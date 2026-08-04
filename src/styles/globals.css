@@ -1,0 +1,277 @@
+/* Google Fonts loaded via <link> in index.html for faster LCP — no @import here */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global touch optimisations ────────────────────────────────────────────── */
+/* Eliminate 300ms tap delay on all interactive elements on mobile */
+a, button, [role="button"], input, select, textarea, label {
+  touch-action: manipulation;
+}
+
+/* Prevent text selection flash on rapid taps (iOS) */
+button, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Smooth momentum scrolling on all scrollable containers */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────── */
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+  50%       { box-shadow: 0 0 0 12px rgba(201,168,76,0.12); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@layer base {
+  :root {
+    /* Core Colors */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 44 54% 54%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 74 54% 54%;
+    --secondary-foreground: 0 0% 29%;
+    --muted: 46 13% 19%;
+    --muted-foreground: 0 0% 96%;
+    --accent: 224 54% 54%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 44 20% 14%;
+    --input: 44 20% 14%;
+    --ring: 44 54% 54%;
+
+    /* Extended Colors */
+    --chart-1: 44 53% 84%;
+    --chart-2: 44 54% 69%;
+    --chart-3: 44 54% 54%;
+    --chart-4: 44 54% 39%;
+    --chart-5: 45 53% 24%;
+
+    /* Sidebar Colors */
+    --sidebar: 46 13% 19%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 44 54% 54%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 224 54% 54%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 44 20% 14%;
+    --sidebar-ring: 44 54% 54%;
+
+    /* Typography */
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-heading: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-serif: ui-serif, Georgia, "Times New Roman", serif;
+    --font-mono: ui-monospace, "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+
+    /* Border Radius */
+    --radius: 0.75rem;
+
+    /* Shadows */
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --gold-glow: 0 0 40px rgba(201,168,76,0.15), 0 0 80px rgba(201,168,76,0.05);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading) !important;
+  }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .animate-in {
+    animation-duration: 0.2s;
+    animation-fill-mode: both;
+  }
+
+  .fade-in {
+    animation-name: fadeIn;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Glassmorphism — contain:layout style paint isolates repaints to the element */
+  .glass {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(201,168,76,0.12);
+    contain: layout style paint;
+    will-change: transform;
+  }
+
+  .glass-dark {
+    background: rgba(10,10,10,0.7);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(201,168,76,0.1);
+    contain: layout style paint;
+    will-change: transform;
+  }
+
+  .glass-card {
+    background: rgba(20,18,14,0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(201,168,76,0.15);
+    contain: layout style paint;
+    will-change: transform;
+  }
+
+  /* Gold gradient text */
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #C9A84C 0%, #F0D080 50%, #C9A84C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gold shimmer text */
+  .text-gold-shimmer {
+    background: linear-gradient(90deg, #C9A84C 0%, #F0D080 25%, #C9A84C 50%, #F0D080 75%, #C9A84C 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
+  }
+
+  /* Gold border glow */
+  .border-gold-glow {
+    border: 1px solid rgba(201,168,76,0.3);
+    box-shadow: 0 0 20px rgba(201,168,76,0.08), inset 0 0 20px rgba(201,168,76,0.02);
+  }
+
+  /* Float animation */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Pulse gold */
+  .animate-pulse-gold {
+    animation: pulse-gold 2s ease-in-out infinite;
+  }
+
+  /* Spin slow */
+  .animate-spin-slow {
+    animation: spin-slow 20s linear infinite;
+  }
+
+  /* Noise texture overlay */
+  .noise-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
+  /* Gradient borders */
+  .gradient-border {
+    position: relative;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(201,168,76,0.4), rgba(201,168,76,0.05), rgba(201,168,76,0.2));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Unless told otherwise, keep it for smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar — gold on dark */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(201, 168, 76, 0.25);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.45);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Selection highlight */
+::selection {
+  background: rgba(201, 168, 76, 0.25);
+  color: #F0D080;
+}

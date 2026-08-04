@@ -1,0 +1,501 @@
+/**
+ * userStore.ts — PostgreSQL-backed user repository.
+ *
+ * Drop-in replacement for the flat-file JSONL implementation.
+ * All exported function signatures are identical to the original.
+ *
+ * Falls back to flat-file behaviour when DATABASE_URL is not configured,
+ * so the app continues to work during the migration transition period.
+ */
+
+import crypto from 'node:crypto';
+import { eq, and, sql as drizzleSql } from 'drizzle-orm';
+import { getDb, isDatabaseConfigured } from '../db/db.js';
+import { users } from '../db/schema.js';
+import type { User, NewUser } from '../db/schema.js';
+import { stripDangerousKeys } from './inputValidator.js';
+
+// ── Re-export types (backward compat) ─────────────────────────────────────────
+
+export type UserStatus = 'pending_verification' | 'pending_kyc' | 'pending_approval' | 'active' | 'suspended' | 'frozen' | 'rejected';
+export type KYCStatus  = 'not_submitted' | 'submitted' | 'approved' | 'rejected';
+
+// Map DB row → legacy UserRecord shape (camelCase)
+export interface UserRecord {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  country?: string;
+  status: UserStatus;
+  kycStatus: KYCStatus;
+  emailVerified: boolean;
+  emailVerifyToken?: string;
+  emailVerifyExpiry?: string;
+  passwordHash: string;
+  createdAt: string;
+  updatedAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+  loginAttempts: number;
+  lastLoginAt?: string;
+  lastLoginIp?: string;
+  ip?: string;
+  balance?: number;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankRoutingNumber?: string;
+  bankSwift?: string;
+  bankIban?: string;
+  walletBtc?: string;
+  walletEth?: string;
+  walletUsdt?: string;
+  walletSol?: string;
+  avatarUrl?: string;
+  dateOfBirth?: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
+  idType?: string;
+  idNumber?: string;
+  idDocumentUrl?: string;
+  kycSubmittedAt?: string;
+  kycApprovedAt?: string;
+  kycRejectedAt?: string;
+  kycRejectionReason?: string;
+  selfieUrl?: string;
+  sessionToken?: string;
+  sessionCreatedAt?: string;
+  sessionLastSeenAt?: string;
+  sessionExpiresAt?: string;
+  primaryCurrency?: string;
+  accountTier?: 'personal' | 'savings' | 'business';
+  totpSecret?: string | null;
+  totpEnabled?: boolean;
+  locale?: string;
+  timezone?: string;
+  notificationPrefs?: unknown;
+  beneficiaries?: unknown;
+  trustedDevices?: unknown;
+}
+
+// ── DB row → UserRecord ───────────────────────────────────────────────────────
+
+function toRecord(u: User): UserRecord {
+  return {
+    id:                  u.id,
+    email:               u.email,
+    name:                u.name,
+    phone:               u.phone ?? undefined,
+    country:             u.country ?? undefined,
+    status:              u.status as UserStatus,
+    kycStatus:           u.kycStatus as KYCStatus,
+    emailVerified:       u.emailVerified,
+    emailVerifyToken:    u.emailVerifyToken ?? undefined,
+    emailVerifyExpiry:   u.emailVerifyExpiry?.toISOString() ?? undefined,
+    passwordHash:        u.passwordHash,
+    loginAttempts:       u.loginAttempts,
+    lastLoginAt:         u.lastLoginAt?.toISOString() ?? undefined,
+    lastLoginIp:         u.lastLoginIp ?? undefined,
+    ip:                  u.ip ?? undefined,
+    balance:             u.balance ?? 0,
+    bankName:            u.bankName ?? undefined,
+    bankAccountNumber:   u.bankAccountNumber ?? undefined,
+    bankRoutingNumber:   u.bankRoutingNumber ?? undefined,
+    bankSwift:           u.bankSwift ?? undefined,
+    bankIban:            u.bankIban ?? undefined,
+    walletBtc:           u.walletBtc ?? undefined,
+    walletEth:           u.walletEth ?? undefined,
+    walletUsdt:          u.walletUsdt ?? undefined,
+    walletSol:           u.walletSol ?? undefined,
+    avatarUrl:           u.avatarUrl ?? undefined,
+    dateOfBirth:         u.dateOfBirth ?? undefined,
+    address:             u.address ?? undefined,
+    city:                u.city ?? undefined,
+    postalCode:          u.postalCode ?? undefined,
+    idType:              u.idType ?? undefined,
+    idNumber:            u.idNumber ?? undefined,
+    idDocumentUrl:       u.idDocumentUrl ?? undefined,
+    kycSubmittedAt:      u.kycSubmittedAt?.toISOString() ?? undefined,
+    kycApprovedAt:       u.kycApprovedAt?.toISOString() ?? undefined,
+    kycRejectedAt:       u.kycRejectedAt?.toISOString() ?? undefined,
+    kycRejectionReason:  u.kycRejectionReason ?? undefined,
+    selfieUrl:           u.selfieUrl ?? undefined,
+    approvedAt:          u.approvedAt?.toISOString() ?? undefined,
+    approvedBy:          u.approvedBy ?? undefined,
+    rejectedAt:          u.rejectedAt?.toISOString() ?? undefined,
+    rejectedBy:          u.rejectedBy ?? undefined,
+    rejectionReason:     u.rejectionReason ?? undefined,
+    primaryCurrency:     u.primaryCurrency ?? 'USD',
+    accountTier:         (u.accountTier ?? 'personal') as 'personal' | 'savings' | 'business',
+    totpSecret:          u.totpSecret ?? undefined,
+    totpEnabled:         u.totpEnabled ?? false,
+    locale:              u.locale ?? undefined,
+    timezone:            u.timezone ?? undefined,
+    notificationPrefs:   u.notificationPrefs ?? undefined,
+    beneficiaries:       u.beneficiaries ?? undefined,
+    trustedDevices:      u.trustedDevices ?? undefined,
+    createdAt:           u.createdAt.toISOString(),
+    updatedAt:           u.updatedAt.toISOString(),
+  };
+}
+
+// ── Flat-file fallback ────────────────────────────────────────────────────────
+// When DATABASE_URL is not set, fall back to the original flat-file implementation.
+// This ensures the app keeps working during the migration transition.
+
+let _flatFile: typeof import('./userStore.flatfile.js') | null = null;
+
+async function getFlatFile() {
+  if (!_flatFile) {
+    _flatFile = await import('./userStore.flatfile.js');
+  }
+  return _flatFile;
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+export async function loadAllUsers(): Promise<UserRecord[]> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.loadAllUsers();
+  }
+  const db = getDb();
+  const rows = await db.select().from(users).orderBy(users.createdAt);
+  return rows.map(toRecord);
+}
+
+export async function findUserByEmail(email: string): Promise<UserRecord | undefined> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.findUserByEmail(email);
+  }
+  const db = getDb();
+  const rows = await db.select().from(users)
+    .where(drizzleSql`LOWER(${users.email}) = LOWER(${email})`)
+    .limit(1);
+  return rows[0] ? toRecord(rows[0]) : undefined;
+}
+
+export async function findUserById(id: string): Promise<UserRecord | undefined> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.findUserById(id);
+  }
+  const db = getDb();
+  const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return rows[0] ? toRecord(rows[0]) : undefined;
+}
+
+export async function findUserByVerifyToken(token: string): Promise<UserRecord | undefined> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.findUserByVerifyToken(token);
+  }
+  const db = getDb();
+  const rows = await db.select().from(users)
+    .where(eq(users.emailVerifyToken, token))
+    .limit(1);
+  return rows[0] ? toRecord(rows[0]) : undefined;
+}
+
+export async function createUser(
+  data: Omit<UserRecord, 'id' | 'createdAt' | 'updatedAt' | 'loginAttempts'>
+): Promise<UserRecord> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.createUser(data);
+  }
+  const db = getDb();
+  const id = 'usr_' + crypto.randomBytes(8).toString('hex');
+  const now = new Date();
+
+  const insert: NewUser = {
+    id,
+    email:              data.email.toLowerCase(),
+    name:               data.name,
+    phone:              data.phone ?? null,
+    country:            data.country ?? null,
+    status:             (data.status ?? 'pending_verification') as User['status'],
+    kycStatus:          (data.kycStatus ?? 'not_submitted') as User['kycStatus'],
+    emailVerified:      data.emailVerified ?? false,
+    emailVerifyToken:   data.emailVerifyToken ?? null,
+    emailVerifyExpiry:  data.emailVerifyExpiry ? new Date(data.emailVerifyExpiry) : null,
+    passwordHash:       data.passwordHash,
+    loginAttempts:      0,
+    ip:                 data.ip ?? null,
+    balance:            data.balance ?? 0,
+    primaryCurrency:    data.primaryCurrency ?? 'USD',
+    accountTier:        (data.accountTier ?? 'personal') as User['accountTier'],
+    createdAt:          now,
+    updatedAt:          now,
+  };
+
+  const rows = await db.insert(users).values(insert).returning();
+  return toRecord(rows[0]);
+}
+
+export async function updateUser(id: string, patch: Partial<UserRecord>): Promise<UserRecord | null> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.updateUser(id, patch);
+  }
+  const db = getDb();
+  const safe = stripDangerousKeys(patch as Record<string, unknown>) as Partial<UserRecord>;
+
+  // Map camelCase patch → snake_case DB columns
+  const dbPatch: Partial<NewUser> = {};
+  if (safe.email !== undefined)              dbPatch.email              = safe.email.toLowerCase();
+  if (safe.name !== undefined)               dbPatch.name               = safe.name;
+  if (safe.phone !== undefined)              dbPatch.phone              = safe.phone ?? null;
+  if (safe.country !== undefined)            dbPatch.country            = safe.country ?? null;
+  if (safe.status !== undefined)             dbPatch.status             = safe.status as User['status'];
+  if (safe.kycStatus !== undefined)          dbPatch.kycStatus          = safe.kycStatus as User['kycStatus'];
+  if (safe.emailVerified !== undefined)      dbPatch.emailVerified      = safe.emailVerified;
+  if (safe.emailVerifyToken !== undefined)   dbPatch.emailVerifyToken   = safe.emailVerifyToken ?? null;
+  if (safe.emailVerifyExpiry !== undefined)  dbPatch.emailVerifyExpiry  = safe.emailVerifyExpiry ? new Date(safe.emailVerifyExpiry) : null;
+  if (safe.passwordHash !== undefined)       dbPatch.passwordHash       = safe.passwordHash;
+  if (safe.loginAttempts !== undefined)      dbPatch.loginAttempts      = safe.loginAttempts;
+  if (safe.lastLoginAt !== undefined)        dbPatch.lastLoginAt        = safe.lastLoginAt ? new Date(safe.lastLoginAt) : null;
+  if (safe.lastLoginIp !== undefined)        dbPatch.lastLoginIp        = safe.lastLoginIp ?? null;
+  if (safe.ip !== undefined)                 dbPatch.ip                 = safe.ip ?? null;
+  if (safe.balance !== undefined)            dbPatch.balance            = safe.balance ?? 0;
+  if (safe.bankName !== undefined)           dbPatch.bankName           = safe.bankName ?? null;
+  if (safe.bankAccountNumber !== undefined)  dbPatch.bankAccountNumber  = safe.bankAccountNumber ?? null;
+  if (safe.bankRoutingNumber !== undefined)  dbPatch.bankRoutingNumber  = safe.bankRoutingNumber ?? null;
+  if (safe.bankSwift !== undefined)          dbPatch.bankSwift          = safe.bankSwift ?? null;
+  if (safe.bankIban !== undefined)           dbPatch.bankIban           = safe.bankIban ?? null;
+  if (safe.walletBtc !== undefined)          dbPatch.walletBtc          = safe.walletBtc ?? null;
+  if (safe.walletEth !== undefined)          dbPatch.walletEth          = safe.walletEth ?? null;
+  if (safe.walletUsdt !== undefined)         dbPatch.walletUsdt         = safe.walletUsdt ?? null;
+  if (safe.walletSol !== undefined)          dbPatch.walletSol          = safe.walletSol ?? null;
+  if (safe.avatarUrl !== undefined)          dbPatch.avatarUrl          = safe.avatarUrl ?? null;
+  if (safe.dateOfBirth !== undefined)        dbPatch.dateOfBirth        = safe.dateOfBirth ?? null;
+  if (safe.address !== undefined)            dbPatch.address            = safe.address ?? null;
+  if (safe.city !== undefined)               dbPatch.city               = safe.city ?? null;
+  if (safe.postalCode !== undefined)         dbPatch.postalCode         = safe.postalCode ?? null;
+  if (safe.idType !== undefined)             dbPatch.idType             = safe.idType ?? null;
+  if (safe.idNumber !== undefined)           dbPatch.idNumber           = safe.idNumber ?? null;
+  if (safe.idDocumentUrl !== undefined)      dbPatch.idDocumentUrl      = safe.idDocumentUrl ?? null;
+  if (safe.kycSubmittedAt !== undefined)     dbPatch.kycSubmittedAt     = safe.kycSubmittedAt ? new Date(safe.kycSubmittedAt) : null;
+  if (safe.kycApprovedAt !== undefined)      dbPatch.kycApprovedAt      = safe.kycApprovedAt ? new Date(safe.kycApprovedAt) : null;
+  if (safe.kycRejectedAt !== undefined)      dbPatch.kycRejectedAt      = safe.kycRejectedAt ? new Date(safe.kycRejectedAt) : null;
+  if (safe.kycRejectionReason !== undefined) dbPatch.kycRejectionReason = safe.kycRejectionReason ?? null;
+  if (safe.selfieUrl !== undefined)          dbPatch.selfieUrl          = safe.selfieUrl ?? null;
+  if (safe.approvedAt !== undefined)         dbPatch.approvedAt         = safe.approvedAt ? new Date(safe.approvedAt) : null;
+  if (safe.approvedBy !== undefined)         dbPatch.approvedBy         = safe.approvedBy ?? null;
+  if (safe.rejectedAt !== undefined)         dbPatch.rejectedAt         = safe.rejectedAt ? new Date(safe.rejectedAt) : null;
+  if (safe.rejectedBy !== undefined)         dbPatch.rejectedBy         = safe.rejectedBy ?? null;
+  if (safe.rejectionReason !== undefined)    dbPatch.rejectionReason    = safe.rejectionReason ?? null;
+  if (safe.primaryCurrency !== undefined)    dbPatch.primaryCurrency    = safe.primaryCurrency ?? 'USD';
+  if (safe.accountTier !== undefined)        dbPatch.accountTier        = safe.accountTier as User['accountTier'];
+  if (safe.totpSecret !== undefined)         dbPatch.totpSecret         = safe.totpSecret ?? null;
+  if (safe.totpEnabled !== undefined)        dbPatch.totpEnabled        = safe.totpEnabled;
+  if (safe.locale !== undefined)             dbPatch.locale             = safe.locale ?? null;
+  if (safe.timezone !== undefined)           dbPatch.timezone           = safe.timezone ?? null;
+  if (safe.notificationPrefs !== undefined)  dbPatch.notificationPrefs  = safe.notificationPrefs ?? null;
+  if (safe.beneficiaries !== undefined)      dbPatch.beneficiaries      = safe.beneficiaries ?? null;
+  if (safe.trustedDevices !== undefined)     dbPatch.trustedDevices     = safe.trustedDevices ?? null;
+
+  dbPatch.updatedAt = new Date();
+
+  const rows = await db.update(users).set(dbPatch).where(eq(users.id, id)).returning();
+  return rows[0] ? toRecord(rows[0]) : null;
+}
+
+export interface BalanceAdjustResult {
+  ok: boolean;
+  user?: UserRecord;
+  previousBalance?: number;
+  newBalance?: number;
+}
+
+/**
+ * adjustUserBalance — atomic balance credit/debit.
+ *
+ * FIX (Category C, task #41 — see AUDIT_REPORT.md §7/§8): every balance
+ * mutation in this codebase (admin/balance/adjust, users/transfer(s),
+ * users/withdraw) previously followed the same unsafe pattern: read the
+ * user's current balance in JS (`const previousBalance = user.balance`),
+ * compute a new value in JS (`previousBalance - amount`), then write it
+ * back with a plain `updateUser(id, { balance: newBalance })`. Between the
+ * read and the write, an arbitrary amount of async work runs (other DB
+ * queries, ledger inserts, sometimes even outbound email) — long enough
+ * for a second concurrent request against the same account to read the
+ * same starting balance and compute its own "new" balance from it. Whichever
+ * write lands last wins and silently overwrites the other: two concurrent
+ * withdrawals that should both be checked against the real balance can both
+ * succeed and overdraw the account (lost update / TOCTOU race), and even
+ * two concurrent credits can lose one of the two additions.
+ *
+ * This function closes that gap by pushing the arithmetic into a single
+ * atomic SQL statement — `balance = balance + delta` computed server-side
+ * by Postgres in the same UPDATE that also enforces the non-negative floor
+ * in its WHERE clause (`COALESCE(balance,0) + delta >= 0`), so the
+ * "check funds, then spend them" step cannot be split across two requests.
+ * If two debits race, at most one UPDATE matches the guarded WHERE clause;
+ * the other returns zero rows and `ok: false`, exactly like a real bank
+ * ledger would reject the second overdraft attempt.
+ *
+ * `delta` is positive for a credit, negative for a debit.
+ *
+ * `opts.allowNegative` — skip the non-negative floor entirely (there are
+ * currently no callers that need this — the default is the safe choice).
+ *
+ * `opts.clampToZero` — for the one existing caller (admin/balance/adjust)
+ * whose pre-existing behavior was "debit, but never go below $0" rather
+ * than "reject the debit outright" (`Math.max(0, previousBalance - amount)`
+ * in the original code). This preserves that exact behavior atomically via
+ * SQL `GREATEST(balance + delta, 0)` instead of rejecting the write —
+ * `ok` is always `true` in this mode since there's nothing to reject.
+ */
+export async function adjustUserBalance(
+  id: string,
+  delta: number,
+  opts: { allowNegative?: boolean; clampToZero?: boolean } = {}
+): Promise<BalanceAdjustResult> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.adjustUserBalance(id, delta, opts);
+  }
+  if (!Number.isFinite(delta)) return { ok: false };
+
+  const db = getDb();
+  const allowNegative = opts.allowNegative ?? false;
+  const clampToZero   = opts.clampToZero   ?? false;
+
+  // Read purely to report `previousBalance` to the caller for audit/response
+  // purposes — the actual arithmetic below does NOT depend on this value, so
+  // a write racing in between this read and the UPDATE cannot cause a lost
+  // update or an overdraft; the UPDATE's WHERE clause re-checks the live
+  // balance atomically at write time.
+  const before = await db.select({ balance: users.balance }).from(users).where(eq(users.id, id)).limit(1);
+  if (before.length === 0) return { ok: false };
+  const previousBalance = Number(before[0].balance ?? 0);
+
+  const whereClause = allowNegative || clampToZero
+    ? eq(users.id, id)
+    : and(eq(users.id, id), drizzleSql`COALESCE(${users.balance}, 0) + ${delta} >= 0`);
+
+  const newBalanceExpr = clampToZero
+    ? drizzleSql`GREATEST(COALESCE(${users.balance}, 0) + ${delta}, 0)`
+    : drizzleSql`COALESCE(${users.balance}, 0) + ${delta}`;
+
+  const rows = await db.update(users)
+    .set({ balance: newBalanceExpr, updatedAt: new Date() })
+    .where(whereClause)
+    .returning();
+
+  if (rows.length === 0) {
+    // Either the row vanished between the read above and this UPDATE
+    // (not a realistic concern for user accounts), or — far more likely —
+    // the non-negative guard rejected the debit because a concurrent
+    // request already spent the balance. Either way, no partial write
+    // happened; the balance is exactly as it was before this call.
+    return { ok: false, previousBalance };
+  }
+
+  const updated = toRecord(rows[0]);
+  return { ok: true, user: updated, previousBalance, newBalance: updated.balance };
+}
+
+/**
+ * Atomically redenominates a user's balance into a new currency — used by
+ * currency swap, which (unlike a credit/debit) isn't expressible as a
+ * `balance + delta` because the fee/markup math applied to compute
+ * `newBalance` isn't a pure ratio of the old balance (flat fee components,
+ * min/max fee clamps). Instead this uses optimistic concurrency: the caller
+ * passes the balance it read and computed `newBalance` from, and the UPDATE
+ * only commits if the live balance still matches `expectedBalance` — so a
+ * concurrent credit/debit (e.g. an admin-approved deposit landing between
+ * the swap's rate lookup and this write) causes the swap to fail with
+ * `conflict: true` instead of silently overwriting the other change.
+ */
+export async function swapUserBalance(
+  id: string,
+  expectedBalance: number,
+  newBalance: number,
+  newCurrency: string
+): Promise<{ ok: boolean; conflict?: boolean; user?: UserRecord }> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.swapUserBalance(id, expectedBalance, newBalance, newCurrency);
+  }
+  const db = getDb();
+  const rows = await db.update(users)
+    .set({ balance: newBalance, primaryCurrency: newCurrency, updatedAt: new Date() })
+    .where(and(eq(users.id, id), drizzleSql`COALESCE(${users.balance}, 0) = ${expectedBalance}`))
+    .returning();
+
+  if (rows.length === 0) return { ok: false, conflict: true };
+  return { ok: true, user: toRecord(rows[0]) };
+}
+
+export function generateVerifyToken(): { token: string; expiry: string } {
+  return {
+    token:  crypto.randomBytes(32).toString('hex'),
+    expiry: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  };
+}
+
+export async function detectDuplicate(
+  email: string,
+  ip?: string
+): Promise<{ isDuplicate: boolean; reason?: string }> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.detectDuplicate(email, ip);
+  }
+  const db = getDb();
+
+  const existing = await db.select({ id: users.id })
+    .from(users)
+    .where(drizzleSql`LOWER(${users.email}) = LOWER(${email})`)
+    .limit(1);
+
+  if (existing.length > 0) return { isDuplicate: true, reason: 'email_exists' };
+
+  if (ip) {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentFromIp = await db.select({ id: users.id })
+      .from(users)
+      .where(drizzleSql`${users.ip} = ${ip} AND ${users.createdAt} > ${oneHourAgo}`)
+      .limit(3);
+    if (recentFromIp.length >= 3) return { isDuplicate: true, reason: 'too_many_from_ip' };
+  }
+
+  return { isDuplicate: false };
+}
+
+/**
+ * findUserBySessionToken — looks up the customer_sessions table.
+ * Session management is now in customerSessionStore.ts.
+ * This shim is kept for backward compatibility with existing call sites.
+ */
+export async function findUserBySessionToken(token: string): Promise<UserRecord | undefined> {
+  if (!token) return undefined;
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.findUserBySessionToken(token);
+  }
+  // Delegate to the session store
+  const { findUserByCustomerToken } = await import('./customerSessionStore.js');
+  return findUserByCustomerToken(token);
+}
+
+/**
+ * deleteUser — permanently removes a customer record.
+ * Callers are responsible for audit-logging before deletion (the row is gone after).
+ */
+export async function deleteUser(id: string): Promise<boolean> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    return ff.deleteUser(id);
+  }
+  const db = getDb();
+  const deleted = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+  return deleted.length > 0;
+}

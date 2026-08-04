@@ -1,0 +1,25 @@
+/**
+ * POST /api/users/transfer
+ * Body: { currency: string, amount: number, beneficiaryId: string, note?: string }
+ * Send money to a saved beneficiary. See customerTransfer.ts for the shared
+ * fee/validation/transaction-creation logic (also used by
+ * POST /api/users/transfers).
+ */
+import type { Request, Response } from 'express';
+import { findUserBySessionToken } from '../../../lib/userStore.js';
+import { createCustomerTransfer } from '../../../lib/customerTransfer.js';
+import { appendAudit } from '../../../lib/auditLog.js';
+
+export default async function handler(req: Request, res: Response) {
+  const auth = req.headers.authorization ?? '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const user = await findUserBySessionToken(token);
+  if (!user) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+
+  const result = await createCustomerTransfer(user, req.body as Record<string, unknown>);
+  if (!result.ok) return res.status(result.status).json({ ok: false, error: result.error });
+
+  appendAudit({ event: 'user_transfer_requested', userId: user.id, email: user.email, ip: req.ip ?? 'unknown', meta: { txId: result.transaction.id } });
+
+  return res.status(201).json({ ok: true, transaction: result.transaction, fee: result.fee, message: 'Transfer submitted — awaiting approval.' });
+}

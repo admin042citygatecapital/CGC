@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      Strip ?airoShareToken=... from the URL as early as possible. The token
+      is only needed for the initial request: dev-supervisor reads it,
+      validates, and sets the airo_share_token cookie (HttpOnly, first-party
+      on the preview origin). Subsequent requests use the cookie path —
+      the URL parameter is dead weight after the cookie is stored.
+
+      Leaving it in the URL is a leak risk:
+        - Visible in the address bar (top-level "Open in new tab" path)
+        - Recorded in browser history
+        - Sent as Referer on sub-resources loaded before this runs (mitigated
+          by the same-origin referrer-policy meta tag below)
+        - Copy/pasted or screenshotted, accidentally sharing access
+
+      Inline at the top of <head> so it runs synchronously BEFORE any
+      <link>, <script>, or sub-resource fires. The window where the token
+      is in the URL collapses to "while the browser is parsing this script"
+      — effectively zero.
+
+      replaceState (not pushState) means the original URL is replaced in the
+      browser's history entry, not pushed as a new entry — the back button
+      doesn't return to a URL with the token.
+    -->
+    <script>
+      (function () {
+        try {
+          var u = new URL(location.href);
+          if (u.searchParams.has('airoShareToken')) {
+            u.searchParams.delete('airoShareToken');
+            history.replaceState(null, '', u.toString());
+          }
+        } catch (e) { /* ignore — URL parser unavailable in this environment */ }
+      })();
+    </script>
+    <!--
+      Prevent sub-resources (CSS/JS/images/fonts/etc.) from sending the
+      token-bearing URL as their Referer header during the brief window
+      between page-load and the strip-script above. `same-origin` allows
+      the referrer for first-party requests (preserving analytics and
+      relative-link behavior) but strips it for cross-origin requests,
+      which is where the token-leak risk actually lives.
+    -->
+    <meta name="referrer" content="same-origin" />
+    <link rel="icon" type="image/png" href="/airo-assets/images/logo/favicon" />
+    <link rel="apple-touch-icon" href="/airo-assets/images/logo/primary" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Preconnect to Google Fonts to eliminate DNS + TLS round-trips (LCP) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <!-- Load fonts via <link> not @import — parser-blocking @import delays render -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" />
+    <!--app-head-->
+  </head>
+  <body class="fs-unmask-airo-app-builder">
+    <div id="app" class="fs-unmask-airo-app-builder"><!--app-html--></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script src="/analytics.js"></script>
+  </body>
+</html>

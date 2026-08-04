@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login – City Gate Capital</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: #0a0a0a;
+      font-family: 'Georgia', serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .login-container {
+      background-color: #111111;
+      border: 1px solid #b8952a;
+      border-radius: 8px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 0 40px rgba(184,149,42,0.15);
+    }
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo h1 { color: #b8952a; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; }
+    .logo p { color: #666; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
+    .divider { width: 60px; height: 1px; background: #b8952a; margin: 16px auto; opacity: 0.5; }
+    label { display: block; color: #999; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    input {
+      width: 100%; padding: 12px 16px; background: #1a1a1a;
+      border: 1px solid #333; border-radius: 4px; color: #fff;
+      font-size: 14px; margin-bottom: 20px; transition: border-color 0.2s; outline: none;
+    }
+    input:focus { border-color: #b8952a; }
+    button {
+      width: 100%; padding: 14px; background: #b8952a; color: #0a0a0a;
+      border: none; border-radius: 4px; font-size: 13px; font-weight: bold;
+      letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: background 0.2s;
+    }
+    button:hover { background: #d4aa30; }
+    button:disabled { background: #555; cursor: not-allowed; }
+    .error-message {
+      display: none; background: #2a0a0a; border: 1px solid #8b0000;
+      border-radius: 4px; color: #ff6b6b; font-size: 13px;
+      padding: 12px 16px; margin-top: 16px; text-align: center;
+    }
+    .error-message.show { display: block; }
+    .footer-note { text-align: center; color: #444; font-size: 11px; margin-top: 24px; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+<div class="login-container">
+  <div class="logo">
+    <h1>City Gate Capital</h1>
+    <div class="divider"></div>
+    <p>Admin Portal</p>
+  </div>
+  <form id="loginForm">
+    <label for="email">Email Address</label>
+    <input type="email" id="email" placeholder="admin@citygate.capital" autocomplete="email" required />
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="••••••••••••" autocomplete="current-password" required />
+    <button type="submit" id="loginBtn">Sign In</button>
+    <div class="error-message" id="errorMsg"></div>
+  </form>
+  <p class="footer-note">Restricted Access — Authorised Personnel Only</p>
+</div>
+<script>
+  const SUPABASE_URL  = 'https://chdpquotirulzmycpcxm.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoZHBxdW90aXJ1bHpteWNwY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NDQ3MTIsImV4cCI6MjA5NTIyMDcxMn0._IhimnZXQbmqr84t_Szv17hYYinaib70Ou2T-SXWnAE';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+  const form   = document.getElementById('loginForm');
+  const btn    = document.getElementById('loginBtn');
+  const errMsg = document.getElementById('errorMsg');
+  function showError(msg) { errMsg.textContent = msg; errMsg.classList.add('show'); }
+  function hideError() { errMsg.classList.remove('show'); }
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    if (!email || !password) { showError('Please enter your email and password.'); return; }
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    try {
+      const { data: authData, error: authError } = await sb.auth.signInWithPassword({ email, password });
+      if (authError) { showError('Invalid email or password. Please try again.'); return; }
+      const { data: profile, error: profileError } = await sb.from('profiles').select('role').eq('id', authData.user.id).single();
+      if (profileError || !profile) { await sb.auth.signOut(); showError('Account not found. Please contact support.'); return; }
+      if (profile.role !== 'admin') { await sb.auth.signOut(); showError('Access denied. Admin accounts only.'); return; }
+      window.location.href = '/admin-dashboard.html';
+    } catch (err) {
+      showError('Something went wrong. Please try again.');
+      console.error(err);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Sign In';
+    }
+  });
+</script>
+</body>
+</html>

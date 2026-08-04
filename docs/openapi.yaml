@@ -1,0 +1,91 @@
+openapi: 3.1.0
+info:
+  title: City Gate Capital API
+  description: |
+    Complete API documentation for City Gate Capital — a premium digital banking platform.
+  version: 1.0.0
+  contact:
+    name: City Gate Capital
+    url: https://citygate.capital
+    email: admin@citygate.capital
+servers:
+  - url: https://citygate.capital
+    description: Production
+components:
+  securitySchemes:
+    customerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Customer Bearer token from POST /api/users/login
+    adminAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Admin Bearer token from POST /api/admin/auth/login
+paths:
+  /api/health:
+    get:
+      summary: Server health check
+      tags: [Public]
+      responses:
+        '200':
+          description: Server is healthy
+  /api/csrf:
+    get:
+      summary: Get CSRF token
+      tags: [Public]
+      responses:
+        '200':
+          description: CSRF token
+  /api/users/login:
+    post:
+      summary: Customer login
+      tags: [Customer Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+  /api/admin/auth/login:
+    post:
+      summary: Admin login
+      tags: [Admin Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+tags:
+  - name: Public
+    description: No authentication required
+  - name: Customer Auth
+    description: Customer authentication endpoints
+  - name: Admin Auth
+    description: Admin authentication endpoints

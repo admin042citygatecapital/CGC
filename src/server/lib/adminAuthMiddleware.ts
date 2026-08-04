@@ -1,0 +1,92 @@
+/**
+ * Admin authentication middleware.
+ *
+ * Token resolution order (dual-mode for backward compat):
+ *   1. HttpOnly cookie  `cgc_admin_sid`  (preferred — XSS-safe)
+ *   2. Authorization: Bearer <token>     (fallback — SPA localStorage)
+ *
+ * Session fingerprinting is enforced: IP + UA must match the values recorded
+ * at login. A mismatch returns 401 so the client re-authenticates.
+ *
+ * Attaches `req.adminSession` and `req.adminToken` for downstream handlers.
+ */
+import type { Request, Response, NextFunction } from 'express';
+import { getSession, type Session } from './sessionStore.js';
+
+// Augment Express Request so downstream handlers can read the session
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace -- `declare global { namespace X }` is the only way to augment a third-party module's ambient types.
+  namespace Express {
+    interface Request {
+      adminSession?: Session;
+      adminToken?:   string;
+    }
+  }
+}
+
+export const COOKIE_NAME = 'cgc_admin_sid';
+
+/** Cookie options — HttpOnly, Secure (prod), SameSite=Strict */
+export function sessionCookieOptions(maxAgeMs: number) {
+  return {
+    httpOnly:  true,
+    secure:    process.env.NODE_ENV === 'production',
+    sameSite:  'strict' as const,
+    maxAge:    Math.floor(maxAgeMs / 1000), // express uses seconds
+    path:      '/api/admin',
+  };
+}
+
+/** Resolve the raw token from cookie or Authorization header */
+function resolveToken(req: Request): string | null {
+  const cookie = (req.cookies as Record<string, string> | undefined)?.[COOKIE_NAME];
+  if (cookie && cookie.length === 64) return cookie;
+
+  const bearer = req.headers.authorization?.replace('Bearer ', '').trim();
+  if (bearer && bearer.length === 64) return bearer;
+
+  return null;
+}
+
+/**
+ * Express middleware — validates the admin session.
+ * Returns 401 JSON on failure; calls next() on success.
+ */
+export async function requireAdminAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const token = resolveToken(req);
+  if (!token) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  const ip = req.ip ?? 'unknown';
+  const ua = req.headers['user-agent'] ?? 'unknown';
+
+  // FIX (see AUDIT_REPORT.md §7): getSession is async — calling it without
+  // `await` meant `session` was always the pending Promise object (always
+  // truthy), so the "session expired or invalid" rejection below could never
+  // fire. This was the core defect behind the admin-auth-guard bypass.
+  const session = await getSession(token, { ip, ua });
+  if (!session) {
+    // Clear stale cookie if present
+    res.clearCookie(COOKIE_NAME, { path: '/api/admin' });
+    res.status(401).json({ error: 'Session expired or invalid' });
+    return;
+  }
+
+  req.adminSession = session;
+  req.adminToken   = token;
+  next();
+}
+
+/**
+ * Lightweight variant — reads the session WITHOUT fingerprint enforcement.
+ * Used by the /verify endpoint where the client is just checking if the
+ * token is still valid (no IP/UA available at that point).
+ */
+export async function resolveAdminSession(req: Request): Promise<Session | null> {
+  const token = resolveToken(req);
+  if (!token) return null;
+  // FIX (see AUDIT_REPORT.md §7): missing await — same defect as above.
+  return await getSession(token); // no fingerprint arg → skip binding check
+}

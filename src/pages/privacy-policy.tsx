@@ -1,0 +1,364 @@
+import { Helmet } from '@dr.pogodin/react-helmet';
+import { motion } from 'motion/react';
+import { Link } from 'react-router-dom';
+import { Shield, Lock, Eye, Database, Globe, Mail, ChevronRight, FileText } from 'lucide-react';
+
+const LAST_UPDATED = 'May 23, 2026';
+const EFFECTIVE_DATE = 'May 23, 2026';
+const CANONICAL = 'https://citygate.capital/privacy-policy';
+
+const sections = [
+  {
+    id: 'information-we-collect',
+    title: '1. Information We Collect',
+    icon: Database,
+    content: [
+      {
+        subtitle: '1.1 Information You Provide',
+        body: `When you open an account or use our services, we collect: full legal name, date of birth, nationality, government-issued identification documents (passport, national ID, driver's licence), residential address, email address, phone number, tax identification number, source of funds declarations, and any other information required for KYC/AML compliance under applicable law.`,
+      },
+      {
+        subtitle: '1.2 Information Collected Automatically',
+        body: `We automatically collect: IP address, device identifiers, browser type and version, operating system, referring URLs, pages visited, session duration, click-stream data, transaction metadata (amounts, timestamps, counterparty identifiers), geolocation data (where permitted), and biometric authentication data stored locally on your device.`,
+      },
+      {
+        subtitle: '1.3 Information from Third Parties',
+        body: `We receive information from identity verification providers, credit reference agencies, fraud prevention databases, sanctions screening services, correspondent banking partners, and publicly available sources including company registries and regulatory databases.`,
+      },
+    ],
+  },
+  {
+    id: 'how-we-use-information',
+    title: '2. How We Use Your Information',
+    icon: Eye,
+    content: [
+      {
+        subtitle: '2.1 Service Delivery',
+        body: `We use your information to open and maintain your account, process transactions, issue payment instruments, provide customer support, send account notifications, and deliver the features described in our Terms of Service.`,
+      },
+      {
+        subtitle: '2.2 Legal and Regulatory Obligations',
+        body: `We are required by law to verify your identity (KYC), screen against sanctions lists, monitor for suspicious activity (AML), report certain transactions to financial intelligence units, and retain records for the periods mandated by applicable law — typically 5–7 years after account closure.`,
+      },
+      {
+        subtitle: '2.3 Security and Fraud Prevention',
+        body: `We analyse transaction patterns, device signals, and behavioural data to detect and prevent fraud, unauthorised access, money laundering, terrorist financing, and other financial crime. This processing is necessary for the performance of our contract with you and our legitimate interests in protecting the platform.`,
+      },
+      {
+        subtitle: '2.4 Product Improvement',
+        body: `We use aggregated and anonymised data to improve our products, develop new features, conduct research, and generate internal analytics. This data cannot be used to identify you individually.`,
+      },
+    ],
+  },
+  {
+    id: 'legal-basis',
+    title: '3. Legal Basis for Processing',
+    icon: FileText,
+    content: [
+      {
+        subtitle: '3.1 Contractual Necessity',
+        body: `Most processing is necessary to perform our contract with you — without it, we cannot provide the services you have requested.`,
+      },
+      {
+        subtitle: '3.2 Legal Obligation',
+        body: `KYC, AML, sanctions screening, and record-keeping are required by financial services regulations in every jurisdiction in which we operate, including but not limited to the EU's AMLD6, the UK's Money Laundering Regulations 2017, and equivalent legislation in 40+ other jurisdictions.`,
+      },
+      {
+        subtitle: '3.3 Legitimate Interests',
+        body: `We process certain data on the basis of our legitimate interests, including fraud prevention, network security, and improving our services. We have conducted balancing tests and concluded that our interests do not override your fundamental rights.`,
+      },
+      {
+        subtitle: '3.4 Consent',
+        body: `Where we rely on consent (e.g. marketing communications), you may withdraw it at any time by contacting privacy@citygate.capital or using the unsubscribe link in any marketing email. Withdrawal does not affect the lawfulness of processing before withdrawal.`,
+      },
+    ],
+  },
+  {
+    id: 'data-sharing',
+    title: '4. How We Share Your Information',
+    icon: Globe,
+    content: [
+      {
+        subtitle: '4.1 Service Providers',
+        body: `We share data with carefully vetted third-party processors including cloud infrastructure providers, identity verification vendors, payment processors, card scheme operators, fraud detection services, and customer support platforms. All processors are bound by data processing agreements requiring them to protect your data.`,
+      },
+      {
+        subtitle: '4.2 Regulatory and Law Enforcement',
+        body: `We disclose information to financial regulators, tax authorities, law enforcement agencies, and courts when required by law, court order, or regulatory mandate. We will notify you of such disclosures where legally permitted to do so.`,
+      },
+      {
+        subtitle: '4.3 Corporate Transactions',
+        body: `In the event of a merger, acquisition, restructuring, or sale of assets, your data may be transferred to the acquiring entity, subject to the same privacy protections described in this policy.`,
+      },
+      {
+        subtitle: '4.4 No Sale of Personal Data',
+        body: `We do not sell, rent, or trade your personal data to third parties for their own marketing purposes. Period.`,
+      },
+    ],
+  },
+  {
+    id: 'international-transfers',
+    title: '5. International Data Transfers',
+    icon: Globe,
+    content: [
+      {
+        subtitle: '5.1 Transfer Mechanisms',
+        body: `City Gate Capital operates globally. Your data may be transferred to and processed in countries outside your home jurisdiction, including countries that may not provide the same level of data protection as your home country. Where we transfer data from the EEA or UK, we rely on Standard Contractual Clauses (SCCs), adequacy decisions, or other lawful transfer mechanisms.`,
+      },
+      {
+        subtitle: '5.2 Safeguards',
+        body: `All international transfers are subject to appropriate technical and organisational safeguards including encryption in transit and at rest, access controls, and contractual protections. You may request a copy of the relevant transfer mechanism by contacting privacy@citygate.capital.`,
+      },
+    ],
+  },
+  {
+    id: 'data-retention',
+    title: '6. Data Retention',
+    icon: Database,
+    content: [
+      {
+        subtitle: '6.1 Retention Periods',
+        body: `We retain your personal data for as long as your account is active and for a minimum of 5 years after account closure, or longer where required by applicable law. Transaction records are retained for 7 years in most jurisdictions. Biometric data is deleted within 90 days of collection unless you have consented to longer retention.`,
+      },
+      {
+        subtitle: '6.2 Deletion',
+        body: `After the applicable retention period, we securely delete or anonymise your data. You may request early deletion of data that is not subject to legal retention obligations by contacting privacy@citygate.capital.`,
+      },
+    ],
+  },
+  {
+    id: 'your-rights',
+    title: '7. Your Privacy Rights',
+    icon: Shield,
+    content: [
+      {
+        subtitle: '7.1 Rights Available to You',
+        body: `Depending on your jurisdiction, you may have the right to: access a copy of your personal data; correct inaccurate data; request deletion of data not subject to legal retention; restrict or object to certain processing; receive your data in a portable format; withdraw consent; and lodge a complaint with your local data protection authority.`,
+      },
+      {
+        subtitle: '7.2 Exercising Your Rights',
+        body: `To exercise any of these rights, contact privacy@citygate.capital with your full name, account email, and a description of your request. We will respond within 30 days (or within the timeframe required by applicable law). We may need to verify your identity before processing your request.`,
+      },
+      {
+        subtitle: '7.3 Supervisory Authorities',
+        body: `If you are located in the EEA, you have the right to lodge a complaint with your national data protection authority. UK residents may contact the Information Commissioner's Office (ICO) at ico.org.uk. We would, however, appreciate the opportunity to address your concerns before you contact a regulator.`,
+      },
+    ],
+  },
+  {
+    id: 'security',
+    title: '8. Security',
+    icon: Lock,
+    content: [
+      {
+        subtitle: '8.1 Technical Safeguards',
+        body: `We protect your data using 256-bit AES encryption at rest, TLS 1.3 in transit, hardware security modules (HSMs) for key management, multi-factor authentication for all staff access, zero-trust network architecture, and regular penetration testing by independent security firms.`,
+      },
+      {
+        subtitle: '8.2 Incident Response',
+        body: `In the event of a data breach that is likely to result in a risk to your rights and freedoms, we will notify the relevant supervisory authority within 72 hours and affected individuals without undue delay, as required by applicable law.`,
+      },
+    ],
+  },
+  {
+    id: 'cookies',
+    title: '9. Cookies',
+    icon: Shield,
+    content: [
+      {
+        subtitle: '9.1 Cookie Use',
+        body: `We use cookies and similar tracking technologies for authentication, security, performance monitoring, and analytics. For full details, please see our Cookie Policy at citygate.capital/cookie-policy.`,
+      },
+    ],
+  },
+  {
+    id: 'contact',
+    title: '10. Contact & Data Controller',
+    icon: Mail,
+    content: [
+      {
+        subtitle: '10.1 Data Controller',
+        body: `City Gate Capital Ltd is the data controller for personal data processed in connection with our services. Registered address: City Gate Capital Ltd, International Financial Centre, London, United Kingdom.`,
+      },
+      {
+        subtitle: '10.2 Privacy Contact',
+        body: `For all privacy-related enquiries, requests, or complaints, contact our Data Protection Officer at: privacy@citygate.capital. We aim to respond to all requests within 5 business days.`,
+      },
+      {
+        subtitle: '10.3 Changes to This Policy',
+        body: `We may update this Privacy Policy from time to time. We will notify you of material changes by email or in-app notification at least 30 days before they take effect. Continued use of our services after the effective date constitutes acceptance of the updated policy.`,
+      },
+    ],
+  },
+];
+
+const tocItems = sections.map(s => ({ id: s.id, title: s.title }));
+
+export default function PrivacyPolicyPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'Privacy Policy — City Gate Capital',
+    url: CANONICAL,
+    description: 'How City Gate Capital collects, uses, and protects your personal data.',
+    dateModified: LAST_UPDATED,
+    publisher: {
+      '@type': 'Organization',
+      name: 'City Gate Capital',
+      url: 'https://citygate.capital',
+    },
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://citygate.capital' },
+        { '@type': 'ListItem', position: 2, name: 'Privacy Policy', item: CANONICAL },
+      ],
+    },
+  };
+
+  return (
+    <>
+      <Helmet>
+        <title>Privacy Policy — City Gate Capital</title>
+        <meta name="description" content="Understand how City Gate Capital collects, uses, shares, and protects your personal data. GDPR, UK GDPR, and global privacy compliance." />
+        <link rel="canonical" href={CANONICAL} />
+        <meta property="og:title" content="Privacy Policy — City Gate Capital" />
+        <meta property="og:description" content="How City Gate Capital handles your personal data — transparent, compliant, and secure." />
+        <meta property="og:url" content={CANONICAL} />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://citygate.capital/api/og?title=Privacy+Policy&description=How+City+Gate+Capital+handles+your+personal+data" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:alt" content="Privacy Policy — City Gate Capital" />
+        <meta property="og:site_name" content="City Gate Capital" />
+        <meta property="og:locale" content="en_GB" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@CityGateCapital" />
+        <meta name="twitter:title" content="Privacy Policy — City Gate Capital" />
+        <meta name="twitter:description" content="How City Gate Capital handles your personal data — transparent, compliant, and secure." />
+        <meta name="twitter:image" content="https://citygate.capital/api/og?title=Privacy+Policy&description=How+City+Gate+Capital+handles+your+personal+data" />
+        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+      </Helmet>
+
+      {/* Hero */}
+      <section className="relative pt-32 pb-16 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+        <div className="container mx-auto px-4 md:px-6">
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-foreground/35 mb-8">
+            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+            <ChevronRight size={12} />
+            <span className="text-foreground/55">Privacy Policy</span>
+          </nav>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-3xl"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-medium mb-6">
+              <Shield size={12} />
+              Legal Document
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+              Privacy Policy
+            </h1>
+            <p className="text-foreground/55 text-lg leading-relaxed mb-6">
+              We are committed to protecting your personal data. This policy explains what we collect, why we collect it, and how we keep it safe.
+            </p>
+            <div className="flex flex-wrap gap-4 text-xs text-foreground/40">
+              <span>Effective: <span className="text-foreground/60">{EFFECTIVE_DATE}</span></span>
+              <span>·</span>
+              <span>Last updated: <span className="text-foreground/60">{LAST_UPDATED}</span></span>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Body */}
+      <section className="pb-24">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 max-w-6xl">
+
+            {/* Sticky TOC */}
+            <aside className="hidden lg:block lg:col-span-1">
+              <div className="sticky top-28 space-y-1">
+                <p className="text-[10px] font-bold text-foreground/25 uppercase tracking-[0.18em] mb-4">Contents</p>
+                {tocItems.map(item => (
+                  <a
+                    key={item.id}
+                    href={`#${item.id}`}
+                    className="block text-xs text-foreground/40 hover:text-primary py-1.5 pl-3 border-l border-primary/10 hover:border-primary/40 transition-colors leading-snug"
+                  >
+                    {item.title}
+                  </a>
+                ))}
+                <div className="pt-6 border-t border-primary/10 mt-6">
+                  <p className="text-[10px] text-foreground/25 mb-3">Related</p>
+                  <Link to="/terms-of-service" className="block text-xs text-foreground/40 hover:text-primary py-1 transition-colors">Terms of Service</Link>
+                  <Link to="/cookie-policy" className="block text-xs text-foreground/40 hover:text-primary py-1 transition-colors">Cookie Policy</Link>
+                  <Link to="/compliance" className="block text-xs text-foreground/40 hover:text-primary py-1 transition-colors">Compliance</Link>
+                </div>
+              </div>
+            </aside>
+
+            {/* Content */}
+            <main className="lg:col-span-3 space-y-12">
+              {sections.map((section, i) => {
+                const Icon = section.icon;
+                return (
+                  <motion.article
+                    key={section.id}
+                    id={section.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: i * 0.03 }}
+                    className="scroll-mt-28"
+                  >
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                        <Icon size={14} className="text-primary" />
+                      </div>
+                      <h2 className="text-lg font-bold text-foreground" style={{ fontFamily: 'var(--font-heading)' }}>
+                        {section.title}
+                      </h2>
+                    </div>
+                    <div className="space-y-5 pl-11">
+                      {section.content.map(block => (
+                        <div key={block.subtitle}>
+                          <h3 className="text-sm font-semibold text-foreground/80 mb-2">{block.subtitle}</h3>
+                          <p className="text-sm text-foreground/55 leading-relaxed">{block.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {i < sections.length - 1 && (
+                      <div className="mt-10 h-px bg-gradient-to-r from-primary/10 via-primary/5 to-transparent" />
+                    )}
+                  </motion.article>
+                );
+              })}
+
+              {/* Contact card */}
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                    <Mail size={16} className="text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Privacy Questions?</h3>
+                    <p className="text-sm text-foreground/55 mb-3">Our Data Protection Officer is available to answer any questions about how we handle your data.</p>
+                    <a href="mailto:privacy@citygate.capital" className="text-sm text-primary hover:underline font-medium">privacy@citygate.capital</a>
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

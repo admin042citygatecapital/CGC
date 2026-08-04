@@ -1,0 +1,129 @@
+# Render Blueprint — City Gate Capital
+# https://render.com/docs/blueprint-spec
+#
+# Deploy with: connect this repo in the Render dashboard → "New +" → "Blueprint"
+# → Render reads this file and provisions the service below. Every `sync: false`
+# variable must be entered manually in the Render dashboard after the first
+# deploy (Render will prompt for these) — none of them are stored in this file.
+#
+# Env var list below is exhaustive per src/server/lib/envValidator.ts's real
+# REGISTRY plus the additional secrets read directly via getSecret() across
+# r2Storage.ts, cardStore.ts, emailService.ts/smtpTransport.ts, zohoTokenStore.ts,
+# and market/providers/*.ts (confirmed by direct grep, not guessed).
+
+services:
+  - type: web
+    name: citygate-capital
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: standard          # bump from "starter" once you have real traffic — see note below
+    region: oregon          # pick the region closest to your primary user base
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+
+    envVars:
+      # ── Core / required — app will not start correctly without these ──────
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false          # Neon connection string
+      - key: SESSION_SECRET
+        generateValue: true  # Render generates a strong random value on first deploy
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD_HASH
+        sync: false          # generate via hashPassword() in adminCredentials.ts — see deployment notes
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_UNLOCK_KEY
+        generateValue: true  # break-glass key for /api/admin/auth/unlock and /diag — store this separately too, Render won't show it again after generation
+      - key: CARD_ENCRYPTION_KEY
+        generateValue: true  # encrypts card PAN/CVV at rest — DO NOT rotate on an existing deploy without a data-migration plan, it will make existing encrypted card data unreadable
+      - key: APP_URL
+        value: https://app.citygate.capital
+      - key: ADMIN_URL
+        value: https://admin.citygate.capital
+
+      # ── Email — Zoho Mail (primary, per your requirement to keep Zoho) ────
+      - key: ZOHO_CLIENT_ID
+        sync: false
+      - key: ZOHO_CLIENT_SECRET
+        sync: false
+      - key: ZOHO_REFRESH_TOKEN
+        sync: false
+      - key: ZOHO_ACCOUNT_ID
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+
+      # ── Email — Resend (secondary transport, smtpTransport.ts) ────────────
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+
+      # ── File storage — Cloudflare R2 ───────────────────────────────────────
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        value: cgc-media
+      - key: R2_PUBLIC_URL
+        sync: false          # e.g. https://media.citygate.capital
+
+      # ── Market data providers (optional — trading features degrade gracefully without these) ──
+      - key: ALPHA_VANTAGE_API_KEY
+        sync: false
+      - key: FINNHUB_API_KEY
+        sync: false
+      - key: POLYGON_API_KEY
+        sync: false
+      - key: TWELVE_DATA_API_KEY
+        sync: false
+
+      # ── Live chat / support widget (optional) ──────────────────────────────
+      - key: SMARTSUPP_KEY
+        sync: false
+      - key: SMARTSUPP_API_KEY
+        sync: false
+
+      # ── Analytics (optional) ───────────────────────────────────────────────
+      - key: GA_MEASUREMENT_ID
+        sync: false
+      - key: GA_API_SECRET
+        sync: false
+      - key: GTM_CONTAINER_ID
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+
+      # ── Cloudflare DNS/zone management (optional — only if the app calls the Cloudflare API directly) ──
+      - key: CLOUDFLARE_API_TOKEN
+        sync: false
+      - key: CLOUDFLARE_ZONE_ID
+        sync: false
+
+      # ── Payment gateways — registered in envValidator but NOT wired to any
+      # route handler anywhere in this codebase (confirmed in AUDIT_REPORT.md
+      # §8). Leave unset until real Stripe/PayPal/Flutterwave/Paystack
+      # integration work is actually done — setting these today does nothing. ──
+      # - key: STRIPE_SECRET_KEY
+      # - key: STRIPE_PUBLISHABLE_KEY
+      # - key: STRIPE_WEBHOOK_SECRET
+      # - key: PAYPAL_CLIENT_ID
+      # - key: PAYPAL_CLIENT_SECRET
+      # - key: FLUTTERWAVE_SECRET_KEY
+      # - key: PAYSTACK_SECRET_KEY
+
+      # ── SMS/WhatsApp — same as above, registered but not wired to any route ──
+      # - key: TWILIO_ACCOUNT_SID
+      # - key: TWILIO_AUTH_TOKEN
+      # - key: TWILIO_VERIFY_SID
+      # - key: WHATSAPP_TOKEN
+      # - key: WHATSAPP_PHONE_ID
+
+      # - key: BANKING_API_KEY   # registered, not wired to any route — leave unset
