@@ -819,12 +819,17 @@ app.get("/sitemap.xml", (req, res) => {
 // genuine runtime value Node reads directly, immune to any bundler-time
 // inlining behavior, and is the standard way to gate "serve the built app"
 // vs. "loaded live by vite dev's apiDevPlugin for /api/* proxying only".
+// `ready` resolves once the production app is fully wired (static assets +
+// SSR render middleware). Serverless callers (api/index.ts on Vercel) await
+// it before handling a request. Stays already-resolved outside production
+// (dev uses Vite's middleware mode to configure the app instead).
+export let ready: Promise<void> = Promise.resolve();
 if (process.env.NODE_ENV === 'production') {
   // Wrapped in an async IIFE rather than using top-level await: this file's
   // SSR build target (shared with the client build's browser-compat esbuild
   // target) doesn't support literal top-level await, even though this code
   // only ever runs under Node.
-  void (async () => {
+  ready = (async () => {
 	const __dirname = dirname(fileURLToPath(import.meta.url));
 
 	// ── Apply pending DB migrations before accepting any traffic ──────────────
@@ -1081,6 +1086,12 @@ if (process.env.NODE_ENV === 'production') {
 
 	const host = process.env.HOST || "0.0.0.0";
 
+	// On Vercel (serverless) the platform invokes the exported Express app as a
+	// function — there is no persistent process to listen() on, and WebSockets
+	// plus background timers are unsupported. Skip the entire listen path there;
+	// the static + SSR middleware attached above is all the handler needs.
+	// Outside Vercel (Render, local `npm start`) this runs exactly as before.
+	if (!process.env.VERCEL) {
 	// ── HTTP server wrapping Express ──────────────────────────────────────────
 	const httpServer = createServer(app);
 
@@ -1200,6 +1211,7 @@ if (process.env.NODE_ENV === 'production') {
 		});
 		process.exit(1);
 	});
+	} // end if (!process.env.VERCEL) — serverless skips the listen path
   })().catch((e) => {
     console.error(JSON.stringify({ event: 'server.startup.failed', error: e instanceof Error ? e.message : String(e) }));
     process.exit(1);
