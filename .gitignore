@@ -73,3 +73,10 @@ pids
 
 # Import temporary files
 .import-*
+
+# Source-code API route directories literally named "logs" must be tracked.
+# The generic "logs" rule above is only meant for runtime log files/dirs; it
+# was unintentionally excluding the admin security-logs API route source
+# (src/server/api/admin/security/logs/GET.ts), which broke the SSR build.
+!src/server/api/**/logs/
+!src/server/api/**/logs/**
