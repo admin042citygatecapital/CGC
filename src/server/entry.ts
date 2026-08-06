@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { fileURLToPath } from "node:url";
 import { dirname, extname, join } from "node:path";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 // Security & performance middleware
 import { securityHeaders, enforceHttps, removeFingerprinting, requestSizeGuard, apiCacheHeaders } from "./lib/securityMiddleware";
 import { pathHardeningMiddleware } from "./lib/pathHardeningMiddleware";
@@ -840,8 +840,23 @@ if (process.env.NODE_ENV === 'production') {
 	// replaced, where DB errors this same class were swallowed as unhandled
 	// rejections and never surfaced anywhere.
 	if (isDatabaseConfigured()) {
+		// __dirname differs between the built bundle (dist/, where the build
+		// copies migrations to dist/migrations so vercel.json's
+		// includeFiles: "dist/**" ships them into the function) and running
+		// from source (src/server/, where they live in db/migrations). The
+		// previous single hardcoded "../migrations" matched neither, so this
+		// step always threw and exited 1 on any boot with a database
+		// configured. Resolve against the candidates instead.
+		const migrationsFolder = [
+			join(__dirname, "migrations"),
+			join(__dirname, "db", "migrations"),
+		].find(existsSync);
+
 		try {
-			await migrate(getDb(), { migrationsFolder: join(__dirname, "..", "migrations") });
+			if (!migrationsFolder) {
+				throw new Error(`migrations folder not found (looked in ${__dirname})`);
+			}
+			await migrate(getDb(), { migrationsFolder });
 			console.log(JSON.stringify({ event: 'db.migrate.success' }));
 		} catch (e) {
 			console.error(JSON.stringify({ event: 'db.migrate.failed', error: e instanceof Error ? e.message : String(e) }));
