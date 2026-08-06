@@ -324,7 +324,7 @@ import { APP_ENV } from "./lib/envConfig";
 // registered at their respective app.get() lines. No duplicate imports needed.
 import { initMarketProviders } from "./lib/market/init";
 import { marketRegistry } from "./lib/market/registry";
-import { migrate } from "drizzle-orm/neon-http/migrator";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { getDb, isDatabaseConfigured } from "./db/db";
 
 function normalizeCommerceApiBaseUrlEnv() {
