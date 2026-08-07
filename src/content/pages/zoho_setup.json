@@ -1,0 +1,46 @@
+{
+  "header": {
+    "title": "Zoho Mail OAuth Setup",
+    "subtitle": "citygate.capital · SMTP re-authorization"
+  },
+  "step1": {
+    "label": "Step 1 — Authorize with Zoho",
+    "description": "Click the button below. You'll be redirected to Zoho to grant access, then automatically returned here with your new refresh token.",
+    "cta": "Connect Zoho Mail →"
+  },
+  "step2": {
+    "label": "Or paste authorization code manually",
+    "description": "If the redirect was intercepted (e.g. from a self-client JSON file), paste the code value here. Codes expire in 60 seconds — paste immediately after generating.",
+    "placeholder": "1000.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "buttonIdle": "Exchange",
+    "buttonBusy": "Exchanging…"
+  },
+  "status": {
+    "exchanging": "Contacting Zoho token endpoint…",
+    "tokenLabel": "Refresh Token — save as ZOHO_REFRESH_TOKEN",
+    "copyIdle": "↑ Click to copy · Permanent token — do not share",
+    "copiedConfirm": "✓ Copied to clipboard",
+    "warning": "⚠ Close this tab after saving. Do not share the refresh token."
+  },
+  "nextSteps": {
+    "label": "Next Steps",
+    "items": [
+      {
+        "id": "ns1",
+        "text": "Copy the refresh token above (click it)"
+      },
+      {
+        "id": "ns2",
+        "text": "Go to Settings → Secrets in the builder"
+      },
+      {
+        "id": "ns3",
+        "text": "Update ZOHO_REFRESH_TOKEN with the copied value"
+      },
+      {
+        "id": "ns4",
+        "text": "Re-publish — email delivery will be live immediately"
+      }
+    ]
+  }
+}

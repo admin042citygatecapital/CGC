@@ -1,0 +1,205 @@
+Route,Method,Description,Authentication,Response,Rate Limit
+/,GET,Homepage,Public,HTML,—
+/about,GET,About City Gate Capital,Public,HTML,—
+/digital-banking,GET,Digital banking feature page,Public,HTML,—
+/accounts,GET,Account types & pricing,Public,HTML,—
+/support,GET,Help & support centre,Public,HTML,—
+/contact,GET,Contact page,Public,HTML,—
+/privacy-policy,GET,Privacy policy,Public,HTML,—
+/terms-of-service,GET,Terms of service,Public,HTML,—
+/cookie-policy,GET,Cookie policy,Public,HTML,—
+/compliance,GET,Compliance & regulation,Public,HTML,—
+/login,GET,Customer login page,Public,HTML,—
+/register,GET,Customer registration page,Public,HTML,—
+/forgot-password,GET,Customer password reset request page,Public,HTML,—
+/reset-password,GET,Customer password reset page (token in query),Public,HTML,—
+/dashboard,GET,Customer dashboard,Customer Auth,HTML,—
+/wallet,GET,Wallet & balances,Customer Auth,HTML,—
+/transfers,GET,Transfers & payments,Customer Auth,HTML,—
+/kyc,GET,KYC verification flow,Customer Auth,HTML,—
+/admin/login,GET,Admin login page,Public,HTML,—
+/admin/forgot-password,GET,Admin password reset request page,Public,HTML,—
+/admin/reset-password,GET,Admin password reset page (token in query),Public,HTML,—
+/admin,GET,Admin dashboard,Admin Auth,HTML,—
+/admin/users,GET,User management,Admin Auth,HTML,—
+/admin/transactions,GET,Transaction management,Admin Auth,HTML,—
+/admin/banking,GET,Banking operations,Admin Auth,HTML,—
+/admin/crypto,GET,Crypto wallet management,Admin Auth,HTML,—
+/admin/kyc,GET,KYC review queue,Admin Auth,HTML,—
+/admin/support,GET,Support ticket management,Admin Auth,HTML,—
+/admin/security,GET,Security monitoring,Admin Auth,HTML,—
+/admin/rates,GET,Exchange rates & fees,Admin Auth,HTML,—
+/admin/cms,GET,Content management,Admin Auth,HTML,—
+/admin/newsletter,GET,Newsletter management,Admin Auth,HTML,—
+/admin/smtp,GET,SMTP / email configuration,Admin Auth,HTML,—
+/admin/contacts,GET,Contact form submissions,Admin Auth,HTML,—
+/admin/social,GET,Social media settings,Admin Auth,HTML,—
+/admin/chatbot,GET,Chatbot configuration,Admin Auth,HTML,—
+/admin/links,GET,External links management,Admin Auth,HTML,—
+/admin/website,GET,Website settings,Admin Auth,HTML,—
+/admin/settings,GET,Admin settings,Admin Auth,HTML,—
+/admin/documentation,GET,API documentation downloads,Admin Auth,HTML,—
+/api/health,GET,Server health check,Public,JSON,Global 200/min
+/api/csrf,GET,Get CSRF token,Public,JSON,Global 200/min
+/api/og,GET,Open Graph image generator,Public,PNG,Global 200/min
+/api/cms/content,GET,Public CMS content (60s cache),Public,JSON,Global 200/min
+/api/settings/rates,GET,Public exchange rates & fees,Public,JSON,Global 200/min
+/api/settings/social,GET,Public social media links,Public,JSON,Global 200/min
+/api/contact,POST,Submit contact form,Public,JSON,10/hr/IP
+/api/newsletter/subscribe,POST,Subscribe to newsletter,Public,JSON,5/hr/IP
+/api/newsletter/unsubscribe,GET,Unsubscribe from newsletter,Public,JSON,Global 200/min
+/api/accounts/apply,POST,Submit account application,Public,JSON,3/hr/IP
+/api/analytics/event,POST,Track analytics event,Public,JSON,Global 200/min
+/unsubscribe,GET,Newsletter unsubscribe (alias),Public,JSON,Global 200/min
+/robots.txt,GET,Robots.txt,Public,Text,—
+/sitemap.xml,GET,XML sitemap,Public,XML,—
+/api/users/register,POST,Register new customer account,Public,JSON,5/hr/IP
+/api/users/verify-email,GET,Verify email address,Public,JSON,Global 200/min
+/api/users/login,POST,Customer login,Public,JSON,5/15min/IP
+/api/users/session,GET,Get current session,Customer Auth,JSON,Global 200/min
+/api/users/logout,POST,Logout customer,Customer Auth,JSON,Global 200/min
+/api/users/password-reset,POST,Request customer password reset,Public,JSON,5/15min/IP
+/api/users/password-reset/confirm,POST,Confirm customer password reset,Public,JSON,5/15min/IP
+/api/users/me,PATCH,Update customer profile,Customer Auth,JSON,Global 200/min
+/api/users/avatar,POST,Upload profile avatar,Customer Auth,JSON,Global 200/min
+/api/users/kyc-document,POST,Upload KYC document,Customer Auth,JSON,Global 200/min
+/api/users/balance,GET,Get wallet balances,Customer Auth,JSON,Global 200/min
+/api/users/transactions,GET,Get transaction history,Customer Auth,JSON,Global 200/min
+/api/users/transfer,POST,Initiate a transfer,Customer Auth,JSON,Global 200/min
+/api/users/deposit,POST,Initiate a deposit,Customer Auth,JSON,Global 200/min
+/api/users/withdraw,POST,Initiate a withdrawal,Customer Auth,JSON,Global 200/min
+/api/users/swap,POST,Currency swap / exchange,Customer Auth,JSON,Global 200/min
+/api/users/cards,GET,List customer's virtual cards,Customer Auth,JSON,Global 200/min
+/api/users/cards/generate,POST,Generate a new virtual card,Customer Auth,JSON,Global 200/min
+/api/users/cards/freeze,POST,Freeze / unfreeze a card,Customer Auth,JSON,Global 200/min
+/api/users/cards/delete,POST,Delete a virtual card,Customer Auth,JSON,Global 200/min
+/api/users/notifications,GET,Get customer notifications,Customer Auth,JSON,Global 200/min
+/api/users/notifications/read,POST,Mark notifications as read,Customer Auth,JSON,Global 200/min
+/api/users/support,GET,Get customer's support tickets,Customer Auth,JSON,Global 200/min
+/api/users/support,POST,Submit a new support ticket,Customer Auth,JSON,Global 200/min
+/api/admin/auth/login,POST,Admin login,Public,JSON,5/15min/IP
+/api/admin/auth/otp/verify,POST,Verify OTP / 2FA code,Public,JSON,5/15min/IP
+/api/admin/auth/password-reset,POST,Request admin password reset,Public,JSON,3/15min/IP
+/api/admin/auth/password-reset/confirm,POST,Confirm admin password reset,Public,JSON,5/15min/IP
+/api/admin/auth/verify,GET,Verify admin session,Public,JSON,Global 200/min
+/api/admin/auth/logout,POST,Logout admin,Public,JSON,Global 200/min
+/api/admin/auth/unlock,POST,Unlock admin account,Public,JSON,Global 200/min
+/api/admin/auth/trusted-devices,GET,List trusted devices,Public,JSON,Global 200/min
+/api/admin/auth/trusted-devices,DELETE,Remove trusted device,Public,JSON,Global 200/min
+/api/admin/auth/diag,GET,Auth diagnostics,Public,JSON,Global 200/min
+/api/admin/health,GET,Admin health check,Admin Auth,JSON,Global 200/min
+/api/admin/stats,GET,Dashboard KPIs and activity,Admin Auth,JSON,Global 200/min
+/api/admin/users,GET,List / search users,Admin Auth,JSON,Global 200/min
+/api/admin/users/action,POST,Suspend / activate / delete user,Admin Auth,JSON,Global 200/min
+/api/admin/users/approve,POST,Approve pending user,Admin Auth,JSON,Global 200/min
+/api/admin/users/reject,POST,Reject pending user,Admin Auth,JSON,Global 200/min
+/api/admin/users/override,POST,Override user data,Admin Auth,JSON,Global 200/min
+/api/admin/users/edit,POST,Edit user profile,Admin Auth,JSON,Global 200/min
+/api/admin/users/currency,POST,Set user's primary currency,Admin Auth,JSON,Global 200/min
+/api/admin/transactions,GET,List all transactions (legacy),Admin Auth,JSON,Global 200/min
+/api/admin/transactions/real,GET,List real transactions with filters,Admin Auth,JSON,Global 200/min
+/api/admin/transactions/create,POST,Create manual transaction,Admin Auth,JSON,Global 200/min
+/api/admin/transactions/approve,POST,Approve pending transaction,Admin Auth,JSON,Global 200/min
+/api/admin/transactions/reject,POST,Reject pending transaction,Admin Auth,JSON,Global 200/min
+/api/admin/transactions/freeze,POST,Freeze transaction,Admin Auth,JSON,Global 200/min
+/api/admin/balance/adjust,POST,Adjust user balance,Admin Auth,JSON,Global 200/min
+/api/admin/balance/history,GET,Balance adjustment history,Admin Auth,JSON,Global 200/min
+/api/admin/wallets,GET,List all crypto wallets,Admin Auth,JSON,Global 200/min
+/api/admin/wallets,PATCH,Update wallet address / balance,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/stats,GET,KYC statistics,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/queue,GET,Pending KYC submissions,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/settings,GET,KYC expiry settings,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/settings,POST,Update KYC expiry settings,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/approve,POST,Approve KYC submission,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/reject,POST,Reject KYC submission,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/request-info,POST,Request additional info from user,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/flag,POST,Flag KYC submission,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/extend,POST,Extend KYC expiry,Admin Auth,JSON,Global 200/min
+/api/admin/kyc/note,POST,Add internal note to KYC,Admin Auth,JSON,Global 200/min
+/api/admin/security/logs,GET,Login & HTTP access logs,Admin Auth,JSON,Global 200/min
+/api/admin/security/sessions,GET,Active admin sessions,Admin Auth,JSON,Global 200/min
+/api/admin/security/sessions,DELETE,Terminate admin session,Admin Auth,JSON,Global 200/min
+/api/admin/security/sessions/:token,PATCH,Update session metadata,Admin Auth,JSON,Global 200/min
+/api/admin/security/threats,GET,Security threat flags,Admin Auth,JSON,Global 200/min
+/api/admin/security/threats,PATCH,Resolve / update threat flag,Admin Auth,JSON,Global 200/min
+/api/admin/security/export,GET,Export security data,Admin Auth,JSON,Global 200/min
+/api/admin/support,GET,List all support tickets,Admin Auth,JSON,Global 200/min
+/api/admin/support/stats,GET,Support statistics,Admin Auth,JSON,Global 200/min
+/api/admin/support/reply,POST,Reply to a ticket,Admin Auth,JSON,Global 200/min
+/api/admin/support/status,POST,Change ticket status,Admin Auth,JSON,Global 200/min
+/api/admin/support/bulk,POST,Bulk actions on tickets,Admin Auth,JSON,Global 200/min
+/api/admin/support/assign,POST,Assign ticket to agent,Admin Auth,JSON,Global 200/min
+/api/admin/support/note,POST,Add internal note to ticket,Admin Auth,JSON,Global 200/min
+/api/admin/support/priority,POST,Set ticket priority,Admin Auth,JSON,Global 200/min
+/api/admin/support/canned,GET,Get canned responses,Admin Auth,JSON,Global 200/min
+/api/admin/support/canned,POST,Create canned response,Admin Auth,JSON,Global 200/min
+/api/admin/support/canned,PUT,Update canned response,Admin Auth,JSON,Global 200/min
+/api/admin/support/canned,DELETE,Delete canned response,Admin Auth,JSON,Global 200/min
+/api/admin/support/routing,GET,Get routing rules,Admin Auth,JSON,Global 200/min
+/api/admin/support/routing,POST,Update routing rules,Admin Auth,JSON,Global 200/min
+/api/admin/support/notifications,GET,Support notification settings,Admin Auth,JSON,Global 200/min
+/api/admin/support/notifications,POST,Update notification settings,Admin Auth,JSON,Global 200/min
+/api/admin/tickets,GET,List tickets (legacy),Admin Auth,JSON,Global 200/min
+/api/admin/tickets/:ticketId/reply,POST,Reply to ticket (legacy),Admin Auth,JSON,Global 200/min
+/api/admin/tickets/:ticketId/replies,GET,Get ticket replies (legacy),Admin Auth,JSON,Global 200/min
+/api/admin/rates,GET,Get all rates & fee config,Admin Auth,JSON,Global 200/min
+/api/admin/rates/tx-fees,POST,Set transaction fees,Admin Auth,JSON,Global 200/min
+/api/admin/rates/fx-markup,POST,Set FX markup,Admin Auth,JSON,Global 200/min
+/api/admin/rates/tier-fees,POST,Set tier-based fees,Admin Auth,JSON,Global 200/min
+/api/admin/rates/limits,POST,Set withdrawal limits,Admin Auth,JSON,Global 200/min
+/api/admin/rates/fee-history,GET,Fee change history,Admin Auth,JSON,Global 200/min
+/api/admin/rates/limits/user,GET,Per-user withdrawal limits,Admin Auth,JSON,Global 200/min
+/api/admin/settings/rates,GET,Rates settings (legacy),Admin Auth,JSON,Global 200/min
+/api/admin/settings/rates,POST,Update rates settings (legacy),Admin Auth,JSON,Global 200/min
+/api/admin/cms,GET,Get full CMS content,Admin Auth,JSON,Global 200/min
+/api/admin/cms,POST,Update CMS content,Admin Auth,JSON,Global 200/min
+/api/admin/contacts,GET,Contact form submissions,Admin Auth,JSON,Global 200/min
+/api/admin/social,GET,Social media settings,Admin Auth,JSON,Global 200/min
+/api/admin/social,POST,Update social media settings,Admin Auth,JSON,Global 200/min
+/api/admin/chatbot,GET,Chatbot configuration,Admin Auth,JSON,Global 200/min
+/api/admin/chatbot,POST,Update chatbot configuration,Admin Auth,JSON,Global 200/min
+/api/admin/links,GET,External links,Admin Auth,JSON,Global 200/min
+/api/admin/links,POST,Update external links,Admin Auth,JSON,Global 200/min
+/api/admin/website,GET,Website settings,Admin Auth,JSON,Global 200/min
+/api/admin/website,POST,Update website settings,Admin Auth,JSON,Global 200/min
+/api/admin/smtp/status,GET,SMTP / email transport status,Admin Auth,JSON,Global 200/min
+/api/admin/smtp/config,GET,SMTP configuration,Admin Auth,JSON,Global 200/min
+/api/admin/smtp/config,POST,Update SMTP configuration,Admin Auth,JSON,Global 200/min
+/api/admin/smtp/verify,POST,Verify SMTP connection,Admin Auth,JSON,Global 200/min
+/api/admin/smtp/test,POST,Send test email,Admin Auth,JSON,Global 200/min
+/api/admin/smtp/mode,POST,Switch email transport mode,Admin Auth,JSON,Global 200/min
+/api/admin/smtp/test-template,POST,Send test email using template,Admin Auth,JSON,Global 200/min
+/api/admin/smtp/queue,GET,Email queue (legacy alias),Admin Auth,JSON,Global 200/min
+/api/admin/email/test,POST,Send test email (alias),Admin Auth,JSON,Global 200/min
+/api/admin/email/queue,GET,Email queue,Admin Auth,JSON,Global 200/min
+/api/admin/email/queue/retry,POST,Retry failed email,Admin Auth,JSON,Global 200/min
+/api/admin/email/queue/:id,DELETE,Delete queued email,Admin Auth,JSON,Global 200/min
+/api/admin/email/flush,POST,Flush email queue,Admin Auth,JSON,Global 200/min
+/api/admin/email/purge,POST,Purge email queue,Admin Auth,JSON,Global 200/min
+/api/admin/email/requeue,POST,Requeue failed emails,Admin Auth,JSON,Global 200/min
+/api/admin/email/status,GET,Email system status,Admin Auth,JSON,Global 200/min
+/api/admin/email/templates,GET,Email templates,Admin Auth,JSON,Global 200/min
+/api/admin/email/templates,POST,Update email template,Admin Auth,JSON,Global 200/min
+/api/admin/email/templates/reset,POST,Reset template to default,Admin Auth,JSON,Global 200/min
+/api/admin/email/log,GET,Email delivery log,Admin Auth,JSON,Global 200/min
+/api/newsletter/subscribers,GET,List subscribers (admin),Admin Auth,JSON,Global 200/min
+/api/newsletter/send-sequence,POST,Send email sequence,Admin Auth,JSON,Global 200/min
+/api/admin/newsletter/campaigns,GET,List campaigns,Admin Auth,JSON,Global 200/min
+/api/admin/newsletter/campaigns,POST,Create campaign,Admin Auth,JSON,Global 200/min
+/api/admin/newsletter/campaigns,PUT,Update campaign,Admin Auth,JSON,Global 200/min
+/api/admin/newsletter/campaigns/duplicate,POST,Duplicate campaign,Admin Auth,JSON,Global 200/min
+/api/admin/newsletter/campaigns/send,POST,Send / schedule campaign,Admin Auth,JSON,Global 200/min
+/api/admin/newsletter/subscribers/unsubscribe,POST,Unsubscribe subscriber,Admin Auth,JSON,Global 200/min
+/api/admin/newsletter/subscribers/import,POST,Import subscribers from CSV,Admin Auth,JSON,Global 200/min
+/api/admin/notifications/send,POST,Send push notification to user(s),Admin Auth,JSON,Global 200/min
+/api/analytics/summary,GET,Analytics summary,Admin Auth,JSON,Global 200/min
+/api/analytics/conversions,GET,Conversion analytics,Admin Auth,JSON,Global 200/min
+/api/analytics/ab-results,GET,A/B test results,Admin Auth,JSON,Global 200/min
+/api/admin/settings,GET,Admin platform settings,Admin Auth,JSON,Global 200/min
+/api/admin/settings,POST,Update admin platform settings,Admin Auth,JSON,Global 200/min
+/api/admin/audit,GET,Audit log,Admin Auth,JSON,Global 200/min
+/api/zoho/connect,GET,Initiate Zoho OAuth flow,Public,Redirect,Global 200/min
+/api/zoho/callback,GET,Zoho OAuth callback,Public,Redirect,Global 200/min
+/api/zoho/status,GET,Zoho credential status,Admin Auth,JSON,Global 200/min
+/api/admin/zoho/oauth/callback,GET,Admin Zoho OAuth callback,Admin Auth,JSON,Global 200/min
+/api/test-email,POST,Send test email,Admin Auth,JSON,10/hr/IP

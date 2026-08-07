@@ -1,0 +1,721 @@
+{
+  "hero": {
+    "trustBadge": "Built for customers worldwide",
+    "headline1": "The Future of",
+    "headlineAccent": "Banking",
+    "headline2": "is Here",
+    "subheadline": "Multi-currency wallets, crypto exchange, international transfers, and smart cards — all in one premium platform built for global citizens.",
+    "ctaSecondary": "Explore Features",
+    "trustBadges": [
+      {
+        "id": "tb1",
+        "label": "Bank-Grade Security"
+      },
+      {
+        "id": "tb2",
+        "label": "256-bit Encryption"
+      },
+      {
+        "id": "tb3",
+        "label": "ISO 27001"
+      }
+    ],
+    "heroCTALabels": {
+      "control": "Open Free Account",
+      "urgency": "Start Banking Today",
+      "benefit": "Get $0 Fees Forever"
+    }
+  },
+  "stats": [
+    {
+      "id": "s1",
+      "value": 2,
+      "suffix": "M+",
+      "label": "Active Customers"
+    },
+    {
+      "id": "s2",
+      "value": 180,
+      "suffix": "+",
+      "label": "Countries Served"
+    },
+    {
+      "id": "s3",
+      "value": 50,
+      "suffix": "B+",
+      "prefix": "$",
+      "label": "Assets Managed"
+    },
+    {
+      "id": "s4",
+      "value": 40,
+      "suffix": "+",
+      "label": "Jurisdictions"
+    }
+  ],
+  "trustBadges": [
+    {
+      "id": "tb1",
+      "label": "Bank-Grade Security"
+    },
+    {
+      "id": "tb2",
+      "label": "256-bit Encryption"
+    },
+    {
+      "id": "tb3",
+      "label": "Biometric Auth"
+    },
+    {
+      "id": "tb4",
+      "label": "Global Multi-Currency Support"
+    },
+    {
+      "id": "tb5",
+      "label": "SOC 2 Type II Certified"
+    }
+  ],
+  "features": {
+    "eyebrow": "Platform Features",
+    "headline1": "Everything You Need to",
+    "headlineAccent": "Bank Smarter",
+    "subheadline": "One platform for all your financial needs — from everyday spending to global investments and crypto.",
+    "items": [
+      {
+        "id": "f1",
+        "title": "Global Transfers",
+        "desc": "Send to 180+ countries at real mid-market rates. No hidden fees, ever."
+      },
+      {
+        "id": "f2",
+        "title": "Crypto Exchange",
+        "desc": "Buy, sell and hold 50+ cryptocurrencies directly in your account."
+      },
+      {
+        "id": "f3",
+        "title": "Smart Cards",
+        "desc": "Virtual and physical cards with real-time spend controls and cashback."
+      },
+      {
+        "id": "f4",
+        "title": "AI Analytics",
+        "desc": "Machine-learning insights that predict spending and grow your wealth."
+      },
+      {
+        "id": "f5",
+        "title": "Bank-Grade Security",
+        "desc": "Biometrics, 256-bit encryption and cold-storage for every asset."
+      },
+      {
+        "id": "f6",
+        "title": "Investment Tools",
+        "desc": "Stocks, ETFs, crypto indices and auto-rebalancing portfolios."
+      }
+    ]
+  },
+  "dashboard": {
+    "eyebrow": "Smart Dashboard",
+    "headline1": "Your Finances,",
+    "headlineAccent": "Beautifully Clear",
+    "subheadline": "A real-time dashboard gives you a complete picture of your financial health — balances, spending trends, crypto portfolio, and upcoming payments.",
+    "featureBullets": [
+      {
+        "id": "db1",
+        "label": "Real-time analytics"
+      },
+      {
+        "id": "db2",
+        "label": "Portfolio breakdown"
+      },
+      {
+        "id": "db3",
+        "label": "Smart alerts"
+      },
+      {
+        "id": "db4",
+        "label": "Net worth view"
+      },
+      {
+        "id": "db5",
+        "label": "Multi-account"
+      }
+    ]
+  },
+  "transfers": {
+    "eyebrow": "International Transfers",
+    "headline1": "Send Money Anywhere",
+    "headlineAccent": "In Seconds",
+    "subheadline": "Transfer to 180+ countries at real mid-market rates. Transparent fees from $0.99, instant settlement, and full tracking from send to delivery.",
+    "featureBullets": [
+      {
+        "id": "tr1",
+        "title": "Bank-grade security",
+        "desc": "Every transfer is encrypted and monitored for fraud in real time."
+      },
+      {
+        "id": "tr2",
+        "title": "50+ currencies supported",
+        "desc": "Send in the local currency — no double conversion, no extra fees."
+      },
+      {
+        "id": "tr3",
+        "title": "Real-time notifications",
+        "desc": "Push alerts the moment your transfer is initiated, sent, and delivered."
+      },
+      {
+        "id": "tr4",
+        "title": "Batch & scheduled sends",
+        "desc": "Send to multiple recipients at once or schedule recurring transfers."
+      }
+    ]
+  },
+  "crypto": {
+    "eyebrow": "Crypto Exchange",
+    "headline1": "Buy, Sell & Hold",
+    "headlineAccent": "50+ Cryptocurrencies",
+    "subheadline": "Trade crypto at real market prices with zero commission. Instant settlement, cold-storage security, and a portfolio dashboard that keeps you in control.",
+    "ctaLabel": "Explore Crypto Wallet",
+    "featureBullets": [
+      {
+        "id": "cr1",
+        "title": "Instant Settlement",
+        "desc": "Trades execute in milliseconds. Your balance updates in real time — no waiting, no delays."
+      },
+      {
+        "id": "cr2",
+        "title": "Cold Storage Security",
+        "desc": "95% of crypto assets held in air-gapped cold storage vaults, never connected to the internet."
+      },
+      {
+        "id": "cr3",
+        "title": "Portfolio Analytics",
+        "desc": "Track performance, allocation, and P&L across all your crypto holdings in one dashboard."
+      },
+      {
+        "id": "cr4",
+        "title": "Auto-Rebalancing",
+        "desc": "Set target allocations and let City Gate Capital automatically rebalance your crypto portfolio."
+      },
+      {
+        "id": "cr5",
+        "title": "Zero Commission",
+        "desc": "No trading fees. We earn on the spread — always transparent, always disclosed upfront."
+      }
+    ]
+  },
+  "wallet": {
+    "eyebrow": "Multi-Currency Wallet",
+    "headline1": "One Wallet,",
+    "headlineAccent": "Every Currency",
+    "subheadline": "Hold, exchange, and spend in 50+ fiat currencies and 50+ cryptocurrencies — all from a single account with real mid-market rates.",
+    "ctaLabel": "Open Your Wallet",
+    "featureBullets": [
+      {
+        "id": "w1",
+        "title": "50+ Fiat Currencies",
+        "desc": "Hold and spend in USD, EUR, GBP, JPY, AUD, CAD, CHF, and 43 more. Switch between currencies instantly at real rates."
+      },
+      {
+        "id": "w2",
+        "title": "50+ Cryptocurrencies",
+        "desc": "BTC, ETH, SOL, USDT, USDC, BNB and more — all in the same wallet alongside your fiat balances."
+      },
+      {
+        "id": "w3",
+        "title": "Instant Currency Exchange",
+        "desc": "Convert between any two currencies in seconds at the real mid-market rate. No spread markup, no hidden fees."
+      },
+      {
+        "id": "w4",
+        "title": "Virtual & Physical Cards",
+        "desc": "Spend in any currency with your City Gate Capital card. The right currency is automatically selected at checkout."
+      },
+      {
+        "id": "w5",
+        "title": "Scheduled Conversions",
+        "desc": "Set target rates and let the platform auto-convert when the market hits your price. Never miss a rate again."
+      },
+      {
+        "id": "w6",
+        "title": "Net Worth in One View",
+        "desc": "See your total wealth across all currencies and assets consolidated into your home currency in real time."
+      }
+    ]
+  },
+  "security": {
+    "eyebrow": "Security & Compliance",
+    "headline1": "Your Money is",
+    "headlineAccent": "Fort Knox Safe",
+    "subheadline": "Institutional-grade security, AI-powered fraud detection, and a 5-minute KYC process — so you're protected from day one.",
+    "zeroIncidentsHeadline": "Zero Security Incidents",
+    "zeroIncidentsSub": "Since founding in 2018 — a record we're proud of and committed to maintaining.",
+    "featureBullets": [
+      {
+        "id": "sec1",
+        "title": "256-bit AES Encryption",
+        "desc": "Military-grade encryption for all data at rest and in transit. Your information is unreadable to anyone without your keys."
+      },
+      {
+        "id": "sec2",
+        "title": "Biometric Verification",
+        "desc": "Face ID, Touch ID and liveness detection on every login. Spoofing attempts are blocked automatically."
+      },
+      {
+        "id": "sec3",
+        "title": "Cold Storage Custody",
+        "desc": "95% of crypto assets held in air-gapped cold storage vaults, never connected to the internet."
+      },
+      {
+        "id": "sec4",
+        "title": "AI Fraud Detection",
+        "desc": "Machine learning models monitor every transaction in real time and flag anomalies before they become problems."
+      }
+    ]
+  },
+  "mobileApp": {
+    "eyebrow": "Mobile App",
+    "headline1": "Banking in Your",
+    "headlineAccent": "Pocket",
+    "subheadline": "Powerful iOS and Android apps with full banking power. Send, receive, invest and manage everything from your phone.",
+    "awardLabel": "Bank-Grade Security",
+    "awardSub": "256-bit encryption · Biometric login",
+    "appChips": [
+      {
+        "id": "ac1",
+        "label": "Apple Pay"
+      },
+      {
+        "id": "ac2",
+        "label": "Google Pay"
+      },
+      {
+        "id": "ac3",
+        "label": "Widget Support"
+      },
+      {
+        "id": "ac4",
+        "label": "Dark Mode"
+      },
+      {
+        "id": "ac5",
+        "label": "Face ID"
+      },
+      {
+        "id": "ac6",
+        "label": "Offline Mode"
+      }
+    ],
+    "featureBullets": [
+      {
+        "id": "ma1",
+        "title": "Instant Notifications",
+        "desc": "Real-time push alerts for every transaction, transfer, and price movement."
+      },
+      {
+        "id": "ma2",
+        "title": "Biometric Login",
+        "desc": "Face ID and Touch ID for instant, secure access — no passwords needed."
+      },
+      {
+        "id": "ma3",
+        "title": "Auto-sync Across Devices",
+        "desc": "Your data syncs instantly across all your devices. Always up to date."
+      },
+      {
+        "id": "ma4",
+        "title": "Portfolio Dashboard",
+        "desc": "Full crypto and fiat portfolio view with P&L, charts, and allocation breakdown."
+      },
+      {
+        "id": "ma5",
+        "title": "One-tap Transfers",
+        "desc": "Send money to anyone in seconds. Saved recipients, instant confirmation."
+      }
+    ]
+  },
+  "pricing": {
+    "eyebrow": "Pricing",
+    "headline1": "Simple,",
+    "headlineAccent": "Transparent",
+    "headline2": "Pricing",
+    "subheadline": "No hidden fees. No surprises. Start free and upgrade when you're ready.",
+    "trustStrip": [
+      {
+        "id": "pt1",
+        "label": "No contracts, cancel anytime"
+      },
+      {
+        "id": "pt2",
+        "label": "30-day money-back guarantee"
+      },
+      {
+        "id": "pt3",
+        "label": "Bank-grade security on all plans"
+      },
+      {
+        "id": "pt4",
+        "label": "Free plan forever — no credit card"
+      }
+    ]
+  },
+  "testimonials": {
+    "eyebrow": "Testimonials",
+    "headline1": "What Our",
+    "headlineAccent": "Customers",
+    "headline2": "Say",
+    "subheadline": "From freelancers to Fortune 500 treasurers — here's what our customers say.",
+    "featuredQuote": "We moved our entire treasury operation to City Gate Capital. The API, the compliance tools, and the dedicated relationship manager make it completely seamless. It's the most sophisticated fintech platform I've used in 20 years of finance.",
+    "featuredName": "James W.",
+    "featuredRole": "Hedge Fund Manager · Zurich, Switzerland",
+    "pressLabel": "",
+    "pressLogos": [],
+    "items": [
+      {
+        "id": "t1",
+        "name": "Sarah M.",
+        "role": "Entrepreneur",
+        "location": "New York, USA",
+        "avatar": "S",
+        "color": "#C9A84C",
+        "rating": 5,
+        "text": "City Gate Capital transformed how I manage international payments. The exchange rates are unbeatable and the interface is stunning. I've saved thousands in fees."
+      },
+      {
+        "id": "t2",
+        "name": "David K.",
+        "role": "Crypto Investor",
+        "location": "London, UK",
+        "avatar": "D",
+        "color": "#627EEA",
+        "rating": 5,
+        "text": "Having both my crypto and fiat in one place is a game changer. The security features give me complete peace of mind. Nothing else comes close."
+      },
+      {
+        "id": "t3",
+        "name": "Priya R.",
+        "role": "Freelancer",
+        "location": "Singapore",
+        "avatar": "P",
+        "color": "#10B981",
+        "rating": 5,
+        "text": "Getting paid from clients worldwide used to be a nightmare. Now it's instant and I keep far more of my money. The app is beautiful too."
+      },
+      {
+        "id": "t4",
+        "name": "Marcus T.",
+        "role": "CFO",
+        "location": "Dubai, UAE",
+        "avatar": "M",
+        "color": "#9945FF",
+        "rating": 5,
+        "text": "The institutional-grade custody and compliance tools are exactly what our treasury team needed. Exceptional platform, exceptional support."
+      },
+      {
+        "id": "t5",
+        "name": "Yuki T.",
+        "role": "Portfolio Manager",
+        "location": "Tokyo, Japan",
+        "avatar": "Y",
+        "color": "#F7931A",
+        "rating": 5,
+        "text": "The analytics dashboard is on par with Bloomberg terminals I've used. Real-time data, clean charts, and everything in one account."
+      },
+      {
+        "id": "t6",
+        "name": "Amara O.",
+        "role": "Business Owner",
+        "location": "Lagos, Nigeria",
+        "avatar": "A",
+        "color": "#F0D080",
+        "rating": 5,
+        "text": "Sending money back home used to cost me 8% in fees. City Gate Capital charges $0.99. That's not a small difference — it's life-changing."
+      },
+      {
+        "id": "t7",
+        "name": "Lena B.",
+        "role": "Digital Nomad",
+        "location": "Berlin, Germany",
+        "avatar": "L",
+        "color": "#EC4899",
+        "rating": 5,
+        "text": "I live in 6 countries a year. Having one card that works everywhere at real exchange rates is the single best financial decision I've made."
+      },
+      {
+        "id": "t8",
+        "name": "James W.",
+        "role": "Hedge Fund Manager",
+        "location": "Zurich, Switzerland",
+        "avatar": "J",
+        "color": "#14B8A6",
+        "rating": 5,
+        "text": "We moved our entire treasury operation to City Gate Capital. The API, the compliance tools, and the dedicated manager make it seamless."
+      }
+    ]
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "headline1": "Common",
+    "headlineAccent": "Questions",
+    "subheadline": "Everything you need to know about City Gate Capital. Can't find an answer?",
+    "supportLinkLabel": "Talk to our team.",
+    "stillHaveQuestions": "Still have questions?",
+    "liveChatLabel": "Live Chat Support",
+    "emailLabel": "Email Us",
+    "items": [
+      {
+        "id": "fq1",
+        "cat": "Security",
+        "q": "Is City Gate Capital safe?",
+        "a": "Yes. We use 256-bit AES encryption, multi-factor authentication, biometric verification, and air-gapped cold storage for 95% of crypto assets. Security is our top priority, with continuous account monitoring and bank-grade safeguards across the platform."
+      },
+      {
+        "id": "fq2",
+        "cat": "Security",
+        "q": "What happens if I lose access to my account?",
+        "a": "We offer multiple account recovery options including backup codes, identity re-verification, and support-assisted recovery. Our 24/7 security team can restore access securely, typically within 1 hour for Premium and Elite customers."
+      },
+      {
+        "id": "fq3",
+        "cat": "Accounts",
+        "q": "How quickly can I open an account?",
+        "a": "Account opening takes under 5 minutes. Our AI-powered KYC verification is usually instant. You can fund your account and start transacting the same day — no branch visits, no paperwork."
+      },
+      {
+        "id": "fq4",
+        "cat": "Accounts",
+        "q": "What currencies and crypto do you support?",
+        "a": "We support 50+ fiat currencies including USD, EUR, GBP, JPY, AUD, CAD, CHF, and 43 more. For crypto we support 50+ assets including BTC, ETH, SOL, USDT, USDC, BNB, ADA, and more. New assets are added regularly."
+      },
+      {
+        "id": "fq5",
+        "cat": "Pricing",
+        "q": "Are there monthly fees?",
+        "a": "Our Standard account is completely free forever — no monthly fee, no minimum balance. Premium ($9/mo) and Elite ($29/mo) plans unlock unlimited transfers, physical metal cards, investment tools, and priority support."
+      },
+      {
+        "id": "fq6",
+        "cat": "Pricing",
+        "q": "Are there hidden fees on transfers?",
+        "a": "Never. We charge a transparent flat fee from $0.99 per transfer and always use the real mid-market exchange rate — no spread markup. You see the exact cost before you confirm every transaction."
+      },
+      {
+        "id": "fq7",
+        "cat": "Transfers",
+        "q": "How do international transfers work?",
+        "a": "Enter the amount, select the destination currency and recipient. We show you the exact rate and fee upfront. Most transfers arrive within seconds to minutes; some corridors may take up to 1 business day depending on the destination bank."
+      },
+      {
+        "id": "fq8",
+        "cat": "Transfers",
+        "q": "Can I schedule or automate recurring transfers?",
+        "a": "Yes. Premium and Elite customers can set up recurring transfers on a daily, weekly, or monthly schedule. You can also set target exchange rates and we'll auto-execute when the market hits your price."
+      }
+    ]
+  },
+  "finalCta": {
+    "badge": "Open in under 5 minutes",
+    "headline1": "Ready to Bank",
+    "headlineAccent": "Smarter?",
+    "subheadline": "Join customers around the world who trust City Gate Capital for global transfers, crypto, investments, and everyday banking.",
+    "ctaPrimary": "Open Free Account",
+    "ctaSecondary": "Talk to Sales",
+    "featureStrip": [
+      {
+        "id": "fs1",
+        "label": "Bank-grade security"
+      },
+      {
+        "id": "fs2",
+        "label": "180+ countries"
+      },
+      {
+        "id": "fs3",
+        "label": "Instant account opening"
+      },
+      {
+        "id": "fs4",
+        "label": "No contracts, cancel anytime"
+      },
+      {
+        "id": "fs5",
+        "label": "Free plan forever"
+      }
+    ]
+  },
+  "plans": [
+    {
+      "id": "plan1",
+      "name": "Standard",
+      "tagline": "For individuals getting started",
+      "monthlyPrice": 0,
+      "yearlyPrice": 0,
+      "highlight": false,
+      "badge": "",
+      "color": "#627EEA",
+      "cta": "Open Free Account",
+      "features": [
+        {
+          "id": "pf1",
+          "label": "Multi-currency account (10 currencies)",
+          "included": true
+        },
+        {
+          "id": "pf2",
+          "label": "Virtual debit card",
+          "included": true
+        },
+        {
+          "id": "pf3",
+          "label": "5 international transfers / month",
+          "included": true
+        },
+        {
+          "id": "pf4",
+          "label": "Crypto wallet (10 assets)",
+          "included": true
+        },
+        {
+          "id": "pf5",
+          "label": "Mobile banking app",
+          "included": true
+        },
+        {
+          "id": "pf6",
+          "label": "Standard support (48h)",
+          "included": true
+        },
+        {
+          "id": "pf7",
+          "label": "Physical metal card",
+          "included": false
+        },
+        {
+          "id": "pf8",
+          "label": "Investment portfolio",
+          "included": false
+        },
+        {
+          "id": "pf9",
+          "label": "Dedicated manager",
+          "included": false
+        }
+      ]
+    },
+    {
+      "id": "plan2",
+      "name": "Premium",
+      "tagline": "For professionals & frequent traders",
+      "monthlyPrice": 9,
+      "yearlyPrice": 7,
+      "highlight": true,
+      "badge": "Most Popular",
+      "color": "#C9A84C",
+      "cta": "Start Premium",
+      "features": [
+        {
+          "id": "pf10",
+          "label": "Multi-currency account (50+ currencies)",
+          "included": true
+        },
+        {
+          "id": "pf11",
+          "label": "Virtual & physical metal card",
+          "included": true
+        },
+        {
+          "id": "pf12",
+          "label": "Unlimited international transfers",
+          "included": true
+        },
+        {
+          "id": "pf13",
+          "label": "Crypto wallet (50+ assets)",
+          "included": true
+        },
+        {
+          "id": "pf14",
+          "label": "Mobile banking app",
+          "included": true
+        },
+        {
+          "id": "pf15",
+          "label": "Priority support 24/7",
+          "included": true
+        },
+        {
+          "id": "pf16",
+          "label": "Investment portfolio & analytics",
+          "included": true
+        },
+        {
+          "id": "pf17",
+          "label": "Advanced dashboard analytics",
+          "included": true
+        },
+        {
+          "id": "pf18",
+          "label": "Dedicated manager",
+          "included": false
+        }
+      ]
+    },
+    {
+      "id": "plan3",
+      "name": "Elite",
+      "tagline": "For HNWIs & institutional clients",
+      "monthlyPrice": 29,
+      "yearlyPrice": 23,
+      "highlight": false,
+      "badge": "White Glove",
+      "color": "#9945FF",
+      "cta": "Contact Elite Team",
+      "features": [
+        {
+          "id": "pf19",
+          "label": "Everything in Premium",
+          "included": true
+        },
+        {
+          "id": "pf20",
+          "label": "Dedicated relationship manager",
+          "included": true
+        },
+        {
+          "id": "pf21",
+          "label": "Concierge card & travel services",
+          "included": true
+        },
+        {
+          "id": "pf22",
+          "label": "Institutional-grade cold custody",
+          "included": true
+        },
+        {
+          "id": "pf23",
+          "label": "Custom API access",
+          "included": true
+        },
+        {
+          "id": "pf24",
+          "label": "White-glove onboarding",
+          "included": true
+        },
+        {
+          "id": "pf25",
+          "label": "Private banking desk",
+          "included": true
+        },
+        {
+          "id": "pf26",
+          "label": "Custom reporting & compliance",
+          "included": true
+        },
+        {
+          "id": "pf27",
+          "label": "SLA-backed 1h support response",
+          "included": true
+        }
+      ]
+    }
+  ]
+}

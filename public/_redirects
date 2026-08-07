@@ -1,0 +1,3 @@
+# Cloudflare Pages redirects
+# www → apex redirect (handled by Cloudflare DNS, but belt-and-suspenders)
+https://www.citygate.capital/* https://citygate.capital/:splat 301

@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: city-gate-capital
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm ci && npm run verify
+    startCommand: npm start
+    preDeployCommand: npm run db:migrate
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PLATFORM_MODE
+        value: preview
+      - key: VITE_PLATFORM_MODE
+        value: preview
+      - key: ENABLE_FINANCIAL_OPERATIONS
+        value: "0"
+      - key: ENABLE_PAPER_TRADING
+        value: "0"
+      - key: APP_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: CARD_ENCRYPTION_KEY
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false

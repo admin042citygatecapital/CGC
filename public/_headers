@@ -1,0 +1,39 @@
+# Cloudflare Pages / CDN custom headers
+# These supplement the headers set by the Express server.
+# When Cloudflare proxies the origin, these are applied at the edge.
+
+# Static assets — aggressive caching
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Hashed JS/CSS chunks — immutable
+/assets/*.js
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: application/javascript; charset=utf-8
+
+/assets/*.css
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: text/css; charset=utf-8
+
+# Fonts
+/assets/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+
+# Media uploads
+/airo-assets/*
+  Cache-Control: public, max-age=604800
+
+# Favicon and manifest
+/favicon.ico
+  Cache-Control: public, max-age=86400
+
+/site.webmanifest
+  Cache-Control: public, max-age=86400
+  Content-Type: application/manifest+json
+
+# Security headers for all pages (supplements Express headers)
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin

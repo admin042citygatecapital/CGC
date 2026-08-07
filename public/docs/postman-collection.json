@@ -1,0 +1,281 @@
+{
+  "info": {
+    "name": "City Gate Capital API",
+    "description": "Complete API collection for City Gate Capital — customer-facing and admin endpoints.\n\nBase URL: https://citygate.capital\n\nAuthentication:\n- Customer: Cookie `cgc_customer_token` or `Authorization: Bearer <token>`\n- Admin: Cookie `cgc_admin_sid` or `Authorization: Bearer <token>`\n- CSRF: Obtain token from GET /api/csrf, send as `X-CSRF-Token` header\n\nGenerated: 2026-06-04",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "cgc-api-v1-2026-06-04",
+    "version": { "major": 1, "minor": 0, "patch": 0 }
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://citygate.capital", "type": "string" },
+    { "key": "adminToken", "value": "", "type": "string", "description": "Admin Bearer token from POST /api/admin/auth/login" },
+    { "key": "customerToken", "value": "", "type": "string", "description": "Customer Bearer token from POST /api/users/login" },
+    { "key": "csrfToken", "value": "", "type": "string", "description": "CSRF token from GET /api/csrf" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        { "name": "Health Check", "request": { "method": "GET", "url": "{{baseUrl}}/api/health", "description": "Server health check" } },
+        { "name": "Get CSRF Token", "request": { "method": "GET", "url": "{{baseUrl}}/api/csrf", "description": "Obtain CSRF token for form submissions" } },
+        { "name": "OG Image", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/og?title=City+Gate+Capital&description=Secure+Digital+Banking", "host": ["{{baseUrl}}"], "path": ["api", "og"], "query": [{ "key": "title", "value": "City Gate Capital" }, { "key": "description", "value": "Secure Digital Banking" }] }, "description": "Generate Open Graph image" } },
+        { "name": "CMS Content", "request": { "method": "GET", "url": "{{baseUrl}}/api/cms/content", "description": "Public CMS content (60s cache)" } },
+        { "name": "Public Rates", "request": { "method": "GET", "url": "{{baseUrl}}/api/settings/rates", "description": "Public exchange rates and fees" } },
+        { "name": "Public Social Links", "request": { "method": "GET", "url": "{{baseUrl}}/api/settings/social", "description": "Public social media links" } },
+        { "name": "Sitemap", "request": { "method": "GET", "url": "{{baseUrl}}/sitemap.xml", "description": "XML sitemap" } },
+        { "name": "Robots.txt", "request": { "method": "GET", "url": "{{baseUrl}}/robots.txt", "description": "Robots.txt" } },
+        {
+          "name": "Submit Contact Form",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/contact",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"subject\": \"Enquiry\",\n  \"message\": \"Hello, I have a question.\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Submit contact form. Rate limited: 10/hr/IP. Requires CSRF token."
+          }
+        },
+        {
+          "name": "Newsletter Subscribe",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/newsletter/subscribe",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"subscriber@example.com\",\n  \"name\": \"Jane Doe\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Subscribe to newsletter. Rate limited: 5/hr/IP."
+          }
+        },
+        {
+          "name": "Account Application",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/accounts/apply",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"country\": \"GB\",\n  \"accountType\": \"personal\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Submit account application. Rate limited: 3/hr/IP. Requires CSRF token."
+          }
+        },
+        {
+          "name": "Track Analytics Event",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/analytics/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"event\": \"page_view\",\n  \"page\": \"/\",\n  \"referrer\": \"\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Fire-and-forget analytics event"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"country\": \"GB\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Register new customer. Rate limited: 5/hr/IP."
+          }
+        },
+        { "name": "Verify Email", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/users/verify-email?token=TOKEN", "host": ["{{baseUrl}}"], "path": ["api", "users", "verify-email"], "query": [{ "key": "token", "value": "TOKEN" }] }, "description": "Verify email address with token from email" } },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePass123!\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Customer login. Rate limited: 5/15min/IP."
+          }
+        },
+        { "name": "Get Session", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/session", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "description": "Verify customer session and get user data" } },
+        { "name": "Logout", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/logout", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "description": "Logout customer session" } },
+        {
+          "name": "Request Password Reset",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users/password-reset",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"john@example.com\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Request password reset email. Rate limited: 5/15min/IP."
+          }
+        },
+        {
+          "name": "Confirm Password Reset",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users/password-reset/confirm",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"RESET_TOKEN\",\n  \"password\": \"NewSecurePass123!\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Confirm password reset with token. Rate limited: 5/15min/IP."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer — Wallet & Transactions",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+      "item": [
+        { "name": "Get Balance", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/balance", "description": "Get all wallet balances (currencies, primary amount, total USD)" } },
+        { "name": "Get Transactions", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/transactions", "description": "Get customer transaction history" } },
+        { "name": "Transfer", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/transfer", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"toAddress\": \"recipient@example.com\",\n  \"amount\": 100,\n  \"currency\": \"USD\",\n  \"note\": \"Payment\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Initiate a transfer" } },
+        { "name": "Deposit", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/deposit", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"amount\": 500,\n  \"currency\": \"USD\",\n  \"method\": \"bank_transfer\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Initiate a deposit" } },
+        { "name": "Withdraw", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/withdraw", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"amount\": 200,\n  \"currency\": \"USD\",\n  \"destination\": \"bank_account_id\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Initiate a withdrawal" } },
+        { "name": "Swap / Exchange", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/swap", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"fromCurrency\": \"USD\",\n  \"toCurrency\": \"EUR\",\n  \"amount\": 100\n}", "options": { "raw": { "language": "json" } } }, "description": "Currency swap / exchange" } }
+      ]
+    },
+    {
+      "name": "Customer — Cards",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+      "item": [
+        { "name": "List Cards", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/cards", "description": "List customer's virtual cards" } },
+        { "name": "Generate Card", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/generate", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"label\": \"Shopping Card\",\n  \"currency\": \"USD\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Generate a new virtual card" } },
+        { "name": "Freeze / Unfreeze Card", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/freeze", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"cardId\": \"card_id_here\",\n  \"frozen\": true\n}", "options": { "raw": { "language": "json" } } }, "description": "Freeze or unfreeze a virtual card" } },
+        { "name": "Delete Card", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/delete", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"cardId\": \"card_id_here\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Delete a virtual card" } }
+      ]
+    },
+    {
+      "name": "Customer — Profile & Support",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+      "item": [
+        { "name": "Update Profile", "request": { "method": "PATCH", "url": "{{baseUrl}}/api/users/me", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phone\": \"+44123456789\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Update customer profile" } },
+        { "name": "Get Notifications", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/notifications", "description": "Get customer notifications" } },
+        { "name": "Mark Notifications Read", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/notifications/read", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"ids\": [\"notif_1\", \"notif_2\"]\n}", "options": { "raw": { "language": "json" } } }, "description": "Mark notifications as read" } },
+        { "name": "Get Support Tickets", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/support", "description": "Get customer's support tickets" } },
+        { "name": "Submit Support Ticket", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/support", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"subject\": \"Issue with transfer\",\n  \"message\": \"My transfer has been pending for 24 hours.\",\n  \"category\": \"transfers\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Submit a new support ticket" } }
+      ]
+    },
+    {
+      "name": "Admin Auth",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [{ "listen": "test", "script": { "exec": ["const r = pm.response.json();", "if (r.token) pm.collectionVariables.set('adminToken', r.token);"], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/admin/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@citygate.capital\",\n  \"password\": \"your_admin_password\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Admin login. Rate limited: 5/15min/IP. Token auto-saved to collection variable."
+          }
+        },
+        { "name": "Verify OTP", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/auth/otp/verify", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"otp\": \"123456\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Verify OTP / 2FA code" } },
+        { "name": "Verify Session", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/auth/verify", "description": "Verify existing admin session" } },
+        { "name": "Logout", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/auth/logout", "description": "Logout admin session" } },
+        { "name": "Request Password Reset", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/auth/password-reset", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@citygate.capital\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Request admin password reset. Rate limited: 3/15min/IP." } },
+        { "name": "Confirm Password Reset", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/auth/password-reset/confirm", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"token\": \"RESET_TOKEN\",\n  \"password\": \"NewAdminPass123!\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Confirm admin password reset. Rate limited: 5/15min/IP." } }
+      ]
+    },
+    {
+      "name": "Admin — Dashboard & Users",
+      "item": [
+        { "name": "Health Check", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/health", "description": "Admin health check" } },
+        { "name": "Dashboard Stats", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/stats", "description": "KPIs, revenue, crypto balances, recent activity" } },
+        { "name": "List Users", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/users?page=1&limit=20&search=", "host": ["{{baseUrl}}"], "path": ["api", "admin", "users"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }, { "key": "search", "value": "" }] }, "description": "List / search users" } },
+        { "name": "User Action", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/users/action", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": \"user_id\",\n  \"action\": \"suspend\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Suspend / activate / delete user. Actions: suspend, activate, delete" } },
+        { "name": "Edit User", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/users/edit", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": \"user_id\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@example.com\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Edit user profile" } },
+        { "name": "Set User Currency", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/users/currency", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": \"user_id\",\n  \"currency\": \"GBP\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Set user's primary currency" } }
+      ]
+    },
+    {
+      "name": "Admin — Transactions & Banking",
+      "item": [
+        { "name": "List Transactions", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/transactions/real?page=1&limit=20&status=all", "host": ["{{baseUrl}}"], "path": ["api", "admin", "transactions", "real"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }, { "key": "status", "value": "all" }] }, "description": "List real transactions with filters" } },
+        { "name": "Create Transaction", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/transactions/create", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": \"user_id\",\n  \"type\": \"deposit\",\n  \"amount\": 1000,\n  \"currency\": \"USD\",\n  \"note\": \"Manual deposit\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Create a manual transaction" } },
+        { "name": "Approve Transaction", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/transactions/approve", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"transactionId\": \"tx_id\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Approve a pending transaction" } },
+        { "name": "Reject Transaction", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/transactions/reject", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"transactionId\": \"tx_id\",\n  \"reason\": \"Suspicious activity\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Reject a pending transaction" } },
+        { "name": "Adjust Balance", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/balance/adjust", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": \"user_id\",\n  \"currency\": \"USD\",\n  \"amount\": 500,\n  \"type\": \"credit\",\n  \"note\": \"Promotional credit\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Adjust user balance (credit or debit)" } },
+        { "name": "Balance History", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/balance/history?userId=", "host": ["{{baseUrl}}"], "path": ["api", "admin", "balance", "history"], "query": [{ "key": "userId", "value": "" }] }, "description": "Balance adjustment history" } }
+      ]
+    },
+    {
+      "name": "Admin — KYC",
+      "item": [
+        { "name": "KYC Stats", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/kyc/stats", "description": "KYC statistics" } },
+        { "name": "KYC Queue", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/kyc/queue?status=pending&page=1", "host": ["{{baseUrl}}"], "path": ["api", "admin", "kyc", "queue"], "query": [{ "key": "status", "value": "pending" }, { "key": "page", "value": "1" }] }, "description": "Pending KYC submissions" } },
+        { "name": "Approve KYC", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/kyc/approve", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": \"user_id\",\n  \"note\": \"Documents verified\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Approve KYC submission" } },
+        { "name": "Reject KYC", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/kyc/reject", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"userId\": \"user_id\",\n  \"reason\": \"Document unclear\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Reject KYC submission" } },
+        { "name": "KYC Settings", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/kyc/settings", "description": "Get KYC expiry settings" } }
+      ]
+    },
+    {
+      "name": "Admin — Security",
+      "item": [
+        { "name": "Security Logs (Login)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/security/logs?type=login&limit=50&page=1", "host": ["{{baseUrl}}"], "path": ["api", "admin", "security", "logs"], "query": [{ "key": "type", "value": "login" }, { "key": "limit", "value": "50" }, { "key": "page", "value": "1" }] }, "description": "Login audit log" } },
+        { "name": "Security Logs (HTTP)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/security/logs?type=http&limit=50&page=1", "host": ["{{baseUrl}}"], "path": ["api", "admin", "security", "logs"], "query": [{ "key": "type", "value": "http" }, { "key": "limit", "value": "50" }, { "key": "page", "value": "1" }] }, "description": "HTTP access log" } },
+        { "name": "Active Sessions", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/security/sessions", "description": "List active admin sessions" } },
+        { "name": "Terminate Session", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/admin/security/sessions", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"token\": \"session_token\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Terminate an admin session" } },
+        { "name": "Threat Flags", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/security/threats", "description": "Security threat flags" } },
+        { "name": "Export Security Data", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/security/export", "description": "Export security data as CSV/JSON" } },
+        { "name": "Audit Log", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/audit?page=1&limit=50", "host": ["{{baseUrl}}"], "path": ["api", "admin", "audit"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "50" }] }, "description": "Admin audit log" } }
+      ]
+    },
+    {
+      "name": "Admin — Support",
+      "item": [
+        { "name": "List Tickets", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/support?status=open&page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["api", "admin", "support"], "query": [{ "key": "status", "value": "open" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }, "description": "List all support tickets" } },
+        { "name": "Support Stats", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/support/stats", "description": "Support statistics" } },
+        { "name": "Reply to Ticket", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/support/reply", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"ticketId\": \"ticket_id\",\n  \"message\": \"Thank you for contacting us.\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Reply to a support ticket" } },
+        { "name": "Change Ticket Status", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/support/status", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"ticketId\": \"ticket_id\",\n  \"status\": \"resolved\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Change ticket status: open, in_progress, resolved, closed" } },
+        { "name": "Get Canned Responses", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/support/canned", "description": "Get canned response templates" } }
+      ]
+    },
+    {
+      "name": "Admin — Rates & Fees",
+      "item": [
+        { "name": "Get All Rates", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/rates", "description": "Get all rates and fee configuration" } },
+        { "name": "Set Transaction Fees", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/rates/tx-fees", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"transferFeePercent\": 0.5,\n  \"transferFeeMin\": 1,\n  \"transferFeeMax\": 50\n}", "options": { "raw": { "language": "json" } } }, "description": "Set transaction fees" } },
+        { "name": "Set FX Markup", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/rates/fx-markup", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"markupPercent\": 1.5\n}", "options": { "raw": { "language": "json" } } }, "description": "Set FX markup percentage" } },
+        { "name": "Set Withdrawal Limits", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/rates/limits", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"dailyLimit\": 10000,\n  \"monthlyLimit\": 50000,\n  \"currency\": \"USD\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Set withdrawal limits" } },
+        { "name": "Fee History", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/rates/fee-history", "description": "Fee change history" } }
+      ]
+    },
+    {
+      "name": "Admin — CMS & Content",
+      "item": [
+        { "name": "Get CMS Content", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/cms", "description": "Get full CMS content" } },
+        { "name": "Update CMS Content", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/cms", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"section\": \"homepage\",\n  \"data\": {}\n}", "options": { "raw": { "language": "json" } } }, "description": "Update CMS content" } },
+        { "name": "Get Contacts", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/contacts", "description": "Contact form submissions" } },
+        { "name": "Get Social Settings", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/social", "description": "Social media settings" } },
+        { "name": "Get Website Settings", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/website", "description": "Website settings" } }
+      ]
+    },
+    {
+      "name": "Admin — Email & SMTP",
+      "item": [
+        { "name": "SMTP Status", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/smtp/status", "description": "SMTP / email transport status" } },
+        { "name": "Get SMTP Config", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/smtp/config", "description": "SMTP configuration" } },
+        { "name": "Send Test Email", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/smtp/test", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"to\": \"admin@citygate.capital\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Send a test email" } },
+        { "name": "Email Queue", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/email/queue", "description": "View email queue" } },
+        { "name": "Email Status", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/email/status", "description": "Email system status" } },
+        { "name": "Email Log", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/email/log?page=1&limit=50", "host": ["{{baseUrl}}"], "path": ["api", "admin", "email", "log"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "50" }] }, "description": "Email delivery log" } },
+        { "name": "Get Email Templates", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/email/templates", "description": "Get email templates" } },
+        { "name": "Zoho Status", "request": { "method": "GET", "url": "{{baseUrl}}/api/zoho/status", "description": "Zoho OAuth credential status" } }
+      ]
+    },
+    {
+      "name": "Admin — Newsletter",
+      "item": [
+        { "name": "List Campaigns", "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/newsletter/campaigns", "description": "List newsletter campaigns" } },
+        { "name": "Create Campaign", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/newsletter/campaigns", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"June Newsletter\",\n  \"subject\": \"Your June Update\",\n  \"body\": \"<p>Hello!</p>\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Create a newsletter campaign" } },
+        { "name": "Send Campaign", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/newsletter/campaigns/send", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"campaignId\": \"campaign_id\",\n  \"scheduledAt\": null\n}", "options": { "raw": { "language": "json" } } }, "description": "Send or schedule a newsletter campaign" } },
+        { "name": "List Subscribers", "request": { "method": "GET", "url": "{{baseUrl}}/api/newsletter/subscribers", "description": "List newsletter subscribers" } },
+        { "name": "Import Subscribers", "request": { "method": "POST", "url": "{{baseUrl}}/api/admin/newsletter/subscribers/import", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"csv\": \"email,name\\njohn@example.com,John Doe\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Import subscribers from CSV" } }
+      ]
+    },
+    {
+      "name": "Admin — Analytics",
+      "item": [
+        { "name": "Analytics Summary", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/analytics/summary?days=30", "host": ["{{baseUrl}}"], "path": ["api", "analytics", "summary"], "query": [{ "key": "days", "value": "30" }] }, "description": "Analytics summary" } },
+        { "name": "Conversions", "request": { "method": "GET", "url": "{{baseUrl}}/api/analytics/conversions", "description": "Conversion analytics" } },
+        { "name": "A/B Test Results", "request": { "method": "GET", "url": "{{baseUrl}}/api/analytics/ab-results", "description": "A/B test results" } }
+      ]
+    }
+  ]
+}

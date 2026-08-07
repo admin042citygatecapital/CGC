@@ -1,0 +1,1435 @@
+openapi: 3.1.0
+info:
+  title: City Gate Capital API
+  description: |
+    Complete API documentation for City Gate Capital — a premium digital banking platform.
+
+    ## Authentication
+    - **Customer**: Cookie `cgc_customer_token` (HttpOnly) or `Authorization: Bearer <token>`
+    - **Admin**: Cookie `cgc_admin_sid` (HttpOnly) or `Authorization: Bearer <token>`
+    - **CSRF**: Required on contact and account application forms. Obtain from `GET /api/csrf`, send as `X-CSRF-Token` header.
+
+    ## Rate Limits
+    | Scope | Window | Max |
+    |---|---|---|
+    | Global API | 1 min | 200/IP |
+    | Auth (login/session) | 15 min | 5/IP |
+    | Admin password reset | 15 min | 3/IP |
+    | Registration | 1 hr | 5/IP |
+    | Contact form | 1 hr | 10/IP |
+    | Newsletter subscribe | 1 hr | 5/IP |
+    | Account application | 1 hr | 3/IP |
+  version: 1.0.0
+  contact:
+    name: City Gate Capital
+    url: https://citygate.capital
+    email: admin@citygate.capital
+servers:
+  - url: https://citygate.capital
+    description: Production
+
+components:
+  securitySchemes:
+    customerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Customer Bearer token from POST /api/users/login
+    adminAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Admin Bearer token from POST /api/admin/auth/login
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+    SuccessMessage:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended, pending]
+        kycStatus:
+          type: string
+          enum: [none, pending, approved, rejected]
+        createdAt:
+          type: string
+          format: date-time
+    Balance:
+      type: object
+      properties:
+        currencies:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              amount:
+                type: number
+              symbol:
+                type: string
+        primaryAmount:
+          type: number
+        primaryCurrency:
+          type: string
+        totalUsd:
+          type: number
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [deposit, withdrawal, transfer, swap, fee, refund]
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, failed, frozen]
+        createdAt:
+          type: string
+          format: date-time
+        note:
+          type: string
+    VirtualCard:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        last4:
+          type: string
+        currency:
+          type: string
+        frozen:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    SupportTicket:
+      type: object
+      properties:
+        id:
+          type: string
+        subject:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        createdAt:
+          type: string
+          format: date-time
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+
+paths:
+  # ── Health ──────────────────────────────────────────────────────────────────
+  /api/health:
+    get:
+      summary: Server health check
+      tags: [Public]
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/csrf:
+    get:
+      summary: Get CSRF token
+      tags: [Public]
+      responses:
+        '200':
+          description: CSRF token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+
+  /api/og:
+    get:
+      summary: Open Graph image generator
+      tags: [Public]
+      parameters:
+        - name: title
+          in: query
+          schema:
+            type: string
+        - name: description
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PNG image
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /api/cms/content:
+    get:
+      summary: Public CMS content
+      description: Returns all public CMS content. Cached for 60 seconds.
+      tags: [Public]
+      responses:
+        '200':
+          description: CMS content object
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/settings/rates:
+    get:
+      summary: Public exchange rates and fees
+      tags: [Public]
+      responses:
+        '200':
+          description: Rates and fees
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/settings/social:
+    get:
+      summary: Public social media links
+      tags: [Public]
+      responses:
+        '200':
+          description: Social media links
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/contact:
+    post:
+      summary: Submit contact form
+      description: Rate limited to 10 requests per hour per IP. Requires CSRF token.
+      tags: [Public]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                subject:
+                  type: string
+                message:
+                  type: string
+      responses:
+        '200':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '429':
+          description: Rate limit exceeded
+
+  /api/newsletter/subscribe:
+    post:
+      summary: Subscribe to newsletter
+      description: Rate limited to 5 requests per hour per IP.
+      tags: [Public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Subscribed successfully
+        '429':
+          description: Rate limit exceeded
+
+  /api/newsletter/unsubscribe:
+    get:
+      summary: Unsubscribe from newsletter
+      tags: [Public]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unsubscribed successfully
+
+  /api/accounts/apply:
+    post:
+      summary: Submit account application
+      description: Rate limited to 3 requests per hour per IP. Requires CSRF token.
+      tags: [Public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, country, accountType]
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                country:
+                  type: string
+                accountType:
+                  type: string
+                  enum: [personal, savings, business]
+      responses:
+        '201':
+          description: Application submitted
+        '429':
+          description: Rate limit exceeded
+
+  /api/analytics/event:
+    post:
+      summary: Track analytics event
+      description: Fire-and-forget telemetry. No CSRF required.
+      tags: [Public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                page:
+                  type: string
+                referrer:
+                  type: string
+      responses:
+        '200':
+          description: Event recorded
+
+  # ── Customer Auth ────────────────────────────────────────────────────────────
+  /api/users/register:
+    post:
+      summary: Register new customer
+      description: Rate limited to 5 requests per hour per IP.
+      tags: [Customer Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, password, country]
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                country:
+                  type: string
+      responses:
+        '201':
+          description: Account created
+        '400':
+          description: Validation error
+        '409':
+          description: Email already registered
+
+  /api/users/verify-email:
+    get:
+      summary: Verify email address
+      tags: [Customer Auth]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Email verified
+
+  /api/users/login:
+    post:
+      summary: Customer login
+      description: Rate limited to 5 requests per 15 minutes per IP.
+      tags: [Customer Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  customer:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Rate limit exceeded
+
+  /api/users/session:
+    get:
+      summary: Verify customer session
+      tags: [Customer Auth]
+      security:
+        - customerAuth: []
+      responses:
+        '200':
+          description: Session valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Session invalid or expired
+
+  /api/users/logout:
+    post:
+      summary: Logout customer
+      tags: [Customer Auth]
+      security:
+        - customerAuth: []
+      responses:
+        '200':
+          description: Logged out
+
+  /api/users/password-reset:
+    post:
+      summary: Request customer password reset
+      description: Rate limited to 5 requests per 15 minutes per IP. No enumeration — always returns success.
+      tags: [Customer Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent (if account exists)
+
+  /api/users/password-reset/confirm:
+    post:
+      summary: Confirm customer password reset
+      description: Rate limited to 5 requests per 15 minutes per IP.
+      tags: [Customer Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: Password updated
+        '400':
+          description: Invalid or expired token
+
+  # ── Customer Wallet ──────────────────────────────────────────────────────────
+  /api/users/balance:
+    get:
+      summary: Get wallet balances
+      tags: [Customer Wallet]
+      security:
+        - customerAuth: []
+      responses:
+        '200':
+          description: Wallet balances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+
+  /api/users/transactions:
+    get:
+      summary: Get transaction history
+      tags: [Customer Wallet]
+      security:
+        - customerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  total:
+                    type: integer
+
+  /api/users/transfer:
+    post:
+      summary: Initiate a transfer
+      tags: [Customer Wallet]
+      security:
+        - customerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [toAddress, amount, currency]
+              properties:
+                toAddress:
+                  type: string
+                amount:
+                  type: number
+                currency:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Transfer initiated
+        '400':
+          description: Insufficient funds or validation error
+
+  /api/users/deposit:
+    post:
+      summary: Initiate a deposit
+      tags: [Customer Wallet]
+      security:
+        - customerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, currency]
+              properties:
+                amount:
+                  type: number
+                currency:
+                  type: string
+                method:
+                  type: string
+      responses:
+        '200':
+          description: Deposit initiated
+
+  /api/users/withdraw:
+    post:
+      summary: Initiate a withdrawal
+      tags: [Customer Wallet]
+      security:
+        - customerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, currency]
+              properties:
+                amount:
+                  type: number
+                currency:
+                  type: string
+                destination:
+                  type: string
+      responses:
+        '200':
+          description: Withdrawal initiated
+        '400':
+          description: Exceeds withdrawal limit
+
+  /api/users/swap:
+    post:
+      summary: Currency swap / exchange
+      tags: [Customer Wallet]
+      security:
+        - customerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fromCurrency, toCurrency, amount]
+              properties:
+                fromCurrency:
+                  type: string
+                toCurrency:
+                  type: string
+                amount:
+                  type: number
+      responses:
+        '200':
+          description: Swap executed
+
+  # ── Customer Cards ───────────────────────────────────────────────────────────
+  /api/users/cards:
+    get:
+      summary: List virtual cards
+      tags: [Customer Cards]
+      security:
+        - customerAuth: []
+      responses:
+        '200':
+          description: List of virtual cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VirtualCard'
+
+  /api/users/cards/generate:
+    post:
+      summary: Generate a new virtual card
+      tags: [Customer Cards]
+      security:
+        - customerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label:
+                  type: string
+                currency:
+                  type: string
+      responses:
+        '201':
+          description: Card generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VirtualCard'
+
+  /api/users/cards/freeze:
+    post:
+      summary: Freeze or unfreeze a virtual card
+      tags: [Customer Cards]
+      security:
+        - customerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId, frozen]
+              properties:
+                cardId:
+                  type: string
+                frozen:
+                  type: boolean
+      responses:
+        '200':
+          description: Card freeze status updated
+
+  /api/users/cards/delete:
+    post:
+      summary: Delete a virtual card
+      tags: [Customer Cards]
+      security:
+        - customerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId]
+              properties:
+                cardId:
+                  type: string
+      responses:
+        '200':
+          description: Card deleted
+
+  # ── Customer Support ─────────────────────────────────────────────────────────
+  /api/users/support:
+    get:
+      summary: Get customer support tickets
+      tags: [Customer Support]
+      security:
+        - customerAuth: []
+      responses:
+        '200':
+          description: Support tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SupportTicket'
+    post:
+      summary: Submit a support ticket
+      tags: [Customer Support]
+      security:
+        - customerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, message]
+              properties:
+                subject:
+                  type: string
+                message:
+                  type: string
+                category:
+                  type: string
+      responses:
+        '201':
+          description: Ticket created
+
+  # ── Admin Auth ───────────────────────────────────────────────────────────────
+  /api/admin/auth/login:
+    post:
+      summary: Admin login
+      description: Rate limited to 5 requests per 15 minutes per IP.
+      tags: [Admin Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  admin:
+                    $ref: '#/components/schemas/AdminUser'
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Rate limit exceeded
+
+  /api/admin/auth/otp/verify:
+    post:
+      summary: Verify OTP / 2FA code
+      tags: [Admin Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otp]
+              properties:
+                otp:
+                  type: string
+      responses:
+        '200':
+          description: OTP verified
+
+  /api/admin/auth/verify:
+    get:
+      summary: Verify admin session
+      tags: [Admin Auth]
+      responses:
+        '200':
+          description: Session valid
+        '401':
+          description: Session invalid
+
+  /api/admin/auth/logout:
+    post:
+      summary: Logout admin
+      tags: [Admin Auth]
+      responses:
+        '200':
+          description: Logged out
+
+  /api/admin/auth/password-reset:
+    post:
+      summary: Request admin password reset
+      description: Rate limited to 3 requests per 15 minutes per IP. No enumeration.
+      tags: [Admin Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent (if account exists)
+
+  /api/admin/auth/password-reset/confirm:
+    post:
+      summary: Confirm admin password reset
+      description: Rate limited to 5 requests per 15 minutes per IP. Minimum 12 character password.
+      tags: [Admin Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  minLength: 12
+      responses:
+        '200':
+          description: Password updated
+        '400':
+          description: Invalid token or weak password
+
+  # ── Admin Dashboard ──────────────────────────────────────────────────────────
+  /api/admin/health:
+    get:
+      summary: Admin health check
+      tags: [Admin Dashboard]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Health status
+
+  /api/admin/stats:
+    get:
+      summary: Dashboard KPIs and activity
+      tags: [Admin Dashboard]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kpis:
+                    type: object
+                  dailyRevenue:
+                    type: array
+                    items:
+                      type: object
+                  cryptoBalances:
+                    type: array
+                    items:
+                      type: object
+                  recentActivity:
+                    type: array
+                    items:
+                      type: object
+
+  # ── Admin Users ──────────────────────────────────────────────────────────────
+  /api/admin/users:
+    get:
+      summary: List / search users
+      tags: [Admin Users]
+      security:
+        - adminAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  total:
+                    type: integer
+
+  /api/admin/users/action:
+    post:
+      summary: Suspend / activate / delete user
+      tags: [Admin Users]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, action]
+              properties:
+                userId:
+                  type: string
+                action:
+                  type: string
+                  enum: [suspend, activate, delete]
+      responses:
+        '200':
+          description: Action applied
+
+  /api/admin/balance/adjust:
+    post:
+      summary: Adjust user balance
+      tags: [Admin Banking]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, currency, amount, type]
+              properties:
+                userId:
+                  type: string
+                currency:
+                  type: string
+                amount:
+                  type: number
+                type:
+                  type: string
+                  enum: [credit, debit]
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Balance adjusted
+
+  /api/admin/transactions/real:
+    get:
+      summary: List real transactions
+      tags: [Admin Banking]
+      security:
+        - adminAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: userId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction list
+
+  /api/admin/kyc/queue:
+    get:
+      summary: Pending KYC submissions
+      tags: [Admin KYC]
+      security:
+        - adminAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, flagged]
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: KYC queue
+
+  /api/admin/kyc/approve:
+    post:
+      summary: Approve KYC submission
+      tags: [Admin KYC]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: KYC approved
+
+  /api/admin/kyc/reject:
+    post:
+      summary: Reject KYC submission
+      tags: [Admin KYC]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, reason]
+              properties:
+                userId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: KYC rejected
+
+  /api/admin/security/logs:
+    get:
+      summary: Security logs (login or HTTP)
+      tags: [Admin Security]
+      security:
+        - adminAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [login, http]
+            default: login
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Security logs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  pages:
+                    type: integer
+
+  /api/admin/support:
+    get:
+      summary: List all support tickets
+      tags: [Admin Support]
+      security:
+        - adminAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Support tickets
+
+  /api/admin/rates:
+    get:
+      summary: Get all rates and fee configuration
+      tags: [Admin Rates]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Rates and fees configuration
+
+  /api/admin/cms:
+    get:
+      summary: Get full CMS content
+      tags: [Admin CMS]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: CMS content
+    post:
+      summary: Update CMS content
+      tags: [Admin CMS]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                section:
+                  type: string
+                data:
+                  type: object
+      responses:
+        '200':
+          description: CMS updated
+
+  /api/admin/smtp/status:
+    get:
+      summary: SMTP / email transport status
+      tags: [Admin Email]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Email transport status
+
+  /api/admin/email/queue:
+    get:
+      summary: Email queue
+      tags: [Admin Email]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Queued emails
+
+  /api/admin/email/log:
+    get:
+      summary: Email delivery log
+      tags: [Admin Email]
+      security:
+        - adminAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Email log
+
+  /api/admin/newsletter/campaigns:
+    get:
+      summary: List newsletter campaigns
+      tags: [Admin Newsletter]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Campaigns list
+    post:
+      summary: Create newsletter campaign
+      tags: [Admin Newsletter]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, subject, body]
+              properties:
+                name:
+                  type: string
+                subject:
+                  type: string
+                body:
+                  type: string
+      responses:
+        '201':
+          description: Campaign created
+
+  /api/admin/newsletter/campaigns/send:
+    post:
+      summary: Send or schedule newsletter campaign
+      tags: [Admin Newsletter]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [campaignId]
+              properties:
+                campaignId:
+                  type: string
+                scheduledAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+      responses:
+        '200':
+          description: Campaign sent or scheduled
+
+  /api/analytics/summary:
+    get:
+      summary: Analytics summary
+      tags: [Admin Analytics]
+      security:
+        - adminAuth: []
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Analytics summary
+
+  /api/admin/audit:
+    get:
+      summary: Admin audit log
+      tags: [Admin Security]
+      security:
+        - adminAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Audit log entries
+
+  /api/zoho/status:
+    get:
+      summary: Zoho OAuth credential status
+      tags: [Admin Email]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Zoho credential diagnostics
+
+tags:
+  - name: Public
+    description: No authentication required
+  - name: Customer Auth
+    description: Customer authentication endpoints
+  - name: Customer Wallet
+    description: Wallet, balances, and transactions
+  - name: Customer Cards
+    description: Virtual card management
+  - name: Customer Support
+    description: Customer support tickets
+  - name: Admin Auth
+    description: Admin authentication (public — no session required)
+  - name: Admin Dashboard
+    description: Admin dashboard and health
+  - name: Admin Users
+    description: User management
+  - name: Admin Banking
+    description: Transactions and balance management
+  - name: Admin KYC
+    description: KYC review and management
+  - name: Admin Security
+    description: Security monitoring and audit
+  - name: Admin Support
+    description: Support ticket management
+  - name: Admin Rates
+    description: Exchange rates and fee configuration
+  - name: Admin CMS
+    description: Content management
+  - name: Admin Email
+    description: Email, SMTP, and queue management
+  - name: Admin Newsletter
+    description: Newsletter campaigns and subscribers
+  - name: Admin Analytics
+    description: Analytics and reporting
