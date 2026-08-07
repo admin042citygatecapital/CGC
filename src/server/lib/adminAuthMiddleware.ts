@@ -22,6 +22,7 @@ declare module 'express-serve-static-core' {
 }
 
 export const COOKIE_NAME = 'cgc_admin_sid';
+export const COOKIE_PATH = '/api';
 
 /** Cookie options — HttpOnly, Secure (prod), SameSite=Strict */
 export function sessionCookieOptions(maxAgeMs: number) {
@@ -32,7 +33,7 @@ export function sessionCookieOptions(maxAgeMs: number) {
     // Express's maxAge is milliseconds.  Passing seconds here silently turns
     // an eight-hour session into a roughly 29-second cookie.
     maxAge:    maxAgeMs,
-    path:      '/api/admin',
+    path:      COOKIE_PATH,
   };
 }
 
@@ -67,7 +68,7 @@ export async function requireAdminAuth(req: Request, res: Response, next: NextFu
   const session = await getSession(token, { ip, ua });
   if (!session) {
     // Clear stale cookie if present
-    res.clearCookie(COOKIE_NAME, { path: '/api/admin' });
+    res.clearCookie(COOKIE_NAME, { path: COOKIE_PATH });
     res.status(401).json({ error: 'Session expired or invalid' });
     return;
   }

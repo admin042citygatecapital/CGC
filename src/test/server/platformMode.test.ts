@@ -7,6 +7,13 @@ const original = {
   ENABLE_FINANCIAL_OPERATIONS: process.env.ENABLE_FINANCIAL_OPERATIONS,
   ENABLE_PAPER_TRADING: process.env.ENABLE_PAPER_TRADING,
   ALLOW_PUBLIC_REGISTRATION: process.env.ALLOW_PUBLIC_REGISTRATION,
+  LIVE_COMPLIANCE_APPROVAL_ID: process.env.LIVE_COMPLIANCE_APPROVAL_ID,
+  KYC_PROVIDER: process.env.KYC_PROVIDER,
+  AML_SCREENING_PROVIDER: process.env.AML_SCREENING_PROVIDER,
+  PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER,
+  CUSTODY_PROVIDER: process.env.CUSTODY_PROVIDER,
+  ENABLE_TRANSACTION_MONITORING: process.env.ENABLE_TRANSACTION_MONITORING,
+  ENABLE_SIGNED_PROVIDER_WEBHOOKS: process.env.ENABLE_SIGNED_PROVIDER_WEBHOOKS,
 };
 
 afterEach(() => {
@@ -35,10 +42,28 @@ describe('production platform mode', () => {
     expect(status).toHaveBeenCalledWith(503);
   });
 
-  it('requires both live mode and explicit enablement', async () => {
+  it('blocks live operations when provider readiness is incomplete', async () => {
     process.env.NODE_ENV = 'production';
     process.env.PLATFORM_MODE = 'live';
     process.env.ENABLE_FINANCIAL_OPERATIONS = '1';
+    vi.resetModules();
+    const { requireFinancialOperations } = await import('../../server/lib/platformMode.js');
+    const { response, status } = responseMock();
+    expect(requireFinancialOperations(response)).toBe(false);
+    expect(status).toHaveBeenCalledWith(503);
+  });
+
+  it('requires live mode, explicit enablement, approvals, and named providers', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.PLATFORM_MODE = 'live';
+    process.env.ENABLE_FINANCIAL_OPERATIONS = '1';
+    process.env.LIVE_COMPLIANCE_APPROVAL_ID = 'approved-launch-001';
+    process.env.KYC_PROVIDER = 'contracted-kyc-provider';
+    process.env.AML_SCREENING_PROVIDER = 'contracted-screening-provider';
+    process.env.PAYMENT_PROVIDER = 'contracted-payment-provider';
+    process.env.CUSTODY_PROVIDER = 'contracted-custody-provider';
+    process.env.ENABLE_TRANSACTION_MONITORING = '1';
+    process.env.ENABLE_SIGNED_PROVIDER_WEBHOOKS = '1';
     vi.resetModules();
     const { requireFinancialOperations } = await import('../../server/lib/platformMode.js');
     const { response, status } = responseMock();

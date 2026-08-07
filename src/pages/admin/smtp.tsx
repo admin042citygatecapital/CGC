@@ -11,6 +11,7 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AdminLayout from '@/layouts/AdminLayout';
+import { authHeaders } from '@/lib/adminAuth';
 import {
   Mail, Settings, Send, RefreshCw, CheckCircle, XCircle, AlertTriangle,
   Wifi, RotateCcw, Eye, EyeOff, Zap, Shield, Activity, Inbox, User,
@@ -117,11 +118,6 @@ const OVERRIDE_ACTIONS = [
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem('cgc_admin_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 function fmtDate(iso: string) {
   if (!iso) return '—';

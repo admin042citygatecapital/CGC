@@ -12,6 +12,7 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { zoho_setup } from 'virtual:content';
+import { authHeaders } from '@/lib/adminAuth';
 
 type Step = 'idle' | 'exchanging' | 'done' | 'error';
 
@@ -38,7 +39,7 @@ export default function ZohoSetupPage() {
     try {
       const res = await fetch('/api/admin/zoho/exchange', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         credentials: 'include',
         body: JSON.stringify({ code: code.trim() }),
       });

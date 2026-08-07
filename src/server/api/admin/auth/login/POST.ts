@@ -86,7 +86,6 @@ export default async function handler(req: Request, res: Response) {
 
   return res.json({
     ok:    true,
-    token: sessionToken,
     admin: { id: admin.id, email: admin.email, name: admin.name, role: admin.role, avatar: admin.avatar },
   });
 }

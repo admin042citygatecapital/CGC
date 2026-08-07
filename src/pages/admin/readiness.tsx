@@ -9,7 +9,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
-import { useAdminAuth } from '@/lib/adminAuth';
+import { authHeaders, useAdminAuth } from '@/lib/adminAuth';
 import {
   CheckCircle, XCircle, AlertTriangle, Info, RefreshCw,
   Shield, Database, Mail, MessageSquare, Lock, Globe,
@@ -217,7 +217,7 @@ function EnvRow({ v }: { v: EnvVarReport }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ReadinessPage() {
-  const { token } = useAdminAuth();
+  const { admin } = useAdminAuth();
   const [tab, setTab] = useState<'readiness' | 'env'>('readiness');
   const [readiness, setReadiness] = useState<ReadinessReport | null>(null);
   const [envReport, setEnvReport] = useState<EnvReport | null>(null);
@@ -225,11 +225,11 @@ export default function ReadinessPage() {
   const [error, setError]   = useState<string | null>(null);
 
   const fetchReports = useCallback(async () => {
-    if (!token) return;
+    if (!admin) return;
     setLoading(true);
     setError(null);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      const headers = authHeaders();
       const [rRes, eRes] = await Promise.all([
         fetch('/api/admin/readiness',  { headers }),
         fetch('/api/admin/env-report', { headers }),
@@ -243,7 +243,7 @@ export default function ReadinessPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [admin]);
 
   useEffect(() => { fetchReports(); }, [fetchReports]);
 

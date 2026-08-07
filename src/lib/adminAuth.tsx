@@ -1,114 +1,97 @@
 /**
- * Admin authentication context — direct password-only login.
+ * Administrator authentication context.
  *
- * Token storage (defence-in-depth):
- *  - Primary:  HttpOnly cookie `cgc_admin_sid` — XSS-safe, auto-sent on same-origin requests
- *  - Fallback: localStorage `cgc_admin_token` — for explicit Bearer headers in fetch calls
- *
- * Session verify is called once on mount. On 401 the stale token is cleared
- * immediately so the login page is shown without a redirect loop.
+ * The session credential exists only in the Secure, HttpOnly cookie. Browser
+ * JavaScript receives an independent CSRF token but never the session token.
  */
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export interface AdminUser {
-  id:     string;
-  email:  string;
-  name:   string;
-  role:   string;
+  id: string;
+  email: string;
+  name: string;
+  role: string;
   avatar: string;
 }
 
 interface AdminAuthCtx {
-  admin:   AdminUser | null;
-  token:   string | null;
+  admin: AdminUser | null;
   loading: boolean;
-  login:   (email: string, password: string) => Promise<{ ok?: boolean; error?: string }>;
-  logout:  () => Promise<void>;
+  login: (email: string, password: string) => Promise<{ ok?: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const Ctx = createContext<AdminAuthCtx | null>(null);
-const TOKEN_KEY = 'cgc_admin_token';
+const LEGACY_TOKEN_KEY = 'cgc_admin_token';
+let csrfToken: string | null = null;
 
-function clearStoredToken() {
-  if (typeof window !== 'undefined') localStorage.removeItem(TOKEN_KEY);
+function clearLegacyToken() {
+  if (typeof window !== 'undefined') localStorage.removeItem(LEGACY_TOKEN_KEY);
 }
 
-function getStoredToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(TOKEN_KEY);
+export async function refreshAdminCsrfToken(): Promise<string | null> {
+  try {
+    const response = await fetch('/api/csrf', { credentials: 'same-origin' });
+    if (!response.ok) return null;
+    const data = await response.json() as { csrfToken?: string };
+    csrfToken = data.csrfToken ?? null;
+    return csrfToken;
+  } catch {
+    csrfToken = null;
+    return null;
+  }
 }
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
-  const [admin,   setAdmin]   = useState<AdminUser | null>(null);
-  // Always initialise to null so server and client render the same initial
-  // markup (fixes React hydration mismatch #418). The stored token is read
-  // inside the verify useEffect, which only runs on the client after hydration.
-  const [token,   setToken]   = useState<string | null>(null);
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   const clearAuth = useCallback(() => {
-    clearStoredToken();
-    setToken(null);
+    clearLegacyToken();
+    csrfToken = null;
     setAdmin(null);
   }, []);
 
-  // On mount: verify existing session
   useEffect(() => {
-    if (typeof window === 'undefined') { setLoading(false); return; }
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
 
-    const storedToken = getStoredToken();
-
-    fetch('/api/admin/auth/verify', {
-      credentials: 'same-origin',
-      headers: storedToken ? { Authorization: `Bearer ${storedToken}` } : {},
-    })
-      .then(async r => {
-        if (r.status === 401 || r.status === 403) {
-          // Session expired or invalid — clear immediately, no retry
+    clearLegacyToken();
+    refreshAdminCsrfToken()
+      .then(() => fetch('/api/admin/auth/verify', { credentials: 'same-origin' }))
+      .then(async response => {
+        if (response.status === 401 || response.status === 403) {
           clearAuth();
           return;
         }
-        if (!r.ok) {
-          // Server error — don't clear token, might be transient
-          return;
-        }
-        const data = await r.json();
-        if (data?.admin) {
-          setAdmin(data.admin);
-          // Sync token state if it was set via cookie only
-          if (!storedToken && data.token) {
-            localStorage.setItem(TOKEN_KEY, data.token);
-            setToken(data.token);
-          }
-        } else {
-          clearAuth();
-        }
+        if (!response.ok) return;
+        const data = await response.json() as { admin?: AdminUser };
+        if (data.admin) setAdmin(data.admin);
+        else clearAuth();
       })
       .catch(() => {
-        // Network error — keep token, show login if needed
+        // A transient network failure must not manufacture an authenticated UI.
+        setAdmin(null);
       })
       .finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [clearAuth]);
 
   async function login(email: string, password: string) {
     try {
-      const res  = await fetch('/api/admin/auth/login', {
-        method:      'POST',
+      const response = await fetch('/api/admin/auth/login', {
+        method: 'POST',
         credentials: 'same-origin',
-        headers:     { 'Content-Type': 'application/json' },
-        body:        JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
+      const data = await response.json() as { error?: string; admin?: AdminUser };
+      if (!response.ok || !data.admin) return { error: data.error ?? 'Login failed' };
 
-      if (!res.ok) return { error: data.error ?? 'Login failed' };
-
-      const newToken = data.token as string | undefined;
-      if (newToken && typeof window !== 'undefined') {
-        localStorage.setItem(TOKEN_KEY, newToken);
-      }
-      setToken(newToken ?? null);
+      clearLegacyToken();
       setAdmin(data.admin);
+      await refreshAdminCsrfToken();
       return { ok: true };
     } catch {
       return { error: 'Network error — please check your connection' };
@@ -116,20 +99,20 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function logout() {
-    const currentToken = getStoredToken();
     try {
       await fetch('/api/admin/auth/logout', {
-        method:      'POST',
+        method: 'POST',
         credentials: 'same-origin',
-        headers:     currentToken ? { Authorization: `Bearer ${currentToken}` } : {},
+        headers: authHeaders(),
       });
-    } catch { /* ignore network errors on logout */ }
-
+    } catch {
+      // Local sign-out still proceeds if the network is unavailable.
+    }
     clearAuth();
   }
 
   return (
-    <Ctx.Provider value={{ admin, token, loading, login, logout }}>
+    <Ctx.Provider value={{ admin, loading, login, logout }}>
       {children}
     </Ctx.Provider>
   );
@@ -141,9 +124,7 @@ export function useAdminAuth() {
   return ctx;
 }
 
-/** Returns { Authorization: 'Bearer <token>' } or {} if no token */
+/** Headers required for authenticated administrator writes. */
 export function authHeaders(): Record<string, string> {
-  if (typeof window === 'undefined') return {};
-  const t = localStorage.getItem(TOKEN_KEY);
-  return t ? { Authorization: `Bearer ${t}` } : {};
+  return csrfToken ? { 'X-CSRF-Token': csrfToken } : {};
 }

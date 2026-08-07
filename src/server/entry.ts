@@ -303,6 +303,9 @@ import zoho_status_get_283 from "./api/zoho/status/GET";
 // </api-imports>
 import { startEmailQueueWorker } from "./lib/emailQueue";
 import { requireAdminAuth } from "./lib/adminAuthMiddleware";
+import { requireAdminAuthorization } from "./lib/adminAuthorizationMiddleware";
+import { csrfProtect } from "./api/csrf/GET";
+import { auditAdminMutation } from "./lib/adminMutationAuditMiddleware";
 import { requireCustomerAuth } from "./lib/customerAuthMiddleware";
 import { sendEmail as smtpSendEmail } from "./lib/smtpTransport";
 import { seoRoutes } from "../lib/seo-routes";
@@ -408,7 +411,6 @@ app.use('/api', (_req: Request, _res: Response, next: NextFunction) => { next();
 app.use('/api/admin', (req: Request, res: Response, next: NextFunction) => {
   const PUBLIC_SUFFIXES = new Set([
     '/auth/login',
-    '/auth/logout',
     '/auth/password-reset',
     '/auth/password-reset/confirm',
     '/auth/otp/verify',
@@ -421,6 +423,19 @@ app.use('/api/admin', (req: Request, res: Response, next: NextFunction) => {
   if (PUBLIC_SUFFIXES.has(suffix)) return next();
   return requireAdminAuth(req, res, next);
 });
+
+// Authentication alone is not authorization. Apply a fail-closed role policy
+// before any administration handler is registered so new routes cannot become
+// available to every administrator by accident.
+app.use('/api/admin', requireAdminAuthorization);
+
+// Cookie-authenticated administration writes require a matching double-submit
+// token. Public authentication routes have no admin session and are skipped.
+app.use('/api/admin', (req: Request, res: Response, next: NextFunction) => {
+  if (!req.adminSession) return next();
+  return csrfProtect(req, res, next);
+});
+app.use('/api/admin', auditAdminMutation);
 
 // Customer APIs are protected centrally.  Keep the small unauthenticated
 // onboarding/reset surface explicit so newly added /api/users routes are not
@@ -443,6 +458,8 @@ app.use('/api/users', (req: Request, res: Response, next: NextFunction) => {
 app.use('/api/analytics', requireAdminAuth);
 app.use('/api/newsletter/subscribers', requireAdminAuth);
 app.use('/api/newsletter/send-sequence', requireAdminAuth);
+app.use('/api/newsletter/subscribers', csrfProtect);
+app.use('/api/newsletter/send-sequence', csrfProtect);
 
 // <api-registrations>
 app.get("/api/admin/kyc/document", admin_kyc_document_get);

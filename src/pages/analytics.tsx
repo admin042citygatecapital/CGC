@@ -25,7 +25,7 @@ import {
   Trophy,
   TrendingDown,
 } from 'lucide-react';
-import { useAdminAuth } from '@/lib/adminAuth';
+import { authHeaders, useAdminAuth } from '@/lib/adminAuth';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -229,7 +229,7 @@ const PERIODS = [7, 14, 30, 90] as const;
 type Period = typeof PERIODS[number];
 
 export default function AnalyticsPage() {
-  const { token, loading: authLoading } = useAdminAuth();
+  const { admin, loading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [conversions, setConversions] = useState<ConversionSummary | null>(null);
@@ -240,15 +240,11 @@ export default function AnalyticsPage() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   useEffect(() => {
-    if (!authLoading && !token) navigate('/admin/login', { replace: true });
-  }, [authLoading, token, navigate]);
-
-  const authHeaders = useCallback(() => ({
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  }), [token]);
+    if (!authLoading && !admin) navigate('/admin/login', { replace: true });
+  }, [authLoading, admin, navigate]);
 
   const load = useCallback(async (days: Period) => {
-    if (!token) return;
+    if (!admin) return;
     setLoading(true);
     setError(null);
     try {
@@ -275,7 +271,7 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, authHeaders]);
+  }, [admin]);
 
   useEffect(() => { void load(period); }, [period, load]);
 

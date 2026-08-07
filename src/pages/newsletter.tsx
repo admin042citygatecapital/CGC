@@ -8,7 +8,7 @@ import {
   BarChart2, Globe, UserMinus,
 } from 'lucide-react';
 import { NURTURE_SEQUENCE } from '../server/lib/nurtureSequence';
-import { useAdminAuth } from '@/lib/adminAuth';
+import { authHeaders, useAdminAuth } from '@/lib/adminAuth';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ function KpiCard({ icon: Icon, label, value, sub, color }: {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function NewsletterPage() {
-  const { token, loading: authLoading } = useAdminAuth();
+  const { admin, loading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
   const [data, setData]           = useState<SubscribersResponse | null>(null);
   const [loading, setLoading]     = useState(true);
@@ -120,15 +120,11 @@ export default function NewsletterPage() {
   const [page, setPage]           = useState(1);
 
   useEffect(() => {
-    if (!authLoading && !token) navigate('/admin/login', { replace: true });
-  }, [authLoading, token, navigate]);
-
-  const authHeaders = useCallback(() => ({
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  }), [token]);
+    if (!authLoading && !admin) navigate('/admin/login', { replace: true });
+  }, [authLoading, admin, navigate]);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!admin) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/newsletter/subscribers?status=${statusFilter === 'all' ? '' : statusFilter}&page=${page}&limit=50`, {
@@ -138,7 +134,7 @@ export default function NewsletterPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, page, token, authHeaders]);
+  }, [statusFilter, page, admin]);
 
   useEffect(() => { void load(); }, [load]);
 
