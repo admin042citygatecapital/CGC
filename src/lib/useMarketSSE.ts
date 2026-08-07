@@ -31,32 +31,39 @@ export interface UseMarketSseResult {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatPrice(n: number): string {
+function finiteNumber(value: unknown, fallback = 0): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function formatPrice(value: unknown): string {
+  const n = finiteNumber(value);
   if (n >= 1000) return `$${n.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
   if (n >= 1)    return `$${n.toFixed(4)}`;
   return `$${n.toFixed(6)}`;
 }
 
-function formatChange(pct: number): string {
+function formatChange(value: unknown): string {
+  const pct = finiteNumber(value);
   return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
 }
 
 function parseTicker(raw: Record<string, unknown>): TickerData | null {
   const symbol = String(raw.symbol ?? raw.s ?? '');
-  const price  = parseFloat(String(raw.price ?? raw.lastPrice ?? raw.p ?? 0));
-  if (!symbol || isNaN(price)) return null;
-  const change24h = parseFloat(String(
-    raw.changePct24h ?? raw.change24h ?? raw.priceChangePercent ?? raw.changePercent ?? 0
-  ));
+  const price  = finiteNumber(raw.price ?? raw.lastPrice ?? raw.p, Number.NaN);
+  if (!symbol || !Number.isFinite(price)) return null;
+  const change24h = finiteNumber(
+    raw.changePct24h ?? raw.change24h ?? raw.priceChangePercent ?? raw.changePercent
+  );
   return {
     symbol,
     price,
     priceStr:  formatPrice(price),
     change24h,
     changeStr: formatChange(change24h),
-    volume24h: parseFloat(String(raw.volume24h ?? raw.volume ?? 0)),
-    high24h:   parseFloat(String(raw.high24h ?? raw.highPrice ?? 0)),
-    low24h:    parseFloat(String(raw.low24h  ?? raw.lowPrice  ?? 0)),
+    volume24h: finiteNumber(raw.volume24h ?? raw.volume),
+    high24h:   finiteNumber(raw.high24h ?? raw.highPrice),
+    low24h:    finiteNumber(raw.low24h  ?? raw.lowPrice),
     up:        change24h >= 0,
     ts:        Date.now(),
   };

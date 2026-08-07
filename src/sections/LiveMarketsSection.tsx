@@ -48,14 +48,21 @@ function assetInitial(symbol: string): string {
   return symbol.replace(/USDT$|USD$/, '')[0]?.toUpperCase() ?? '?';
 }
 
-function formatPrice(n: number): string {
+function finiteNumber(value: unknown, fallback = 0): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function formatPrice(value: unknown): string {
+  const n = finiteNumber(value);
   if (n >= 10_000) return `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
   if (n >= 1)      return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (n >= 0.01)   return `$${n.toFixed(4)}`;
   return `$${n.toFixed(6)}`;
 }
 
-function formatVol(n: number): string {
+function formatVol(value: unknown): string {
+  const n = finiteNumber(value);
   if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
   if (n >= 1e6) return `$${(n / 1e6).toFixed(0)}M`;
   if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
@@ -75,8 +82,11 @@ interface AssetRowProps {
 }
 
 function AssetRow({ rank, symbol, name, price, change, volume, delay = 0 }: AssetRowProps) {
+  const safePrice  = finiteNumber(price);
+  const safeChange = finiteNumber(change);
+  const safeVolume = finiteNumber(volume);
   const color = assetColor(symbol);
-  const up    = change >= 0;
+  const up    = safeChange >= 0;
   const base  = symbol.replace(/USDT$|USD$/, '').toUpperCase();
 
   return (
@@ -106,15 +116,15 @@ function AssetRow({ rank, symbol, name, price, change, volume, delay = 0 }: Asse
 
       {/* Volume */}
       {volume !== undefined && (
-        <span className="text-[10px] text-white/25 hidden sm:block shrink-0">{formatVol(volume)}</span>
+        <span className="text-[10px] text-white/25 hidden sm:block shrink-0">{formatVol(safeVolume)}</span>
       )}
 
       {/* Price */}
       <div className="text-right shrink-0 min-w-[72px]">
-        <p className="text-sm font-semibold text-white/80 tabular-nums">{formatPrice(price)}</p>
+        <p className="text-sm font-semibold text-white/80 tabular-nums">{formatPrice(safePrice)}</p>
         <p className={`text-xs font-bold flex items-center justify-end gap-0.5 ${up ? 'text-emerald-400' : 'text-red-400'}`}>
           {up ? <TrendingUp size={9} /> : <TrendingDown size={9} />}
-          {up ? '+' : ''}{change.toFixed(2)}%
+          {up ? '+' : ''}{safeChange.toFixed(2)}%
         </p>
       </div>
     </motion.div>

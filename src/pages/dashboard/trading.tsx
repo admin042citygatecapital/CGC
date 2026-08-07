@@ -51,10 +51,37 @@ interface Position {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function fmt(n: number, decimals = 2): string {
+function finiteNumber(value: unknown, fallback = 0): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeSummary(value: unknown): PortfolioSummary {
+  const source = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  return {
+    totalValue: finiteNumber(source.totalValue),
+    totalCost: finiteNumber(source.totalCost),
+    unrealisedPnl: finiteNumber(source.unrealisedPnl),
+    realisedPnl: finiteNumber(source.realisedPnl),
+    totalPnl: finiteNumber(source.totalPnl),
+    pnlPct: finiteNumber(source.pnlPct),
+    openPositions: finiteNumber(source.openPositions),
+    closedPositions: finiteNumber(source.closedPositions),
+    openOrders: finiteNumber(source.openOrders),
+    winRate: finiteNumber(source.winRate),
+    bestTrade: finiteNumber(source.bestTrade),
+    worstTrade: finiteNumber(source.worstTrade),
+    totalTrades: finiteNumber(source.totalTrades),
+    dailyPnl: finiteNumber(source.dailyPnl),
+  };
+}
+
+function fmt(value: unknown, decimals = 2): string {
+  const n = finiteNumber(value);
   return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
-function fmtUSD(n: number): string {
+function fmtUSD(value: unknown): string {
+  const n = finiteNumber(value);
   const abs = Math.abs(n);
   const sign = n < 0 ? '-' : '';
   if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
@@ -189,7 +216,7 @@ export default function TradingPage() {
       });
       if (!res.ok) throw new Error('Failed to load portfolio');
       const data = await res.json();
-      setSummary(data.summary);
+      setSummary(normalizeSummary(data.summary));
       setPositions(data.positions ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load');
@@ -215,7 +242,7 @@ export default function TradingPage() {
     30_000,
     (data) => {
       if (!data) return;
-      setSummary(data.summary);
+      setSummary(normalizeSummary(data.summary));
       setPositions(data.positions ?? []);
     },
   );
