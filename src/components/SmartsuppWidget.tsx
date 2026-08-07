@@ -33,16 +33,22 @@ import { getAnalyticsConsent, onConsentChange } from '@/lib/analytics-consent';
 // the server config endpoint so the literal value is never hard-coded here.
 // Falls back to an empty string if the config endpoint is unavailable.
 let SMARTSUPP_KEY = '';
+let smartsuppKeyPromise: Promise<string> | null = null;
 
 // Fetch the key from the server once and cache it in the module-level variable.
 // This runs before the component mounts so the key is ready when injectScript() fires.
 if (typeof window !== 'undefined') {
-  fetch('/api/config/smartsupp-key')
+  smartsuppKeyPromise = fetch('/api/config/smartsupp-key')
     .then(r => r.ok ? r.json() : null)
     .then((data: { key?: string } | null) => {
-      if (data?.key) SMARTSUPP_KEY = data.key;
+      SMARTSUPP_KEY = typeof data?.key === 'string' ? data.key.trim() : '';
+      return SMARTSUPP_KEY;
     })
-    .catch(() => { /* non-critical — widget simply won't load */ });
+    .catch(() => '');
+}
+
+function loadSmartsuppKey(): Promise<string> {
+  return smartsuppKeyPromise ?? Promise.resolve('');
 }
 
 // Pages where the widget should be completely hidden (no chat bubble shown).
@@ -81,6 +87,7 @@ function ss(...args: unknown[]): void {
 function injectScript(): void {
   if (typeof window === 'undefined') return;
   if (window.__smartsuppLoaded) return;
+  if (!SMARTSUPP_KEY) return;
 
   try {
     window.__smartsuppLoaded = true;
@@ -137,8 +144,13 @@ export default function SmartsuppWidget() {
 
   // ── Step 1: Inject script once on mount ─────────────────────────────────────
   useEffect(() => {
-    injectScript();
+    let cancelled = false;
+    void loadSmartsuppKey().then((key) => {
+      if (!cancelled && key) injectScript();
+    });
+
     return () => {
+      cancelled = true;
       // Cleanup consent listener on unmount (app teardown)
       consentCleanupRef.current?.();
     };
