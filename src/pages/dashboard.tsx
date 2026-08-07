@@ -599,6 +599,7 @@ function WalletTxModal({
 export default function DashboardPage() {
   const { customer, token, loading, logout } = useCustomerAuth();
   const navigate = useNavigate();
+  const isPreview = import.meta.env.VITE_PLATFORM_MODE !== 'live';
 
   // ── Privacy mode (localStorage-persisted) ────────────────────────────────────
   const [privacy, setPrivacy] = useState<boolean>(false);
@@ -1129,7 +1130,9 @@ export default function DashboardPage() {
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               className="mb-4 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border border-emerald-500/15 bg-emerald-500/4">
               <BadgeCheck size={14} className="text-emerald-400 shrink-0" />
-              <p className="text-xs font-medium text-emerald-400">Identity Verified — Full banking access enabled</p>
+              <p className="text-xs font-medium text-emerald-400">
+                {isPreview ? 'Preview identity status — simulated approval' : 'Identity Verified — Full banking access enabled'}
+              </p>
             </motion.div>
           )}
 
@@ -1221,7 +1224,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-1.5 text-xs text-foreground/30">
                           <Shield size={11} className="text-emerald-400" />
-                          <span>FDIC insured</span>
+                          <span>{isPreview ? 'Demo funds — not insured' : 'FDIC insured'}</span>
                         </div>
                         <span className="text-foreground/15">·</span>
                         <span className="text-xs text-foreground/30 font-mono">
