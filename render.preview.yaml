@@ -1,19 +1,22 @@
+databases:
+  - name: city-gate-capital-preview-db-2026
+    plan: free
+    region: virginia
+    databaseName: city_gate_capital_preview
+    user: city_gate_preview
+    postgresMajorVersion: "18"
+
 services:
   - type: web
-    name: city-gate-capital
+    name: city-gate-capital-preview-2026
     runtime: node
-    plan: starter
-    region: oregon
-    buildCommand: npm ci --include=dev && npm run verify
+    plan: free
+    region: virginia
+    buildCommand: npm ci --include=dev && npm run build && npm run db:migrate && npm run preview:seed
     startCommand: npm start
-    preDeployCommand: npm run db:migrate && npm run preview:seed
     healthCheckPath: /api/health
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     maxShutdownDelaySeconds: 30
-    disk:
-      name: city-gate-capital-data
-      mountPath: /private
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
@@ -34,17 +37,21 @@ services:
       - key: ENABLE_PREVIEW_USER_SEED
         value: "1"
       - key: DATABASE_POOL_SIZE
-        value: "5"
+        value: "3"
+      - key: SESSION_TIMEOUT_MINUTES
+        value: "60"
       - key: PRIVATE_DATA_ROOT
-        value: /private
+        value: /tmp/city-gate-capital
       - key: MEDIA_ASSET_ROOT
-        value: /private/public-assets
+        value: /tmp/city-gate-capital/public-assets
       - key: APP_URL
-        sync: false
+        value: https://city-gate-capital-preview-2026.onrender.com
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: city-gate-capital-preview-db-2026
+          property: connectionString
       - key: SESSION_SECRET
-        sync: false
+        generateValue: true
       - key: CARD_ENCRYPTION_KEY
         sync: false
       - key: ADMIN_PASSWORD_HASH

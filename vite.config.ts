@@ -99,7 +99,9 @@ export default defineConfig(({
   ssr: {
     noExternal: isSsrBuild ? true : undefined,
     // hash-wasm is pure WASM and bundles cleanly — no native externals needed.
-    external: undefined
+    // Keep ws external so its optional native accelerators are resolved by
+    // Node at runtime instead of being wrapped incorrectly in the SSR bundle.
+    external: isSsrBuild ? ["ws"] : undefined
   },
   server: {
     host: process.env.HOST || "0.0.0.0",

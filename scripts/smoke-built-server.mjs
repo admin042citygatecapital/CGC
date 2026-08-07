@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import WebSocket from 'ws';
 
 const port = process.env.SMOKE_PORT || '5180';
 const origin = `http://127.0.0.1:${port}`;
@@ -50,12 +51,31 @@ try {
   if (logo.status !== 302 || !logo.headers.get('location')?.startsWith('https://')) {
     throw new Error('Production media middleware did not resolve the primary logo slot.');
   }
+  await new Promise((resolve, reject) => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/market`);
+    const timer = setTimeout(() => {
+      socket.terminate();
+      reject(new Error('Market WebSocket did not connect during the smoke test.'));
+    }, 3_000);
+    socket.once('open', () => {
+      clearTimeout(timer);
+      socket.close();
+      resolve();
+    });
+    socket.once('error', error => {
+      clearTimeout(timer);
+      reject(error);
+    });
+  });
+  await new Promise(resolve => setTimeout(resolve, 100));
+  if (child.exitCode !== null) throw new Error(`Server exited after a WebSocket frame with code ${child.exitCode}.\n${output}`);
   console.log(JSON.stringify({
     ok: true,
     status: response.status,
     previewDisclosure: true,
     noIndex: true,
     mediaAssets: true,
+    marketWebSocket: true,
     health: body,
   }));
 } finally {

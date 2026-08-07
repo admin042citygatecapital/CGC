@@ -2,6 +2,8 @@
 
 The checked-in Render blueprint deploys a persistent, non-indexed product preview. It intentionally uses a paid always-on web service and a small persistent disk because the application includes WebSockets, background work, and several administration/CMS stores that are still filesystem-backed. Confirm current provider pricing before creating resources.
 
+For a temporary, no-monthly-compute-cost review environment, use `render.preview.yaml` instead. It provisions one Free web service and one Free Render Postgres database, runs migrations, and seeds the review user during the build. The free web service sleeps after inactivity, its filesystem is ephemeral, and the free database expires after 30 days. This preview-only blueprint must not be used for production or real customer data.
+
 ## Required external resources
 
 1. A Git repository containing this project.
