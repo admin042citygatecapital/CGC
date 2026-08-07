@@ -12,7 +12,7 @@ useLocation,
 type RouteObject,
 } from 'react-router-dom';
 
-import Spinner from './components/Spinner';
+import PageSkeleton from './components/PageSkeleton';
 import PreviewBanner from './components/PreviewBanner';
 import RootLayout from './layouts/RootLayout';
 import { AdminAuthProvider } from './lib/adminAuth';
@@ -25,12 +25,6 @@ export interface RenderResult {
   redirect?: string;
 }
 
-const SpinnerFallback = () => (
-  <div className="flex justify-center py-8 h-screen items-center">
-    <Spinner />
-  </div>
-);
-
 function SSRLayoutWrapper() {
   const location = useLocation();
   const standalonePrefixes = ['/admin', '/login', '/register', '/dashboard'];
@@ -41,7 +35,7 @@ function SSRLayoutWrapper() {
     return (
       <>
         <PreviewBanner />
-        <Suspense fallback={<SpinnerFallback />}>
+        <Suspense fallback={<PageSkeleton admin />}>
           <Outlet />
         </Suspense>
       </>
@@ -50,7 +44,7 @@ function SSRLayoutWrapper() {
   return (
     <>
       <PreviewBanner />
-      <Suspense fallback={<SpinnerFallback />}>
+      <Suspense fallback={<PageSkeleton />}>
         <RootLayout>
           <Outlet />
         </RootLayout>

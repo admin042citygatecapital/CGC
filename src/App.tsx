@@ -9,6 +9,7 @@ type RouteObject,
 
 import AppErrorBoundary from '@/components/AppErrorBoundary';
 import AriaChatWidget from '@/components/AriaChatWidget';
+import ClientOnly from '@/components/ClientOnly';
 import PreviewBanner from '@/components/PreviewBanner';
 import CookieBannerErrorBoundary from '@/components/CookieBannerErrorBoundary';
 import SmartsuppWidget from '@/components/SmartsuppWidget';
@@ -46,8 +47,10 @@ function LayoutWrapper() {
     <>
       <PreviewBanner />
       {/* Single mount point — never re-mounts during navigation */}
-      <SmartsuppWidget />
-      <AriaChatWidget />
+      <ClientOnly>
+        <SmartsuppWidget />
+        <AriaChatWidget />
+      </ClientOnly>
 
       {isStandalone ? (
         <Suspense fallback={<PageSkeleton admin />}>
@@ -84,11 +87,13 @@ export default function App() {
       <AdminAuthProvider>
         <CustomerAuthProvider>
           <RouterProvider router={router} />
-          <CookieBannerErrorBoundary>
-            <Suspense fallback={null}>
-              <CookieBanner />
-            </Suspense>
-          </CookieBannerErrorBoundary>
+          <ClientOnly>
+            <CookieBannerErrorBoundary>
+              <Suspense fallback={null}>
+                <CookieBanner />
+              </Suspense>
+            </CookieBannerErrorBoundary>
+          </ClientOnly>
         </CustomerAuthProvider>
       </AdminAuthProvider>
     </AppErrorBoundary>

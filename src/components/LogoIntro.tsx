@@ -3,19 +3,32 @@ import { AnimatePresence,motion } from 'motion/react';
 import { useEffect,useState } from 'react';
 
 export default function LogoIntro() {
-  const [visible, setVisible] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return !sessionStorage.getItem('cgc_intro_shown');
-  });
+  // Keep the server render and the client's first render identical. Browser
+  // storage is intentionally consulted only after hydration has completed.
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!visible) return;
+    let shouldShow = false;
+    try {
+      shouldShow = sessionStorage.getItem('cgc_intro_shown') !== '1';
+    } catch {
+      // A blocked storage API should not prevent the intro from working.
+      shouldShow = true;
+    }
+
+    if (!shouldShow) return;
+    setVisible(true);
+
     const t = setTimeout(() => {
       setVisible(false);
-      sessionStorage.setItem('cgc_intro_shown', '1');
+      try {
+        sessionStorage.setItem('cgc_intro_shown', '1');
+      } catch {
+        // The animation can still finish when storage is unavailable.
+      }
     }, 2400);
     return () => clearTimeout(t);
-  }, [visible]);
+  }, []);
 
   return (
     <AnimatePresence>
