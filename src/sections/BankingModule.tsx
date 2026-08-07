@@ -184,7 +184,7 @@ export function HeroSection() {
               />
               {/* Logo image — 200px mobile, up to 320px desktop */}
               <img
-                src="/airo-assets/images/logo/primary"
+                src="/assets/brand/city-gate-capital-seal.png"
                 alt="City Gate Capital"
                 className="relative object-contain shrink-0"
                 style={{

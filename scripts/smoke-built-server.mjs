@@ -1,8 +1,16 @@
 import { spawn } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import WebSocket from 'ws';
 
 const port = process.env.SMOKE_PORT || '5180';
 const origin = `http://127.0.0.1:${port}`;
+const smokeRoot = mkdtempSync(join(tmpdir(), 'cgc-smoke-'));
+const privateDataRoot = join(smokeRoot, 'private');
+const mediaAssetRoot = join(smokeRoot, 'public-assets');
+mkdirSync(privateDataRoot, { recursive: true });
+mkdirSync(mediaAssetRoot, { recursive: true });
 const child = spawn(process.execPath, ['dist/server.bundle.mjs'], {
   cwd: process.cwd(),
   env: {
@@ -10,6 +18,8 @@ const child = spawn(process.execPath, ['dist/server.bundle.mjs'], {
     NODE_ENV: 'development',
     HOST: '127.0.0.1',
     PORT: port,
+    PRIVATE_DATA_ROOT: privateDataRoot,
+    MEDIA_ASSET_ROOT: mediaAssetRoot,
   },
   stdio: ['ignore', 'pipe', 'pipe'],
   windowsHide: true,
@@ -47,9 +57,9 @@ try {
   if (!hero.ok || !hero.headers.get('content-type')?.startsWith('image/')) {
     throw new Error('Production media middleware did not serve the local hero asset.');
   }
-  const logo = await fetch(`${origin}/airo-assets/images/logo/primary`, { redirect: 'manual' });
-  if (logo.status !== 302 || !logo.headers.get('location')?.startsWith('https://')) {
-    throw new Error('Production media middleware did not resolve the primary logo slot.');
+  const logo = await fetch(`${origin}/assets/brand/city-gate-capital-seal.png`);
+  if (!logo.ok || !logo.headers.get('content-type')?.startsWith('image/png')) {
+    throw new Error('Bundled City Gate Capital logo is missing from the production build.');
   }
   await new Promise((resolve, reject) => {
     const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/market`);
@@ -80,4 +90,5 @@ try {
   }));
 } finally {
   if (child.exitCode === null) child.kill();
+  rmSync(smokeRoot, { recursive: true, force: true });
 }

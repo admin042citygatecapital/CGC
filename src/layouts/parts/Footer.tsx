@@ -144,7 +144,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2.5 mb-5">
-              <CgcLogo size={40} withWordmark glow />
+              <CgcLogo size={52} variant="horizontal" glow />
             </Link>
             <p className="text-sm text-foreground/55 leading-relaxed max-w-xs mb-6">
               Premium digital banking for the modern world. Secure, fast, and built for global citizens who demand more.

@@ -2,7 +2,8 @@
  * CgcLogo — Centralized City Gate Capital logo component.
  *
  * All logo placements across the platform import from here.
- * To update the logo site-wide, change the slot URL in LOGO_SLOT_URL only.
+ * Brand images are bundled with the application so they remain available in
+ * standalone deployments without the Airo media-slot service.
  *
  * Usage:
  *   <CgcLogo size={44} />                  — emblem only (circular)
@@ -12,10 +13,10 @@
 
 
 // ── Slot URLs (served by the media slot system) ──────────────────────────────
-const LOGO_HORIZONTAL = '/airo-assets/images/logo/horizontal';
-const LOGO_SQUARE     = '/airo-assets/images/logo/primary';
-const LOGO_VERTICAL   = '/airo-assets/images/logo/vertical';
-const LOGO_FAVICON    = '/airo-assets/images/logo/favicon';
+const LOGO_HORIZONTAL = '/assets/brand/city-gate-capital-horizontal.png';
+const LOGO_SQUARE     = '/assets/brand/city-gate-capital-seal.png';
+const LOGO_VERTICAL   = '/assets/brand/city-gate-capital-seal.png';
+const LOGO_FAVICON    = '/assets/brand/city-gate-capital-favicon.png';
 
 export { LOGO_FAVICON,LOGO_HORIZONTAL,LOGO_SQUARE,LOGO_VERTICAL };
 
@@ -75,7 +76,7 @@ export default function CgcLogo({
             isHorizontal ? 'h-auto w-auto max-h-[56px]' : 'w-auto'
           } ${imgClassName}`}
           style={{
-            height: isHorizontal ? undefined : `${size}px`,
+            height: `${size}px`,
             ...(glow ? { filter: 'drop-shadow(0 0 8px rgba(212,175,55,0.45))' } : {}),
           }}
         />

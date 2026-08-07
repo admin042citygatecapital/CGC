@@ -86,7 +86,7 @@ export default function HomePage() {
               url: 'https://citygate.capital',
               logo: {
                 '@type': 'ImageObject',
-                url: 'https://citygate.capital/airo-assets/images/logo/primary',
+                url: 'https://citygate.capital/assets/brand/city-gate-capital-seal.png',
                 width: 200, height: 200,
               },
               description: 'Premium digital banking with multi-currency wallets, crypto exchange, international transfers, and smart cards.',

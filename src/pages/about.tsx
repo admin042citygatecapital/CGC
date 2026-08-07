@@ -86,7 +86,7 @@ export default function AboutPage() {
             url: 'https://citygate.capital',
             logo: {
               '@type': 'ImageObject',
-              url: 'https://citygate.capital/airo-assets/images/logo/primary',
+              url: 'https://citygate.capital/assets/brand/city-gate-capital-seal.png',
               width: 200,
               height: 200,
             },

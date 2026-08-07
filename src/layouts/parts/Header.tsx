@@ -39,7 +39,7 @@ export default function Header() {
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-              <CgcLogo size={44} withWordmark glow />
+              <CgcLogo size={48} variant="horizontal" glow />
             </Link>
 
             {/* Desktop Nav */}

@@ -61,8 +61,8 @@ interface WebsiteSettings {
 const DEFAULT: WebsiteSettings = {
   siteName: 'City Gate Capital',
   siteTagline: 'Secure Digital Banking for the Modern World',
-  logoUrl: '/airo-assets/images/logo/horizontal',
-  faviconUrl: '/airo-assets/images/logo/favicon',
+  logoUrl: '/assets/brand/city-gate-capital-horizontal.png',
+  faviconUrl: '/assets/brand/city-gate-capital-favicon.png',
   primaryColor: '#C9A84C',
   accentColor: '#627EEA',
   fontHeading: 'Space Grotesk',
