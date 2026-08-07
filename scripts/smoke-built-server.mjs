@@ -51,7 +51,16 @@ try {
   const page = await fetch(`${origin}/login`);
   const html = await page.text();
   if (!page.ok || !html.includes('Product preview')) {
-    throw new Error('Server-rendered preview disclosure is missing from the login page.');
+    throw new Error(`Server-rendered preview disclosure is missing from the login page (status ${page.status}).\n${output}`);
+  }
+  const dashboard = await fetch(`${origin}/dashboard/trading`);
+  const dashboardHtml = await dashboard.text();
+  if (
+    !dashboard.ok ||
+    dashboardHtml.includes('<!--$!-->') ||
+    dashboardHtml.includes('Switched to client rendering')
+  ) {
+    throw new Error('A lazy dashboard route did not finish rendering on the server.');
   }
   const hero = await fetch(`${origin}/airo-assets/uploads/pages-home-hero-e6ece0b6.jpg`);
   if (!hero.ok || !hero.headers.get('content-type')?.startsWith('image/')) {
@@ -83,6 +92,7 @@ try {
     ok: true,
     status: response.status,
     previewDisclosure: true,
+    streamingSsr: true,
     noIndex: true,
     mediaAssets: true,
     marketWebSocket: true,

@@ -1,8 +1,9 @@
 import type { HelmetServerState } from '@dr.pogodin/react-helmet';
 import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { QueryClient,QueryClientProvider } from '@tanstack/react-query';
-import { StrictMode,Suspense } from 'react';
-import { renderToString } from 'react-dom/server';
+import { StrictMode,Suspense,type ReactNode } from 'react';
+import { renderToPipeableStream } from 'react-dom/server';
+import { PassThrough } from 'node:stream';
 import {
 Outlet,
 StaticRouterProvider,
@@ -16,6 +17,7 @@ import PageSkeleton from './components/PageSkeleton';
 import PreviewBanner from './components/PreviewBanner';
 import RootLayout from './layouts/RootLayout';
 import { AdminAuthProvider } from './lib/adminAuth';
+import { CustomerAuthProvider } from './lib/customerAuth';
 import { routes } from './routes';
 
 export interface RenderResult {
@@ -62,6 +64,68 @@ const routeTree: RouteObject[] = [
 
 const handler = createStaticHandler(routeTree);
 
+function renderAllReady(element: ReactNode): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const output = new PassThrough();
+    const chunks: Buffer[] = [];
+    let settled = false;
+    let renderError: unknown;
+    let abortRender = () => {};
+
+    output.on('data', (chunk: Buffer | string) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    output.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      abortRender();
+      reject(error);
+    });
+    output.on('end', () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (renderError) {
+        reject(renderError);
+      } else {
+        resolve(Buffer.concat(chunks).toString('utf8'));
+      }
+    });
+
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      abortRender();
+      reject(new Error('Server rendering timed out before all content was ready.'));
+    }, 15_000);
+
+    const { pipe, abort } = renderToPipeableStream(element, {
+      onAllReady() {
+        if (settled) return;
+        if (renderError) {
+          settled = true;
+          clearTimeout(timeout);
+          abort();
+          reject(renderError);
+          return;
+        }
+        pipe(output);
+      },
+      onShellError(error) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        reject(error);
+      },
+      onError(error) {
+        renderError ??= error;
+      },
+    });
+    abortRender = abort;
+  });
+}
+
 export async function render(url: string): Promise<RenderResult> {
   const context = await handler.query(new Request(`http://ssr${url}`));
 
@@ -88,12 +152,14 @@ export async function render(url: string): Promise<RenderResult> {
     },
   });
 
-  const html = renderToString(
+  const html = await renderAllReady(
     <StrictMode>
       <HelmetProvider context={helmetContext}>
         <QueryClientProvider client={queryClient}>
           <AdminAuthProvider>
-            <StaticRouterProvider router={router} context={context} />
+            <CustomerAuthProvider>
+              <StaticRouterProvider router={router} context={context} />
+            </CustomerAuthProvider>
           </AdminAuthProvider>
         </QueryClientProvider>
       </HelmetProvider>
