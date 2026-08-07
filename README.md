@@ -6,7 +6,7 @@ City Gate Capital is a full-stack digital banking application with a public webs
 
 - React 19, TypeScript, Vite, Tailwind CSS, and React Router
 - Express 5 with server-side rendering and WebSocket market updates
-- PostgreSQL through Drizzle ORM and the Neon serverless driver
+- PostgreSQL through Drizzle ORM and a provider-neutral pooled driver
 - Argon2id password hashing, encrypted card data, bounded sessions, audit logging, and request-rate controls
 - Vitest, ESLint, and production client/server builds
 
@@ -58,6 +58,8 @@ Legacy flat-file data can be checked and imported with `db:import:dry` and `db:i
 This application requires a persistent Node.js service because it hosts Express APIs, server-side rendering, background email processing, and WebSockets. Deploy it to a container or long-running Node platform rather than a static-only host.
 
 The checked-in deployment is deliberately configured as a non-indexed product preview. Preview mode disables money-moving endpoints and paper trading and shows a permanent disclosure. Do not switch `PLATFORM_MODE` to `live` or enable financial operations until banking/custody partners, regulatory approvals, legal copy, and production integrations have been independently verified.
+
+The provider-specific release sequence and required secrets are documented in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ```bash
 npm ci

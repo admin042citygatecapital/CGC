@@ -80,11 +80,18 @@ export async function loadMediaManifest(root: string): Promise<MediaManifest> {
 
 export function buildUploadSearchPaths(root: string): string[] {
   const publicAssets = path.join(root, 'public', 'assets');
-  return [
+  const configuredAssets = process.env.MEDIA_ASSET_ROOT?.trim();
+  const roots = [
     publicAssets,
-    path.join(publicAssets, 'media'),
-    path.join(publicAssets, 'images'),
-    path.join(publicAssets, 'uploads'),
+    ...(configuredAssets ? [configuredAssets] : []),
+    '/shared-storage/public/assets',
+    '/private/public-assets',
+  ];
+  return [
+    ...roots,
+    ...roots.map(assetRoot => path.join(assetRoot, 'media')),
+    ...roots.map(assetRoot => path.join(assetRoot, 'images')),
+    ...roots.map(assetRoot => path.join(assetRoot, 'uploads')),
     path.join(root, 'public', 'media'),
     path.join(root, 'public', 'images'),
   ];

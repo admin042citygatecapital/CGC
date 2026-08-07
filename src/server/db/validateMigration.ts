@@ -15,7 +15,7 @@
  */
 
 import fs   from 'node:fs';
-import { neon } from '@neondatabase/serverless';
+import postgres from 'postgres';
 import { getSecret } from '#airo/secrets';
 
 const url = String(getSecret('DATABASE_URL') || process.env.DATABASE_URL || '').trim();
@@ -25,13 +25,7 @@ if (!url) {
   process.exit(1);
 }
 
-// Use direct (non-pooler) URL — pooler can return empty results for unsafe queries
-const directUrl = url.replace(/-pooler\./, '.');
-const sql = neon(directUrl) as unknown as {
-  <T = Record<string, unknown>>(strings: TemplateStringsArray, ...values: unknown[]): Promise<T[]>;
-  unsafe(query: string): Promise<Record<string, unknown>[]>;
-  end?: () => Promise<void>;
-};
+const sql = postgres(url, { max: 1, prepare: false, connect_timeout: 15 });
 
 interface Check {
   name:   string;
@@ -67,12 +61,12 @@ async function run() {
     pass('db.connection', 'Connected to PostgreSQL');
   } catch (err) {
     fail('db.connection', String(err));
-    await sql.end?.();
+    await sql.end();
     process.exit(1);
   }
 
   // ── 2. Schema exists ───────────────────────────────────────────────────────
-  const tables = await sql<{ tablename: string }>`
+  const tables = await sql<{ tablename: string }[]>`
     SELECT tablename FROM pg_tables
     WHERE schemaname = 'public'
     ORDER BY tablename
@@ -131,7 +125,7 @@ async function run() {
 
   // Users: no null emails
   try {
-    const nullEmails = await sql<{ count: string }>`SELECT COUNT(*)::text as count FROM users WHERE email IS NULL OR email = ''`;
+    const nullEmails = await sql<{ count: string }[]>`SELECT COUNT(*)::text as count FROM users WHERE email IS NULL OR email = ''`;
     const count = parseInt(nullEmails[0].count, 10);
     if (count === 0) pass('integrity.users.email', 'No null/empty emails');
     else fail('integrity.users.email', `${count} users with null/empty email`);
@@ -139,7 +133,7 @@ async function run() {
 
   // Transactions: no null amounts
   try {
-    const nullAmounts = await sql<{ count: string }>`SELECT COUNT(*)::text as count FROM transactions WHERE amount IS NULL`;
+    const nullAmounts = await sql<{ count: string }[]>`SELECT COUNT(*)::text as count FROM transactions WHERE amount IS NULL`;
     const count = parseInt(nullAmounts[0].count, 10);
     if (count === 0) pass('integrity.transactions.amount', 'No null amounts');
     else fail('integrity.transactions.amount', `${count} transactions with null amount`);
@@ -147,7 +141,7 @@ async function run() {
 
   // Cards: encrypted PAN format
   try {
-    const badCards = await sql<{ count: string }>`
+    const badCards = await sql<{ count: string }[]>`
       SELECT COUNT(*)::text as count FROM cards
       WHERE number_enc NOT LIKE 'enc:%' AND number_enc != ''
     `;
@@ -160,7 +154,7 @@ async function run() {
 
   // Customer sessions reference valid users
   try {
-    const orphaned = await sql<{ count: string }>`
+    const orphaned = await sql<{ count: string }[]>`
       SELECT COUNT(*)::text as count FROM customer_sessions cs
       LEFT JOIN users u ON cs.user_id = u.id
       WHERE u.id IS NULL
@@ -172,7 +166,7 @@ async function run() {
 
   // Cards reference valid users
   try {
-    const orphaned = await sql<{ count: string }>`
+    const orphaned = await sql<{ count: string }[]>`
       SELECT COUNT(*)::text as count FROM cards c
       LEFT JOIN users u ON c.user_id = u.id
       WHERE u.id IS NULL
@@ -206,12 +200,12 @@ async function run() {
     console.log(`  📄 Report written to: ${reportPath}\n`);
   } catch { /* ignore */ }
 
-  await sql.end?.();
+  await sql.end();
   process.exit(failed > 0 ? 1 : 0);
 }
 
 run().catch(async (err) => {
   console.error('Fatal error:', err);
-  await sql.end?.();
+  await sql.end();
   process.exit(1);
 });

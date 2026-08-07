@@ -680,8 +680,8 @@ function KycPageInner() {
       if (form.selfieBase64 && customer?.id) {
         await fetch('/api/users/kyc-document', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: customer.id, documentBase64: form.selfieBase64 }),
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ userId: customer.id, documentBase64: form.selfieBase64, documentKind: 'selfie' }),
         }).catch(() => { /* non-critical */ });
       }
 

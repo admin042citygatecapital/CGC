@@ -164,16 +164,20 @@ export async function updateQueuedEmail(id: string, patch: Partial<QueuedEmail>)
 export async function purgeEmail(id: string): Promise<boolean> {
   if (!isDatabaseConfigured()) return false;
   const db = getDb();
-  const result = await db.delete(emailQueueTable).where(eq(emailQueueTable.id, id));
-  return (result.rowCount ?? 0) > 0;
+  const result = await db.delete(emailQueueTable)
+    .where(eq(emailQueueTable.id, id))
+    .returning({ id: emailQueueTable.id });
+  return result.length > 0;
 }
 
 /** Purge all failed emails. Returns count removed. */
 export async function purgeAllFailed(): Promise<number> {
   if (!isDatabaseConfigured()) return 0;
   const db = getDb();
-  const result = await db.delete(emailQueueTable).where(eq(emailQueueTable.status, 'failed'));
-  return result.rowCount ?? 0;
+  const result = await db.delete(emailQueueTable)
+    .where(eq(emailQueueTable.status, 'failed'))
+    .returning({ id: emailQueueTable.id });
+  return result.length;
 }
 
 /** Re-queue a failed email for manual retry */
@@ -182,8 +186,9 @@ export async function requeueEmail(id: string): Promise<boolean> {
   const db = getDb();
   const result = await db.update(emailQueueTable)
     .set({ status: 'queued', attempts: 0, lastError: null })
-    .where(eq(emailQueueTable.id, id));
-  return (result.rowCount ?? 0) > 0;
+    .where(eq(emailQueueTable.id, id))
+    .returning({ id: emailQueueTable.id });
+  return result.length > 0;
 }
 
 // ── Background retry worker ───────────────────────────────────────────────────

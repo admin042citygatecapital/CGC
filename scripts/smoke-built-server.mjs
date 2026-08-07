@@ -42,7 +42,22 @@ try {
   if (!page.ok || !html.includes('Product preview')) {
     throw new Error('Server-rendered preview disclosure is missing from the login page.');
   }
-  console.log(JSON.stringify({ ok: true, status: response.status, previewDisclosure: true, noIndex: true, health: body }));
+  const hero = await fetch(`${origin}/airo-assets/uploads/pages-home-hero-e6ece0b6.jpg`);
+  if (!hero.ok || !hero.headers.get('content-type')?.startsWith('image/')) {
+    throw new Error('Production media middleware did not serve the local hero asset.');
+  }
+  const logo = await fetch(`${origin}/airo-assets/images/logo/primary`, { redirect: 'manual' });
+  if (logo.status !== 302 || !logo.headers.get('location')?.startsWith('https://')) {
+    throw new Error('Production media middleware did not resolve the primary logo slot.');
+  }
+  console.log(JSON.stringify({
+    ok: true,
+    status: response.status,
+    previewDisclosure: true,
+    noIndex: true,
+    mediaAssets: true,
+    health: body,
+  }));
 } finally {
   if (child.exitCode === null) child.kill();
 }

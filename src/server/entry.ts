@@ -11,6 +11,9 @@ import { rateLimitMiddleware } from "./lib/rateLimiter";
 import { httpLogger } from "./lib/httpLogger";
 import cookieParser from "cookie-parser";
 import compression from "compression";
+import { closeConnection } from "./db/db";
+import { createMediaAssetsMiddleware } from "../../export-plugins/media-assets-plugin";
+import admin_kyc_document_get from "./api/admin/kyc/document/GET";
 
 // <api-imports>
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
@@ -429,6 +432,7 @@ app.use('/api/users', (req: Request, res: Response, next: NextFunction) => {
     '/verify-email',
     '/password-reset',
     '/password-reset/confirm',
+    '/kyc-document', // validates either a customer session or a short-lived purpose token
   ]);
   const suffix = req.path.endsWith('/') && req.path.length > 1 ? req.path.slice(0, -1) : req.path || '/';
   if (PUBLIC_SUFFIXES.has(suffix)) return next();
@@ -441,6 +445,7 @@ app.use('/api/newsletter/subscribers', requireAdminAuth);
 app.use('/api/newsletter/send-sequence', requireAdminAuth);
 
 // <api-registrations>
+app.get("/api/admin/kyc/document", admin_kyc_document_get);
 app.post("/api/accounts/apply", accounts_apply_post_0);
 app.get("/api/admin/audit", admin_audit_get_1);
 app.get("/api/admin/auth/diag", admin_auth_diag_get_2);
@@ -824,6 +829,8 @@ if (import.meta.env.PROD) {
 	const __dirname = dirname(fileURLToPath(import.meta.url));
 	const clientDir = join(__dirname, "client");
 
+	app.use(createMediaAssetsMiddleware(() => process.cwd()));
+
 	app.use(
 		express.static(clientDir, {
 			index: false,
@@ -1020,37 +1027,13 @@ if (import.meta.env.PROD) {
 
 	const shutdown = async (signal: string) => {
 		console.log(`Got ${signal}, shutting down gracefully...`);
-		// Scope the ERR_MODULE_NOT_FOUND suppression to the import() only.
-		// A closeConnection() failure that happens to carry the same code
-		// (unlikely but possible for wrapped errors) must not be silently
-		// swallowed - it indicates a real db-close failure worth logging.
-		let mod: { closeConnection?: () => Promise<void> | void } | null = null;
 		try {
-			// Use a runtime-constructed path so Rollup cannot statically resolve
-			// this optional peer dep (which may not exist) at build time.
-			// Both halves are hard-coded string literals — no user input reaches
-			// this import(), so the no-unsanitized/method flag is a false positive.
-			 
-			const dbClientPath = "./db/" + "client.js";
-			 
-			mod = await import(/* @vite-ignore */ dbClientPath);
+			await closeConnection();
+			console.log("Database connections closed");
 		} catch (error: unknown) {
-			const code = (error as { code?: string } | null)?.code;
-			if (code !== "ERR_MODULE_NOT_FOUND") {
-				console.error("ssr.shutdown.db-import-failed", {
-					error: error instanceof Error ? error.message : String(error),
-				});
-			}
-		}
-		if (mod && typeof mod.closeConnection === "function") {
-			try {
-				await mod.closeConnection();
-				console.log("Database connections closed");
-			} catch (error: unknown) {
-				console.error("ssr.shutdown.db-close-failed", {
-					error: error instanceof Error ? error.message : String(error),
-				});
-			}
+			console.error("ssr.shutdown.db-close-failed", {
+				error: error instanceof Error ? error.message : String(error),
+			});
 		}
 		process.exit(0);
 	};

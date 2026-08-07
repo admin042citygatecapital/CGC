@@ -6,6 +6,8 @@ import {
 import { appendAudit } from '../../../lib/auditLog.js';
 import { sendVerificationEmail, sendAdminNewUserAlert } from '../../../lib/emailService.js';
 import { sanitizeString, isValidEmail, validatePassword } from '../../../lib/inputValidator.js';
+import { requirePublicRegistration } from '../../../lib/platformMode.js';
+import { issueKycUploadToken } from '../../../lib/purposeToken.js';
 
 function baseUrl(req: Request) {
   const env = process.env.PUBLIC_URL || process.env.SITE_URL;
@@ -14,6 +16,7 @@ function baseUrl(req: Request) {
 }
 
 export default async function handler(req: Request, res: Response) {
+  if (!requirePublicRegistration(res)) return;
   const raw = req.body as Record<string, unknown>;
   const name     = sanitizeString(raw.name);
   const email    = sanitizeString(raw.email).toLowerCase();
@@ -80,5 +83,6 @@ export default async function handler(req: Request, res: Response) {
     ok: true,
     message: 'Registration successful. Please check your email to verify your account.',
     userId: user.id,
+    documentUploadToken: issueKycUploadToken(user.id),
   });
 }

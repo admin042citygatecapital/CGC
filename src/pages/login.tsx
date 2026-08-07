@@ -183,13 +183,14 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Register link */}
-            <p className="mt-6 text-center text-sm text-foreground/40">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
-                Open an account
-              </Link>
-            </p>
+            {(import.meta.env.DEV || import.meta.env.VITE_ALLOW_PUBLIC_REGISTRATION === '1') && (
+              <p className="mt-6 text-center text-sm text-foreground/40">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
+                  Open an account
+                </Link>
+              </p>
+            )}
           </div>
         </motion.div>
       </div>

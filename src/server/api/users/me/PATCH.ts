@@ -18,8 +18,9 @@ import {
   isOneOf,
   safeWalletAddress,
 } from '../../../lib/inputValidator.js';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
-const KYC_DOC_DIR = '/shared-storage/public/assets/uploads/kyc';
+const KYC_DOC_DIR = privateSubdirectory('kyc-documents');
 const VALID_ID_TYPES = ['passport','national_id','drivers_license','residence_permit'] as const;
 
 export default async function handler(req: Request, res: Response) {
@@ -108,9 +109,12 @@ export default async function handler(req: Request, res: Response) {
 
       try {
         if (!fs.existsSync(KYC_DOC_DIR)) fs.mkdirSync(KYC_DOC_DIR, { recursive: true });
-        const filename = `${user.id}-id.${ext}`;
-        fs.writeFileSync(path.join(KYC_DOC_DIR, filename), Buffer.from(b64data, 'base64'));
-        patch.idDocumentUrl = `/airo-assets/uploads/kyc/${filename}`;
+        const filename = `${user.id}-id-profile.${ext}`;
+        for (const oldFile of fs.readdirSync(KYC_DOC_DIR).filter(file => file.startsWith(`${user.id}-id-`))) {
+          fs.unlinkSync(path.join(KYC_DOC_DIR, oldFile));
+        }
+        fs.writeFileSync(path.join(KYC_DOC_DIR, filename), Buffer.from(b64data, 'base64'), { mode: 0o600 });
+        patch.idDocumentUrl = `/api/admin/kyc/document?userId=${encodeURIComponent(user.id)}&kind=id`;
       } catch (err) {
         return res.status(500).json({ error: 'Failed to save document: ' + String(err) });
       }

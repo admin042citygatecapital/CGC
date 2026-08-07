@@ -6,6 +6,7 @@ const original = {
   PLATFORM_MODE: process.env.PLATFORM_MODE,
   ENABLE_FINANCIAL_OPERATIONS: process.env.ENABLE_FINANCIAL_OPERATIONS,
   ENABLE_PAPER_TRADING: process.env.ENABLE_PAPER_TRADING,
+  ALLOW_PUBLIC_REGISTRATION: process.env.ALLOW_PUBLIC_REGISTRATION,
 };
 
 afterEach(() => {
@@ -43,5 +44,15 @@ describe('production platform mode', () => {
     const { response, status } = responseMock();
     expect(requireFinancialOperations(response)).toBe(true);
     expect(status).not.toHaveBeenCalled();
+  });
+
+  it('blocks public registration unless explicitly enabled', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.ALLOW_PUBLIC_REGISTRATION = '0';
+    vi.resetModules();
+    const { requirePublicRegistration } = await import('../../server/lib/platformMode.js');
+    const { response, status } = responseMock();
+    expect(requirePublicRegistration(response)).toBe(false);
+    expect(status).toHaveBeenCalledWith(503);
   });
 });

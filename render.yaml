@@ -6,10 +6,14 @@ services:
     region: oregon
     buildCommand: npm ci && npm run verify
     startCommand: npm start
-    preDeployCommand: npm run db:migrate
+    preDeployCommand: npm run db:migrate && npm run preview:seed
     healthCheckPath: /api/health
     autoDeployTrigger: checksPass
     maxShutdownDelaySeconds: 30
+    disk:
+      name: city-gate-capital-data
+      mountPath: /private
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
@@ -23,6 +27,18 @@ services:
         value: "0"
       - key: ENABLE_PAPER_TRADING
         value: "0"
+      - key: ALLOW_PUBLIC_REGISTRATION
+        value: "0"
+      - key: VITE_ALLOW_PUBLIC_REGISTRATION
+        value: "0"
+      - key: ENABLE_PREVIEW_USER_SEED
+        value: "1"
+      - key: DATABASE_POOL_SIZE
+        value: "5"
+      - key: PRIVATE_DATA_ROOT
+        value: /private
+      - key: MEDIA_ASSET_ROOT
+        value: /private/public-assets
       - key: APP_URL
         sync: false
       - key: DATABASE_URL
@@ -35,3 +51,9 @@ services:
         sync: false
       - key: ADMIN_EMAIL
         sync: false
+      - key: PREVIEW_USER_EMAIL
+        sync: false
+      - key: PREVIEW_USER_PASSWORD
+        sync: false
+      - key: PREVIEW_USER_NAME
+        value: City Gate Preview

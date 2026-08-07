@@ -24,7 +24,7 @@ import { getSecret } from '#airo/secrets';
 import { APP_ENV, isProd } from '../../../lib/envConfig.js';
 import { getValidAccessToken } from '../../../lib/zohoTokenStore.js';
 import { seoRoutes } from '../../../../lib/seo-routes.js';
-import { getStorageBackend } from '../../../lib/r2Storage.js';
+import { getStorageBackend } from '../../../lib/supabaseStorage.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -408,23 +408,23 @@ function checkCspHeaders(): ReadinessCheck {
 
 function checkStorageBackend(): ReadinessCheck {
   const backend = getStorageBackend();
-  if (backend === 'r2') {
+  if (backend === 'supabase') {
     return {
-      id: 'storage', name: 'Media Storage (Cloudflare R2)', subsystem: 'Storage',
+      id: 'storage', name: 'Media Storage (Supabase)', subsystem: 'Storage',
       status: 'PASS', critical: false,
-      message: 'Cloudflare R2 is configured. Media uploads will be stored in R2.',
-      detail: `Bucket: ${String(getSecret('R2_BUCKET_NAME') || 'cgc-media')} | Public URL: ${String(getSecret('R2_PUBLIC_URL') || '(not set)')}`,
+      message: 'Supabase Storage is configured. Media uploads will use managed object storage.',
+      detail: `Bucket: ${String(getSecret('SUPABASE_STORAGE_BUCKET') || 'cgc-media')}`,
     };
   }
   return {
     id: 'storage', name: 'Media Storage (Local Filesystem)', subsystem: 'Storage',
     status: isProd ? 'WARN' : 'PASS', critical: false,
     message: isProd
-      ? 'Using local filesystem for media storage. Configure R2 for production-grade persistent storage.'
+      ? 'Using local filesystem for media storage. Ensure MEDIA_ASSET_ROOT is on a persistent disk or configure Supabase Storage.'
       : 'Using local filesystem for media storage (development mode).',
     detail: isProd
-      ? 'Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL to enable Cloudflare R2.'
-      : 'Local path: /shared-storage/public/assets/media/',
+      ? 'Set SUPABASE_URL and SUPABASE_SECRET_KEY to enable managed object storage.'
+      : `Local path: ${process.env.MEDIA_ASSET_ROOT || '/shared-storage/public/assets'}/media/`,
   };
 }
 

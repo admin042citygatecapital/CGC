@@ -23,3 +23,13 @@ export function requirePaperTrading(res: Response): boolean {
   });
   return false;
 }
+
+export function requirePublicRegistration(res: Response): boolean {
+  if (process.env.NODE_ENV !== 'production') return true;
+  if (process.env.ALLOW_PUBLIC_REGISTRATION === '1') return true;
+  res.status(503).json({
+    error: 'Public registration is disabled in this product-preview environment.',
+    code: 'REGISTRATION_DISABLED',
+  });
+  return false;
+}

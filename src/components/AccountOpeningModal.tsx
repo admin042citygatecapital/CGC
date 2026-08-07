@@ -634,8 +634,11 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
           });
           await fetch('/api/users/kyc-document', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: data.userId, documentBase64: b64 }),
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${data.documentUploadToken}`,
+            },
+            body: JSON.stringify({ userId: data.userId, documentBase64: b64, documentKind: 'id' }),
           });
         } catch { /* non-critical — user can upload later */ }
       }

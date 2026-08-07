@@ -1,7 +1,7 @@
 /**
  * supabaseStorage.ts — Supabase Storage integration
  *
- * Drop-in replacement for r2Storage.ts.
+ * Managed object storage with a persistent local fallback.
  * When Supabase credentials are configured, uploads go to Supabase Storage.
  * When not configured, falls back to local /shared-storage/public/assets/media/.
  *
@@ -19,6 +19,7 @@ import fs   from 'node:fs';
 import path from 'node:path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getSecret } from '#airo/secrets';
+import { mediaDirectory } from './storagePaths.js';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -129,7 +130,7 @@ export async function deleteFromSupabase(key: string, bucketOverride?: string): 
 
 // ── Local filesystem fallback ─────────────────────────────────────────────────
 
-const LOCAL_ASSET_DIR = '/shared-storage/public/assets/media';
+const LOCAL_ASSET_DIR = mediaDirectory;
 
 /**
  * Save a buffer to local filesystem (fallback when Supabase is not configured).
@@ -199,12 +200,3 @@ export async function deleteMedia(
     deleteFromLocal(filename);
   }
 }
-
-// ── Backward-compat re-exports (drop-in for r2Storage.ts consumers) ───────────
-
-/** @deprecated Use uploadMedia instead */
-export const uploadToR2 = uploadToSupabase;
-/** @deprecated Use deleteMedia instead */
-export const deleteFromR2 = deleteFromSupabase;
-/** @deprecated Use isSupabaseStorageConfigured instead */
-export const isR2Configured = isSupabaseStorageConfigured;

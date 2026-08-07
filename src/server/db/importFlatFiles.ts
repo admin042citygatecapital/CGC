@@ -37,7 +37,7 @@
 import fs     from 'node:fs';
 import path   from 'node:path';
 import crypto from 'node:crypto';
-import { neon } from '@neondatabase/serverless';
+import postgres from 'postgres';
 import { getSecret } from '#airo/secrets';
 
 // ── CLI flags ─────────────────────────────────────────────────────────────────
@@ -48,17 +48,15 @@ const FORCE      = args.includes('--force');
 
 // ── Database connection ───────────────────────────────────────────────────────
 
-const poolerUrl = String(getSecret('DATABASE_URL') || process.env.DATABASE_URL || '').trim();
+const databaseUrl = String(getSecret('DATABASE_URL') || process.env.DATABASE_URL || '').trim();
 
-if (!poolerUrl) {
+if (!databaseUrl) {
   console.error('❌ DATABASE_URL is not set. Add it in Settings → Secrets.');
   process.exit(1);
 }
 
-// Use direct (non-pooler) URL for INSERT operations
-// Neon's pooler (PgBouncer) in transaction mode can silently drop writes
-const directUrl = poolerUrl.replace(/-pooler\./, '.');
-const sql = neon(directUrl);
+// Use a single connection so import order and resource use remain predictable.
+const sql = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 15 });
 
 // ── Report ────────────────────────────────────────────────────────────────────
 
@@ -866,7 +864,7 @@ async function main() {
       console.log('✅ Connected\n');
     } catch (err) {
       console.error('❌ Connection failed:', err);
-      process.exit(1);
+      throw new Error('Database connection failed', { cause: err });
     }
   }
 
@@ -918,13 +916,17 @@ async function main() {
 
   if (report.totalErrors > 0) {
     console.log(`\n⚠ Migration completed with ${report.totalErrors} error(s). Review the report above.`);
-    process.exit(0);
+    process.exitCode = 1;
   } else {
     console.log('\n✅ Migration completed successfully. All records imported.');
   }
 }
 
-main().catch((err) => {
-  console.error('Fatal error:', err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error('Fatal error:', err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await sql.end({ timeout: 5 });
+  });

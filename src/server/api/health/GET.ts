@@ -2,14 +2,15 @@ import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import os from 'node:os';
 import { isDatabaseConfigured, testConnection } from '../../db/db.js';
+import { mediaAssetRoot, privateDataRoot } from '../../lib/storagePaths.js';
 
 // Directories and files that must be accessible for the app to function
 const CRITICAL_DIRS = [
-  '/private/users',
-  '/private/admin',
-  '/private/contacts',
-  '/private/accounts',
-  '/shared-storage/public/assets',
+  `${privateDataRoot}/users`,
+  `${privateDataRoot}/admin`,
+  `${privateDataRoot}/contacts`,
+  `${privateDataRoot}/accounts`,
+  mediaAssetRoot,
 ];
 
 function checkDir(dir: string): 'ok' | 'error' {
@@ -49,13 +50,13 @@ export default async function handler(_req: Request, res: Response) {
 
   // Derived service health
   const services = {
-    userStore:    dbStatus === 'ok' ? 'ok' : (storage['/private/users']    === 'ok' ? 'ok' : 'error'),
-    adminStore:   dbStatus === 'ok' ? 'ok' : (storage['/private/admin']    === 'ok' ? 'ok' : 'error'),
-    contactStore: storage['/private/contacts'] === 'ok' ? 'ok' : 'error',
-    accountStore: storage['/private/accounts'] === 'ok' ? 'ok' : 'error',
-    publicAssets: storage['/shared-storage/public/assets'] === 'ok' ? 'ok' : 'error',
-    sessionStore: dbStatus === 'ok' ? 'ok' : (storage['/private/admin']    === 'ok' ? 'ok' : 'error'),
-    auditLog:     dbStatus === 'ok' ? 'ok' : (storage['/private/admin']    === 'ok' ? 'ok' : 'error'),
+    userStore:    dbStatus === 'ok' ? 'ok' : (storage[`${privateDataRoot}/users`] === 'ok' ? 'ok' : 'error'),
+    adminStore:   dbStatus === 'ok' ? 'ok' : (storage[`${privateDataRoot}/admin`] === 'ok' ? 'ok' : 'error'),
+    contactStore: storage[`${privateDataRoot}/contacts`] === 'ok' ? 'ok' : 'error',
+    accountStore: storage[`${privateDataRoot}/accounts`] === 'ok' ? 'ok' : 'error',
+    publicAssets: storage[mediaAssetRoot] === 'ok' ? 'ok' : 'error',
+    sessionStore: dbStatus === 'ok' ? 'ok' : (storage[`${privateDataRoot}/admin`] === 'ok' ? 'ok' : 'error'),
+    auditLog:     dbStatus === 'ok' ? 'ok' : (storage[`${privateDataRoot}/admin`] === 'ok' ? 'ok' : 'error'),
     database:     dbStatus,
   };
 
@@ -89,7 +90,7 @@ export default async function handler(_req: Request, res: Response) {
     database: {
       status:    dbStatus,
       latencyMs: dbLatencyMs,
-      provider:  'neon',
+      provider:  'postgresql',
     },
     services,
     checks: {

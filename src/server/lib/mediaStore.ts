@@ -7,10 +7,11 @@
 import fs   from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { mediaDirectory } from './storagePaths.js';
 
 const META_DIR  = '/private/media';
 const META_FILE = path.join(META_DIR, 'index.jsonl');
-const ASSET_DIR = '/shared-storage/public/assets/media';
+const ASSET_DIR = mediaDirectory;
 
 function ensureDirs() {
   if (!fs.existsSync(META_DIR))  fs.mkdirSync(META_DIR,  { recursive: true });

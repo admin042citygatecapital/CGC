@@ -1,60 +1,61 @@
-/**
- * POST /api/users/kyc-document
- * Accepts a base64-encoded ID document image and saves it via Supabase Storage (or local fallback).
- * Called right after registration — no auth token yet, so userId is passed in body.
- * The document URL is stored on the user record for admin review.
- */
 import type { Request, Response } from 'express';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { findUserById, updateUser } from '../../../lib/userStore.js';
-import { uploadToSupabase, isSupabaseStorageConfigured } from '../../../lib/supabaseStorage.js';
+import { findUserById, findUserBySessionToken, updateUser } from '../../../lib/userStore.js';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
+import { verifyKycUploadToken } from '../../../lib/purposeToken.js';
 
-const LOCAL_KYC_DIR = '/shared-storage/public/assets/uploads/kyc';
+const kycDirectory = privateSubdirectory('kyc-documents');
 
 export default async function handler(req: Request, res: Response) {
-  const { userId, documentBase64 } = req.body as { userId?: string; documentBase64?: string };
-
-  if (!userId || !documentBase64) {
-    return res.status(400).json({ error: 'userId and documentBase64 are required' });
+  const { userId, documentBase64, documentKind = 'id' } = req.body as {
+    userId?: string;
+    documentBase64?: string;
+    documentKind?: 'id' | 'selfie';
+  };
+  if (!documentBase64) return res.status(400).json({ error: 'documentBase64 is required' });
+  if (documentKind !== 'id' && documentKind !== 'selfie') {
+    return res.status(400).json({ error: 'documentKind must be id or selfie' });
   }
 
-  const user = await findUserById(userId);
+  const authorization = req.headers.authorization ?? '';
+  const bearer = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  const sessionUser = bearer ? await findUserBySessionToken(bearer) : undefined;
+  const authorizedUserId = sessionUser?.id ?? verifyKycUploadToken(bearer);
+  if (!authorizedUserId) return res.status(401).json({ error: 'Authentication required' });
+  if (userId && userId !== authorizedUserId) return res.status(403).json({ error: 'User mismatch' });
+
+  const user = await findUserById(authorizedUserId);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
-  // Parse base64 data URL: "data:image/jpeg;base64,/9j/..."
-  const match = documentBase64.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+  const match = documentBase64.match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
   if (!match) return res.status(400).json({ error: 'Invalid base64 image format' });
+  const [, mimeType, base64Data] = match;
+  const extension = mimeType === 'image/jpeg' ? 'jpg' : mimeType.split('/')[1];
+  const buffer = Buffer.from(base64Data, 'base64');
+  if (buffer.length === 0 || buffer.length > 10 * 1024 * 1024) {
+    return res.status(400).json({ error: 'Document must be between 1 byte and 10MB' });
+  }
 
-  const [, mimeType, b64Data] = match;
-  const ext      = mimeType.split('/')[1] ?? 'jpg';
-  const filename = `${userId}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
-  const buffer   = Buffer.from(b64Data, 'base64');
-
-  let docUrl: string;
-
+  const prefix = `${authorizedUserId}-${documentKind}-`;
+  const filename = `${prefix}${crypto.randomBytes(8).toString('hex')}.${extension}`;
+  const documentUrl = `/api/admin/kyc/document?userId=${encodeURIComponent(authorizedUserId)}&kind=${documentKind}`;
   try {
-    if (isSupabaseStorageConfigured()) {
-      // Use dedicated 'kyc-docs' bucket — private, 10 MB limit
-      const { url } = await uploadToSupabase(filename, buffer, mimeType, 'kyc-docs');
-      docUrl = url;
-    } else {
-      // Local fallback
-      fs.mkdirSync(LOCAL_KYC_DIR, { recursive: true });
-      fs.writeFileSync(path.join(LOCAL_KYC_DIR, filename), buffer);
-      docUrl = `/airo-assets/uploads/kyc/${filename}`;
+    fs.mkdirSync(kycDirectory, { recursive: true });
+    for (const oldFile of fs.readdirSync(kycDirectory).filter(file => file.startsWith(prefix))) {
+      fs.unlinkSync(path.join(kycDirectory, oldFile));
     }
-  } catch (err) {
-    console.error('kyc-document.write.failed', err);
+    fs.writeFileSync(path.join(kycDirectory, filename), buffer, { mode: 0o600 });
+  } catch (error) {
+    console.error('kyc-document.write.failed', error);
     return res.status(500).json({ error: 'Failed to save document' });
   }
 
-  await updateUser(userId, {
-    idDocumentUrl:   docUrl,
-    kycStatus:       'submitted',
-    kycSubmittedAt:  new Date().toISOString(),
+  await updateUser(authorizedUserId, {
+    ...(documentKind === 'id' ? { idDocumentUrl: documentUrl } : { selfieUrl: documentUrl }),
+    kycStatus: 'submitted',
+    kycSubmittedAt: new Date().toISOString(),
   } as Parameters<typeof updateUser>[1]);
-
-  return res.json({ ok: true, url: docUrl });
+  return res.json({ ok: true, url: documentUrl });
 }

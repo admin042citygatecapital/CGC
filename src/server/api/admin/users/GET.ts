@@ -48,6 +48,7 @@ export default async function handler(req: Request, res: Response) {
     idType: u.idType,
     idNumber: u.idNumber,
     idDocumentUrl: u.idDocumentUrl,
+    selfieUrl: u.selfieUrl,
     kycSubmittedAt: u.kycSubmittedAt,
     kycRejectionReason: u.kycRejectionReason,
     // Wallet addresses
