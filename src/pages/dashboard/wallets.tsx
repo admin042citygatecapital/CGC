@@ -24,6 +24,7 @@ import { useCustomerAuth } from '@/lib/customerAuth';
 import { newIdempotencyKey } from '@/lib/idempotency';
 import { useMarketWebSocket } from '@/lib/useMarketWebSocket';
 import { VirtualList } from '@/lib/VirtualList';
+import { CurrencyMark } from '@/components/CurrencyMark';
 import {
 Activity,
 AlertCircle,
@@ -72,11 +73,6 @@ const CCY_COLOR: Record<string, string> = {
   ETH: BLUE, USDT: '#26A17B', BNB: '#F3BA2F', SOL: PURPLE,
   CHF: RED, CAD: '#FF6B35', AUD: '#00B4D8', JPY: '#FF6B9D',
   SGD: '#4ECDC4', AED: '#45B7D1', NGN: '#00B4D8',
-};
-const CCY_FLAG: Record<string, string> = {
-  USD: '🇺🇸', EUR: '🇪🇺', GBP: '🇬🇧', CHF: '🇨🇭', CAD: '🇨🇦',
-  AUD: '🇦🇺', JPY: '🇯🇵', SGD: '🇸🇬', AED: '🇦🇪', NGN: '🇳🇬',
-  BTC: '₿', ETH: 'Ξ', USDT: '₮', BNB: 'B', SOL: '◎',
 };
 const CRYPTO = new Set(['BTC', 'ETH', 'USDT', 'BNB', 'SOL']);
 
@@ -300,7 +296,6 @@ function TickerPill({ symbol }: { symbol: string }) {
   const { tickers } = useMarketWebSocket([symbol], 8_000);
   const t    = tickers.get(symbol);
   const base = symbol.replace('USDT', '');
-  const col  = CCY_COLOR[base] ?? GOLD;
   const up   = (t?.change24h ?? 0) >= 0;
 
   return (
@@ -308,10 +303,7 @@ function TickerPill({ symbol }: { symbol: string }) {
       to={`/dashboard/trading/chart?symbol=${symbol}`}
       className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/[0.07] hover:border-white/[0.14] bg-white/[0.03] hover:bg-white/[0.06] transition-all shrink-0 group"
     >
-      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-        style={{ background: `${col}20`, color: col }}>
-        {base[0]}
-      </div>
+      <CurrencyMark currency={base} size={24} />
       <div>
         <p className="text-[10px] font-semibold text-white/50 group-hover:text-white/70 transition-colors">{base}</p>
         <AnimatePresence mode="popLayout">
@@ -938,17 +930,13 @@ export default function WalletsPage() {
                   <div className="divide-y divide-white/[0.04]">
                     {(overview?.currencies ?? []).map(c => {
                       const col      = CCY_COLOR[c.currency] ?? '#888';
-                      const flag     = CCY_FLAG[c.currency];
                       const isCrypto = CRYPTO.has(c.currency);
                       const isSel    = selectedCcy === c.currency;
                       return (
                         <button key={c.currency} onClick={() => setSelectedCcy(c.currency)}
                           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors text-left"
                           style={{ background: isSel ? `${col}08` : undefined }}>
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm"
-                            style={{ background: `${col}15`, border: `1px solid ${col}22` }}>
-                            {flag && flag.length <= 2 ? flag : <span className="text-[10px] font-bold" style={{ color: col }}>{c.currency.slice(0,2)}</span>}
-                          </div>
+                          <CurrencyMark currency={c.currency} size={36} />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
                               <span className="text-sm font-semibold text-white">{c.currency}</span>
@@ -1080,10 +1068,7 @@ export default function WalletsPage() {
                     style={{ background: `${cColor}06`, borderColor: `${cColor}20` }}
                   >
                     <div className="flex items-center gap-4 mb-5">
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0"
-                        style={{ background: `${cColor}18`, border: `1px solid ${cColor}28` }}>
-                        {CCY_FLAG[selectedW.currency] ?? selectedW.currency.slice(0,2)}
-                      </div>
+                      <CurrencyMark currency={selectedW.currency} size={48} />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-base font-bold text-white">{selectedW.currency}</span>

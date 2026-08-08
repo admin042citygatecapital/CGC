@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { useBackgroundSync } from '@/lib/backgroundSync';
+import { CurrencyMark, currencyOptionLabel } from '@/components/CurrencyMark';
 
 interface RateEntry {
   from:    string;
@@ -25,12 +26,6 @@ interface RatesData {
   rates:     Record<string, number>;
   fxMarkups?: { pairs?: Array<{ pair: string; markup: number; enabled: boolean }> };
 }
-
-const CURRENCY_FLAGS: Record<string, string> = {
-  USD:'🇺🇸', EUR:'🇪🇺', GBP:'🇬🇧', CHF:'🇨🇭', CAD:'🇨🇦',
-  AUD:'🇦🇺', JPY:'🇯🇵', SGD:'🇸🇬', AED:'🇦🇪', NGN:'🇳🇬',
-  BTC:'₿',   ETH:'Ξ',   USDT:'₮', BNB:'B',  SOL:'◎',
-};
 
 const CURRENCY_NAMES: Record<string, string> = {
   USD: 'US Dollar', EUR: 'Euro', GBP: 'British Pound', CHF: 'Swiss Franc', CAD: 'Canadian Dollar',
@@ -48,19 +43,6 @@ const CURRENCY_COLORS: Record<string, string> = {
 const FIAT_CURRENCIES    = ['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','NGN'];
 const CRYPTO_CURRENCIES  = ['BTC','ETH','USDT','BNB','SOL'];
 const ALL_CURRENCIES     = [...FIAT_CURRENCIES, ...CRYPTO_CURRENCIES];
-
-function CurrencyIcon({ currency, size = 32 }: { currency: string; size?: number }) {
-  const color = CURRENCY_COLORS[currency] ?? '#888';
-  const flag  = CURRENCY_FLAGS[currency];
-  return (
-    <div className="rounded-xl flex items-center justify-center shrink-0 text-sm font-bold"
-      style={{ width: size, height: size, background: `${color}18`, border: `1px solid ${color}28` }}>
-      {flag
-        ? <span aria-hidden="true" style={{ fontSize: size * 0.45 }}>{flag}</span>
-        : <span style={{ color, fontSize: size * 0.35 }}>{currency.slice(0, 2)}</span>}
-    </div>
-  );
-}
 
 export default function ExchangeRatesPage() {
   const { token } = useCustomerAuth();
@@ -229,12 +211,12 @@ export default function ExchangeRatesPage() {
                     className="flex-1 bg-transparent text-sm font-bold text-foreground focus:outline-none min-w-0"
                     placeholder="0"
                   />
-                  <CurrencyIcon currency={fromCcy} size={25} />
+                  <CurrencyMark currency={fromCcy} size={25} />
                   <div className="relative">
                     <select value={fromCcy} onChange={e => setFromCcy(e.target.value)}
                       aria-label="Currency to exchange from"
                       className="appearance-none bg-transparent text-xs font-semibold text-foreground/70 focus:outline-none cursor-pointer pr-4 max-w-[92px]">
-                      {availableCurrencies.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{CURRENCY_FLAGS[c]} {c}</option>)}
+                      {availableCurrencies.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{currencyOptionLabel(c)}</option>)}
                     </select>
                     <ChevronDown size={10} className="absolute right-0 top-1/2 -translate-y-1/2 text-foreground/30 pointer-events-none" />
                   </div>
@@ -255,12 +237,12 @@ export default function ExchangeRatesPage() {
                   <span className="flex-1 text-sm font-bold text-foreground/80 min-w-0 truncate">
                     {loading ? '…' : convertedAmount !== null ? fmtConverted(convertedAmount, toCcy) : '—'}
                   </span>
-                  <CurrencyIcon currency={toCcy} size={25} />
+                  <CurrencyMark currency={toCcy} size={25} />
                   <div className="relative">
                     <select value={toCcy} onChange={e => setToCcy(e.target.value)}
                       aria-label="Currency to exchange to"
                       className="appearance-none bg-transparent text-xs font-semibold text-foreground/70 focus:outline-none cursor-pointer pr-4 max-w-[92px]">
-                      {availableCurrencies.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{CURRENCY_FLAGS[c]} {c}</option>)}
+                      {availableCurrencies.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{currencyOptionLabel(c)}</option>)}
                     </select>
                     <ChevronDown size={10} className="absolute right-0 top-1/2 -translate-y-1/2 text-foreground/30 pointer-events-none" />
                   </div>
@@ -319,7 +301,7 @@ export default function ExchangeRatesPage() {
                       key={pair.to}
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
                       className={`flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.025] transition-colors ${i < ratePairs.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
-                      <CurrencyIcon currency={pair.to} size={36} />
+                      <CurrencyMark currency={pair.to} size={36} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-semibold text-foreground/80">{pair.to}</p>

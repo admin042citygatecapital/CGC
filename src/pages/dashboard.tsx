@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
+import { CurrencyMark } from '@/components/CurrencyMark';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -65,12 +66,6 @@ interface VirtualCard {
 }
 
 // ── Country flags for currencies ──────────────────────────────────────────────
-
-const CURRENCY_FLAGS: Record<string, string> = {
-  USD: '🇺🇸', EUR: '🇪🇺', GBP: '🇬🇧', CHF: '🇨🇭', CAD: '🇨🇦',
-  AUD: '🇦🇺', JPY: '🇯🇵', SGD: '🇸🇬', AED: '🇦🇪', NGN: '🇳🇬',
-  BTC: '₿',   ETH: 'Ξ',   USDT: '₮', BNB: 'B',  SOL: '◎',
-};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -546,7 +541,7 @@ function WalletTxModal({
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/6">
             <div className="flex items-center gap-2.5">
-              <span className="text-lg">{CURRENCY_FLAGS[currency] ?? '💱'}</span>
+              <CurrencyMark currency={currency} size={28} />
               <div>
                 <p className="text-sm font-semibold text-foreground">{currency} Transactions</p>
                 <p className="text-[10px] text-foreground/30">{filtered.length} recent entries</p>
@@ -1354,9 +1349,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {(balanceData?.currencies ?? []).slice(0, 8).map(c => {
-                      const color = CURRENCY_COLORS[c.currency] ?? '#888';
                       const isCrypto = CRYPTO_CURRENCIES.has(c.currency);
-                      const flag = CURRENCY_FLAGS[c.currency];
                       // Derive locked/pending from tx data
                       const pendingAmt = allTx
                         .filter(t => t.currency === c.currency && t.status === 'pending')
@@ -1375,15 +1368,7 @@ export default function DashboardPage() {
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                              {/* Flag or icon */}
-                              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
-                                style={{ background: `${color}18`, border: `1px solid ${color}28` }}>
-                                {flag && flag.length <= 2 ? (
-                                  <span className="text-base leading-none">{flag}</span>
-                                ) : (
-                                  <span className="text-xs font-bold" style={{ color }}>{c.currency.slice(0, 2)}</span>
-                                )}
-                              </div>
+                              <CurrencyMark currency={c.currency} size={32} />
                             </div>
                             <div className="flex flex-col items-end gap-1">
                               {isCrypto && (
@@ -1796,14 +1781,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex flex-col gap-2.5">
                     {cryptoBalances.map(c => {
-                      const color = CURRENCY_COLORS[c.currency] ?? '#888';
-                      const flag = CURRENCY_FLAGS[c.currency];
                       return (
                         <div key={c.currency} className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-bold shrink-0"
-                            style={{ background: `${color}18`, border: `1px solid ${color}28` }}>
-                            {flag ? <span className="text-sm">{flag}</span> : <span style={{ color }}>{c.currency.slice(0, 2)}</span>}
-                          </div>
+                          <CurrencyMark currency={c.currency} size={32} />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-foreground/80">{c.currency}</p>
                             <PrivacyValue
@@ -1832,14 +1812,9 @@ export default function DashboardPage() {
                   <h3 className="text-[11px] font-semibold text-foreground/40 uppercase tracking-[0.12em] mb-4">Fiat Wallets</h3>
                   <div className="flex flex-col gap-2.5">
                     {fiatBalances.slice(0, 5).map(c => {
-                      const color = CURRENCY_COLORS[c.currency] ?? '#888';
-                      const flag = CURRENCY_FLAGS[c.currency];
                       return (
                         <div key={c.currency} className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-bold shrink-0"
-                            style={{ background: `${color}18`, border: `1px solid ${color}28` }}>
-                            {flag ? <span className="text-sm">{flag}</span> : <span style={{ color }}>{c.currency.slice(0, 2)}</span>}
-                          </div>
+                          <CurrencyMark currency={c.currency} size={32} />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-foreground/80">{c.currency}</p>
                           </div>

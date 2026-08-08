@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { ArrowRight, TrendingUp, TrendingDown, RefreshCw, Shield, Lock, Zap, Globe, ArrowLeftRight, CheckCircle, Copy, Save, Loader2, AlertCircle } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { newIdempotencyKey } from '@/lib/idempotency';
+import { CurrencyMark, currencyOptionLabel } from '@/components/CurrencyMark';
 
 // ── Static display data (portfolio overview / security sections) ──────────────
 // These are illustrative examples shown to all visitors, not real user balances.
@@ -17,16 +18,16 @@ const cryptoAssets = [
 ];
 
 const fiatCurrencyMeta = [
-  { name: 'US Dollar',        symbol: 'USD', flag: '🇺🇸', color: '#10B981' },
-  { name: 'Euro',             symbol: 'EUR', flag: '🇪🇺', color: '#627EEA' },
-  { name: 'British Pound',    symbol: 'GBP', flag: '🇬🇧', color: '#C9A84C' },
-  { name: 'Japanese Yen',     symbol: 'JPY', flag: '🇯🇵', color: '#EC4899' },
-  { name: 'Singapore Dollar', symbol: 'SGD', flag: '🇸🇬', color: '#9945FF' },
-  { name: 'UAE Dirham',       symbol: 'AED', flag: '🇦🇪', color: '#F7931A' },
-  { name: 'Swiss Franc',      symbol: 'CHF', flag: '🇨🇭', color: '#14B8A6' },
-  { name: 'Canadian Dollar',  symbol: 'CAD', flag: '🇨🇦', color: '#A78BFA' },
-  { name: 'Australian Dollar', symbol: 'AUD', flag: '🇦🇺', color: '#00B4D8' },
-  { name: 'Nigerian Naira',   symbol: 'NGN', flag: '🇳🇬', color: '#10B981' },
+  { name: 'US Dollar',         symbol: 'USD', color: '#10B981' },
+  { name: 'Euro',              symbol: 'EUR', color: '#627EEA' },
+  { name: 'British Pound',     symbol: 'GBP', color: '#C9A84C' },
+  { name: 'Japanese Yen',      symbol: 'JPY', color: '#EC4899' },
+  { name: 'Singapore Dollar',  symbol: 'SGD', color: '#9945FF' },
+  { name: 'UAE Dirham',        symbol: 'AED', color: '#F7931A' },
+  { name: 'Swiss Franc',       symbol: 'CHF', color: '#14B8A6' },
+  { name: 'Canadian Dollar',   symbol: 'CAD', color: '#A78BFA' },
+  { name: 'Australian Dollar', symbol: 'AUD', color: '#00B4D8' },
+  { name: 'Nigerian Naira',    symbol: 'NGN', color: '#10B981' },
 ];
 
 const securityFeatures = [
@@ -348,10 +349,7 @@ export default function WalletPage() {
                   {cryptoDisplayAssets.slice(0, 4).map((asset, i) => (
                     <motion.div key={asset.symbol} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.07 }}
                       className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: `${asset.color}20`, color: asset.color }}>
-                        {asset.symbol[0]}
-                      </div>
+                      <CurrencyMark currency={asset.symbol} size={32} />
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between">
                           <p className="text-xs font-semibold text-foreground">{asset.symbol}</p>
@@ -406,10 +404,7 @@ export default function WalletPage() {
                   transition={{ delay: i * 0.07 }}
                   className="glass-card rounded-2xl p-5 gradient-border flex items-center gap-5 hover:border-primary/25 transition-colors group"
                 >
-                  <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                    style={{ background: `${asset.color}20`, color: asset.color }}>
-                    {asset.symbol[0]}
-                  </div>
+                  <CurrencyMark currency={asset.symbol} size={44} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
                       <div>
@@ -449,7 +444,7 @@ export default function WalletPage() {
                   className="glass-card rounded-2xl p-5 gradient-border hover:border-primary/25 transition-colors"
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="text-2xl">{c.flag}</span>
+                    <CurrencyMark currency={c.symbol} size={36} />
                     <div>
                       <p className="font-semibold text-foreground text-sm">{c.name}</p>
                       <p className="text-xs text-foreground/40">{c.symbol}</p>
@@ -502,18 +497,22 @@ export default function WalletPage() {
                 <div className="space-y-3 mb-5">
                   <div>
                     <label className="text-xs text-foreground/40 uppercase tracking-wide mb-2 block">You Pay</label>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <input
                         type="number"
                         value={amount}
                         min="0"
                         onChange={e => { setAmount(e.target.value); setSwapError(''); setSwapSuccess(''); }}
-                        className="flex-1 bg-white/[0.03] border border-primary/15 rounded-xl px-4 py-3 text-foreground text-lg font-semibold focus:outline-none focus:border-primary/40 transition-colors"
+                        className="flex-1 min-w-0 w-full bg-white/[0.03] border border-primary/15 rounded-xl px-4 py-3 text-foreground text-lg font-semibold focus:outline-none focus:border-primary/40 transition-colors"
                       />
-                      <select value={fromAsset} onChange={e => { setFromAsset(e.target.value); setSwapError(''); setSwapSuccess(''); }}
-                        className="bg-white/[0.03] border border-primary/15 rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary/40 transition-colors">
-                        {['BTC', 'ETH', 'SOL', 'USDT', 'BNB', 'USD', 'EUR', 'GBP'].map(c => <option key={c}>{c}</option>)}
-                      </select>
+                      <div className="flex items-center gap-2 w-full sm:w-auto bg-white/[0.03] border border-primary/15 rounded-xl px-3 focus-within:border-primary/40 transition-colors">
+                        <CurrencyMark currency={fromAsset} size={28} />
+                        <select value={fromAsset} onChange={e => { setFromAsset(e.target.value); setSwapError(''); setSwapSuccess(''); }}
+                          aria-label="Currency to exchange from"
+                          className="flex-1 sm:flex-none bg-transparent py-3 text-foreground focus:outline-none min-w-[92px]">
+                          {['BTC', 'ETH', 'SOL', 'USDT', 'BNB', 'USD', 'EUR', 'GBP'].map(c => <option key={c} value={c}>{currencyOptionLabel(c)}</option>)}
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -529,16 +528,20 @@ export default function WalletPage() {
                   </div>
                   <div>
                     <label className="text-xs text-foreground/40 uppercase tracking-wide mb-2 block">You Receive</label>
-                    <div className="flex gap-3">
-                      <div className="flex-1 bg-white/[0.03] border border-primary/20 rounded-xl px-4 py-3 text-xl font-bold text-gold-gradient">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1 min-w-0 w-full bg-white/[0.03] border border-primary/20 rounded-xl px-4 py-3 text-xl font-bold text-gold-gradient">
                         {receiveAmount > 0
                           ? receiveAmount.toLocaleString('en-US', { maximumFractionDigits: receiveAmount < 1 ? 8 : 2 })
                           : '—'}
                       </div>
-                      <select value={toAsset} onChange={e => { setToAsset(e.target.value); setSwapError(''); setSwapSuccess(''); }}
-                        className="bg-white/[0.03] border border-primary/15 rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary/40 transition-colors">
-                        {['USD', 'EUR', 'GBP', 'USDT', 'ETH', 'BTC', 'SOL', 'BNB'].map(c => <option key={c}>{c}</option>)}
-                      </select>
+                      <div className="flex items-center gap-2 w-full sm:w-auto bg-white/[0.03] border border-primary/15 rounded-xl px-3 focus-within:border-primary/40 transition-colors">
+                        <CurrencyMark currency={toAsset} size={28} />
+                        <select value={toAsset} onChange={e => { setToAsset(e.target.value); setSwapError(''); setSwapSuccess(''); }}
+                          aria-label="Currency to exchange to"
+                          className="flex-1 sm:flex-none bg-transparent py-3 text-foreground focus:outline-none min-w-[92px]">
+                          {['USD', 'EUR', 'GBP', 'USDT', 'ETH', 'BTC', 'SOL', 'BNB'].map(c => <option key={c} value={c}>{currencyOptionLabel(c)}</option>)}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
