@@ -58,7 +58,9 @@ import { Link,useNavigate } from 'react-router-dom';
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 interface SmtpStatus {
-  mode: 'oauth' | 'manual';
+  mode: 'resend' | 'oauth' | 'manual';
+  provider: 'resend' | 'zoho' | 'smtp';
+  resendReady: boolean;
   oauthReady: boolean;
   manualReady: boolean;
   hasRefreshToken: boolean;
@@ -232,7 +234,7 @@ function StatusTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
     </div>
   );
 
-  const smtpOk  = status.mode === 'oauth' ? status.oauthReady : status.manualReady;
+  const smtpOk  = status.resendReady || (status.mode === 'oauth' ? status.oauthReady : status.manualReady);
   const zohoOk  = status.oauthReady && status.hasRefreshToken && status.refreshTokenValid;
 
   return (
@@ -244,14 +246,14 @@ function StatusTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Wifi size={14} className={smtpOk ? 'text-emerald-400' : 'text-red-400'} />
-              <p className="text-white font-semibold text-sm">SMTP Transport</p>
+              <p className="text-white font-semibold text-sm">Production Delivery</p>
             </div>
             <StatusPill ok={smtpOk} label={smtpOk ? 'Healthy' : 'Degraded'} />
           </div>
           <div className="space-y-1.5 text-xs">
             <div className="flex justify-between">
-              <span className="text-white/30">Mode</span>
-              <span className="text-white/70 font-mono uppercase">{status.mode}</span>
+              <span className="text-white/30">Provider</span>
+              <span className="text-white/70 font-mono uppercase">{status.resendReady ? 'Resend HTTPS API' : status.mode}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-white/30">Queue size</span>
@@ -280,9 +282,9 @@ function StatusTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Shield size={14} className={zohoOk ? 'text-emerald-400' : 'text-amber-400'} />
-              <p className="text-white font-semibold text-sm">Zoho OAuth</p>
+              <p className="text-white font-semibold text-sm">Zoho Sending API</p>
             </div>
-            <StatusPill ok={zohoOk} label={zohoOk ? 'Authorised' : 'Needs Auth'} />
+            <StatusPill ok={status.resendReady || zohoOk} label={zohoOk ? 'Authorised' : status.resendReady ? 'Optional' : 'Needs Auth'} />
           </div>
           <div className="space-y-1.5 text-xs">
             <div className="flex justify-between">
@@ -297,11 +299,16 @@ function StatusTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
               <p className="text-amber-400/60 text-[10px] pt-1">{status.clientSecretReason}</p>
             )}
           </div>
-          {!zohoOk && (
+          {!zohoOk && !status.resendReady && (
             <Link to="/admin/zoho-setup"
               className="mt-3 flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-colors">
               <ExternalLink size={11} /> Re-authorise Zoho
             </Link>
+          )}
+          {!zohoOk && status.resendReady && (
+            <p className="mt-3 text-white/30 text-[10px] leading-relaxed">
+              Outgoing email uses Resend. Zoho OAuth is optional and does not affect the active production provider or Zoho-hosted inboxes.
+            </p>
           )}
         </div>
       </div>
