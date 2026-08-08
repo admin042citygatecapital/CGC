@@ -253,6 +253,19 @@ paths:
               schema:
                 type: object
 
+  /api/settings/preview:
+    get:
+      summary: Admin-managed product-preview notice
+      description: Returns the public preview notice while operational platform mode remains server-controlled.
+      tags: [Public]
+      responses:
+        '200':
+          description: Product-preview notice settings
+          content:
+            application/json:
+              schema:
+                type: object
+
   /api/contact:
     post:
       summary: Submit contact form
