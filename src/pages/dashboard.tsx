@@ -124,7 +124,7 @@ const CRYPTO_CURRENCIES = new Set(['BTC', 'ETH', 'USDT', 'BNB', 'SOL']);
 const QUICK_ACTIONS = [
   { icon: Send,          label: 'Send',         href: '/dashboard/transfers',     color: '#C9A84C' },
   { icon: ArrowDownLeft, label: 'Deposit',      href: '/dashboard/deposits',      color: '#10B981' },
-  { icon: Globe,         label: 'Rates',        href: '/dashboard/rates',         color: '#627EEA' },
+  { icon: Globe,         label: 'Exchange',     href: '/dashboard/exchange',      color: '#627EEA' },
   { icon: CreditCard,    label: 'Cards',        href: '/dashboard/cards',         color: '#9945FF' },
   { icon: BarChart2,     label: 'Trade',        href: '/dashboard/trading',       color: '#F7931A' },
   { icon: Shield,        label: 'Security',     href: '/dashboard/security',      color: '#F7931A' },
@@ -422,9 +422,9 @@ function SettingsPanel({
                 <ChevronRight size={12} className="text-foreground/20" />
               </Link>
 
-              {/* Exchange Rates */}
+              {/* Currency Exchange */}
               <Link
-                to="/dashboard/rates"
+                to="/dashboard/exchange"
                 onClick={onClose}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.03] transition-colors"
               >
@@ -432,8 +432,8 @@ function SettingsPanel({
                   <Globe size={13} className="text-foreground/40" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground/80">Exchange Rates</p>
-                  <p className="text-[10px] text-foreground/30">Live FX & converter</p>
+                  <p className="text-xs font-medium text-foreground/80">Currency Exchange</p>
+                  <p className="text-[10px] text-foreground/30">Flags, rates & converter</p>
                 </div>
                 <ChevronRight size={12} className="text-foreground/20" />
               </Link>
@@ -905,7 +905,7 @@ export default function DashboardPage() {
                 { label: 'Transfers',     href: '/dashboard/transfers' },
                 { label: 'Cards',         href: '/dashboard/cards' },
                 { label: 'Analytics',     href: '/dashboard/analytics' },
-                { label: 'Rates',         href: '/dashboard/rates' },
+                { label: 'Exchange',      href: '/dashboard/exchange' },
               ].map(({ label, href }) => (
                 <Link key={label} to={href}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium text-foreground/50 hover:text-foreground hover:bg-white/5 transition-all">
@@ -1867,7 +1867,7 @@ export default function DashboardPage() {
                   { icon: Shield,     label: 'Security',           href: '/dashboard/security',      sub: 'Sessions & alerts' },
                   { icon: FileText,   label: 'Statements',         href: '/dashboard/statements',    sub: 'Export PDF / CSV' },
                   { icon: Users,      label: 'Beneficiaries',      href: '/dashboard/beneficiaries', sub: 'Saved recipients' },
-                  { icon: Globe,      label: 'Exchange Rates',     href: '/dashboard/rates',         sub: 'Live FX & converter' },
+                  { icon: Globe,      label: 'Currency Exchange',  href: '/dashboard/exchange',      sub: 'Flags, rates & converter' },
                   { icon: Smartphone, label: 'Devices',            href: '/dashboard/devices',       sub: 'Trusted devices' },
                   { icon: User,       label: 'My Profile',         href: '/dashboard/profile',       sub: 'Personal info' },
                 ].map(({ icon: Icon, label, href, sub }, i, arr) => (

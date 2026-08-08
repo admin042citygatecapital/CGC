@@ -24,6 +24,11 @@ export interface ExchangeRates {
   GBP_USD:  number;
   JPY_USD:  number;
   CHF_USD:  number;
+  CAD_USD:  number;
+  AUD_USD:  number;
+  SGD_USD:  number;
+  AED_USD:  number;
+  NGN_USD:  number;
   updatedAt: string;
 }
 
@@ -152,6 +157,11 @@ const DEFAULTS: RatesConfig = {
     GBP_USD:  1.262,
     JPY_USD:  0.0065,
     CHF_USD:  1.11,
+    CAD_USD:  0.74,
+    AUD_USD:  0.65,
+    SGD_USD:  0.74,
+    AED_USD:  0.2723,
+    NGN_USD:  0.00066,
     updatedAt: new Date().toISOString(),
   },
   fees: {
@@ -180,6 +190,7 @@ const DEFAULTS: RatesConfig = {
       { pair: 'USD/AUD', markup: 0.4,  enabled: true },
       { pair: 'USD/SGD', markup: 0.5,  enabled: true },
       { pair: 'USD/AED', markup: 0.3,  enabled: true },
+      { pair: 'USD/NGN', markup: 0.8,  enabled: true },
       { pair: 'EUR/GBP', markup: 0.5,  enabled: true },
       { pair: 'BTC/USD', markup: 1.5,  enabled: true },
       { pair: 'ETH/USD', markup: 1.5,  enabled: true },
@@ -367,11 +378,12 @@ export function getWithdrawalUsage(userId: string): { todayUSD: number; monthUSD
       EUR: lr.EUR_USD,
       GBP: lr.GBP_USD,
       CHF: lr.CHF_USD,
-      CAD: 0.74,
-      AUD: 0.65,
+      CAD: lr.CAD_USD,
+      AUD: lr.AUD_USD,
       JPY: lr.JPY_USD,
-      SGD: 0.74,
-      AED: 0.27,
+      SGD: lr.SGD_USD,
+      AED: lr.AED_USD,
+      NGN: lr.NGN_USD,
       BTC:  lr.BTC_USD,
       ETH:  lr.ETH_USD,
       SOL:  lr.SOL_USD,

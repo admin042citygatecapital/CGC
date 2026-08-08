@@ -11,7 +11,7 @@ import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 
-const SUPPORTED = ['USD', 'EUR', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'SGD', 'AED',
+const SUPPORTED = ['USD', 'EUR', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'SGD', 'AED', 'NGN',
                    'BTC', 'ETH', 'SOL', 'USDT', 'BNB'];
 
 export default async function handler(req: Request, res: Response) {

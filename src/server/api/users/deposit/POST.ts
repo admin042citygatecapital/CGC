@@ -11,7 +11,7 @@ import { isOneOf, sanitizeNote } from '../../../lib/inputValidator.js';
 import { requireIdempotency } from '../../../lib/idempotency.js';
 import { requireFinancialOperations } from '../../../lib/platformMode.js';
 
-const VALID_CURRENCIES = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED'] as const;
+const VALID_CURRENCIES = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'] as const;
 const VALID_METHODS = ['bank_wire', 'crypto'] as const;
 const MAX_DEPOSIT_REQUEST = 1_000_000_000;
 

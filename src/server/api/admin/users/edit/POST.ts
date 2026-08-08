@@ -38,7 +38,7 @@ const STATUS_VALUES    = ['pending_verification','pending_kyc','pending_approval
 const KYC_VALUES       = ['not_submitted','submitted','approved','rejected'] as const;
 const ID_TYPE_VALUES   = ['passport','national_id','drivers_license','residence_permit'] as const;
 const TIER_VALUES      = ['personal','savings','business'] as const;
-const CURRENCY_VALUES  = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED'] as const;
+const CURRENCY_VALUES  = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'] as const;
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;

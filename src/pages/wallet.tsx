@@ -25,15 +25,17 @@ const fiatCurrencyMeta = [
   { name: 'UAE Dirham',       symbol: 'AED', flag: '🇦🇪', color: '#F7931A' },
   { name: 'Swiss Franc',      symbol: 'CHF', flag: '🇨🇭', color: '#14B8A6' },
   { name: 'Canadian Dollar',  symbol: 'CAD', flag: '🇨🇦', color: '#A78BFA' },
+  { name: 'Australian Dollar', symbol: 'AUD', flag: '🇦🇺', color: '#00B4D8' },
+  { name: 'Nigerian Naira',   symbol: 'NGN', flag: '🇳🇬', color: '#10B981' },
 ];
 
 const securityFeatures = [
   { icon: Lock,   title: 'Custody Status',       desc: 'No crypto custody is active in this preview. A contracted and reviewed provider is required before launch.',     color: '#C9A84C' },
   { icon: Shield, title: 'Multi-Signature',       desc: 'All withdrawals require multiple cryptographic signatures, eliminating single points of failure.',                color: '#627EEA' },
   { icon: RefreshCw, title: 'Real-time Monitoring', desc: '24/7 automated threat detection with instant alerts and transaction blocking on suspicious activity.',          color: '#10B981' },
-  { icon: Zap,    title: 'Instant Settlement',    desc: 'On-chain transactions settle in seconds. Fiat conversions happen at the real mid-market rate, instantly.',       color: '#9945FF' },
+  { icon: Zap,    title: 'Settlement Preview',    desc: 'The interface demonstrates how settlement and conversion status could be presented after providers are approved.', color: '#9945FF' },
   { icon: Globe,  title: 'Launch Readiness',      desc: 'Legal review, KYC/AML providers, geographic controls, and custody approval are required before launch.',         color: '#EC4899' },
-  { icon: ArrowLeftRight, title: 'Seamless Exchange', desc: 'Swap between any crypto or fiat currency in your wallet at the best available rate, with no hidden fees.', color: '#F7931A' },
+  { icon: ArrowLeftRight, title: 'Exchange Preview', desc: 'Compare supported crypto and fiat currencies using transparent indicative rates and flags.', color: '#F7931A' },
 ];
 
 
@@ -73,11 +75,12 @@ export default function WalletPage() {
           EUR:  r.EUR_USD,
           GBP:  r.GBP_USD,
           CHF:  r.CHF_USD,
-          CAD:  0.74,
-          AUD:  0.65,
+          CAD:  r.CAD_USD,
+          AUD:  r.AUD_USD,
           JPY:  r.JPY_USD,
-          SGD:  0.74,
-          AED:  0.27,
+          SGD:  r.SGD_USD,
+          AED:  r.AED_USD,
+          NGN:  r.NGN_USD,
           BTC:  r.BTC_USD,
           ETH:  r.ETH_USD,
           SOL:  r.SOL_USD,
@@ -102,7 +105,7 @@ export default function WalletPage() {
   // "1 unit of X = N USD" map — live rates from admin panel, no hardcoded fallbacks
   const USD_RATES: Record<string, number> = useMemo(() => liveRates ?? {
     USD: 1, EUR: 1.086, GBP: 1.262, CHF: 1.11, CAD: 0.74,
-    AUD: 0.65, JPY: 0.0065, SGD: 0.74, AED: 0.27,
+    AUD: 0.65, JPY: 0.0065, SGD: 0.74, AED: 0.2723, NGN: 0.00066,
     BTC: 67420, ETH: 3840, SOL: 182.5, USDT: 1, BNB: 598,
   }, [liveRates]);
 

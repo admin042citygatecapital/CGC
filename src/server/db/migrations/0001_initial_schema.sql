@@ -45,7 +45,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE TYPE tx_currency AS ENUM (
     'USD', 'EUR', 'GBP', 'BTC', 'ETH', 'USDT', 'BNB', 'SOL',
-    'CHF', 'JPY', 'CAD', 'AUD', 'SGD', 'AED'
+    'CHF', 'JPY', 'CAD', 'AUD', 'SGD', 'AED', 'NGN'
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 

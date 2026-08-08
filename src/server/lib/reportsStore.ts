@@ -55,7 +55,7 @@ function toUsdRate(): Record<string, number> {
   const r   = cfg.rates;
   return {
     USD: 1, EUR: r.EUR_USD, GBP: r.GBP_USD, CHF: r.CHF_USD,
-    CAD: 0.74, AUD: 0.65, JPY: r.JPY_USD, SGD: 0.74, AED: 0.27,
+    CAD: r.CAD_USD, AUD: r.AUD_USD, JPY: r.JPY_USD, SGD: r.SGD_USD, AED: r.AED_USD, NGN: r.NGN_USD,
     BTC: r.BTC_USD, ETH: r.ETH_USD, SOL: r.SOL_USD, USDT: r.USDT_USD, BNB: r.BNB_USD,
   };
 }

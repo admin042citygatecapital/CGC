@@ -31,6 +31,7 @@ const routeImports: Record<string, () => Promise<unknown>> = {
   '/dashboard/devices':            () => import('../pages/dashboard/devices'),
   '/dashboard/beneficiaries':      () => import('../pages/dashboard/beneficiaries'),
   '/dashboard/rates':              () => import('../pages/dashboard/rates'),
+  '/dashboard/exchange':           () => import('../pages/dashboard/rates'),
   '/dashboard/profile':            () => import('../pages/dashboard/profile'),
   '/dashboard/settings':           () => import('../pages/dashboard/settings'),
 

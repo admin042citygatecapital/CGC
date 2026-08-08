@@ -193,7 +193,7 @@ export default function ClientEditModal({ user, onClose, onSuccess }: Props) {
                   <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Primary Display Currency</label>
                   <select value={form.primaryCurrency ?? 'USD'} onChange={e => set('primaryCurrency', e.target.value)}
                     className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40 transition-colors">
-                    {['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','BTC','ETH','SOL','USDT','BNB'].map(c => (
+                    {['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','NGN','BTC','ETH','SOL','USDT','BNB'].map(c => (
                       <option key={c} value={c} className="bg-[#0A0A0A]">{c}</option>
                     ))}
                   </select>

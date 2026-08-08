@@ -64,7 +64,7 @@ export const txStatusEnum = pgEnum('tx_status', [
 
 export const txCurrencyEnum = pgEnum('tx_currency', [
   'USD', 'EUR', 'GBP', 'BTC', 'ETH', 'USDT', 'BNB', 'SOL',
-  'CHF', 'JPY', 'CAD', 'AUD', 'SGD', 'AED',
+  'CHF', 'JPY', 'CAD', 'AUD', 'SGD', 'AED', 'NGN',
 ]);
 
 export const adminRoleEnum = pgEnum('admin_role', [

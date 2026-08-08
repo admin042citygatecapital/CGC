@@ -14,7 +14,7 @@ import { safeParseId, sanitizeString, sanitizeNote, isOneOf } from '../../../../
 
 const VALID_TYPES: TxType[]      = ['deposit','withdrawal','transfer','crypto_buy','crypto_sell','wire_transfer','fee','refund','manual_credit','manual_debit'];
 const VALID_STATUSES: TxStatus[] = ['pending','completed','failed','rejected','flagged'];
-const VALID_CURRENCIES: TxCurrency[] = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY'];
+const VALID_CURRENCIES: TxCurrency[] = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'];
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;

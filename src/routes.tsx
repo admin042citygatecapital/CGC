@@ -145,6 +145,7 @@ export const routes: RouteObject[] = [
   { path: '/dashboard/devices',       element: <CustomerOnly><DashboardDevices /></CustomerOnly> },
   { path: '/dashboard/beneficiaries', element: <CustomerOnly><DashboardBeneficiaries /></CustomerOnly> },
   { path: '/dashboard/rates',         element: <CustomerOnly><DashboardRates /></CustomerOnly> },
+  { path: '/dashboard/exchange',      element: <CustomerOnly><DashboardRates /></CustomerOnly> },
   { path: '/dashboard/trading',         element: <CustomerOnly><DashboardTrading /></CustomerOnly> },
   { path: '/dashboard/trading/markets',   element: <CustomerOnly><DashboardTradingMarkets /></CustomerOnly> },
   { path: '/dashboard/trading/orders',    element: <CustomerOnly><DashboardTradingOrders /></CustomerOnly> },

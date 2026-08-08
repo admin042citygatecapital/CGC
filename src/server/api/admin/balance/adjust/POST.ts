@@ -17,12 +17,12 @@ import { sendBalanceAdjustmentEmail } from '../../../../lib/emailService.js';
 import { safeParseId, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
 
 const VALID_TYPES      = ['credit','debit'] as const;
-const SUPPORTED_CURRENCIES = ['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','BTC','ETH','SOL','USDT','BNB'] as const;
+const SUPPORTED_CURRENCIES = ['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','NGN','BTC','ETH','SOL','USDT','BNB'] as const;
 
 // Approximate USD conversion rates for the legacy balance field
 const TO_USD: Record<string, number> = {
   USD: 1, EUR: 1.09, GBP: 1.27, CHF: 1.11, CAD: 0.74,
-  AUD: 0.65, JPY: 0.0065, SGD: 0.74, AED: 0.27,
+  AUD: 0.65, JPY: 0.0065, SGD: 0.74, AED: 0.2723, NGN: 0.00066,
   BTC: 67420, ETH: 3840, SOL: 182.5, USDT: 1, BNB: 598,
 };
 

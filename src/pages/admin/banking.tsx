@@ -69,7 +69,7 @@ const RISK_STYLES: Record<string, string> = {
   high:   'bg-red-500/15 text-red-400',
 };
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'SGD', 'AED', 'BTC', 'ETH', 'SOL', 'USDT', 'BNB'];
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'SGD', 'AED', 'NGN', 'BTC', 'ETH', 'SOL', 'USDT', 'BNB'];
 
 function riskLevel(tx: PendingTx): 'low' | 'medium' | 'high' {
   if (tx.flagged) return 'high';

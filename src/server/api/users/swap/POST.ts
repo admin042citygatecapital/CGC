@@ -19,7 +19,7 @@ import { requireIdempotency } from '../../../lib/idempotency.js';
 import { requireFinancialOperations } from '../../../lib/platformMode.js';
 
 // Explicit asset allowlist — prevents arbitrary string injection into transaction records
-const SUPPORTED_ASSETS = ['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','BTC','ETH','SOL','USDT','BNB'] as const;
+const SUPPORTED_ASSETS = ['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','NGN','BTC','ETH','SOL','USDT','BNB'] as const;
 
 /** Build a "1 unit = N USD" map from live ratesStore */
 function buildToUsdMap(cfg: ReturnType<typeof readRatesConfig>): Record<string, number> {
@@ -29,11 +29,12 @@ function buildToUsdMap(cfg: ReturnType<typeof readRatesConfig>): Record<string, 
     EUR:  r.EUR_USD,
     GBP:  r.GBP_USD,
     CHF:  r.CHF_USD,
-    CAD:  0.74,
-    AUD:  0.65,
+    CAD:  r.CAD_USD,
+    AUD:  r.AUD_USD,
     JPY:  r.JPY_USD,
-    SGD:  0.74,
-    AED:  0.27,
+    SGD:  r.SGD_USD,
+    AED:  r.AED_USD,
+    NGN:  r.NGN_USD,
     BTC:  r.BTC_USD,
     ETH:  r.ETH_USD,
     SOL:  r.SOL_USD,

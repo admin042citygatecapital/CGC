@@ -248,7 +248,7 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void; onSu
         <div>
           <label className={labelCls}>Primary Currency</label>
           <select value={form.primaryCurrency} onChange={set('primaryCurrency')} className={selectCls}>
-            {['USD','EUR','GBP','CHF','CAD','AUD','SGD','AED'].map(c => <option key={c} value={c}>{c}</option>)}
+            {['USD','EUR','GBP','CHF','CAD','AUD','SGD','AED','NGN'].map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>

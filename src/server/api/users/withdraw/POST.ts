@@ -17,7 +17,7 @@ import { sanitizeString, sanitizeNote, isOneOf } from '../../../lib/inputValidat
 import { requireIdempotency } from '../../../lib/idempotency.js';
 import { requireFinancialOperations } from '../../../lib/platformMode.js';
 
-const VALID_CURRENCIES     = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED'] as const;
+const VALID_CURRENCIES     = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'] as const;
 const VALID_DEST_TYPES     = ['bank','crypto'] as const;
 
 /** Apply a FeeRule to an amount. Returns the fee amount. */
@@ -40,11 +40,12 @@ function buildToUsdMap(cfg: ReturnType<typeof readRatesConfig>): Record<string, 
     EUR: r.EUR_USD,
     GBP: r.GBP_USD,
     CHF: r.CHF_USD,
-    CAD: 0.74,
-    AUD: 0.65,
+    CAD: r.CAD_USD,
+    AUD: r.AUD_USD,
     JPY: r.JPY_USD,
-    SGD: 0.74,
-    AED: 0.27,
+    SGD: r.SGD_USD,
+    AED: r.AED_USD,
+    NGN: r.NGN_USD,
     BTC:  r.BTC_USD,
     ETH:  r.ETH_USD,
     SOL:  r.SOL_USD,

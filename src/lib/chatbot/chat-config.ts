@@ -55,7 +55,7 @@ You can help customers with:
 - Market screener: /dashboard/trading/markets
 - Price charts & order placement: /dashboard/trading/chart
 - Order management: /dashboard/trading/orders
-- Exchange rates: /dashboard/rates
+- Currency exchange preview: /dashboard/exchange
 - Beneficiaries: /dashboard/beneficiaries
 - Account statements: /dashboard/statements
 - Security center: /dashboard/security

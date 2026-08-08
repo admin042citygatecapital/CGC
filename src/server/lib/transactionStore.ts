@@ -14,7 +14,7 @@ import { stripDangerousKeys } from './inputValidator.js';
 
 export type TxType     = 'deposit' | 'withdrawal' | 'transfer' | 'crypto_buy' | 'crypto_sell' | 'wire_transfer' | 'fee' | 'refund' | 'manual_credit' | 'manual_debit';
 export type TxStatus   = 'pending' | 'completed' | 'failed' | 'rejected' | 'flagged' | 'frozen';
-export type TxCurrency = 'USD' | 'EUR' | 'GBP' | 'BTC' | 'ETH' | 'USDT' | 'BNB' | 'SOL' | 'CHF' | 'JPY' | 'CAD' | 'AUD' | 'SGD' | 'AED';
+export type TxCurrency = 'USD' | 'EUR' | 'GBP' | 'BTC' | 'ETH' | 'USDT' | 'BNB' | 'SOL' | 'CHF' | 'JPY' | 'CAD' | 'AUD' | 'SGD' | 'AED' | 'NGN';
 
 export interface Transaction {
   id:              string;

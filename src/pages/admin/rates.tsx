@@ -867,6 +867,11 @@ export default function AdminRates() {
                         { key: 'GBP_USD', label: 'British Pound (GBP)', symbol: 'GBP', color: '#10B981' },
                         { key: 'JPY_USD', label: 'Japanese Yen (JPY)',  symbol: 'JPY', color: '#EF4444' },
                         { key: 'CHF_USD', label: 'Swiss Franc (CHF)',   symbol: 'CHF', color: '#6366F1' },
+                        { key: 'CAD_USD', label: 'Canadian Dollar (CAD)', symbol: 'CAD', color: '#EF4444' },
+                        { key: 'AUD_USD', label: 'Australian Dollar (AUD)', symbol: 'AUD', color: '#00B4D8' },
+                        { key: 'SGD_USD', label: 'Singapore Dollar (SGD)', symbol: 'SGD', color: '#4ECDC4' },
+                        { key: 'AED_USD', label: 'UAE Dirham (AED)', symbol: 'AED', color: '#45B7D1' },
+                        { key: 'NGN_USD', label: 'Nigerian Naira (NGN)', symbol: 'NGN', color: '#10B981' },
                       ] as ExchangeRateField[]
                     ).map(f => (
                       <div key={f.key} className="px-5 py-3 flex items-center gap-4">
