@@ -12,7 +12,7 @@ import AriaChatWidget from '@/components/AriaChatWidget';
 import ClientOnly from '@/components/ClientOnly';
 import PreviewBanner from '@/components/PreviewBanner';
 import CookieBannerErrorBoundary from '@/components/CookieBannerErrorBoundary';
-import SmartsuppWidget from '@/components/SmartsuppWidget';
+import TawkWidget from '@/components/TawkWidget';
 import AiroErrorBoundary from '../export-plugins/AiroErrorBoundary';
 import PageSkeleton from './components/PageSkeleton';
 import RootLayout from './layouts/RootLayout';
@@ -34,7 +34,7 @@ const STANDALONE_PREFIXES = ['/admin', '/login', '/register', '/dashboard'];
  * LayoutWrapper is the persistent root element of the route tree.
  * React Router keeps it mounted for the entire SPA lifetime — only the
  * <Outlet> children swap on navigation. This makes it the ideal home for
- * SmartsuppWidget: it loads the script once, survives all navigations,
+ * TawkWidget: it loads the script once, survives all navigations,
  * and has access to useLocation, useAdminAuth, and useCustomerAuth.
  */
 function LayoutWrapper() {
@@ -48,7 +48,7 @@ function LayoutWrapper() {
       <PreviewBanner />
       {/* Single mount point — never re-mounts during navigation */}
       <ClientOnly>
-        <SmartsuppWidget />
+        <TawkWidget />
         <AriaChatWidget />
       </ClientOnly>
 

@@ -62,23 +62,23 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
     [
       "default-src 'self'",
       // Google Fonts serves only CSS from googleapis.com — no scripts needed from there.
-      `script-src ${scriptSrc}`,
+      `script-src ${scriptSrc} https://embed.tawk.to`,
       // unsafe-inline required for Tailwind/Vite-injected inline styles;
       // style nonces would require build-time changes — accepted tradeoff.
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://embed.tawk.to",
       // Google Fonts woff2 files are served from fonts.gstatic.com
-      "font-src 'self' https://fonts.gstatic.com data:",
+      "font-src 'self' https://fonts.gstatic.com https://embed.tawk.to data:",
       // Images: self + data URIs (inline SVG/base64) + blob (canvas exports) +
       // platform asset CDN (airoapp.ai). No wildcard https: — explicit allowlist only.
-      "img-src 'self' data: blob: https://*.airoapp.ai https://*.c24.airoapp.ai",
+      "img-src 'self' data: blob: https://*.airoapp.ai https://*.c24.airoapp.ai https://*.tawk.to https://*.tawk.link",
       // XHR/fetch: self + Zoho OAuth endpoints (used by server-side token refresh
       // triggered from the browser admin panel) + platform CDN.
-      `connect-src 'self' ${ZOHO_ACCOUNTS} https://mail.zoho.com https://*.airoapp.ai https://*.c24.airoapp.ai`,
+      `connect-src 'self' ${ZOHO_ACCOUNTS} https://mail.zoho.com https://*.airoapp.ai https://*.c24.airoapp.ai https://*.tawk.to https://*.tawk.link wss://*.tawk.to`,
       "worker-src 'self' blob:",
       "manifest-src 'self'",
       "media-src 'self' blob:",
       "object-src 'none'",
-      "frame-src 'none'",
+      "frame-src https://*.tawk.to https://*.tawk.link",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       // form-action: self only — prevents form hijacking to external URLs

@@ -107,6 +107,22 @@ describe('securityHeaders', () => {
     expect(headers['Content-Security-Policy']).toContain("frame-ancestors 'none'");
   });
 
+  it('allows the configured Tawk live-support origins', async () => {
+    const { securityHeaders } = await import('../../server/lib/securityMiddleware.js');
+    const headers: Record<string, string> = {};
+    const req = { headers: {}, secure: false } as unknown as Request;
+    const res = {
+      setHeader: vi.fn((k: string, v: string) => { headers[k] = v; }),
+      locals: {},
+    } as unknown as Response;
+    const next = vi.fn();
+    securityHeaders(req, res, next);
+    const csp = headers['Content-Security-Policy'];
+    expect(csp).toContain('https://embed.tawk.to');
+    expect(csp).toContain('wss://*.tawk.to');
+    expect(csp).toContain('frame-src https://*.tawk.to https://*.tawk.link');
+  });
+
   it('sets HSTS on HTTPS requests', async () => {
     const { securityHeaders } = await import('../../server/lib/securityMiddleware.js');
     const headers: Record<string, string> = {};
