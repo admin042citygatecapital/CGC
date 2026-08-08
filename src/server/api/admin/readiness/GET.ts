@@ -94,18 +94,20 @@ function checkAdminAuth(): ReadinessCheck {
       detail: 'Admin login will fail. Add ADMIN_PASSWORD_HASH in Settings → Secrets.',
     };
   }
-  if (!hash.startsWith('$2')) {
+  const valid = hash.startsWith('$argon2') || hash.startsWith('$2a$') ||
+    hash.startsWith('$2b$') || hash.startsWith('$2y$') || hash.startsWith('100000:');
+  if (!valid) {
     return {
       id: 'admin_auth', name: 'Admin Authentication', subsystem: 'Authentication',
       status: 'FAIL', critical: true,
-      message: 'ADMIN_PASSWORD_HASH is not a valid bcrypt hash.',
-      detail: 'Hash must start with $2a$ or $2b$. Regenerate with bcryptjs at cost 12.',
+      message: 'ADMIN_PASSWORD_HASH is not in a supported secure format.',
+      detail: 'Use Argon2id. Legacy bcrypt and PBKDF2 hashes remain accepted for migration.',
     };
   }
   return {
     id: 'admin_auth', name: 'Admin Authentication', subsystem: 'Authentication',
     status: 'PASS', critical: true,
-    message: 'Admin password hash is present and bcrypt-formatted.',
+    message: 'Admin password hash is present and securely formatted.',
     detail: `Hash prefix: ${hash.slice(0, 7)}…`,
   };
 }

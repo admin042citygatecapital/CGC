@@ -6,7 +6,7 @@
  * Validates credentials and creates a session immediately — no OTP step.
  * All other security systems remain active:
  *  - Brute-force lockout (per-email + per-IP, exponential backoff)
- *  - Timing-safe bcrypt password comparison
+ *  - Secure Argon2id verification with legacy bcrypt/PBKDF2 compatibility
  *  - HttpOnly Secure session cookie
  *  - Full audit + login log on every outcome
  *  - Login alert email on success
@@ -45,7 +45,7 @@ export default async function handler(req: Request, res: Response) {
   // ── Credential verification ──────────────────────────────────────────────
   const admin = findAdminByEmail(email);
 
-  // Always run bcrypt compare to prevent timing-based user enumeration
+  // Always run a password verification path to reduce timing-based user enumeration.
   const hashToCheck = admin?.passwordHash ?? '$2a$12$invalidhashpaddingtomakethiswork00000000000000000000000';
   const passwordOk  = await verifyPassword(password, hashToCheck);
 
