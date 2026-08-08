@@ -3,8 +3,9 @@
  * Send a test email using a specific template to the admin's email.
  */
 import type { Request, Response } from 'express';
-import { getTemplate, type TemplateId } from '../../../../lib/emailTemplateStore.js';
-import { sendMail } from '../../../../lib/emailService.js';
+import { getTemplate, renderTemplate, type TemplateId } from '../../../../lib/emailTemplateStore.js';
+import { renderBrandedEmail } from '../../../../lib/emailLayout.js';
+import { getEmailDeliveryStatus, sendEmail } from '../../../../lib/smtpTransport.js';
 
 export default async function handler(req: Request, res: Response) {
   try {
@@ -35,28 +36,34 @@ export default async function handler(req: Request, res: Response) {
       device:           'Chrome on Windows',
     };
 
-    let subject = template.subject;
-    let body    = template.body;
-    for (const [k, v] of Object.entries(sampleVars)) {
-      subject = subject.replaceAll(`{${k}}`, v);
-      body    = body.replaceAll(`{${k}}`, v);
+    const rendered = renderTemplate(template, sampleVars);
+    const html = renderBrandedEmail({
+      title: template.name,
+      bodyHtml: rendered.body,
+      testLabel: `Admin template test: ${template.name}`,
+    });
+
+    const result = await sendEmail({ to, subject: `[TEST] ${rendered.subject}`, html });
+    if (!result.success) return res.status(502).json({ ok: false, error: result.error ?? 'Delivery provider rejected the email.' });
+
+    let deliveryStatus: string | null = null;
+    if (result.messageId) {
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 750 : 1_250));
+        deliveryStatus = (await getEmailDeliveryStatus(result.messageId)).status;
+        if (deliveryStatus && !['queued', 'scheduled', 'sent'].includes(deliveryStatus)) break;
+      }
     }
 
-    const html = `
-<div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:0 auto;background:#111;color:#e5e5e5;padding:32px;border-radius:12px;border:1px solid rgba(201,168,76,0.2)">
-  <div style="text-align:center;margin-bottom:24px">
-    <span style="font-size:20px;font-weight:700;color:#C9A84C">City Gate Capital</span>
-  </div>
-  ${body}
-  <hr style="margin:32px 0;border-color:rgba(255,255,255,0.1)"/>
-  <p style="font-size:11px;color:#555;text-align:center">
-    This is a test email sent from the City Gate Capital admin panel.<br/>
-    Template: <strong>${template.name}</strong>
-  </p>
-</div>`;
-
-    await sendMail({ to, subject: `[TEST] ${subject}`, html });
-    return res.json({ ok: true, message: `Test email sent to ${to}` });
+    const failed = ['bounced', 'canceled', 'complained', 'failed', 'suppressed'].includes(deliveryStatus ?? '');
+    return res.status(failed ? 502 : 200).json({
+      ok: !failed,
+      message: failed
+        ? `Resend reported ${deliveryStatus} for ${to}`
+        : `Template test accepted for ${to}${deliveryStatus ? `; provider status: ${deliveryStatus}` : ''}`,
+      messageId: result.messageId,
+      deliveryStatus,
+    });
   } catch (err) {
     return res.status(500).json({ ok: false, error: String(err) });
   }

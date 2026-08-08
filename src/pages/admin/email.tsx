@@ -84,6 +84,20 @@ interface EmailTemplate {
   updatedBy: string;
 }
 
+interface EmailBrandingConfig {
+  brandName: string;
+  logoUrl: string;
+  websiteUrl: string;
+  websiteButtonLabel: string;
+  supportEmail: string;
+  supportPhone: string;
+  postalAddress: string;
+  primaryColor: string;
+  footerMessage: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
 interface QueueItem {
   id: string;
   to: string;
@@ -319,15 +333,22 @@ function StatusTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
 // ─────────────────────────────────────────────────────────────────────────────
 function TemplatesTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [branding,  setBranding]  = useState<EmailBrandingConfig | null>(null);
   const [loading,   setLoading]   = useState(true);
   const [editing,   setEditing]   = useState<EmailTemplate | null>(null);
   const [saving,    setSaving]    = useState(false);
+  const [savingBranding, setSavingBranding] = useState(false);
   const [preview,   setPreview]   = useState(false);
+  const [testTo,    setTestTo]    = useState('admin@citygate.capital');
+  const [testingTemplate, setTestingTemplate] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/email/templates', { headers: authHeaders() })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.templates) setTemplates(d.templates); })
+      .then(d => {
+        if (d?.templates) setTemplates(d.templates);
+        if (d?.branding) setBranding(d.branding);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -347,6 +368,39 @@ function TemplatesTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
       setTemplates(prev => prev.map(t => t.id === editing.id ? { ...t, subject: editing.subject, body: editing.body } : t));
       setEditing(null);
     } else showToast(d.error ?? 'Save failed', false);
+  }
+
+  async function saveBranding() {
+    if (!branding) return;
+    setSavingBranding(true);
+    const r = await fetch('/api/admin/email/templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ kind: 'branding', branding }),
+    });
+    const d = await r.json();
+    setSavingBranding(false);
+    if (r.ok && d.branding) {
+      setBranding(d.branding);
+      showToast('Email branding and website link saved');
+    } else showToast(d.error ?? 'Branding save failed', false);
+  }
+
+  function patchBranding<K extends keyof EmailBrandingConfig>(key: K, value: EmailBrandingConfig[K]) {
+    setBranding(current => current ? { ...current, [key]: value } : current);
+  }
+
+  async function sendTemplateTest() {
+    if (!editing || !testTo.trim()) return;
+    setTestingTemplate(true);
+    const r = await fetch('/api/admin/smtp/test-template', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ templateId: editing.id, to: testTo.trim() }),
+    });
+    const d = await r.json();
+    setTestingTemplate(false);
+    showToast(d.message ?? d.error ?? (r.ok ? 'Template test sent' : 'Template test failed'), r.ok);
   }
 
   const CATEGORY_ORDER = ['account', 'auth', 'kyc', 'transaction', 'security'];
@@ -402,14 +456,45 @@ function TemplatesTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
           ))}
         </div>
 
+        <div className="flex flex-wrap items-end gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-3">
+          <label className="flex-1 min-w-[240px]">
+            <span className="text-white/30 text-[10px] uppercase tracking-wide mb-1 block">Send this template as a test</span>
+            <input type="email" value={testTo} onChange={event => setTestTo(event.target.value)}
+              placeholder="admin@citygate.capital"
+              className="w-full bg-black/20 border border-white/8 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-primary/40" />
+          </label>
+          <button onClick={sendTemplateTest} disabled={testingTemplate || !testTo.trim()}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-primary/25 bg-primary/10 text-primary text-xs font-semibold disabled:opacity-50">
+            {testingTemplate ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
+            Send Test
+          </button>
+        </div>
+
         {preview ? (
-          <div className="rounded-2xl border border-white/5 overflow-hidden">
+          <div className="rounded-2xl border border-white/5 overflow-hidden bg-[#0A0A0A]">
             <div className="px-4 py-2 border-b border-white/5 bg-white/[0.02]">
               <p className="text-white/50 text-xs"><span className="text-white/25">Subject: </span>{editing.subject}</p>
             </div>
-            <div className="p-4 bg-[#0A0A0A]"
-              dangerouslySetInnerHTML={{ __html: editing.body }}
-              style={{ fontFamily: 'Inter, Arial, sans-serif', color: '#fff', fontSize: 14, lineHeight: 1.7 }} />
+            {branding && (
+              <div className="p-5 border-b border-white/5 bg-black flex justify-center">
+                <img src={branding.logoUrl} alt={branding.brandName} className="max-h-24 max-w-[360px] w-full object-contain" />
+              </div>
+            )}
+            <div className="p-6">
+              <h2 className="text-white text-xl font-semibold mb-4">{editing.name}</h2>
+              <div dangerouslySetInnerHTML={{ __html: editing.body }}
+                style={{ fontFamily: 'Inter, Arial, sans-serif', color: '#d0d0d0', fontSize: 14, lineHeight: 1.7 }} />
+              {branding && (
+                <div className="text-center mt-7">
+                  <a href={branding.websiteUrl} target="_blank" rel="noreferrer"
+                    className="inline-flex px-5 py-2.5 rounded-lg text-black text-xs font-bold"
+                    style={{ backgroundColor: branding.primaryColor }}>
+                    {branding.websiteButtonLabel}
+                  </a>
+                  <p className="text-white/25 text-[10px] mt-4">{branding.footerMessage}</p>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -432,6 +517,66 @@ function TemplatesTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
 
   return (
     <div className="pt-4 space-y-5">
+      {branding && (
+        <div className="rounded-2xl border border-primary/20 bg-primary/[0.03] p-5 space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-white font-semibold text-sm">Email Branding & Banking Website</p>
+              <p className="text-white/35 text-xs mt-1">Applied to every production email. The logo and website button are clickable.</p>
+            </div>
+            <button onClick={saveBranding} disabled={savingBranding}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/20 border border-primary/30 text-primary text-xs font-semibold hover:bg-primary/30 disabled:opacity-50">
+              {savingBranding ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
+              Save Branding
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {([
+              ['brandName', 'Brand Name', 'City Gate Capital'],
+              ['logoUrl', 'Email Logo URL', 'https://citygate.capital/assets/brand/city-gate-capital-horizontal.png'],
+              ['websiteUrl', 'Banking Website URL', 'https://citygate.capital'],
+              ['websiteButtonLabel', 'Website Button Text', 'Open City Gate Capital'],
+              ['supportEmail', 'Support Email', 'support@citygate.capital'],
+              ['supportPhone', 'Support Phone', '+44 7888 382458'],
+              ['postalAddress', 'Postal Address', '1 Canada Square, Canary Wharf, London'],
+              ['primaryColor', 'Primary Color', '#C9A84C'],
+            ] as Array<[keyof EmailBrandingConfig, string, string]>).map(([key, label, placeholder]) => (
+              <label key={key} className={key === 'logoUrl' || key === 'postalAddress' ? 'md:col-span-2' : ''}>
+                <span className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">{label}</span>
+                <input value={String(branding[key] ?? '')} placeholder={placeholder}
+                  onChange={event => patchBranding(key, event.target.value as never)}
+                  className="w-full bg-black/20 border border-white/8 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-primary/40" />
+              </label>
+            ))}
+          </div>
+
+          <label className="block">
+            <span className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Footer Message</span>
+            <textarea value={branding.footerMessage} rows={3}
+              onChange={event => patchBranding('footerMessage', event.target.value)}
+              placeholder="Message displayed in the footer of every system email."
+              className="w-full bg-black/20 border border-white/8 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-primary/40 resize-y" />
+          </label>
+
+          <div className="rounded-xl border border-white/8 bg-[#0b0b0b] p-4">
+            <p className="text-white/25 text-[10px] uppercase tracking-widest mb-3">Live Branding Preview</p>
+            <div className="flex flex-col items-center text-center gap-3">
+              <a href={branding.websiteUrl} target="_blank" rel="noreferrer" className="block">
+                <img src={branding.logoUrl} alt={branding.brandName} className="max-h-24 max-w-full object-contain" />
+              </a>
+              <a href={branding.websiteUrl} target="_blank" rel="noreferrer"
+                className="inline-flex px-5 py-2.5 rounded-lg text-black text-xs font-bold"
+                style={{ backgroundColor: branding.primaryColor }}>
+                {branding.websiteButtonLabel}
+              </a>
+              <p className="text-white/35 text-xs">{branding.footerMessage}</p>
+              <p className="text-white/20 text-[10px]">{branding.supportEmail} · {branding.websiteUrl}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {CATEGORY_ORDER.map(cat => {
         const items = grouped[cat];
         if (!items?.length) return null;

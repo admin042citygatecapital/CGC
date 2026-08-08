@@ -6,6 +6,7 @@
 import type { Request, Response } from 'express';
 import { getEmailDeliveryStatus, sendEmail, type EmailDeliveryStatus } from '../../../../lib/smtpTransport.js';
 import { loadSmtpConfig, type SmtpMode } from '../../../../lib/smtpConfigStore.js';
+import { escapeEmailHtml, renderBrandedEmail } from '../../../../lib/emailLayout.js';
 
 const EMAIL_TYPES = ['connectivity', 'verification', 'otp', 'password_reset', 'transaction', 'login_alert', 'withdrawal', 'admin_alert'] as const;
 type EmailType = typeof EMAIL_TYPES[number];
@@ -24,16 +25,13 @@ async function waitForDelivery(messageId: string): Promise<EmailDeliveryStatus |
 }
 
 function buildTestHtml(type: EmailType, to: string): { subject: string; html: string } {
-  const base = `<div style="background:#0A0A0A;font-family:Inter,Arial,sans-serif;padding:40px;border-radius:16px;max-width:560px;margin:auto;color:#fff;">
-    <img src="https://citygate.capital/assets/IMG-20260519-WA0000.jpg" height="48" style="height:48px;width:auto;margin-bottom:24px;" alt="City Gate Capital"/>`;
-  const footer = `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:24px 0;"/>
-    <p style="color:rgba(255,255,255,0.3);font-size:12px;margin:0;">This is a test email from City Gate Capital Admin Panel · ${new Date().toUTCString()}</p></div>`;
+  const safeTo = escapeEmailHtml(to);
 
   const templates: Record<EmailType, { subject: string; body: string }> = {
     connectivity: {
       subject: '✅ CGC Email Test — Connectivity',
       body: `<h2 style="color:#C9A84C;margin:0 0 12px;">Email Delivery Confirmed</h2>
-             <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.7;">Transport is working correctly. Sent to: <strong>${to}</strong></p>`,
+             <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.7;">Transport is working correctly. Sent to: <strong>${safeTo}</strong></p>`,
     },
     verification: {
       subject: '🔐 CGC Test — Email Verification',
@@ -81,7 +79,14 @@ function buildTestHtml(type: EmailType, to: string): { subject: string; html: st
   };
 
   const t = templates[type] ?? templates.connectivity;
-  return { subject: t.subject, html: `${base}${t.body}${footer}` };
+  return {
+    subject: t.subject,
+    html: renderBrandedEmail({
+      title: t.subject.replace(/^\S+\s+CGC Test\s+—\s+/, '').replace(/^CGC Email Test\s+—\s+/, ''),
+      bodyHtml: t.body,
+      testLabel: `Admin delivery test · ${new Date().toUTCString()}`,
+    }),
+  };
 }
 
 export default async function handler(req: Request, res: Response) {

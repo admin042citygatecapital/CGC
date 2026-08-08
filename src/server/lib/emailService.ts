@@ -29,6 +29,8 @@ import { getSecret } from '#airo/secrets';
 import { getValidAccessToken, invalidateTokenCache, getResolvedAccountId } from './zohoTokenStore.js';
 import { sendEmail as smtpSend } from './smtpTransport.js';
 import { enqueueEmail } from './emailQueue.js';
+import { escapeEmailHtml, renderBrandedEmail, websiteButton } from './emailLayout.js';
+import { getTemplate, renderTemplate, type TemplateId } from './emailTemplateStore.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -203,36 +205,23 @@ async function send(payload: MailPayload): Promise<void> {
 // ─── HTML helpers ─────────────────────────────────────────────────────────────
 
 function goldButton(text: string, url: string): string {
-  return `<a href="${url}" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#F0D080);color:#000;font-weight:700;padding:14px 32px;border-radius:10px;text-decoration:none;font-size:15px;">${text}</a>`;
+  return websiteButton(text, url);
 }
 
 function emailWrapper(title: string, bodyHtml: string): string {
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#0A0A0A;font-family:Inter,Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0">
-  <tr><td align="center" style="padding:40px 20px;">
-    <table width="600" cellpadding="0" cellspacing="0"
-      style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;overflow:hidden;">
-      <tr><td style="background:linear-gradient(135deg,#0A1F44,#0d2a5e);padding:32px 40px;text-align:center;">
-        <img src="https://citygate.capital/assets/IMG-20260519-WA0000.jpg"
-          alt="City Gate Capital" height="56" style="height:56px;width:auto;"/>
-        <p style="color:#C9A84C;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;margin:8px 0 0;">
-          Premium Digital Banking</p>
-      </td></tr>
-      <tr><td style="padding:40px;">
-        <h2 style="color:#fff;font-size:22px;margin:0 0 20px;">${title}</h2>
-        ${bodyHtml}
-        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:32px 0;"/>
-        <p style="color:rgba(255,255,255,0.3);font-size:12px;margin:0;">
-          City Gate Capital Ltd &bull; 1 Canada Square, Canary Wharf, London<br/>
-          <a href="mailto:support@citygate.capital" style="color:#C9A84C;">support@citygate.capital</a>
-          &bull; +44 7888 382458
-        </p>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-</body></html>`;
+  return renderBrandedEmail({ title, bodyHtml });
+}
+
+function configuredTemplate(
+  id: TemplateId,
+  vars: Record<string, string>,
+  fallback: { subject: string; title: string; body: string },
+): { subject: string; html: string } {
+  const template = getTemplate(id);
+  if (!template) return { subject: fallback.subject, html: emailWrapper(fallback.title, fallback.body) };
+  const safeVars = Object.fromEntries(Object.entries(vars).map(([key, value]) => [key, escapeEmailHtml(String(value))]));
+  const rendered = renderTemplate(template, safeVars);
+  return { subject: rendered.subject, html: emailWrapper(template.name, rendered.body) };
 }
 
 function parseUaShort(ua: string): string {
@@ -267,57 +256,43 @@ export async function sendVerificationEmail(to: string, name: string, token: str
 }
 
 export async function sendWelcomeEmail(to: string, name: string) {
-  await send({
-    to,
+  const content = configuredTemplate('welcome', {
+    user_name: name,
+    email: to,
+    date: new Date().toLocaleDateString('en-GB'),
+    account_number: 'Available in your secure dashboard',
+  }, {
     subject: 'Welcome to City Gate Capital — Account Under Review',
-    html: emailWrapper('Welcome to City Gate Capital',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Your email has been verified. Your account is now under review by our compliance team. You will receive a notification once your KYC documents have been reviewed and your account is approved.</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Expected review time: <strong style="color:#C9A84C;">1–3 business days</strong>.</p>
-       <p style="color:rgba(255,255,255,0.4);font-size:13px;">Questions? <a href="mailto:support@citygate.capital" style="color:#C9A84C;">support@citygate.capital</a></p>`
-    ),
+    title: 'Welcome to City Gate Capital',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your email has been verified and your account is under review.</p>`,
   });
+  await send({ to, ...content });
 }
 
 export async function sendApprovalEmail(to: string, name: string) {
-  await send({
-    to,
+  const content = configuredTemplate('kyc_approved', {
+    user_name: name,
+    date: new Date().toLocaleDateString('en-GB'),
+    account_number: 'Available in your secure dashboard',
+  }, {
     subject: 'Account Approved — Welcome to City Gate Capital',
-    html: emailWrapper('Your Account Has Been Approved',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Congratulations! Your City Gate Capital account has been <strong style="color:#10B981;">approved</strong>. You now have full access to our premium digital banking services including:</p>
-       <ul style="color:rgba(255,255,255,0.6);font-size:14px;line-height:2;">
-         <li>Multi-currency digital wallet</li>
-         <li>International SWIFT/SEPA transfers</li>
-         <li>Crypto exchange (BTC, ETH, USDT)</li>
-         <li>Premium savings accounts</li>
-       </ul>
-       <p style="margin:28px 0;">${goldButton('Access Your Dashboard', 'https://citygate.capital/dashboard')}</p>
-       <p style="color:rgba(255,255,255,0.4);font-size:13px;">For support: <a href="mailto:support@citygate.capital" style="color:#C9A84C;">support@citygate.capital</a></p>`
-    ),
+    title: 'Your Account Has Been Approved',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your account has been approved.</p>`,
   });
+  await send({ to, ...content });
 }
 
 export async function sendRejectionEmail(to: string, name: string, reason: string) {
-  await send({
-    to,
+  const content = configuredTemplate('kyc_rejected', {
+    user_name: name,
+    rejection_reason: reason,
+    date: new Date().toLocaleDateString('en-GB'),
+  }, {
     subject: 'City Gate Capital — Application Status Update',
-    html: emailWrapper('Account Application Update',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">After reviewing your application, we are unable to approve your account at this time.</p>
-       <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:16px 20px;margin:20px 0;">
-         <p style="color:#fca5a5;font-size:14px;margin:0;"><strong>Reason:</strong> ${reason}</p>
-       </div>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">You may resubmit your application with the correct documentation. Please ensure:</p>
-       <ul style="color:rgba(255,255,255,0.6);font-size:14px;line-height:2;">
-         <li>Government-issued photo ID is clear and valid</li>
-         <li>Proof of address is dated within 3 months</li>
-         <li>All personal details match your official documents</li>
-       </ul>
-       <p style="margin:28px 0;">${goldButton('Resubmit Application', 'https://citygate.capital/accounts')}</p>
-       <p style="color:rgba(255,255,255,0.4);font-size:13px;">Questions? <a href="mailto:support@citygate.capital" style="color:#C9A84C;">support@citygate.capital</a></p>`
-    ),
+    title: 'Account Application Update',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your application could not be approved.</p><p><strong>Reason:</strong> ${escapeEmailHtml(reason)}</p>`,
   });
+  await send({ to, ...content });
 }
 
 export async function sendAdminNewUserAlert(adminEmail: string, user: { name: string; email: string; country?: string; ip?: string }) {
@@ -347,17 +322,17 @@ export async function sendAdminNewUserAlert(adminEmail: string, user: { name: st
 
 export async function sendPasswordResetEmail(to: string, name: string, token: string, baseUrl: string) {
   const url = `${baseUrl}/reset-password?token=${token}`;
-  await send({
-    to,
+  const content = configuredTemplate('password_reset', {
+    user_name: name,
+    reset_link: url,
+    expiry_time: '1 hour',
+    date: new Date().toLocaleDateString('en-GB'),
+  }, {
     subject: 'Reset Your Password — City Gate Capital',
-    html: emailWrapper('Reset Your Password',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">We received a request to reset your City Gate Capital account password. Click the button below to set a new password.</p>
-       <p style="margin:28px 0;">${goldButton('Reset Password', url)}</p>
-       <p style="color:rgba(255,255,255,0.4);font-size:13px;">This link expires in <strong>1 hour</strong>. If you did not request a password reset, please ignore this email — your password will remain unchanged.</p>
-       <p style="color:rgba(255,255,255,0.4);font-size:13px;">For security, never share this link with anyone.</p>`
-    ),
+    title: 'Reset Your Password',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>${goldButton('Reset Password', url)}</p>`,
   });
+  await send({ to, ...content });
 }
 
 export async function sendAdminOtpEmail(to: string, name: string, otp: string, ip: string, ua: string) {
@@ -474,22 +449,17 @@ export async function sendAdminFailedOtpAlertEmail(
  * and any non-admin OTP flows that need a simpler signature.
  */
 export async function sendOtpEmail(to: string, name: string, otp: string) {
-  await send({
-    to,
-    subject: '🔐 Your Verification Code — City Gate Capital',
-    html: emailWrapper('Your Verification Code',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Hello <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Use the code below to complete your verification.</p>
-       <div style="margin:28px 0;text-align:center;">
-         <div style="display:inline-block;background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:24px 40px;">
-           <p style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin:0 0 12px;">Verification Code</p>
-           <p style="color:#C9A84C;font-size:42px;font-weight:800;letter-spacing:0.3em;margin:0;font-family:monospace;">${otp}</p>
-           <p style="color:rgba(255,255,255,0.3);font-size:12px;margin:12px 0 0;">Expires in 10 minutes</p>
-         </div>
-       </div>
-       <p style="color:rgba(255,255,255,0.4);font-size:13px;">If you did not request this code, please ignore this email.</p>`
-    ),
+  const content = configuredTemplate('two_fa_code', {
+    user_name: name,
+    otp_code: otp,
+    expiry_time: '10 minutes',
+    date: new Date().toLocaleDateString('en-GB'),
+  }, {
+    subject: 'Your Verification Code — City Gate Capital',
+    title: 'Your Verification Code',
+    body: `<p>Hello ${escapeEmailHtml(name)},</p><p>Your verification code is <strong>${escapeEmailHtml(otp)}</strong>.</p>`,
   });
+  await send({ to, ...content });
 }
 
 /**

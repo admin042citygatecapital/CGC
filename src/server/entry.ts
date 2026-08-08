@@ -314,6 +314,8 @@ import { seoRoutes } from "../lib/seo-routes";
 import { logStartupCredentialState } from "./lib/zohoTokenStore";
 import { loadSmtpConfigFromDb } from "./lib/smtpConfigStore";
 import { loadConfigFromDb } from "./lib/configStore";
+import { loadEmailBrandingFromDb } from "./lib/emailBrandingStore";
+import { loadEmailTemplatesFromDb } from "./lib/emailTemplateStore";
 import { getSecret } from "#airo/secrets";
 import { validateEnvAtStartup } from "./lib/envValidator";
 import { APP_ENV } from "./lib/envConfig";
@@ -1265,6 +1267,8 @@ if (import.meta.env.PROD) {
 		Promise.all([
 			loadConfigFromDb().catch(e => console.warn('configStore.load.skipped', String(e))),
 			loadSmtpConfigFromDb().catch(e => console.warn('smtpConfigStore.load.skipped', String(e))),
+			loadEmailBrandingFromDb().catch(e => console.warn('emailBranding.load.skipped', String(e))),
+			loadEmailTemplatesFromDb().catch(e => console.warn('emailTemplates.load.skipped', String(e))),
 		]).then(() => {
 			// ── Start email queue retry worker ──────────────────────────────────
 			startEmailQueueWorker(smtpSendEmail);

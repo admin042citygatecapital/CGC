@@ -9,9 +9,13 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { eq } from 'drizzle-orm';
+import { getDb, isDatabaseConfigured } from '../db/db.js';
+import { config as configTable } from '../db/schema.js';
 
 const DATA_DIR  = '/private/email';
 const DATA_FILE = path.join(DATA_DIR, 'templates.json');
+const CONFIG_KEY = 'email_templates';
 
 export type TemplateId =
   | 'welcome'
@@ -228,6 +232,8 @@ Date: {date}</p>
   },
 ];
 
+let cache: EmailTemplate[] | null = null;
+
 // ── Store functions ───────────────────────────────────────────────────────────
 
 function ensureDir() {
@@ -235,8 +241,9 @@ function ensureDir() {
 }
 
 export function loadTemplates(): EmailTemplate[] {
+  if (cache) return cache.map(template => ({ ...template }));
   ensureDir();
-  if (!fs.existsSync(DATA_FILE)) return [...DEFAULTS];
+  if (!fs.existsSync(DATA_FILE)) return DEFAULTS.map(template => ({ ...template }));
   try {
     const raw = fs.readFileSync(DATA_FILE, 'utf-8');
     const saved = JSON.parse(raw) as EmailTemplate[];
@@ -246,9 +253,10 @@ export function loadTemplates(): EmailTemplate[] {
     for (const def of DEFAULTS) {
       if (!savedIds.has(def.id)) merged.push(def);
     }
-    return merged;
+    cache = merged;
+    return merged.map(template => ({ ...template }));
   } catch {
-    return [...DEFAULTS];
+    return DEFAULTS.map(template => ({ ...template }));
   }
 }
 
@@ -262,7 +270,11 @@ export function saveTemplate(id: TemplateId, patch: { subject?: string; body?: s
   const idx = all.findIndex(t => t.id === id);
   if (idx < 0) throw new Error(`Template not found: ${id}`);
   all[idx] = { ...all[idx], ...patch, updatedAt: new Date().toISOString(), updatedBy };
-  fs.writeFileSync(DATA_FILE, JSON.stringify(all, null, 2), 'utf-8');
+  cache = all;
+  try { fs.writeFileSync(DATA_FILE, JSON.stringify(all, null, 2), 'utf-8'); } catch { /* DB remains authoritative in production */ }
+  persistTemplates(all, updatedBy).catch(error =>
+    console.error(JSON.stringify({ event: 'emailTemplates.write.failed', error: String(error) }))
+  );
   return all[idx];
 }
 
@@ -284,4 +296,28 @@ export function renderTemplate(template: EmailTemplate, vars: Record<string, str
     body    = body.replaceAll(placeholder, val);
   }
   return { subject, body };
+}
+
+async function persistTemplates(templates: EmailTemplate[], updatedBy: string): Promise<void> {
+  if (!isDatabaseConfigured()) return;
+  await getDb().insert(configTable)
+    .values({ key: CONFIG_KEY, value: templates as unknown as Record<string, unknown>, updatedBy })
+    .onConflictDoUpdate({
+      target: configTable.key,
+      set: { value: templates as unknown as Record<string, unknown>, updatedAt: new Date(), updatedBy },
+    });
+}
+
+/** Load persisted admin template edits into the synchronous runtime cache. */
+export async function loadEmailTemplatesFromDb(): Promise<void> {
+  if (!isDatabaseConfigured()) return;
+  try {
+    const rows = await getDb().select().from(configTable).where(eq(configTable.key, CONFIG_KEY)).limit(1);
+    if (!rows.length || !Array.isArray(rows[0].value)) return;
+    const saved = rows[0].value as unknown as EmailTemplate[];
+    const savedIds = new Set(saved.map(template => template.id));
+    cache = [...saved, ...DEFAULTS.filter(template => !savedIds.has(template.id))];
+  } catch (error) {
+    console.warn(JSON.stringify({ event: 'emailTemplates.load.skipped', error: String(error) }));
+  }
 }
