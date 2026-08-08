@@ -7,6 +7,7 @@ import Header from '@/layouts/parts/Header';
 import Website from '@/layouts/Website';
 import { usePageViewTracking } from '@/lib/useAnalytics';
 import LogoIntro from '@/components/LogoIntro';
+import WebsiteAnnouncement from '@/components/WebsiteAnnouncement';
 
 /**
  * Root layout component that wraps all pages with consistent header and footer.
@@ -118,6 +119,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       </Helmet>
       <ScrollRestoration />
       <Header />
+      <WebsiteAnnouncement />
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>

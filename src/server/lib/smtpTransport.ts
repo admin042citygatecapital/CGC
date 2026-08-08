@@ -34,6 +34,11 @@ export interface SendResult {
   transport:  'resend' | 'none';
 }
 
+export type EmailDeliveryStatus =
+  | 'bounced' | 'canceled' | 'clicked' | 'complained' | 'delivered'
+  | 'delivery_delayed' | 'failed' | 'opened' | 'queued' | 'scheduled'
+  | 'sent' | 'suppressed';
+
 const MAX_RETRIES   = 3;
 const RETRY_BASE_MS = 800;
 
@@ -102,6 +107,25 @@ export async function sendEmail(
 
   console.error(JSON.stringify({ event: 'email.failed', to, subject, error: lastError, attempts: MAX_RETRIES }));
   return { success: false, error: lastError, attempts: MAX_RETRIES, durationMs: Date.now() - t0, transport: 'resend' };
+}
+
+/**
+ * Fetch the provider's latest event for an email accepted by Resend.
+ * This is intentionally separate from sendEmail: ordinary application sends
+ * remain fast, while the admin test center can verify final delivery.
+ */
+export async function getEmailDeliveryStatus(
+  messageId: string,
+): Promise<{ status: EmailDeliveryStatus | null; error?: string }> {
+  const resend = getResend();
+  if (!resend) return { status: null, error: 'RESEND_API_KEY not configured' };
+  try {
+    const { data, error } = await resend.emails.get(messageId);
+    if (error) return { status: null, error: error.message };
+    return { status: data?.last_event ?? null };
+  } catch (err) {
+    return { status: null, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 /**

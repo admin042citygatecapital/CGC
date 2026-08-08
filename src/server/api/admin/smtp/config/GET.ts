@@ -7,6 +7,11 @@ import { loadSmtpConfig } from '../../../../lib/smtpConfigStore.js';
 
 export default function handler(_req: Request, res: Response) {
   const cfg = loadSmtpConfig();
-  // Never return the password in plaintext
-  return res.json({ ...cfg, password: cfg.password ? '••••••••' : '' });
+  // Never return delivery credentials to the browser.
+  return res.json({
+    ...cfg,
+    password: cfg.password ? '••••••••' : '',
+    oauthClientSecret: cfg.oauthClientSecret ? '••••••••' : '',
+    oauthRefreshToken: cfg.oauthRefreshToken ? '••••••••' : '',
+  });
 }

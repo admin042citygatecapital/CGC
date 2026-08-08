@@ -39,6 +39,8 @@ interface SmtpConfig {
 
 interface SmtpStatus {
   mode: 'oauth' | 'manual';
+  provider: 'resend' | 'none';
+  resendReady: boolean;
   oauthReady: boolean;
   manualReady: boolean;
   hasAccountId: boolean;
@@ -214,7 +216,7 @@ export default function SmtpManagementPage() {
   const [testMode,    setTestMode]    = useState<'oauth' | 'manual' | 'auto'>('auto');
   const [testLoading, setTestLoading] = useState(false);
   const [testResult,  setTestResult]  = useState<{
-    ok: boolean; message: string; transport?: string; durationMs?: number; attempts?: number;
+    ok: boolean; message: string; transport?: string; durationMs?: number; attempts?: number; deliveryStatus?: string;
   } | null>(null);
 
   const [overrideUserId, setOverrideUserId] = useState('');
@@ -555,7 +557,7 @@ export default function SmtpManagementPage() {
           <div>
             <h1 className="text-xl font-bold text-foreground">SMTP Management</h1>
             <p className="text-xs text-muted-foreground">
-              Dual-mode transport · OAuth2 primary · Manual SMTP fallback · Auto-retry queue
+              Resend API delivery · Zoho business inboxes · Auto-retry queue
             </p>
           </div>
           <button onClick={() => { fetchStatus(); fetchLogs(); }}
@@ -567,8 +569,12 @@ export default function SmtpManagementPage() {
         {/* Mode toggle */}
         {status && (
           <div className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border flex-wrap">
-            <span className="text-xs font-medium text-muted-foreground">Active Mode:</span>
-            {(['oauth', 'manual'] as const).map(m => (
+            <span className="text-xs font-medium text-muted-foreground">Active Provider:</span>
+            {status.resendReady ? (
+              <span className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground flex items-center gap-1.5">
+                <Zap size={12} /> Resend API
+              </span>
+            ) : (['oauth', 'manual'] as const).map(m => (
               <button key={m} onClick={() => switchMode(m)}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   status.mode === m
@@ -580,8 +586,14 @@ export default function SmtpManagementPage() {
               </button>
             ))}
             <div className="ml-auto flex items-center gap-2 flex-wrap">
-              <StatusPill ok={status.oauthReady}  label="OAuth" />
-              <StatusPill ok={status.manualReady} label="SMTP" />
+              {status.resendReady ? (
+                <StatusPill ok label="Resend ready" />
+              ) : (
+                <>
+                  <StatusPill ok={status.oauthReady}  label="OAuth" />
+                  <StatusPill ok={status.manualReady} label="SMTP" />
+                </>
+              )}
               {status.queue.queued > 0 && (
                 <span className="text-xs text-yellow-400 flex items-center gap-1">
                   <Clock size={11} /> {status.queue.queued} queued
@@ -597,7 +609,7 @@ export default function SmtpManagementPage() {
         )}
 
         {/* OAuth warning banner */}
-        {status && !status.clientSecretValid && (
+        {status && !status.resendReady && !status.clientSecretValid && (
           <div className="p-4 rounded-xl bg-red-500/8 border border-red-500/25 flex gap-3">
             <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
             <div>
@@ -640,9 +652,21 @@ export default function SmtpManagementPage() {
         {/* ── STATUS TAB ── */}
         {activeTab === 'status' && status && (
           <div className="space-y-4">
-            {/* OAuth health */}
+            {/* Active provider health */}
+            {status.resendReady ? (
+              <Card>
+                <SectionTitle icon={Zap} label="Production Delivery Provider" />
+                <div className="p-4 rounded-lg border bg-emerald-500/5 border-emerald-500/20 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Resend HTTPS API</p>
+                    <p className="text-xs text-muted-foreground mt-1">The production API key is configured. Zoho continues to receive business email for citygate.capital.</p>
+                  </div>
+                  <StatusPill ok label="Ready" />
+                </div>
+              </Card>
+            ) : (
             <Card>
-              <SectionTitle icon={Zap} label="OAuth2 Health" />
+              <SectionTitle icon={Zap} label="Zoho OAuth2 Fallback Health" />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {[
                   { label: 'Account ID',     ok: status.hasAccountId },
@@ -663,6 +687,7 @@ export default function SmtpManagementPage() {
                 </p>
               )}
             </Card>
+            )}
 
             {/* Queue stats */}
             <Card>
@@ -692,7 +717,7 @@ export default function SmtpManagementPage() {
               <SectionTitle icon={Mail} label="Sender Configuration" />
               <div className="space-y-2 text-sm">
                 {[
-                  ['Mode',        status.mode === 'oauth' ? 'OAuth2 (Zoho REST API)' : 'Manual SMTP'],
+                  ['Provider',    status.resendReady ? 'Resend HTTPS API' : (status.mode === 'oauth' ? 'OAuth2 (Zoho REST API)' : 'Manual SMTP')],
                   ['Sender',      status.senderEmail],
                   ['Sender Name', status.senderName],
                   ['SMTP Host',   status.manualHost ?? '—'],
@@ -708,7 +733,7 @@ export default function SmtpManagementPage() {
             </Card>
 
             {/* Force OAuth flush */}
-            <Card>
+            {!status.resendReady && <Card>
               <SectionTitle icon={RotateCcw} label="Force OAuth Cache Flush & Queue Drain" />
               <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
                 Clears the in-memory OAuth token cache, fetches a fresh access token using the current{' '}
@@ -779,13 +804,22 @@ export default function SmtpManagementPage() {
                   </div>
                 </div>
               )}
-            </Card>
+            </Card>}
           </div>
         )}
 
         {/* ── CONFIG TAB ── */}
         {activeTab === 'config' && config && (
           <div className="space-y-5">
+            {status?.resendReady && (
+              <Card>
+                <SectionTitle icon={Shield} label="Production Environment" />
+                <p className="text-sm text-foreground font-medium">Resend API is active</p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  The API key is stored as a protected Render environment variable and is never returned to this admin page. Sender: {status.senderEmail}.
+                </p>
+              </Card>
+            )}
             {/* OAuth */}
             <Card>
               <SectionTitle icon={Zap} label="OAuth2 Credentials (Zoho)" />
@@ -917,7 +951,9 @@ export default function SmtpManagementPage() {
                     ? <CheckCircle size={14} className="text-emerald-400" />
                     : <XCircle size={14} className="text-red-400" />}
                   <span className={`text-sm font-bold ${testResult.ok ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {testResult.ok ? 'Delivered' : 'Failed'}
+                    {testResult.ok
+                      ? (['delivered', 'opened', 'clicked'].includes(testResult.deliveryStatus ?? '') ? 'Delivered' : 'Accepted')
+                      : (testResult.deliveryStatus === 'suppressed' ? 'Suppressed' : 'Failed')}
                   </span>
                   {testResult.transport && (
                     <span className="text-xs text-muted-foreground ml-auto">via {testResult.transport}</span>

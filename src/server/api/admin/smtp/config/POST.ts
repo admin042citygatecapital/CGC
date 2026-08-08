@@ -22,11 +22,23 @@ export default function handler(req: Request, res: Response) {
     if (typeof body.senderName === 'string')      patch.senderName = body.senderName.trim();
     if (typeof body.encryption === 'string')      patch.encryption = body.encryption;
     if (typeof body.oauthClientId === 'string')   patch.oauthClientId = body.oauthClientId.trim();
-    if (typeof body.oauthClientSecret === 'string') patch.oauthClientSecret = body.oauthClientSecret.trim();
-    if (typeof body.oauthRefreshToken === 'string') patch.oauthRefreshToken = body.oauthRefreshToken.trim();
+    if (typeof body.oauthClientSecret === 'string' && body.oauthClientSecret && body.oauthClientSecret !== '••••••••') {
+      patch.oauthClientSecret = body.oauthClientSecret.trim();
+    }
+    if (typeof body.oauthRefreshToken === 'string' && body.oauthRefreshToken && body.oauthRefreshToken !== '••••••••') {
+      patch.oauthRefreshToken = body.oauthRefreshToken.trim();
+    }
 
     const saved = saveSmtpConfig(patch as Parameters<typeof saveSmtpConfig>[0], 'admin');
-    return res.json({ ok: true, config: { ...saved, password: saved.password ? '••••••••' : '' } });
+    return res.json({
+      ok: true,
+      config: {
+        ...saved,
+        password: saved.password ? '••••••••' : '',
+        oauthClientSecret: saved.oauthClientSecret ? '••••••••' : '',
+        oauthRefreshToken: saved.oauthRefreshToken ? '••••••••' : '',
+      },
+    });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
   }

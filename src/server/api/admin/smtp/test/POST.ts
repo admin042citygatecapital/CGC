@@ -4,11 +4,24 @@
  * Body: { to?: string; type?: 'connectivity' | 'verification' | 'otp' | 'password_reset' | 'transaction' | 'login_alert'; forceMode?: 'oauth' | 'manual' }
  */
 import type { Request, Response } from 'express';
-import { sendEmail } from '../../../../lib/smtpTransport.js';
+import { getEmailDeliveryStatus, sendEmail, type EmailDeliveryStatus } from '../../../../lib/smtpTransport.js';
 import { loadSmtpConfig, type SmtpMode } from '../../../../lib/smtpConfigStore.js';
 
 const EMAIL_TYPES = ['connectivity', 'verification', 'otp', 'password_reset', 'transaction', 'login_alert', 'withdrawal', 'admin_alert'] as const;
 type EmailType = typeof EMAIL_TYPES[number];
+const SUCCESS_EVENTS = new Set<EmailDeliveryStatus>(['delivered', 'opened', 'clicked']);
+const FAILURE_EVENTS = new Set<EmailDeliveryStatus>(['bounced', 'canceled', 'complained', 'failed', 'suppressed']);
+
+async function waitForDelivery(messageId: string): Promise<EmailDeliveryStatus | null> {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 400));
+    const result = await getEmailDeliveryStatus(messageId);
+    if (result.status && (SUCCESS_EVENTS.has(result.status) || FAILURE_EVENTS.has(result.status))) {
+      return result.status;
+    }
+  }
+  return (await getEmailDeliveryStatus(messageId)).status;
+}
 
 function buildTestHtml(type: EmailType, to: string): { subject: string; html: string } {
   const base = `<div style="background:#0A0A0A;font-family:Inter,Arial,sans-serif;padding:40px;border-radius:16px;max-width:560px;margin:auto;color:#fff;">
@@ -85,10 +98,25 @@ export default async function handler(req: Request, res: Response) {
 
   try {
     const result = await sendEmail({ to, subject, html }, forceMode);
-    return res.status(result.success ? 200 : 502).json({
-      ok:         result.success,
-      message:    result.success ? `Test email delivered to ${to}` : (result.error ?? 'Delivery failed'),
+    const deliveryStatus = result.success && result.messageId
+      ? await waitForDelivery(result.messageId)
+      : null;
+    const failedDelivery = deliveryStatus ? FAILURE_EVENTS.has(deliveryStatus) : false;
+    const delivered = deliveryStatus ? SUCCESS_EVENTS.has(deliveryStatus) : false;
+    const ok = result.success && !failedDelivery;
+    const message = failedDelivery
+      ? `Provider reported ${deliveryStatus} for ${to}`
+      : delivered
+        ? `Test email delivered to ${to}`
+        : result.success
+          ? `Test email accepted by Resend for ${to}; final status is ${deliveryStatus ?? 'pending'}`
+          : (result.error ?? 'Delivery failed');
+
+    return res.status(ok ? (delivered ? 200 : 202) : 502).json({
+      ok,
+      message,
       transport:  result.transport,
+      deliveryStatus,
       mode:       cfg.mode,
       durationMs: result.durationMs,
       attempts:   result.attempts,

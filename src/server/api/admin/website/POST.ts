@@ -31,6 +31,25 @@ export default function handler(req: Request, res: Response) {
   ) {
     return res.status(400).json({ error: 'Invalid preview notice display option.' });
   }
+  if (settings.announcementEnabled !== undefined && typeof settings.announcementEnabled !== 'boolean') {
+    return res.status(400).json({ error: 'Invalid announcement display option.' });
+  }
+  if (
+    settings.announcementText !== undefined
+    && (typeof settings.announcementText !== 'string' || settings.announcementText.trim().length < 10 || settings.announcementText.trim().length > 300)
+  ) {
+    return res.status(400).json({ error: 'Announcement text must be between 10 and 300 characters.' });
+  }
+  if (settings.announcementLink !== undefined) {
+    const link = settings.announcementLink;
+    if (
+      typeof link !== 'string'
+      || link.length > 200
+      || (link !== '' && !link.startsWith('/') && !link.startsWith('https://citygate.capital'))
+    ) {
+      return res.status(400).json({ error: 'Announcement link must be blank or point to City Gate Capital.' });
+    }
+  }
 
   writeWebsiteSettings(settings);
   appendAudit({

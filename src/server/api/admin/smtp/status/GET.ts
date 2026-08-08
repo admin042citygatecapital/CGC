@@ -7,6 +7,7 @@ import type { Request, Response } from 'express';
 import { loadSmtpConfig } from '../../../../lib/smtpConfigStore.js';
 import { diagnoseOAuthCredentials, getResolvedAccountId } from '../../../../lib/zohoTokenStore.js';
 import { getQueueStats } from '../../../../lib/emailQueue.js';
+import { getSecret } from '#airo/secrets';
 
 export default async function handler(_req: Request, res: Response) {
   const cfg    = loadSmtpConfig();
@@ -15,9 +16,14 @@ export default async function handler(_req: Request, res: Response) {
 
   const oauthReady  = oauthDx.clientSecretValid && oauthDx.refreshTokenValid;
   const manualReady = !!(cfg.host && cfg.username && cfg.password);
+  const resendReady = !!getSecret('RESEND_API_KEY');
+  const senderEmail = String(getSecret('MAIL_FROM_ADDRESS') || cfg.senderEmail);
+  const senderName  = String(getSecret('MAIL_FROM_NAME') || cfg.senderName);
 
   return res.json({
     mode:          cfg.mode,
+    provider:      resendReady ? 'resend' : 'none',
+    resendReady,
     oauthReady,
     manualReady,
     // OAuth detail
@@ -30,8 +36,8 @@ export default async function handler(_req: Request, res: Response) {
     // Manual SMTP detail
     manualHost:    cfg.host || null,
     manualPort:    cfg.port,
-    senderEmail:   cfg.senderEmail,
-    senderName:    cfg.senderName,
+    senderEmail,
+    senderName,
     encryption:    cfg.encryption,
     updatedAt:     cfg.updatedAt,
     updatedBy:     cfg.updatedBy,
