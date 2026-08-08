@@ -34,11 +34,11 @@ const sections = [
     content: [
       {
         subtitle: '2.1 Service Description',
-        body: `City Gate Capital provides digital banking services including multi-currency accounts, domestic and international payment processing, debit and virtual card issuance, cryptocurrency custody and exchange, savings products, and related financial services. The specific services available to you depend on your account type, jurisdiction, and KYC verification status.`,
+        body: `This website currently provides a product preview of proposed account, card, transfer, wallet, analytics, and administration experiences. It does not accept deposits, issue payment instruments, provide custody, execute trades, or process live financial transactions.`,
       },
       {
         subtitle: '2.2 Service Availability',
-        body: `We aim to maintain 99.9% uptime but do not guarantee uninterrupted access. We may suspend services temporarily for maintenance, security updates, or regulatory compliance. We will provide advance notice where reasonably practicable.`,
+        body: `Preview access is provided on an as-available basis without an uptime guarantee. We may suspend it for maintenance, security updates, testing, or legal review.`,
       },
       {
         subtitle: '2.3 Service Changes',
@@ -53,11 +53,11 @@ const sections = [
     content: [
       {
         subtitle: '3.1 Account Opening',
-        body: `To use our services, you must complete our account registration process, which includes providing accurate personal information and completing identity verification (KYC). You agree to provide truthful, current, and complete information and to update it promptly if it changes.`,
+        body: `You may create a preview profile to explore the software. Do not upload real identity documents or use the preview as a substitute for a bank, broker, wallet, payment account, or custodian.`,
       },
       {
         subtitle: '3.2 Identity Verification',
-        body: `We are required by law to verify your identity before providing financial services. This includes collecting government-issued identification, proof of address, and in some cases, source of funds documentation. We use automated and manual verification processes. Failure to complete verification will result in restricted or suspended account access.`,
+        body: `Identity-verification screens are demonstrations. A contracted KYC/AML provider, approved policies, consent notices, retention rules, and jurisdiction-specific legal review are required before real verification can be enabled.`,
       },
       {
         subtitle: '3.3 Account Security',
@@ -76,15 +76,15 @@ const sections = [
     content: [
       {
         subtitle: '4.1 Transaction Authorisation',
-        body: `By initiating a payment or transaction, you authorise City Gate Capital to execute it on your behalf. Once a payment instruction is submitted and confirmed, it may not be reversible. You are responsible for verifying all transaction details before confirming.`,
+        body: `Actions labelled as payments, deposits, withdrawals, transfers, trades, or card transactions create demonstration records only. They do not instruct, authorise, or settle a real financial transaction.`,
       },
       {
         subtitle: '4.2 Fees',
-        body: `Our fee schedule is published in the app and at citygate.capital/fees. Fees are deducted from your account balance at the time of the transaction. We reserve the right to change fees with 30 days' notice. Continued use after the notice period constitutes acceptance of the new fees.`,
+        body: `Any fee, rate, yield, price, exchange rate, or return shown in the preview is illustrative and is not an offer or contractual term. Live commercial terms will require separate publication and approval.`,
       },
       {
         subtitle: '4.3 Transaction Limits',
-        body: `Transaction limits apply based on your account tier and verification status. Standard accounts: $10,000/day. Premium accounts: $50,000/day. Elite accounts: custom limits. Limits may be temporarily reduced for security reasons.`,
+        body: `Preview limits are illustrative controls only. They do not create an entitlement or ability to move funds.`,
       },
       {
         subtitle: '4.4 Declined Transactions',
@@ -122,11 +122,11 @@ const sections = [
       },
       {
         subtitle: '6.2 Custody',
-        body: `We hold cryptocurrency on your behalf in segregated cold storage wallets. You retain beneficial ownership of your crypto assets. In the event of our insolvency, your crypto assets are held separately from our corporate assets and are not available to our creditors.`,
+        body: `City Gate Capital does not hold cryptocurrency or provide custody in this preview. Wallet addresses, balances, orders, and portfolio values are demonstrations. Do not send assets to any identifier displayed by the preview.`,
       },
       {
         subtitle: '6.3 Regulatory Status',
-        body: `Cryptocurrency services are regulated differently across jurisdictions. In some jurisdictions, our crypto services may be provided by a regulated entity; in others, they may not be subject to the same regulatory protections as traditional financial services. Please review the regulatory disclosures applicable to your jurisdiction.`,
+        body: `No cryptocurrency service is offered in this environment. Any future service would require appropriate legal analysis, registrations or licensed partners, custody arrangements, risk disclosures, and geographic controls.`,
       },
     ],
   },

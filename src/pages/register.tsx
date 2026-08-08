@@ -140,7 +140,7 @@ export default function RegisterPage() {
             </div>
 
             <h1 className="text-2xl font-bold text-foreground mb-1">Create your account</h1>
-            <p className="text-sm text-foreground/50 mb-8">Join 2M+ customers in 180+ countries</p>
+            <p className="text-sm text-foreground/50 mb-8">Create a profile to explore the product preview</p>
 
             {error && (
               <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 mb-6">

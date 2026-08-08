@@ -17,15 +17,15 @@ const accountTypes = [
     icon: User,
     name: 'Personal',
     tagline: 'For individuals',
-    desc: 'Everything you need for everyday banking, investing, and global transfers. Free forever.',
-    price: 'Free',
+    desc: 'Preview the everyday account, portfolio, and transfer experience in one workspace.',
+    price: 'Preview',
     color: '#C9A84C',
     accentClass: 'from-primary/20 to-primary/5',
     features: [
       { text: 'Multi-currency account (50+ currencies)', included: true  },
       { text: 'Crypto wallet (50+ assets)',              included: true  },
       { text: '1 virtual debit card',                   included: true  },
-      { text: 'International transfers from $0.99',     included: true  },
+      { text: 'International transfer demonstration',  included: true  },
       { text: 'Basic investment tools',                 included: true  },
       { text: 'Metal physical card',                    included: false },
       { text: 'Priority support',                       included: false },
@@ -35,20 +35,20 @@ const accountTypes = [
   {
     icon: TrendingUp,
     name: 'Savings',
-    tagline: '5.2% APY',
-    desc: 'High-yield savings with no lock-up periods. Earn more on every dollar, every day.',
-    price: 'Free',
+    tagline: 'Goal-based preview',
+    desc: 'Explore savings goals, automated rules, and projected returns using demonstration data.',
+    price: 'Preview',
     color: '#10B981',
     highlight: true,
     accentClass: 'from-emerald-500/20 to-emerald-500/5',
     features: [
-      { text: '5.2% APY on USD balances',              included: true  },
-      { text: '4.8% APY on EUR balances',              included: true  },
+      { text: 'Illustrative return projections',       included: true  },
+      { text: 'Multi-currency goal tracking',          included: true  },
       { text: 'No minimum balance required',           included: true  },
-      { text: 'Instant withdrawals, no lock-up',       included: true  },
+      { text: 'Withdrawal flow demonstration',         included: true  },
       { text: 'Auto-save rules & round-ups',           included: true  },
       { text: 'Savings goals & tracking',              included: true  },
-      { text: 'FDIC insured up to $250,000',           included: true  },
+      { text: 'No deposits accepted in preview',       included: true  },
       { text: 'Dedicated savings manager',             included: false },
     ],
   },
@@ -56,8 +56,8 @@ const accountTypes = [
     icon: Building2,
     name: 'Business',
     tagline: 'For companies',
-    desc: 'Full-featured business banking with multi-user access, expense management, and API integrations.',
-    price: '$19/mo',
+    desc: 'Preview multi-user access, expense workflows, and proposed API integrations.',
+    price: 'Preview',
     color: '#627EEA',
     accentClass: 'from-blue-500/20 to-blue-500/5',
     features: [
@@ -74,41 +74,41 @@ const accountTypes = [
 ];
 
 const kycSteps = [
-  { icon: User,        step: '01', title: 'Create Account',    desc: 'Enter your email and set a secure password. Takes 30 seconds. No credit check required.',           color: '#C9A84C' },
-  { icon: Camera,      step: '02', title: 'Verify Identity',   desc: 'Take a photo of your government ID. Our AI verification engine processes it instantly.',             color: '#627EEA' },
+  { icon: User,        step: '01', title: 'Create Preview',    desc: 'Enter your email and set a secure password to access the demonstration workspace.',                  color: '#C9A84C' },
+  { icon: Camera,      step: '02', title: 'Review KYC Flow',   desc: 'Preview the identity-verification journey. A contracted KYC provider is required before launch.',  color: '#627EEA' },
   { icon: Fingerprint, step: '03', title: 'Biometric Setup',   desc: 'Enable Face ID or Touch ID for secure, fast logins. Your biometric data never leaves your device.',  color: '#10B981' },
-  { icon: DollarSign,  step: '04', title: 'Fund Your Account', desc: 'Add funds via bank transfer, card, or crypto. Your account is ready to use immediately.',            color: '#9945FF' },
+  { icon: DollarSign,  step: '04', title: 'Explore Demo Data', desc: 'Use demonstration balances and transactions. This environment cannot receive or move real funds.', color: '#9945FF' },
 ];
 
 const trustBadges = [
-  { icon: Shield,      label: 'FDIC Insured',      desc: 'Up to $250,000',            color: '#C9A84C' },
+  { icon: Shield,      label: 'Preview Safeguard', desc: 'No live deposits',           color: '#C9A84C' },
   { icon: Fingerprint, label: 'Biometric Auth',    desc: 'Face & Touch ID',           color: '#627EEA' },
-  { icon: FileText,    label: 'Regulated',         desc: '40+ jurisdictions',         color: '#10B981' },
-  { icon: Zap,         label: 'Instant Setup',     desc: 'Under 5 minutes',           color: '#9945FF' },
+  { icon: FileText,    label: 'Launch Gated',      desc: 'Approvals required',         color: '#10B981' },
+  { icon: Zap,         label: 'Guided Setup',      desc: 'Preview workflow',           color: '#9945FF' },
   { icon: Lock,        label: '256-bit AES',       desc: 'Military-grade encryption', color: '#EC4899' },
-  { icon: Globe,       label: '180+ Countries',    desc: 'Global coverage',           color: '#F7931A' },
-  { icon: CreditCard,  label: 'Virtual Cards',     desc: 'Instant issuance',          color: '#14B8A6' },
-  { icon: Star,        label: '4.9 App Rating',    desc: 'App Store & Play',          color: '#F0D080' },
+  { icon: Globe,       label: 'Multi-Currency',    desc: 'Prototype coverage',        color: '#F7931A' },
+  { icon: CreditCard,  label: 'Virtual Cards',     desc: 'Demonstration only',        color: '#14B8A6' },
+  { icon: Star,        label: 'Responsive UI',     desc: 'Web preview',                color: '#F0D080' },
 ];
 
 const testimonials = [
-  { name: 'Michael R.', role: 'Digital Nomad',        text: 'Opened my account in 4 minutes while sitting in a café in Bali. The KYC was instant — I was genuinely shocked.', rating: 5 },
-  { name: 'Emma L.',    role: 'Small Business Owner',  text: 'The business account has transformed how we manage expenses. The team access feature alone is worth it.',         rating: 5 },
-  { name: 'David K.',   role: 'Investor',              text: "The 5.2% APY savings account is the best rate I've found anywhere. No lock-up, instant access. Perfect.",         rating: 5 },
+  { name: 'Personal Preview', role: 'Illustrative scenario', text: 'See balances, cards, transfers, and spending insights together in a guided account experience.', rating: 5 },
+  { name: 'Business Preview', role: 'Illustrative scenario', text: 'Explore team access, expense controls, approval flows, and reporting before provider integrations go live.', rating: 5 },
+  { name: 'Savings Preview', role: 'Illustrative scenario', text: 'Model goals and projected returns with demonstration data; no deposit or advertised yield is offered.', rating: 5 },
 ];
 
 // Comparison table data
 const comparisonRows = [
-  { feature: 'Monthly fee',           personal: 'Free',       savings: 'Free',        business: '$19/mo' },
+  { feature: 'Preview access',        personal: 'Included',   savings: 'Included',    business: 'Included' },
   { feature: 'Currencies supported',  personal: '50+',        savings: '50+',         business: '50+' },
   { feature: 'Virtual cards',         personal: '1',          savings: '1',           business: 'Unlimited' },
   { feature: 'Physical metal card',   personal: null,         savings: null,          business: true },
-  { feature: 'APY on balances',       personal: '0.5%',       savings: '5.2%',        business: '1.0%' },
-  { feature: 'Transfer fee',          personal: 'From $0.99', savings: 'From $0.99',  business: 'From $0.49' },
+  { feature: 'Return modelling',      personal: null,         savings: true,          business: null },
+  { feature: 'Transfer preview',      personal: true,         savings: true,          business: true },
   { feature: 'Team seats',            personal: null,         savings: null,          business: 'Up to 10' },
   { feature: 'API access',            personal: null,         savings: null,          business: true },
   { feature: 'Priority support',      personal: null,         savings: null,          business: true },
-  { feature: 'FDIC insured',          personal: true,         savings: true,          business: true },
+  { feature: 'Live deposits',         personal: null,         savings: null,          business: null },
 ];
 
 function ComparisonCell({ value }: { value: string | boolean | null }) {
@@ -120,7 +120,7 @@ function ComparisonCell({ value }: { value: string | boolean | null }) {
 // Hero account preview card
 const heroStats = [
   { label: 'Total Balance', value: '$48,291.40', sub: '+2.4% this month', color: '#C9A84C' },
-  { label: 'APY Earned',    value: '$210.18',    sub: 'This month',       color: '#10B981' },
+  { label: 'Projected Return', value: '$210.18', sub: 'Illustrative only', color: '#10B981' },
   { label: 'Transfers',     value: '12',         sub: 'This week',        color: '#627EEA' },
 ];
 
@@ -148,7 +148,7 @@ export default function AccountsPage() {
   );
   function getPlanCTALabel(planName: string): string {
     if (planCTA.variant === 'action') return 'Get Started — Free';
-    if (planCTA.variant === 'social') return 'Join 2M+ Members';
+    if (planCTA.variant === 'social') return 'Explore the Preview';
     return `Open ${planName} Account`;
   }
 
@@ -156,10 +156,10 @@ export default function AccountsPage() {
     <>
       <Helmet>
         <title>Open an Account — Personal, Savings & Business | CGC</title>
-        <meta name="description" content="Open a free personal checking, high-yield savings (5.2% APY), or business account with City Gate Capital. No fees, instant setup, FDIC insured. Open in under 5 minutes." />
+        <meta name="description" content="Preview City Gate Capital personal, savings, and business account experiences using demonstration balances and workflows." />
         <link rel="canonical" href="https://citygate.capital/accounts" />
         <meta property="og:title" content="Open a Bank Account — Personal, Savings & Business" />
-        <meta property="og:description" content="Personal, savings (5.2% APY), and business accounts. No fees, instant KYC, FDIC insured. Open in under 5 minutes." />
+        <meta property="og:description" content="Explore personal, savings, and business account experiences in the City Gate Capital product preview." />
         <meta property="og:url" content="https://citygate.capital/accounts" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -172,7 +172,7 @@ export default function AccountsPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Open a Bank Account — City Gate Capital" />
-        <meta name="twitter:description" content="Personal, savings (5.2% APY), and business accounts. No fees, instant KYC, FDIC insured." />
+        <meta name="twitter:description" content="Explore personal, savings, and business account experiences in the product preview." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -186,9 +186,9 @@ export default function AccountsPage() {
             '@type': 'ItemList',
             name: 'City Gate Capital Account Types',
             itemListElement: [
-              { '@type': 'ListItem', position: 1, item: { '@type': 'FinancialProduct', name: 'Personal Account', description: 'Free multi-currency personal checking account with crypto wallet.', provider: { '@id': 'https://citygate.capital/#organization' }, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } } },
-              { '@type': 'ListItem', position: 2, item: { '@type': 'FinancialProduct', name: 'Savings Account', description: 'High-yield savings account with 5.2% APY, no lock-up, FDIC insured.', provider: { '@id': 'https://citygate.capital/#organization' }, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } } },
-              { '@type': 'ListItem', position: 3, item: { '@type': 'FinancialProduct', name: 'Business Account', description: 'Full-featured business banking with team access, expense management, and API.', provider: { '@id': 'https://citygate.capital/#organization' }, offers: { '@type': 'Offer', price: '19', priceCurrency: 'USD', billingIncrement: 'P1M' } } },
+              { '@type': 'ListItem', position: 1, name: 'Personal account experience preview' },
+              { '@type': 'ListItem', position: 2, name: 'Savings goals experience preview' },
+              { '@type': 'ListItem', position: 3, name: 'Business account experience preview' },
             ],
           },
         }) }} />
@@ -226,7 +226,7 @@ export default function AccountsPage() {
 
               {/* Feature pills */}
               <div className="flex flex-wrap gap-2 mb-10">
-                {['No credit check', 'Instant KYC', 'FDIC insured', 'Free to start', 'No hidden fees'].map(tag => (
+                {['Demonstration account', 'KYC flow preview', 'No live deposits', 'Preview access', 'No financial transactions'].map(tag => (
                   <span key={tag} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-primary bg-primary/10 border border-primary/20">
                     <CheckCircle size={10} />
                     {tag}
@@ -292,7 +292,7 @@ export default function AccountsPage() {
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-xs text-foreground/40">Savings Growth</p>
-                    <p className="text-xs text-primary font-semibold">+5.2% APY</p>
+                    <p className="text-xs text-primary font-semibold">Illustrative return</p>
                   </div>
                   <div className="flex items-end gap-1 h-14">
                     {[40, 52, 48, 65, 58, 72, 68, 80, 75, 88, 84, 100].map((h, i) => (

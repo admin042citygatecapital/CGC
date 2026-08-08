@@ -186,10 +186,9 @@ export default defineConfig(({
           if (id.includes('node_modules/lucide-react')) {
             return 'icons';
           }
-          // Admin panel pages — only loaded when visiting /admin/*
-          if (id.includes('/src/pages/admin/')) {
-            return 'admin-pages';
-          }
+          // Keep admin pages as their existing route-level lazy chunks. Grouping
+          // all of them here would force nearly 1 MB of JavaScript to load for
+          // every admin route and defeat React.lazy() in routes.tsx.
           // Admin layout + auth lib
           if (id.includes('/src/layouts/Admin') || id.includes('/src/lib/adminAuth')) {
             return 'admin-shell';

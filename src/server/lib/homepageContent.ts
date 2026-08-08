@@ -47,15 +47,15 @@ export interface HomepageAdminView {
 
 export function defaultHomepageContent(): HomepageAdminView {
   return {
-    trustBadge:                'Trusted by 2M+ customers worldwide',
+    trustBadge:                'City Gate Capital product preview',
     headline1:                 'The Future of',
     headlineAccent:            'Banking',
     headline2:                 'is Here',
-    subheadline:               'Multi-currency wallets, crypto exchange, international transfers, and smart cards — all in one premium platform built for global citizens.',
+    subheadline:               'Preview multi-currency accounts, wallets, transfers, cards, analytics, and administration in one premium demonstration platform.',
     ctaSecondary:              'Explore Features',
-    heroCTAControl:            'Open Free Account',
-    heroCTAUrgency:            'Start Banking Today',
-    heroCTABenefit:            'Get $0 Fees Forever',
+    heroCTAControl:            'Explore the Preview',
+    heroCTAUrgency:            'See the Platform',
+    heroCTABenefit:            'Create a Preview Profile',
     showStats:                 true,
     showTestimonials:          true,
     showPartners:              true,

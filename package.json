@@ -14,7 +14,8 @@
     "start": "node dist/server.bundle.mjs",
     "smoke": "node scripts/smoke-built-server.mjs",
     "production-guard": "node scripts/check-production-guard.mjs",
-    "release:check": "npm run verify && npm run smoke && npm run production-guard",
+    "preview-claims": "node scripts/check-preview-claims.mjs",
+    "release:check": "npm run preview-claims && npm run verify && npm run smoke && npm run production-guard",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -149,9 +150,8 @@
     "eslint-plugin-react-refresh": "^0.4.14",
     "eslint-plugin-security": "^3.0.1",
     "globals": "14.0.0",
-    "jsdom": "^29.0.2",
-    "lockfile-lint": "~4.13.2",
-    "postcss": "^8.5.25",
+    "jsdom": "^30.0.1",
+    "postcss": "^8.5.26",
     "prettier": "^3.4.2",
     "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",
@@ -167,6 +167,19 @@
     "cmdk": "^1.1.1",
     "react-day-picker": "^9.9.0",
     "brace-expansion": "^2.0.1",
-    "react-router": "7.18.2"
+    "react-router": "7.18.2",
+    "fast-uri": "3.1.5",
+    "js-yaml": "4.3.1",
+    "nanoid": "3.3.17",
+    "undici": "7.29.0",
+    "tsx": {
+      "esbuild": "0.28.1"
+    },
+    "drizzle-kit": {
+      "esbuild": "0.28.1",
+      "@esbuild-kit/core-utils": {
+        "esbuild": "0.28.1"
+      }
+    }
   }
 }

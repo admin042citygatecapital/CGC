@@ -18,27 +18,27 @@ const faqs = [
   {
     category: 'Getting Started',
     q: 'How do I open an account?',
-    a: 'Opening an account takes less than 5 minutes. Click "Open Account", provide your email, verify your identity with a government ID using our AI-powered KYC, and you\'re ready to go. No branch visit required.',
+    a: 'Click "Open Account" to create a preview profile and explore the demonstration. Identity verification is not live; a contracted KYC provider and legal approval are required before launch.',
   },
   {
     category: 'Account & KYC',
     q: 'Is my money safe with City Gate Capital?',
-    a: 'Yes. Fiat deposits are FDIC insured up to $250,000. Crypto assets are stored in cold storage with multi-signature security. We are regulated in 40+ jurisdictions and use 256-bit AES encryption on all data.',
+    a: 'This preview does not accept or protect customer funds. Demonstration balances are not deposits and are not insured. The application uses security controls for preview access, but live financial operation requires approved providers and independent review.',
   },
   {
     category: 'Transfers',
     q: 'What are the transfer fees?',
-    a: 'Transfers between City Gate Capital accounts are always free. International transfers start at $0.99 with real mid-market exchange rates and no markup. Fees are always shown upfront before you confirm.',
+    a: 'Transfer screens use demonstration values only. Live fees, exchange rates, availability, and settlement terms will be published only after payment providers and target jurisdictions are approved.',
   },
   {
     category: 'Transfers',
     q: 'How long do international transfers take?',
-    a: 'Most international transfers arrive within minutes. In rare cases, transfers to certain countries may take 1-2 business days. You\'ll always see an estimated arrival time before confirming.',
+    a: 'No live transfers are processed in this preview. Future settlement estimates will depend on the contracted payment rail, currency, recipient bank, compliance review, and jurisdiction.',
   },
   {
     category: 'Crypto & Wallet',
     q: 'What cryptocurrencies do you support?',
-    a: 'We support Bitcoin (BTC), Ethereum (ETH), Solana (SOL), USDT, USDC, BNB, and 50+ other cryptocurrencies. New assets are added regularly based on customer demand.',
+    a: 'The interface demonstrates several digital assets using market or sample data. City Gate Capital does not provide live trading or custody in this environment.',
   },
   {
     category: 'Cards & Payments',
@@ -48,7 +48,7 @@ const faqs = [
   {
     category: 'Account & KYC',
     q: 'What is the daily transfer limit?',
-    a: 'Standard accounts can transfer up to $10,000/day. Premium accounts have a $50,000/day limit. Elite accounts have custom limits. Limits can be increased by contacting support.',
+    a: 'Preview limits are illustrative and do not authorize financial transactions. Live limits will be defined by risk policy, provider contracts, verification level, and applicable law.',
   },
   {
     category: 'Getting Started',
@@ -63,7 +63,7 @@ const faqs = [
   {
     category: 'Cards & Payments',
     q: 'Can I use my card internationally?',
-    a: 'Yes. Your City Gate Capital card works in 180+ countries with zero foreign transaction fees. We use the real mid-market exchange rate with no markup. You\'ll receive instant notifications for every transaction.',
+    a: 'Cards in this environment are demonstrations and cannot be used for purchases. Issuing coverage, fees, exchange rates, and card controls require an approved issuing partner before launch.',
   },
 ];
 
@@ -90,10 +90,10 @@ function FaqItem({ q, a, category }: { q: string; a: string; category: string })
 }
 
 const supportStats = [
-  { value: '< 2 min',  label: 'Live Chat Response',  icon: Zap,           color: '#C9A84C' },
-  { value: '< 2 hrs',  label: 'Email Response',      icon: Clock,         color: '#627EEA' },
-  { value: '24/7',     label: 'Support Availability', icon: MessageCircle, color: '#10B981' },
-  { value: '98%',      label: 'Satisfaction Rate',   icon: Star,          color: '#9945FF' },
+  { value: 'Web',      label: 'Preview Support',      icon: Zap,           color: '#C9A84C' },
+  { value: 'Email',    label: 'Contact Channel',      icon: Clock,         color: '#627EEA' },
+  { value: 'Tracked',  label: 'Support Requests',     icon: MessageCircle, color: '#10B981' },
+  { value: 'Clear',    label: 'Launch Disclosures',   icon: Star,          color: '#9945FF' },
 ];
 
 interface SupportConversation {

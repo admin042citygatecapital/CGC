@@ -4,12 +4,12 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Shield, Globe, Users, TrendingUp, Award, Zap, Heart } from 'lucide-react';
 
 const stats = [
-  { value: '2018', label: 'Founded', sub: 'New York City' },
-  { value: '2M+', label: 'Customers', sub: 'Worldwide' },
-  { value: '180+', label: 'Countries', sub: 'Supported' },
-  { value: '$50B+', label: 'Assets Managed', sub: 'Under custody' },
-  { value: '40+', label: 'Jurisdictions', sub: 'Regulated in' },
-  { value: '99.9%', label: 'Uptime SLA', sub: 'Since founding' },
+  { value: 'Preview', label: 'Current Stage', sub: 'Product validation' },
+  { value: '24/7', label: 'Architecture', sub: 'Designed for availability' },
+  { value: '50+', label: 'Currencies', sub: 'Prototype coverage' },
+  { value: '3', label: 'Account Views', sub: 'Personal, savings, business' },
+  { value: '2FA', label: 'Account Security', sub: 'Supported in preview' },
+  { value: '1', label: 'Unified Platform', sub: 'Web and administration' },
 ];
 
 const values = [
@@ -22,31 +22,25 @@ const values = [
 ];
 
 const milestones = [
-  { year: '2018', event: 'City Gate Capital founded in New York with a mission to democratise premium banking for global citizens. Seed round of $12M closed.' },
-  { year: '2019', event: 'Launched multi-currency accounts and international transfers in 40 countries. Reached 50,000 customers in first year.' },
-  { year: '2020', event: 'Introduced crypto wallet supporting BTC, ETH and 20+ assets. Surpassed 100K customers. Series A: $45M.' },
-  { year: '2021', event: 'Expanded to 100+ countries. Launched investment tools, smart cards, and AI-powered analytics. Series B: $120M.' },
-  { year: '2022', event: 'Surpassed 1M customers. Opened offices in London, Singapore and Dubai. Regulated in 30+ jurisdictions.' },
-  { year: '2023', event: 'Launched Elite private banking tier. Introduced institutional-grade cold storage custody. Series C: $250M at $2B valuation.' },
-  { year: '2024', event: 'Reached 2M+ customers across 180 countries. $50B+ in assets managed. Regulated in 40+ jurisdictions globally.' },
+  { year: '01', event: 'Defined the City Gate Capital product vision and premium global-finance experience.' },
+  { year: '02', event: 'Built the responsive public website, authentication flows, and customer dashboard.' },
+  { year: '03', event: 'Added account, transfer, card, wallet, analytics, and paper-trading demonstrations.' },
+  { year: '04', event: 'Built the administration workspace with role-based access and audit logging.' },
+  { year: '05', event: 'Hardened sessions, CSRF controls, production configuration, and deployment checks.' },
+  { year: 'Next', event: 'Complete legal approvals and contracted KYC, AML, payment, banking, and custody integrations before any live financial launch.' },
 ];
 
 const leadership = [
-  { name: 'Alexandra Chen',  role: 'Chief Executive Officer',    initials: 'AC', color: '#C9A84C', bg: 'from-primary/20 to-primary/5',        bio: 'Former Goldman Sachs MD. 20 years in global finance.' },
-  { name: 'Marcus Williams', role: 'Chief Technology Officer',   initials: 'MW', color: '#627EEA', bg: 'from-blue-500/20 to-blue-500/5',       bio: 'Ex-Stripe engineering lead. Built payments at scale.' },
-  { name: 'Priya Sharma',    role: 'Chief Financial Officer',    initials: 'PS', color: '#10B981', bg: 'from-emerald-500/20 to-emerald-500/5', bio: 'Former JP Morgan treasury. CFA charterholder.' },
-  { name: 'David Okafor',    role: 'Chief Security Officer',     initials: 'DO', color: '#9945FF', bg: 'from-purple-500/20 to-purple-500/5',   bio: 'Ex-NSA cryptographer. 15 years in cybersecurity.' },
-  { name: 'Sofia Reyes',     role: 'Chief Product Officer',      initials: 'SR', color: '#EC4899', bg: 'from-pink-500/20 to-pink-500/5',       bio: 'Former Revolut VP Product. Obsessed with UX.' },
-  { name: 'James Park',      role: 'Chief Compliance Officer',   initials: 'JP', color: '#F7931A', bg: 'from-orange-500/20 to-orange-500/5',   bio: 'Regulatory expert across US, EU, UK, and APAC.' },
-  { name: 'Lena Müller',     role: 'VP Engineering',             initials: 'LM', color: '#14B8A6', bg: 'from-teal-500/20 to-teal-500/5',      bio: 'Built core banking infra at N26 and Monzo.' },
-  { name: 'Raj Patel',       role: 'VP Growth',                  initials: 'RP', color: '#F0D080', bg: 'from-yellow-500/20 to-yellow-500/5',   bio: 'Scaled Wise to 10M users. Growth & partnerships.' },
+  { name: 'Product', role: 'Experience & Research', initials: 'PX', color: '#C9A84C', bg: 'from-primary/20 to-primary/5', bio: 'Shapes clear, accessible journeys for the public and customer experiences.' },
+  { name: 'Engineering', role: 'Platform & Reliability', initials: 'EN', color: '#627EEA', bg: 'from-blue-500/20 to-blue-500/5', bio: 'Builds the web application, APIs, data layer, and operational tooling.' },
+  { name: 'Security', role: 'Identity & Protection', initials: 'SE', color: '#9945FF', bg: 'from-purple-500/20 to-purple-500/5', bio: 'Owns authentication controls, secure defaults, monitoring, and incident readiness.' },
+  { name: 'Compliance', role: 'Launch Readiness', initials: 'CO', color: '#10B981', bg: 'from-emerald-500/20 to-emerald-500/5', bio: 'Coordinates legal review and required provider approvals before live operation.' },
 ];
 
 const awards = [
-  { title: 'Best Fintech App 2025',      org: 'Financial Times' },
-  { title: 'Most Innovative Bank 2024',  org: 'Forbes' },
-  { title: 'Top 50 Fintech 2024',        org: 'Bloomberg' },
-  { title: 'Best Digital Bank 2023',     org: 'The Banker' },
+  { title: 'Responsive Experience', org: 'Product preview' },
+  { title: 'Secure Administration', org: 'Role-based controls' },
+  { title: 'Release Guardrails', org: 'Preview-safe deployment' },
 ];
 
 export default function AboutPage() {
@@ -54,10 +48,10 @@ export default function AboutPage() {
     <>
       <Helmet>
         <title>About City Gate Capital — Our Mission, Values & Team</title>
-        <meta name="description" content="Learn about City Gate Capital — founded in 2018, regulated in 40+ jurisdictions, serving 2M+ customers in 180 countries with premium digital banking services." />
+        <meta name="description" content="Learn about the City Gate Capital product vision, preview platform, security approach, and path to a compliant financial-services launch." />
         <link rel="canonical" href="https://citygate.capital/about" />
         <meta property="og:title" content="About City Gate Capital — Our Mission, Values & Team" />
-        <meta property="og:description" content="Founded in 2018 to democratise premium banking for global citizens. Regulated in 40+ jurisdictions, 2M+ customers worldwide." />
+        <meta property="og:description" content="Explore the City Gate Capital product vision and the work required before a live financial-services launch." />
         <meta property="og:url" content="https://citygate.capital/about" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -70,7 +64,7 @@ export default function AboutPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="About City Gate Capital — Our Mission, Values & Team" />
-        <meta name="twitter:description" content="Founded in 2018 to democratise premium banking for global citizens." />
+        <meta name="twitter:description" content="Explore the City Gate Capital product vision and preview platform." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -81,8 +75,6 @@ export default function AboutPage() {
             '@type': 'Organization',
             '@id': 'https://citygate.capital/#organization',
             name: 'City Gate Capital',
-            foundingDate: '2018',
-            foundingLocation: 'London, UK',
             url: 'https://citygate.capital',
             logo: {
               '@type': 'ImageObject',
@@ -90,21 +82,7 @@ export default function AboutPage() {
               width: 200,
               height: 200,
             },
-            numberOfEmployees: { '@type': 'QuantitativeValue', value: 500 },
-            description: 'Premium digital banking for global citizens. Multi-currency wallets, crypto exchange, international transfers.',
-            award: [
-              'Best Fintech App 2025 — Financial Times',
-              'Most Innovative Bank 2024 — Forbes',
-              'Top 50 Fintech 2024 — Bloomberg',
-              'Best Digital Bank 2023 — The Banker',
-            ],
-            member: leadership.map(person => ({
-              '@type': 'Person',
-              name: person.name,
-              jobTitle: person.role,
-              worksFor: { '@id': 'https://citygate.capital/#organization' },
-              description: person.bio,
-            })),
+            description: 'A product-preview platform exploring multi-currency accounts, transfers, cards, analytics, and administration.',
           },
         }) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -132,7 +110,7 @@ export default function AboutPage() {
               <span className="text-gold-gradient">Global Citizens</span>
             </h1>
             <p className="text-xl text-foreground/50 mb-10 leading-relaxed max-w-2xl mx-auto">
-              Founded in 2018, City Gate Capital was built on a simple belief: everyone deserves access to world-class financial services, regardless of where they live or how much they earn.
+              City Gate Capital is being built around a simple belief: global financial tools should be clear, secure, and accessible. This site currently demonstrates that product direction.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/accounts" className="group relative inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-bold text-black overflow-hidden">
@@ -213,9 +191,9 @@ export default function AboutPage() {
               Our Mission
             </span>
             <p className="text-2xl md:text-3xl font-medium text-foreground/80 leading-relaxed max-w-3xl mx-auto">
-              "To make world-class financial services accessible to every person on the planet — regardless of where they were born, how much they earn, or what currency they use."
+              "To design global financial tools that are clear, secure, and accessible — and to launch them only when the required legal and operational protections are in place."
             </p>
-            <p className="text-sm text-foreground/55 mt-6">— Alexandra Chen, CEO & Co-founder</p>
+            <p className="text-sm text-foreground/55 mt-6">— City Gate Capital product mission</p>
           </motion.div>
         </div>
       </section>
@@ -304,7 +282,7 @@ export default function AboutPage() {
           <div className="text-center mb-14">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-                Leadership
+                The Workstreams
               </span>
               <h2 className="text-4xl font-bold text-foreground mb-4 tracking-tight">
                 The <span className="text-gold-gradient">Team</span> Behind It

@@ -25,10 +25,10 @@ const footerLinks = {
 };
 
 const trustItems = [
-  'FDIC Insured up to $250,000',
-  'Regulated in 40+ jurisdictions',
-  '256-bit AES encryption',
-  '99.9% uptime SLA',
+  'Product preview — no live deposits',
+  'Financial operations disabled by default',
+  'Role-based administration',
+  'Launch subject to legal and provider approval',
 ];
 
 interface SocialLink {
@@ -213,10 +213,10 @@ export default function Footer() {
           <div className="flex items-center gap-5 text-xs text-foreground/50">
             <div className="flex items-center gap-1.5">
               <Globe size={11} />
-              <span>Available in 180+ countries</span>
+              <span>Global product preview</span>
             </div>
             <span className="hidden md:inline">·</span>
-            <span className="hidden md:inline">Regulated · Insured · Secure</span>
+            <span className="hidden md:inline">No live deposits or transactions</span>
           </div>
         </div>
       </div>

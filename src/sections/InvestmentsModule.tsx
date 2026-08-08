@@ -50,9 +50,9 @@ export function InvestmentsSection() {
                 {
                   icon: TrendingUp,
                   label: 'Savings Account',
-                  desc: 'High-yield savings with up to 5.2% APY, automated round-ups, and goal-based vaults.',
+                  desc: 'Savings-goal demonstrations with automated round-ups and projected-return modelling.',
                   color: '#10B981',
-                  badge: '5.2% APY',
+                  badge: 'Preview',
                 },
                 {
                   icon: BarChart3,
@@ -64,7 +64,7 @@ export function InvestmentsSection() {
                 {
                   icon: Bitcoin,
                   label: 'Crypto Wallets',
-                  desc: 'Self-custody and custodial wallets for BTC, ETH, SOL, USDT and 50+ assets with DeFi access.',
+                  desc: 'Demonstration wallets for selected assets; live custody and trading are unavailable.',
                   color: '#F7931A',
                   badge: '50+ Assets',
                 },
@@ -103,7 +103,7 @@ export function InvestmentsSection() {
               <div className="space-y-3">
                 {[
                   { label: 'IBAN',           value: 'GB29 CGCB 6016 1331 9268 19', icon: Globe,     color: '#627EEA' },
-                  { label: 'SWIFT / BIC',    value: 'CGCBGB2LXXX',                 icon: RefreshCw, color: '#C9A84C' },
+                  { label: 'SWIFT / BIC',    value: 'Not issued — preview only',   icon: RefreshCw, color: '#C9A84C' },
                   { label: 'Account Number', value: '•••• •••• 9268',              icon: Lock,      color: '#10B981' },
                   { label: 'Routing Number', value: '•••• 4471',                   icon: Shield,    color: '#9945FF' },
                 ].map((row, i) => (

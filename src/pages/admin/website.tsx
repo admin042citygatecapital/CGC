@@ -97,7 +97,7 @@ const DEFAULT: WebsiteSettings = {
   showTrustBadgesInFooter: true,
 
   announcementEnabled: true,
-  announcementText: 'New: Earn 5.2% APY on your savings. Open a Savings Account today.',
+  announcementText: 'Product preview: balances and transactions are demonstrations.',
   announcementLink: '/accounts',
 
   darkMode: true,
@@ -400,7 +400,7 @@ export default function AdminWebsite() {
                 <Field k="footerAddress" label="Address" placeholder="1 Canada Square, London" />
                 <Field k="footerCopyright" label="Copyright Text (use {year} for dynamic year)" placeholder="© {year} City Gate Capital Ltd." />
                 <Toggle k="showNewsletterInFooter" label="Newsletter Signup" desc="Show newsletter form in footer" />
-                <Toggle k="showTrustBadgesInFooter" label="Trust Badges" desc="Show FDIC, encryption, uptime badges" />
+                <Toggle k="showTrustBadgesInFooter" label="Trust Badges" desc="Show preview safeguards and launch-status badges" />
               </>
             )}
 
@@ -409,7 +409,7 @@ export default function AdminWebsite() {
               <>
                 <h3 className="text-white font-semibold text-sm flex items-center gap-2"><Type size={14} className="text-primary" /> Announcement Banner</h3>
                 <Toggle k="announcementEnabled" label="Show Announcement Banner" desc="Display ticker/banner below header" />
-                <Field k="announcementText" label="Announcement Text" placeholder="New: Earn 5.2% APY on savings…" />
+                <Field k="announcementText" label="Announcement Text" placeholder="Product preview: no live deposits or transactions." />
                 <Field k="announcementLink" label="Announcement Link (optional)" placeholder="/accounts" />
                 {/* Preview */}
                 <div className="rounded-xl overflow-hidden border border-white/8">

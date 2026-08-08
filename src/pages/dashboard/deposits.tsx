@@ -72,7 +72,7 @@ export default function DepositsPage() {
     { label: 'Account Name',    value: customer.name },
     { label: 'Account Number',  value: `CGC${accountId}` },
     { label: 'IBAN',            value: `GB${accountId}CGCB00000000` },
-    { label: 'SWIFT / BIC',     value: 'CGCBGB2L' },
+    { label: 'SWIFT / BIC',     value: 'Not issued — preview only' },
     { label: 'Sort Code',       value: '40-47-84' },
     { label: 'Reference',       value: `DEP-${accountId}` },
   ];

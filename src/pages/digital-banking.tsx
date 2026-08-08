@@ -52,28 +52,28 @@ interface DbCms {
 
 const DB_CMS_DEFAULTS: DbCms = {
   dbHeroTitle:        'Banking That Works for You',
-  dbHeroSubtitle:     'Smart cards, real-time analytics, instant payments, and AI-powered insights — all in one beautifully designed platform.',
+  dbHeroSubtitle:     'Preview smart cards, analytics, payment journeys, and automated insights in one beautifully designed demonstration platform.',
   dbHeroCTA:          'Open Account',
   dbHeroSecondaryCTA: 'Book a Demo',
   dbCtaTitle:         'Start Banking Smarter Today',
-  dbCtaSubtitle:      'Open your free account in under 5 minutes. No credit check. No hidden fees.',
+  dbCtaSubtitle:      'Create a preview profile to explore the interface. Live cards and payments are not available.',
   dbCtaPrimary:       'Open Free Account',
   dbCtaSecondary:     'Book a Demo',
   // Feature card defaults (match hardcoded cardFeatures order)
-  dbFeature1Title: 'Virtual Cards',     dbFeature1Desc: 'Instantly create virtual cards for online shopping with custom spend limits and one-click disposal.',
+  dbFeature1Title: 'Virtual Cards',     dbFeature1Desc: 'Preview virtual-card controls and custom demonstration spend limits.',
   dbFeature2Title: 'Freeze & Unfreeze', dbFeature2Desc: "Lock your card in one tap if it's lost or stolen. Unlock just as fast — no phone call required.",
-  dbFeature3Title: 'Instant Alerts',    dbFeature3Desc: 'Real-time push notifications for every transaction, anywhere in the world, in any currency.',
+  dbFeature3Title: 'Instant Alerts',    dbFeature3Desc: 'Preview notification behaviour for demonstration transactions.',
   dbFeature4Title: 'Auto Top-up',       dbFeature4Desc: 'Set rules to automatically top up your card from your main balance when it falls below a threshold.',
   dbFeature5Title: 'Spend Analytics',   dbFeature5Desc: 'AI categorises every purchase and shows you exactly where your money goes with beautiful visual charts.',
-  dbFeature6Title: 'Contactless Pay',   dbFeature6Desc: 'Apple Pay, Google Pay and Samsung Pay supported on all cards. Tap and pay in milliseconds.',
-  dbFeature7Title: 'Zero FX Fees',      dbFeature7Desc: 'Use your card in any country at the real mid-market rate. No foreign transaction fees, ever.',
+  dbFeature6Title: 'Contactless Pay',   dbFeature6Desc: 'Proposed wallet integrations shown for design purposes; no cards are issued.',
+  dbFeature7Title: 'FX Preview',        dbFeature7Desc: 'Explore currency-conversion screens with illustrative rates and fees.',
   dbFeature8Title: '3D Secure',         dbFeature8Desc: 'Every online transaction is protected by 3D Secure authentication and real-time fraud detection.',
   dbFeature9Title: 'AI Insights',       dbFeature9Desc: 'Personalised financial insights powered by AI. Know your patterns, optimise your spending automatically.',
   // Stats defaults
-  dbStat1Value: '2M+',    dbStat1Label: 'Active Customers',
-  dbStat2Value: '$48B+',  dbStat2Label: 'Processed Annually',
-  dbStat3Value: '190+',   dbStat3Label: 'Countries Supported',
-  dbStat4Value: '99.99%', dbStat4Label: 'Platform Uptime',
+  dbStat1Value: '1',      dbStat1Label: 'Unified Preview',
+  dbStat2Value: '$0',     dbStat2Label: 'Live Funds Processed',
+  dbStat3Value: '50+',    dbStat3Label: 'Prototype Currencies',
+  dbStat4Value: '2FA',    dbStat4Label: 'Account Protection',
 };
 
 const CARD_FEATURE_ICONS = [CreditCard, Shield, Bell, RefreshCw, PieChart, Zap, Globe, Lock, Sparkles];

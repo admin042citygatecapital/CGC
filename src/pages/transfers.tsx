@@ -480,7 +480,7 @@ export default function TransfersPage() {
                           <p className="text-white/60 font-medium mb-2 flex items-center gap-1.5"><Info size={13} /> Wire Transfer Details</p>
                           <div className="flex justify-between"><span className="text-white/40">Bank</span><span className="text-white">City Gate Capital Bank</span></div>
                           <div className="flex justify-between"><span className="text-white/40">Account</span><span className="text-white font-mono">CGC-0001-2847</span></div>
-                          <div className="flex justify-between"><span className="text-white/40">SWIFT</span><span className="text-white font-mono">CGCBGB2L</span></div>
+                          <div className="flex justify-between"><span className="text-white/40">SWIFT</span><span className="text-white font-mono">Preview only</span></div>
                           <div className="flex justify-between"><span className="text-white/40">IBAN</span><span className="text-white font-mono">GB29 CGCB 6016 1331 9268 19</span></div>
                           <p className="text-white/30 text-xs pt-1">Include your account ID as the payment reference.</p>
                         </div>
@@ -706,8 +706,8 @@ export default function TransfersPage() {
                 {[
                   { icon: Shield, text: '256-bit AES encryption on all transactions' },
                   { icon: CheckCircle, text: 'Real-time fraud detection and blocking' },
-                  { icon: Globe, text: 'Regulated in 40+ jurisdictions worldwide' },
-                  { icon: DollarSign, text: 'FDIC insured up to $250,000' },
+                  { icon: Globe, text: 'Preview only — provider approval required' },
+                  { icon: DollarSign, text: 'Demonstration funds — not insured' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[#C9A84C]/15 flex items-center justify-center shrink-0">

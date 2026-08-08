@@ -151,7 +151,7 @@ export function HeroSection() {
               </div>
               <div className="flex flex-wrap gap-5">
                 {home.hero.trustBadges.map((b) => {
-                  const BadgeIcon = b.label === 'FDIC Insured' ? Shield : b.label === '256-bit Encryption' ? Lock : Award;
+                  const BadgeIcon = b.label === 'Preview Safeguard' ? Shield : b.label === '256-bit Encryption' ? Lock : Award;
                   return (
                     <div key={b.id} className="flex items-center gap-2 text-foreground/55">
                       <BadgeIcon size={14} className="text-primary" />
@@ -602,7 +602,7 @@ export function SecuritySection() {
               <p className="text-center text-sm font-semibold text-foreground mb-1">Excellent</p>
               <p className="text-center text-xs text-foreground/40 mb-6">Your account is fully secured</p>
               <div className="space-y-3">
-                {['256-bit Encryption','Biometric Auth','2FA Enabled','KYC Verified','Cold Storage'].map((item, i) => (
+                {['Secure Sessions','Biometric UI','2FA Enabled','KYC Preview','No Live Custody'].map((item, i) => (
                   <motion.div key={item} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.4 + i * 0.07 }} className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-full bg-emerald-400/15 flex items-center justify-center shrink-0"><CheckCircle size={11} className="text-emerald-400" /></div>
                     <span className="text-xs text-foreground/60">{item}</span>
@@ -610,9 +610,9 @@ export function SecuritySection() {
                 ))}
               </div>
               <div className="mt-6 pt-5 border-t border-primary/10">
-                <p className="text-xs text-foreground/30 uppercase tracking-widest mb-3">Regulated & Certified</p>
+                <p className="text-xs text-foreground/30 uppercase tracking-widest mb-3">Preview Safeguards</p>
                 <div className="flex flex-wrap gap-2">
-                  {['Bank-Grade Security','SOC 2','ISO 27001','PCI DSS','GDPR'].map(badge => (
+                  {['Secure Cookies','CSRF Controls','Admin RBAC','Audit Events','Launch Guard'].map(badge => (
                     <span key={badge} className="text-[10px] font-bold px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/20">{badge}</span>
                   ))}
                 </div>
@@ -642,16 +642,16 @@ export function SecuritySection() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <p className="text-sm font-semibold text-foreground">KYC Verification</p>
-                  <p className="text-xs text-foreground/40">Complete in under 5 minutes</p>
+                  <p className="text-xs text-foreground/40">Demonstration workflow only</p>
                 </div>
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20">AI-Powered</span>
+                <span className="text-xs font-bold text-amber-300 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20">Provider Required</span>
               </div>
               <div className="grid sm:grid-cols-4 gap-3 mb-5">
                 {[
                   { icon: User,        step: '01', label: 'Personal Info',  desc: 'Name, DOB, address',      done: true },
                   { icon: Camera,      step: '02', label: 'ID Document',    desc: 'Passport or national ID', done: true },
                   { icon: Fingerprint, step: '03', label: 'Liveness Check', desc: 'Quick selfie scan',       done: true },
-                  { icon: CheckCircle, step: '04', label: 'Verified',       desc: 'Instant AI decision',     done: true },
+                  { icon: CheckCircle, step: '04', label: 'Review',         desc: 'No live decision',         done: true },
                 ].map((s, i) => (
                   <motion.div key={s.step} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 + i * 0.1 }}
                     className="relative p-4 rounded-2xl border text-center bg-primary/5 border-primary/25">
@@ -666,8 +666,8 @@ export function SecuritySection() {
               </div>
               <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-white/[0.02] border border-primary/8">
                 <Shield size={12} className="text-primary shrink-0" />
-                <span className="text-xs text-foreground/40">Regulated in</span>
-                {['USA','UK','EU','UAE','SG','CA','AU','+33 more'].map(j => (
+                <span className="text-xs text-foreground/40">Launch review needed for</span>
+                {['USA','UK','EU','UAE','SG','CA','AU','other markets'].map(j => (
                   <span key={j} className="text-[10px] font-semibold text-foreground/50 bg-white/5 px-2 py-0.5 rounded-md">{j}</span>
                 ))}
               </div>
@@ -773,8 +773,8 @@ export function MobileAppSection() {
               </motion.div>
               <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const, delay: 1 }}
                 className="absolute -left-10 bottom-24 glass-card rounded-2xl px-3 py-2.5 gradient-border w-32" style={{ boxShadow: '0 8px 32px rgba(201,168,76,0.15)' }}>
-                <p className="text-[9px] font-bold text-primary mb-0.5">4.9 ★★★★★</p>
-                <p className="text-[8px] text-foreground/40">App Store · 48K reviews</p>
+                <p className="text-[9px] font-bold text-primary mb-0.5">Mobile Preview</p>
+                <p className="text-[8px] text-foreground/40">Coming soon</p>
               </motion.div>
             </div>
           </motion.div>
@@ -782,8 +782,8 @@ export function MobileAppSection() {
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.15 }} className="space-y-5">
             <div className="space-y-3">
               {[
-                { store: 'App Store',   sub: 'Download on the', rating: '4.9', reviews: '48K reviews',  icon: Smartphone },
-                { store: 'Google Play', sub: 'Get it on',        rating: '4.8', reviews: '62K reviews',  icon: Smartphone },
+                { store: 'App Store',   sub: 'Planned for', rating: '—', reviews: 'Not yet published', icon: Smartphone },
+                { store: 'Google Play', sub: 'Planned for', rating: '—', reviews: 'Not yet published', icon: Smartphone },
               ].map((s, i) => (
                 <motion.button key={s.store} type="button" aria-label={`${s.sub} ${s.store} — coming soon`}
                   initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.1 }}
@@ -801,7 +801,7 @@ export function MobileAppSection() {
               ))}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {[{ value: '2M+', label: 'Active Users' }, { value: '180+', label: 'Countries' }, { value: '<0.1s', label: 'Avg. Load Time' }, { value: '99.9%', label: 'Uptime SLA' }].map((s, i) => (
+              {[{ value: 'Preview', label: 'Current Stage' }, { value: '50+', label: 'Prototype Currencies' }, { value: '2FA', label: 'Account Protection' }, { value: '$0', label: 'Live Funds Moved' }].map((s, i) => (
                 <StatBadge key={s.label} value={s.value} label={s.label} delay={0.3 + i * 0.07} />
               ))}
             </div>

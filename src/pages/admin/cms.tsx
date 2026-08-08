@@ -55,7 +55,7 @@ const INITIAL = {
   footerAddress: '1 Canada Square, Canary Wharf, London',
   welcomeEmailSubject: 'Welcome to City Gate Capital',
   welcomeEmailBody: 'Dear {{name}},\n\nWelcome to City Gate Capital. Your account has been created successfully.\n\nBest regards,\nCity Gate Capital Team',
-  bannerText: 'New: Earn 5.2% APY on your savings. Open a Savings Account today.',
+  bannerText: 'Product preview: balances and transactions are demonstrations.',
   bannerActive: true,
   // Digital Banking page fields
   dbHeroTitle:        'Banking That Works for You',
@@ -77,10 +77,10 @@ const INITIAL = {
   dbFeature8Title: '3D Secure',         dbFeature8Desc: 'Every online transaction is protected by 3D Secure authentication and real-time fraud detection.',
   dbFeature9Title: 'AI Insights',       dbFeature9Desc: 'Personalised financial insights powered by AI. Know your patterns, optimise your spending automatically.',
   // Stats strip
-  dbStat1Value: '2M+',    dbStat1Label: 'Active Customers',
-  dbStat2Value: '$48B+',  dbStat2Label: 'Processed Annually',
-  dbStat3Value: '190+',   dbStat3Label: 'Countries Supported',
-  dbStat4Value: '99.99%', dbStat4Label: 'Platform Uptime',
+  dbStat1Value: '1',      dbStat1Label: 'Unified Preview',
+  dbStat2Value: '$0',     dbStat2Label: 'Live Funds Processed',
+  dbStat3Value: '50+',    dbStat3Label: 'Prototype Currencies',
+  dbStat4Value: '2FA',    dbStat4Label: 'Account Protection',
 };
 
 export default function AdminCMS() {

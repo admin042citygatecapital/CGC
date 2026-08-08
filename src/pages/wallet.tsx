@@ -28,11 +28,11 @@ const fiatCurrencyMeta = [
 ];
 
 const securityFeatures = [
-  { icon: Lock,   title: 'Cold Storage',         desc: '95% of crypto assets held in air-gapped cold storage vaults, never connected to the internet.',                   color: '#C9A84C' },
+  { icon: Lock,   title: 'Custody Status',       desc: 'No crypto custody is active in this preview. A contracted and reviewed provider is required before launch.',     color: '#C9A84C' },
   { icon: Shield, title: 'Multi-Signature',       desc: 'All withdrawals require multiple cryptographic signatures, eliminating single points of failure.',                color: '#627EEA' },
   { icon: RefreshCw, title: 'Real-time Monitoring', desc: '24/7 automated threat detection with instant alerts and transaction blocking on suspicious activity.',          color: '#10B981' },
   { icon: Zap,    title: 'Instant Settlement',    desc: 'On-chain transactions settle in seconds. Fiat conversions happen at the real mid-market rate, instantly.',       color: '#9945FF' },
-  { icon: Globe,  title: 'Global Compliance',     desc: 'Fully compliant with AML/KYC regulations in 40+ jurisdictions. Your assets are always protected by law.',       color: '#EC4899' },
+  { icon: Globe,  title: 'Launch Readiness',      desc: 'Legal review, KYC/AML providers, geographic controls, and custody approval are required before launch.',         color: '#EC4899' },
   { icon: ArrowLeftRight, title: 'Seamless Exchange', desc: 'Swap between any crypto or fiat currency in your wallet at the best available rate, with no hidden fees.', color: '#F7931A' },
 ];
 
@@ -240,10 +240,10 @@ export default function WalletPage() {
       <Helmet>
         <title>Crypto & Fiat Wallet — 50+ Currencies | CGC</title>
         <meta name="robots" content="noindex, nofollow" />
-        <meta name="description" content="Manage Bitcoin, Ethereum, USDT, and 50+ fiat currencies in one secure wallet. Real exchange rates, zero hidden fees, institutional-grade cold storage security." />
+        <meta name="description" content="Preview a unified crypto and fiat wallet interface using demonstration balances. Live custody, trading, and transfers are unavailable." />
         <link rel="canonical" href="https://citygate.capital/wallet" />
         <meta property="og:title" content="Crypto & Fiat Wallet — Hold 50+ Currencies" />
-        <meta property="og:description" content="One wallet for every currency. 50+ crypto and fiat currencies, real exchange rates, institutional-grade cold storage." />
+        <meta property="og:description" content="Preview a unified crypto and fiat wallet interface using demonstration balances." />
         <meta property="og:url" content="https://citygate.capital/wallet" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -271,7 +271,7 @@ export default function WalletPage() {
           mainEntity: {
             '@type': 'FinancialProduct',
             name: 'City Gate Capital Multi-Currency Wallet',
-            description: 'Secure crypto and fiat wallet supporting 50+ currencies with institutional-grade cold storage.',
+            description: 'Product preview of a crypto and fiat wallet interface using demonstration balances.',
             provider: { '@id': 'https://citygate.capital/#organization' },
             feesAndCommissionsSpecification: 'Zero hidden fees. Real mid-market exchange rates.',
           },

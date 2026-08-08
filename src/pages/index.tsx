@@ -58,10 +58,10 @@ export default function HomePage() {
     <>
       <Helmet>
         <title>City Gate Capital — Secure Digital Banking</title>
-        <meta name="description" content="City Gate Capital offers premium digital banking, crypto & fiat wallets, international transfers, and smart cards. Join 2M+ customers in 180+ countries. Open your account in minutes." />
+        <meta name="description" content="Explore the City Gate Capital product preview for multi-currency accounts, wallets, transfers, cards, analytics, and secure administration." />
         <link rel="canonical" href="https://citygate.capital/" />
         <meta property="og:title" content="City Gate Capital — Secure Digital Banking for the Modern World" />
-        <meta property="og:description" content="Multi-currency wallets, crypto exchange, international transfers, and smart cards — all in one premium platform. Join 2M+ customers." />
+        <meta property="og:description" content="A product preview for multi-currency accounts, wallets, transfers, cards, analytics, and secure administration." />
         <meta property="og:url" content="https://citygate.capital/" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />

@@ -7,24 +7,24 @@ const LAST_UPDATED = 'May 23, 2026';
 const CANONICAL = 'https://citygate.capital/compliance';
 
 const regulatoryBadges = [
-  { label: 'FCA Registered', region: 'United Kingdom', color: '#C9A84C' },
-  { label: 'FinCEN Registered', region: 'United States', color: '#627EEA' },
-  { label: 'AUSTRAC Registered', region: 'Australia', color: '#10B981' },
-  { label: 'MAS Licensed', region: 'Singapore', color: '#9945FF' },
-  { label: 'GDPR Compliant', region: 'European Union', color: '#EC4899' },
-  { label: 'PCI DSS Level 1', region: 'Global', color: '#F7931A' },
+  { label: 'Legal Review', region: 'Required before launch', color: '#C9A84C' },
+  { label: 'KYC Provider', region: 'Contract required', color: '#627EEA' },
+  { label: 'AML Screening', region: 'Contract required', color: '#10B981' },
+  { label: 'Payment Rails', region: 'Approval required', color: '#9945FF' },
+  { label: 'Custody Provider', region: 'Approval required', color: '#EC4899' },
+  { label: 'External Audit', region: 'Evidence required', color: '#F7931A' },
 ];
 
 const certifications = [
-  { title: 'ISO 27001', desc: 'Information Security Management', icon: Lock },
-  { title: 'SOC 2 Type II', desc: 'Security, Availability & Confidentiality', icon: Shield },
-  { title: 'PCI DSS Level 1', desc: 'Payment Card Industry Data Security', icon: FileText },
-  { title: 'GDPR', desc: 'EU General Data Protection Regulation', icon: Eye },
-  { title: 'UK GDPR', desc: 'UK Data Protection Act 2018', icon: Eye },
-  { title: 'AML/CFT', desc: 'Anti-Money Laundering & Counter-Terrorism Financing', icon: AlertTriangle },
+  { title: 'Encryption', desc: 'Secure transport and protected credentials', icon: Lock },
+  { title: 'Access Control', desc: 'Role-based administration', icon: Shield },
+  { title: 'Audit Trail', desc: 'Administrative mutation logging', icon: FileText },
+  { title: 'Privacy Review', desc: 'Required before processing live data', icon: Eye },
+  { title: 'Data Minimisation', desc: 'Collect only what the preview needs', icon: Eye },
+  { title: 'Launch Guard', desc: 'Live money movement disabled by default', icon: AlertTriangle },
 ];
 
-const sections = [
+const verifiedSections = [
   {
     id: 'regulatory-framework',
     title: '1. Regulatory Framework',
@@ -187,6 +187,51 @@ const sections = [
   },
 ];
 
+const previewSections = [
+  {
+    id: 'current-status',
+    title: '1. Current Status',
+    icon: Globe,
+    content: [
+      { subtitle: '1.1 Product Preview', body: 'This environment is a software demonstration. City Gate Capital is not operating a bank here, does not accept deposits, and does not execute live financial transactions.' },
+      { subtitle: '1.2 No Regulatory Claim', body: 'No licence, registration, certification, deposit-protection scheme, or partner relationship should be inferred from this preview. Any future claim will require legal verification and published evidence.' },
+    ],
+  },
+  {
+    id: 'launch-requirements',
+    title: '2. Requirements Before Live Launch',
+    icon: AlertTriangle,
+    content: [
+      { subtitle: '2.1 Legal and Regulatory Approval', body: 'Qualified counsel must determine the permitted business model, entity structure, target jurisdictions, required licences, disclosures, complaints process, and consumer-protection obligations.' },
+      { subtitle: '2.2 Contracted Providers', body: 'Live operation requires approved KYC and AML screening, transaction monitoring, payment or banking rails, custody where applicable, signed webhook validation, reconciliations, and documented incident procedures.' },
+      { subtitle: '2.3 Operational Evidence', body: 'Provider contracts, security reviews, data-processing agreements, policies, staff ownership, testing evidence, and launch approval must be recorded before financial operations can be enabled.' },
+    ],
+  },
+  {
+    id: 'implemented-controls',
+    title: '3. Controls Implemented in the Preview',
+    icon: Lock,
+    content: [
+      { subtitle: '3.1 Identity and Administration', body: 'The application includes separate customer and administrator sessions, role-based administration, CSRF protection, secure-cookie support, rate limits, and administrative audit events.' },
+      { subtitle: '3.2 Safe Deployment Mode', body: 'Production starts in preview mode. Money-moving endpoints remain unavailable unless explicit live-readiness settings and provider attestations are present.' },
+      { subtitle: '3.3 Demonstration Data', body: 'Balances, transactions, market activity, cards, yields, and trading results shown in this environment are illustrative and do not represent customer funds or executed orders.' },
+    ],
+  },
+  {
+    id: 'contact',
+    title: '4. Compliance Contact',
+    icon: Mail,
+    content: [
+      { subtitle: '4.1 Enquiries', body: 'Questions about launch readiness or regulatory review may be sent to compliance@citygate.capital. This address does not constitute a regulator, ombudsman, or licensed financial-service support channel.' },
+    ],
+  },
+];
+
+// Retained only as a drafting reference; it must not be published until every
+// statement has documentary evidence and counsel approval.
+void verifiedSections;
+const sections = previewSections;
+
 const tocItems = sections.map(s => ({ id: s.id, title: s.title }));
 
 export default function CompliancePage() {
@@ -215,10 +260,10 @@ export default function CompliancePage() {
     <>
       <Helmet>
         <title>Compliance — City Gate Capital</title>
-        <meta name="description" content="City Gate Capital's regulatory compliance framework covering AML/CFT, KYC, GDPR, PCI DSS, and consumer protection across 40+ jurisdictions." />
+        <meta name="description" content="City Gate Capital product-preview status, implemented safeguards, and the regulatory and provider requirements that must be completed before a live launch." />
         <link rel="canonical" href={CANONICAL} />
         <meta property="og:title" content="Compliance — City Gate Capital" />
-        <meta property="og:description" content="Our regulatory compliance framework: AML/CFT, KYC, data protection, and security certifications across 40+ jurisdictions." />
+        <meta property="og:description" content="Product-preview safeguards and requirements that must be completed before any live financial launch." />
         <meta property="og:url" content={CANONICAL} />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -231,7 +276,7 @@ export default function CompliancePage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:title" content="Compliance — City Gate Capital" />
-        <meta name="twitter:description" content="Our regulatory compliance framework: AML/CFT, KYC, data protection, and security certifications across 40+ jurisdictions." />
+        <meta name="twitter:description" content="Product-preview safeguards and requirements before any live financial launch." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </Helmet>
@@ -255,13 +300,13 @@ export default function CompliancePage() {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-medium mb-6">
               <Shield size={12} />
-              Regulatory Compliance
+              Launch Readiness
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
               Compliance
             </h1>
             <p className="text-foreground/55 text-lg leading-relaxed mb-6">
-              City Gate Capital is built on a foundation of regulatory compliance, financial integrity, and the highest standards of security. We are licensed, audited, and accountable.
+              This is a product-preview environment. It documents implemented software safeguards and the legal, regulatory, provider, and operational work still required before any live financial service can launch.
             </p>
             <div className="flex flex-wrap gap-4 text-xs text-foreground/55">
               <span>Last updated: <span className="text-foreground/60">{LAST_UPDATED}</span></span>
@@ -295,7 +340,7 @@ export default function CompliancePage() {
       {/* Certifications strip */}
       <section className="pb-12">
         <div className="container mx-auto px-4 md:px-6">
-          <p className="text-[10px] font-bold text-foreground/50 uppercase tracking-[0.18em] mb-5">Security & Compliance Certifications</p>
+          <p className="text-[10px] font-bold text-foreground/50 uppercase tracking-[0.18em] mb-5">Preview Safeguards & Launch Requirements</p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 max-w-5xl">
             {certifications.map(cert => {
               const Icon = cert.icon;

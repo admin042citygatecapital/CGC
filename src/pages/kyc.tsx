@@ -446,7 +446,7 @@ function StepIdentity({ form, onChange, errors }: {
       </div>
       <div className="flex items-center gap-3 text-xs text-foreground/35 rounded-xl border border-white/5 bg-white/2 p-3">
         <Lock size={12} className="text-primary shrink-0" />
-        <span>256-bit AES encryption · Documents deleted after verification · SOC 2 Type II compliant</span>
+        <span>Preview workflow only · Do not upload real identity documents · Live KYC is not enabled</span>
       </div>
     </div>
   );

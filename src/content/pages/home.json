@@ -1,10 +1,10 @@
 {
   "hero": {
-    "trustBadge": "Built for customers worldwide",
+    "trustBadge": "City Gate Capital product preview",
     "headline1": "The Future of",
     "headlineAccent": "Banking",
     "headline2": "is Here",
-    "subheadline": "Multi-currency wallets, crypto exchange, international transfers, and smart cards — all in one premium platform built for global citizens.",
+    "subheadline": "Preview multi-currency accounts, wallets, transfers, smart cards, analytics, and administration in one premium demonstration platform.",
     "ctaSecondary": "Explore Features",
     "trustBadges": [
       {
@@ -17,40 +17,40 @@
       },
       {
         "id": "tb3",
-        "label": "ISO 27001"
+        "label": "Secure-by-Default Preview"
       }
     ],
     "heroCTALabels": {
-      "control": "Open Free Account",
-      "urgency": "Start Banking Today",
-      "benefit": "Get $0 Fees Forever"
+      "control": "Explore the Preview",
+      "urgency": "See the Platform",
+      "benefit": "Create a Preview Profile"
     }
   },
   "stats": [
     {
       "id": "s1",
-      "value": 2,
-      "suffix": "M+",
-      "label": "Active Customers"
+      "value": 1,
+      "suffix": "",
+      "label": "Unified Preview"
     },
     {
       "id": "s2",
-      "value": 180,
+      "value": 50,
       "suffix": "+",
-      "label": "Countries Served"
+      "label": "Prototype Currencies"
     },
     {
       "id": "s3",
-      "value": 50,
-      "suffix": "B+",
-      "prefix": "$",
-      "label": "Assets Managed"
+      "value": 2,
+      "suffix": "FA",
+      "prefix": "",
+      "label": "Account Protection"
     },
     {
       "id": "s4",
-      "value": 40,
-      "suffix": "+",
-      "label": "Jurisdictions"
+      "value": 0,
+      "suffix": "",
+      "label": "Live Transactions"
     }
   ],
   "trustBadges": [
@@ -72,7 +72,7 @@
     },
     {
       "id": "tb5",
-      "label": "SOC 2 Type II Certified"
+      "label": "Administrative Audit Trail"
     }
   ],
   "features": {
@@ -84,32 +84,32 @@
       {
         "id": "f1",
         "title": "Global Transfers",
-        "desc": "Send to 180+ countries at real mid-market rates. No hidden fees, ever."
+        "desc": "Explore a global-transfer workflow with illustrative rates, fees, tracking, and delivery states."
       },
       {
         "id": "f2",
         "title": "Crypto Exchange",
-        "desc": "Buy, sell and hold 50+ cryptocurrencies directly in your account."
+        "desc": "Explore paper trading and portfolio views; live trading and custody are unavailable."
       },
       {
         "id": "f3",
         "title": "Smart Cards",
-        "desc": "Virtual and physical cards with real-time spend controls and cashback."
+        "desc": "Preview virtual and physical card designs with demonstration spend controls."
       },
       {
         "id": "f4",
         "title": "AI Analytics",
-        "desc": "Machine-learning insights that predict spending and grow your wealth."
+        "desc": "Explore demonstration spending categorisation and proposed financial-insight views."
       },
       {
         "id": "f5",
         "title": "Bank-Grade Security",
-        "desc": "Biometrics, 256-bit encryption and cold-storage for every asset."
+        "desc": "Account security controls and a production launch gate that keeps financial operations disabled."
       },
       {
         "id": "f6",
         "title": "Investment Tools",
-        "desc": "Stocks, ETFs, crypto indices and auto-rebalancing portfolios."
+        "desc": "Preview stocks, ETFs, crypto indices, and portfolio-allocation workflows using sample data."
       }
     ]
   },
@@ -145,7 +145,7 @@
     "eyebrow": "International Transfers",
     "headline1": "Send Money Anywhere",
     "headlineAccent": "In Seconds",
-    "subheadline": "Transfer to 180+ countries at real mid-market rates. Transparent fees from $0.99, instant settlement, and full tracking from send to delivery.",
+    "subheadline": "Preview international transfer journeys with illustrative rates, fees, settlement states, and end-to-end tracking.",
     "featureBullets": [
       {
         "id": "tr1",
@@ -184,7 +184,7 @@
       {
         "id": "cr2",
         "title": "Cold Storage Security",
-        "desc": "95% of crypto assets held in air-gapped cold storage vaults, never connected to the internet."
+        "desc": "Custody is not active in the preview and requires a contracted, independently reviewed provider before launch."
       },
       {
         "id": "cr3",
@@ -263,7 +263,7 @@
       {
         "id": "sec3",
         "title": "Cold Storage Custody",
-        "desc": "95% of crypto assets held in air-gapped cold storage vaults, never connected to the internet."
+        "desc": "Custody is not active in the preview and requires a contracted, independently reviewed provider before launch."
       },
       {
         "id": "sec4",
@@ -363,7 +363,7 @@
     "headline1": "What Our",
     "headlineAccent": "Customers",
     "headline2": "Say",
-    "subheadline": "From freelancers to Fortune 500 treasurers — here's what our customers say.",
+    "subheadline": "Illustrative scenarios showing how different audiences could use the proposed platform.",
     "featuredQuote": "We moved our entire treasury operation to City Gate Capital. The API, the compliance tools, and the dedicated relationship manager make it completely seamless. It's the most sophisticated fintech platform I've used in 20 years of finance.",
     "featuredName": "James W.",
     "featuredRole": "Hedge Fund Manager · Zurich, Switzerland",
@@ -408,7 +408,7 @@
         "avatar": "M",
         "color": "#9945FF",
         "rating": 5,
-        "text": "The institutional-grade custody and compliance tools are exactly what our treasury team needed. Exceptional platform, exceptional support."
+        "text": "This scenario demonstrates how treasury users could review controls and reporting after approved provider integrations are available."
       },
       {
         "id": "t5",
@@ -438,7 +438,7 @@
         "avatar": "L",
         "color": "#EC4899",
         "rating": 5,
-        "text": "I live in 6 countries a year. Having one card that works everywhere at real exchange rates is the single best financial decision I've made."
+        "text": "This scenario demonstrates a multi-currency card experience; coverage and exchange terms are not live in the preview."
       },
       {
         "id": "t8",
@@ -466,13 +466,13 @@
         "id": "fq1",
         "cat": "Security",
         "q": "Is City Gate Capital safe?",
-        "a": "Yes. We use 256-bit AES encryption, multi-factor authentication, biometric verification, and air-gapped cold storage for 95% of crypto assets. Security is our top priority, with continuous account monitoring and bank-grade safeguards across the platform."
+        "a": "The preview includes account-security controls such as multi-factor authentication and secure sessions. It does not hold customer funds or crypto assets, and no custody service is active."
       },
       {
         "id": "fq2",
         "cat": "Security",
         "q": "What happens if I lose access to my account?",
-        "a": "We offer multiple account recovery options including backup codes, identity re-verification, and support-assisted recovery. Our 24/7 security team can restore access securely, typically within 1 hour for Premium and Elite customers."
+        "a": "The preview supports password-reset and account-security workflows. Support response times and identity re-verification service levels are not guaranteed."
       },
       {
         "id": "fq3",
@@ -508,7 +508,7 @@
         "id": "fq8",
         "cat": "Transfers",
         "q": "Can I schedule or automate recurring transfers?",
-        "a": "Yes. Premium and Elite customers can set up recurring transfers on a daily, weekly, or monthly schedule. You can also set target exchange rates and we'll auto-execute when the market hits your price."
+        "a": "Recurring transfers and target-rate actions are demonstration features. The preview does not execute live payments or currency conversions."
       }
     ]
   },
@@ -516,7 +516,7 @@
     "badge": "Open in under 5 minutes",
     "headline1": "Ready to Bank",
     "headlineAccent": "Smarter?",
-    "subheadline": "Join customers around the world who trust City Gate Capital for global transfers, crypto, investments, and everyday banking.",
+    "subheadline": "Explore the City Gate Capital vision for global transfers, digital assets, investments, and everyday account management.",
     "ctaPrimary": "Open Free Account",
     "ctaSecondary": "Talk to Sales",
     "featureStrip": [
@@ -526,7 +526,7 @@
       },
       {
         "id": "fs2",
-        "label": "180+ countries"
+        "label": "Multi-currency preview"
       },
       {
         "id": "fs3",
@@ -687,7 +687,7 @@
         },
         {
           "id": "pf22",
-          "label": "Institutional-grade cold custody",
+          "label": "Custody provider required before launch",
           "included": true
         },
         {

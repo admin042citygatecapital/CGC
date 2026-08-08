@@ -65,7 +65,7 @@ function emailShell(content: string): string {
         <!-- Footer -->
         <tr><td style="padding:24px 0 0 0;text-align:center;">
           <p style="color:${MUTED};font-size:11px;margin:0 0 6px 0;">
-            City Gate Capital Ltd · Regulated in 40+ jurisdictions · FDIC Insured
+            City Gate Capital product preview · No live deposits or transactions
           </p>
           <p style="color:${MUTED};font-size:11px;margin:0;">
             <a href="${BASE_URL}/unsubscribe?email={{email}}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>
@@ -103,7 +103,7 @@ function highlight(text: string): string {
   return `<span style="color:${GOLD};font-weight:600;">${text}</span>`;
 }
 
-export const NURTURE_SEQUENCE: NurtureEmail[] = [
+const LEGACY_NURTURE_SEQUENCE: NurtureEmail[] = [
   // ── Step 1: Welcome (sent immediately) ──────────────────────────────────
   {
     step: 1,
@@ -332,6 +332,32 @@ Ready? → ${BASE_URL}/accounts`,
       </table>
       ${ctaButton('Open My Free Account', `${BASE_URL}/accounts`)}
       ${p(`No credit check. No branch visit. No paperwork. Just better banking.`)}
+    `),
+  },
+];
+
+// The legacy campaign is retained as unpublished drafting material. It contains
+// commercial claims that must not be sent without evidence and legal approval.
+void LEGACY_NURTURE_SEQUENCE;
+
+export const NURTURE_SEQUENCE: NurtureEmail[] = [
+  {
+    step: 1,
+    subject: 'Welcome to the City Gate Capital product preview',
+    preheader: 'A clear guide to what this preview can and cannot do.',
+    delayHours: 0,
+    ctaLabel: 'Explore the Product Preview',
+    ctaUrl: `${BASE_URL}/digital-banking`,
+    bodyText: `Welcome to the City Gate Capital product preview.
+
+This environment demonstrates proposed account, wallet, card, transfer, analytics, and administration experiences. It does not accept deposits, provide custody, issue cards, or execute live financial transactions.
+
+Explore the preview: ${BASE_URL}/digital-banking`,
+    bodyHtml: emailShell(`
+      ${h1(`Welcome to the ${highlight('City Gate Capital product preview')}`)}
+      ${p(`This environment demonstrates proposed account, wallet, card, transfer, analytics, and administration experiences.`)}
+      ${p(`It does not accept deposits, provide custody, issue cards, or execute live financial transactions. Live operation requires legal approval and contracted KYC, AML, payment, banking, and custody providers.`)}
+      ${ctaButton('Explore the Product Preview', `${BASE_URL}/digital-banking`)}
     `),
   },
 ];
