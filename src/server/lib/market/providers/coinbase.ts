@@ -29,9 +29,12 @@ async function fetchJSON<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-function toUSDT(symbol: string): string {
+export function toCoinbaseProductId(symbol: string): string {
   // Coinbase uses BTC-USD format
-  return symbol.replace('USDT', '-USD').replace('USD', '-USD');
+  const normalized = symbol.replace('/', '').replace('-', '').toUpperCase();
+  if (normalized.endsWith('USDT')) return `${normalized.slice(0, -4)}-USD`;
+  if (normalized.endsWith('USD')) return `${normalized.slice(0, -3)}-USD`;
+  return symbol;
 }
 
 export class CoinbaseProvider implements MarketDataProvider {
@@ -46,7 +49,7 @@ export class CoinbaseProvider implements MarketDataProvider {
     const results: Ticker[] = [];
     for (const sym of symbols) {
       try {
-        const productId = toUSDT(sym);
+        const productId = toCoinbaseProductId(sym);
         const data = await fetchJSON<Record<string, unknown>>(
           `${REST_BASE}/market/products/${productId}/ticker?limit=1`
         );
@@ -74,7 +77,7 @@ export class CoinbaseProvider implements MarketDataProvider {
   }
 
   async getCandles(symbol: string, interval: CandleInterval, limit = 200): Promise<Candle[]> {
-    const productId = toUSDT(symbol);
+    const productId = toCoinbaseProductId(symbol);
     const gran      = INTERVAL_MAP[interval] ?? 'ONE_HOUR';
     const end       = Math.floor(Date.now() / 1000);
     const granSecs: Record<string, number> = {
@@ -97,7 +100,7 @@ export class CoinbaseProvider implements MarketDataProvider {
   }
 
   async getOrderBook(symbol: string, depth = 20): Promise<OrderBook> {
-    const productId = toUSDT(symbol);
+    const productId = toCoinbaseProductId(symbol);
     const data = await fetchJSON<{ pricebook: { bids: Record<string, string>[]; asks: Record<string, string>[] } }>(
       `${REST_BASE}/market/product_book?product_id=${productId}&limit=${depth}`
     );
@@ -167,7 +170,7 @@ export class CoinbaseProvider implements MarketDataProvider {
     let closed = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const productIds = symbols.map(toUSDT);
+    const productIds = symbols.map(toCoinbaseProductId);
 
     const connect = () => {
       if (closed) return;

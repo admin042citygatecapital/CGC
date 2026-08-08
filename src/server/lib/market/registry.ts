@@ -22,7 +22,7 @@ const CRYPTO_PRIORITY  = ['binance', 'kraken', 'coinbase', 'finnhub', 'twelve-da
 const STOCK_PRIORITY   = ['polygon', 'finnhub', 'twelve-data', 'alpha-vantage'];
 const FOREX_PRIORITY   = ['twelve-data', 'alpha-vantage', 'finnhub'];
 
-class MarketDataRegistry {
+export class MarketDataRegistry {
   private providers = new Map<string, MarketDataProvider>();
   private unavailableUntil = new Map<string, number>();
 
@@ -118,7 +118,11 @@ class MarketDataRegistry {
   // ── Unified API ────────────────────────────────────────────────────────────
 
   async getTicker(symbols: string[], assetClass?: AssetClass): Promise<Ticker[]> {
-    return this.tryWithFallback('ticker', assetClass, p => p.getTicker(symbols));
+    return this.tryWithFallback('ticker', assetClass, async p => {
+      const tickers = await p.getTicker(symbols);
+      if (!tickers.length) throw new Error(`${p.name} returned no ticker data`);
+      return tickers;
+    });
   }
 
   async getCandles(
