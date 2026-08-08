@@ -24,6 +24,7 @@ const FOREX_PRIORITY   = ['twelve-data', 'alpha-vantage', 'finnhub'];
 
 class MarketDataRegistry {
   private providers = new Map<string, MarketDataProvider>();
+  private unavailableUntil = new Map<string, number>();
 
   register(provider: MarketDataProvider) {
     this.providers.set(provider.id, provider);
@@ -99,10 +100,15 @@ class MarketDataRegistry {
 
     let lastError: Error = new Error('No providers');
     for (const p of candidates) {
+      if ((this.unavailableUntil.get(p.id) ?? 0) > Date.now()) continue;
       try {
-        return await fn(p);
+        const result = await fn(p);
+        this.unavailableUntil.delete(p.id);
+        return result;
       } catch (e) {
         lastError = e instanceof Error ? e : new Error(String(e));
+        const geographicBlock = /HTTP 451|restricted location/i.test(lastError.message);
+        this.unavailableUntil.set(p.id, Date.now() + (geographicBlock ? 60 * 60_000 : 30_000));
         console.warn(`[market] Provider ${p.id} failed for ${capability}: ${lastError.message}`);
       }
     }
@@ -167,7 +173,7 @@ class MarketDataRegistry {
     return [...this.providers.values()].map(p => ({
       id: p.id,
       name: p.name,
-      available: true,
+      available: (this.unavailableUntil.get(p.id) ?? 0) <= Date.now(),
       capabilities: Object.entries(p.capabilities)
         .filter(([, v]) => v)
         .map(([k]) => k),
