@@ -55,6 +55,7 @@ const routeImports: Record<string, () => Promise<unknown>> = {
   '/admin/cms':          () => import('../pages/admin/cms'),
   '/admin/newsletter':   () => import('../pages/admin/newsletter'),
   '/admin/contacts':     () => import('../pages/admin/contacts'),
+  '/admin/operations':   () => import('../pages/admin/operations'),
   '/admin/banking':      () => import('../pages/admin/banking'),
   '/admin/crypto':       () => import('../pages/admin/crypto'),
   '/admin/trading':      () => import('../pages/admin/trading'),

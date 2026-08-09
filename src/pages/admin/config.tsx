@@ -432,6 +432,11 @@ export default function AdminConfigPage() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
+                          ['accountApplicationsEnabled','Account Applications', 'Accept and queue new account applications'],
+                          ['contactFormsEnabled',       'Contact Forms',        'Accept public contact submissions'],
+                          ['newsletterSignupEnabled',   'Newsletter Signup',    'Accept newsletter subscriptions'],
+                          ['supportTicketsEnabled',     'Support Tickets',      'Allow customers to open support cases'],
+                          ['cardRequestsEnabled',       'Card Requests',        'Allow eligible customers to request cards'],
                           ['showBalanceWidget',      'Balance Widget'],
                           ['showTransactionFeed',    'Transaction Feed'],
                           ['showSpendingChart',      'Spending Chart'],

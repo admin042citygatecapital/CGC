@@ -6,8 +6,11 @@ import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { sanitizeString, isValidEmail } from '../../../lib/inputValidator.js';
+import { createOperationsItem } from '../../../lib/operationsInboxStore.js';
+import { requireIntakeEnabled } from '../../../lib/operationalControls.js';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
-const DATA_DIR  = '/private/accounts';
+const DATA_DIR  = privateSubdirectory('accounts');
 const DATA_FILE = path.join(DATA_DIR, 'applications.jsonl');
 
 interface Application {
@@ -33,6 +36,7 @@ const VALID_ACCOUNT_TYPES = new Set(['personal', 'savings', 'business']);
 
 export default function handler(req: Request, res: Response) {
   try {
+    if (!requireIntakeEnabled(res, 'accountApplicationsEnabled')) return;
     const raw = req.body as Record<string, unknown>;
 
     // Sanitize all string inputs
@@ -79,6 +83,17 @@ export default function handler(req: Request, res: Response) {
 
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     fs.appendFileSync(DATA_FILE, JSON.stringify(application) + '\n', 'utf8');
+
+    createOperationsItem({
+      source: 'account_application',
+      referenceId: application.id,
+      title: `Account application: ${firstName} ${lastName}`,
+      summary: additionalNotes || `${accountType} account application from ${nationality || 'unspecified nationality'}`,
+      requesterName: `${firstName} ${lastName}`,
+      requesterEmail: email,
+      priority: accountType === 'business' ? 'high' : 'normal',
+      metadata: { accountType, nationality: nationality || 'unspecified' },
+    });
 
     return res.status(201).json({
       ok: true,

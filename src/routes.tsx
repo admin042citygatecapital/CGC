@@ -89,6 +89,7 @@ const AdminSecurity        = lazy(() => import('./pages/admin/security'));
 const AdminSettings        = lazy(() => import('./pages/admin/settings'));
 const AdminNewsletter      = lazy(() => import('./pages/admin/newsletter'));
 const AdminContacts        = lazy(() => import('./pages/admin/contacts'));
+const AdminOperations      = lazy(() => import('./pages/admin/operations'));
 const AdminSmtp            = lazy(() => import('./pages/admin/smtp'));
 const AdminZohoSetup       = lazy(() => import('./pages/admin/zoho-setup'));
 const AdminSocial          = lazy(() => import('./pages/admin/social'));
@@ -171,6 +172,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/settings',     element: <AdminOnly><AdminSettings /></AdminOnly> },
   { path: '/admin/newsletter',   element: <AdminOnly><AdminNewsletter /></AdminOnly> },
   { path: '/admin/contacts',     element: <AdminOnly><AdminContacts /></AdminOnly> },
+  { path: '/admin/operations',   element: <AdminOnly><AdminOperations /></AdminOnly> },
   { path: '/admin/smtp',         element: <AdminOnly><AdminSmtp /></AdminOnly> },
   { path: '/admin/zoho-setup',   element: <AdminOnly><AdminZohoSetup /></AdminOnly> },
   { path: '/admin/social',       element: <AdminOnly><AdminSocial /></AdminOnly> },

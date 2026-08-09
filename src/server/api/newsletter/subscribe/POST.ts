@@ -1,5 +1,7 @@
 import type { Request, Response } from 'express';
 import { addSubscriber, findSubscriberByEmail } from '../../../lib/subscriberStore.js';
+import { createOperationsItem } from '../../../lib/operationsInboxStore.js';
+import { requireIntakeEnabled } from '../../../lib/operationalControls.js';
 
 const VALID_SOURCES = new Set<string>([
   'footer', 'homepage_hero', 'accounts_page', 'contact_page', 'unknown',
@@ -7,6 +9,7 @@ const VALID_SOURCES = new Set<string>([
 
 export default async function handler(req: Request, res: Response) {
   try {
+    if (!requireIntakeEnabled(res, 'newsletterSignupEnabled')) return;
     const { email, name, source } = req.body as {
       email?: string;
       name?: string;
@@ -30,6 +33,12 @@ export default async function handler(req: Request, res: Response) {
       name ? String(name).slice(0, 100).trim() : undefined,
       safeSource,
     );
+
+    createOperationsItem({
+      source: 'newsletter_signup', referenceId: subscriber.id, title: 'Newsletter signup',
+      summary: `New newsletter subscriber from ${safeSource}.`, requesterName: subscriber.name,
+      requesterEmail: subscriber.email, priority: 'low', metadata: { source: safeSource },
+    });
 
     return res.status(201).json({ ok: true, id: subscriber.id });
   } catch (err) {

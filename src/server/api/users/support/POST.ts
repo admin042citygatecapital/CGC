@@ -7,6 +7,8 @@ import type { Request, Response } from 'express';
 import { findUserBySessionToken } from '../../../lib/userStore.js';
 import { createConversation, addMessage } from '../../../lib/supportStore.js';
 import { createNotification } from '../../../lib/notificationStore.js';
+import { createOperationsItem } from '../../../lib/operationsInboxStore.js';
+import { requireIntakeEnabled } from '../../../lib/operationalControls.js';
 
 export default async function handler(req: Request, res: Response) {
   const auth  = req.headers.authorization ?? '';
@@ -15,6 +17,7 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserBySessionToken(token);
   if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
+  if (!requireIntakeEnabled(res, 'supportTicketsEnabled')) return;
 
   const { subject, category = 'general', message, conversationId } = req.body ?? {};
 
@@ -41,6 +44,13 @@ export default async function handler(req: Request, res: Response) {
     subject:   String(subject).trim(),
     category:  String(category).trim(),
     message:   String(message).trim(),
+  });
+
+  createOperationsItem({
+    source: 'support_ticket', referenceId: conv.id, title: conv.subject,
+    summary: String(message).trim(), requesterName: user.name, requesterEmail: user.email,
+    userId: user.id, priority: conv.priority === 'medium' ? 'normal' : conv.priority,
+    metadata: { category: conv.category },
   });
 
   await createNotification(

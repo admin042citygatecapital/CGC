@@ -67,6 +67,18 @@ describe('admin authorization policy', () => {
     expect(status).toHaveBeenCalledWith(403);
   });
 
+  it('allows operational teams to manage the shared inbox but blocks security-only admins', () => {
+    for (const role of ['FINANCE_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] as AdminRole[]) {
+      const allowed = responseMock();
+      const next = vi.fn() as NextFunction;
+      requireAdminAuthorization(request(role, '/operations', 'POST'), allowed.response, next);
+      expect(next).toHaveBeenCalledOnce();
+    }
+    const blocked = responseMock();
+    requireAdminAuthorization(request('SECURITY_ADMIN', '/operations', 'GET'), blocked.response, vi.fn() as NextFunction);
+    expect(blocked.status).toHaveBeenCalledWith(403);
+  });
+
   it('reserves role changes for the super administrator', () => {
     const { response, status } = responseMock();
     const next = vi.fn() as NextFunction;

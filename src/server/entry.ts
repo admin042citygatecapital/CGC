@@ -14,6 +14,8 @@ import compression from "compression";
 import { closeConnection } from "./db/db";
 import { createMediaAssetsMiddleware } from "../../export-plugins/media-assets-plugin";
 import admin_kyc_document_get from "./api/admin/kyc/document/GET";
+import admin_operations_get from "./api/admin/operations/GET";
+import admin_operations_post from "./api/admin/operations/POST";
 
 // <api-imports>
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
@@ -508,6 +510,8 @@ app.post("/api/admin/cms/news", admin_cms_news_post_36);
 app.get("/api/admin/config", admin_config_get_37);
 app.post("/api/admin/config", admin_config_post_38);
 app.get("/api/admin/contacts", admin_contacts_get_39);
+app.get("/api/admin/operations", admin_operations_get);
+app.post("/api/admin/operations", admin_operations_post);
 app.get("/api/admin/developer", admin_developer_get_40);
 app.post("/api/admin/email/flush", admin_email_flush_post_41);
 app.get("/api/admin/email/log", admin_email_log_get_42);

@@ -40,7 +40,15 @@ export async function loadConfigFromDb(): Promise<void> {
     const db   = getDb();
     const rows = await db.select().from(configTable).where(eq(configTable.key, CONFIG_KEY));
     if (rows.length) {
-      _cache = { ...defaultConfig(), ...(rows[0].value as Partial<AppConfig>) };
+      const defaults = defaultConfig();
+      const stored = rows[0].value as Partial<AppConfig>;
+      _cache = {
+        ...defaults,
+        ...stored,
+        // Nested sections must also inherit newly introduced controls when an
+        // older persisted configuration is loaded after a deployment.
+        featureToggles: { ...defaults.featureToggles, ...(stored.featureToggles ?? {}) },
+      };
     }
   } catch { /* use defaults */ }
 }
@@ -121,6 +129,11 @@ export interface MaintenanceModeConfig {
 }
 
 export interface FeatureTogglesConfig {
+  accountApplicationsEnabled: boolean;
+  contactFormsEnabled:        boolean;
+  newsletterSignupEnabled:    boolean;
+  supportTicketsEnabled:      boolean;
+  cardRequestsEnabled:        boolean;
   virtualCardsEnabled:       boolean;
   cryptoWalletEnabled:       boolean;
   p2pTransfersEnabled:       boolean;
@@ -262,6 +275,11 @@ function defaultConfig(): AppConfig {
       showCountdown:    false,
     },
     featureToggles: {
+      accountApplicationsEnabled: true,
+      contactFormsEnabled:        true,
+      newsletterSignupEnabled:    true,
+      supportTicketsEnabled:      true,
+      cardRequestsEnabled:        true,
       virtualCardsEnabled:     true,
       cryptoWalletEnabled:     false,
       p2pTransfersEnabled:     true,

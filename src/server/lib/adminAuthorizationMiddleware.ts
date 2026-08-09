@@ -27,6 +27,7 @@ type Rule = {
 
 const RULES: readonly Rule[] = [
   { prefix: '/stats', roles: ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] },
+  { prefix: '/operations', roles: ['FINANCE_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] },
   { prefix: '/health', roles: ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] },
 
   { prefix: '/security/roles', roles: [], methods: ['POST', 'PUT', 'PATCH', 'DELETE'] },

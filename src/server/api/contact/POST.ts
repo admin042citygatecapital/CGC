@@ -8,8 +8,11 @@
 import type { Request, Response } from 'express';
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { createOperationsItem } from '../../lib/operationsInboxStore.js';
+import { requireIntakeEnabled } from '../../lib/operationalControls.js';
+import { privateSubdirectory } from '../../lib/storagePaths.js';
 
-const STORE_DIR  = '/private/contacts';
+const STORE_DIR  = privateSubdirectory('contacts');
 const STORE_FILE = join(STORE_DIR, 'submissions.jsonl');
 
 interface ContactSubmission {
@@ -46,6 +49,7 @@ function sanitize(value: unknown, maxLen = 500): string {
 
 export default function handler(req: Request, res: Response) {
   try {
+    if (!requireIntakeEnabled(res, 'contactFormsEnabled')) return;
     // ── Sanitize inputs ───────────────────────────────────────────────────────
     const firstName = sanitize(req.body?.firstName, 100);
     const lastName  = sanitize(req.body?.lastName,  100);
@@ -78,6 +82,11 @@ export default function handler(req: Request, res: Response) {
     try {
       mkdirSync(STORE_DIR, { recursive: true });
       appendFileSync(STORE_FILE, JSON.stringify(submission) + '\n', 'utf-8');
+      createOperationsItem({
+        source: 'contact_form', referenceId: submission.id, title: subject, summary: message,
+        requesterName: `${firstName} ${lastName}`, requesterEmail: email,
+        metadata: { company: company || 'not provided' },
+      });
     } catch (fsErr) {
       console.error('contact.store.write-failed', fsErr);
       // Don't fail the request for a storage error — still return success to user
