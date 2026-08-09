@@ -32,8 +32,8 @@ const fiatCurrencyMeta = [
 
 const securityFeatures = [
   { icon: Lock,   title: 'Custody Status',       desc: 'No crypto custody is active in this preview. A contracted and reviewed provider is required before launch.',     color: '#C9A84C' },
-  { icon: Shield, title: 'Multi-Signature',       desc: 'All withdrawals require multiple cryptographic signatures, eliminating single points of failure.',                color: '#627EEA' },
-  { icon: RefreshCw, title: 'Real-time Monitoring', desc: '24/7 automated threat detection with instant alerts and transaction blocking on suspicious activity.',          color: '#10B981' },
+  { icon: Shield, title: 'Provider Security',      desc: 'Custody signing, key management, and withdrawal controls require a contracted provider and independent review.', color: '#627EEA' },
+  { icon: RefreshCw, title: 'Monitoring Required', desc: 'Production fraud, sanctions, and transaction monitoring are not connected in this preview.',                     color: '#10B981' },
   { icon: Zap,    title: 'Settlement Preview',    desc: 'The interface demonstrates how settlement and conversion status could be presented after providers are approved.', color: '#9945FF' },
   { icon: Globe,  title: 'Launch Readiness',      desc: 'Legal review, KYC/AML providers, geographic controls, and custody approval are required before launch.',         color: '#EC4899' },
   { icon: ArrowLeftRight, title: 'Exchange Preview', desc: 'Compare supported crypto and fiat currencies using transparent indicative rates and flags.', color: '#F7931A' },

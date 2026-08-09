@@ -61,7 +61,7 @@ const DB_CMS_DEFAULTS: DbCms = {
   dbCtaSecondary:     'Book a Demo',
   // Feature card defaults (match hardcoded cardFeatures order)
   dbFeature1Title: 'Virtual Cards',     dbFeature1Desc: 'Preview virtual-card controls and custom demonstration spend limits.',
-  dbFeature2Title: 'Freeze & Unfreeze', dbFeature2Desc: "Lock your card in one tap if it's lost or stolen. Unlock just as fast — no phone call required.",
+  dbFeature2Title: 'Freeze & Unfreeze', dbFeature2Desc: 'Preview proposed card-status controls. No payment instrument is issued or connected to a card network.',
   dbFeature3Title: 'Instant Alerts',    dbFeature3Desc: 'Preview notification behaviour for demonstration transactions.',
   dbFeature4Title: 'Top-up Simulation', dbFeature4Desc: 'Explore proposed top-up rules without linking a bank or moving funds.',
   dbFeature5Title: 'Spend Analytics Preview', dbFeature5Desc: 'Explore illustrative purchase categorisation and charts.',
@@ -113,8 +113,9 @@ const spendCategories = [
 const plans = [
   {
     name: 'Standard',
-    price: 'Free',
-    tagline: 'Everything to get started',
+    price: 'Preview',
+    period: '',
+    tagline: 'Illustrative product concept',
     features: [
       { text: '1 virtual card',            included: true },
       { text: 'Basic spend analytics',     included: true },
@@ -127,9 +128,9 @@ const plans = [
   },
   {
     name: 'Premium',
-    price: '$9',
-    period: '/mo',
-    tagline: 'For power users',
+    price: 'Preview',
+    period: '',
+    tagline: 'Illustrative product concept',
     highlight: true,
     features: [
       { text: '5 virtual cards',           included: true },
@@ -143,9 +144,9 @@ const plans = [
   },
   {
     name: 'Elite',
-    price: '$29',
-    period: '/mo',
-    tagline: 'Private banking experience',
+    price: 'Preview',
+    period: '',
+    tagline: 'Illustrative product concept',
     features: [
       { text: 'Unlimited virtual cards',   included: true },
       { text: 'AI financial advisor',      included: true },
@@ -159,9 +160,9 @@ const plans = [
 ];
 
 const testimonials = [
-  { name: 'Sarah K.',   role: 'Entrepreneur',     text: 'The virtual card feature alone is worth it. I create a new card for every subscription and never worry about fraud.', rating: 5 },
-  { name: 'James T.',   role: 'Frequent Traveller', text: 'Zero FX fees have saved me hundreds of dollars. I use my City Gate card everywhere I travel.', rating: 5 },
-  { name: 'Priya M.',   role: 'Freelancer',       text: 'The spend analytics are incredible. I finally understand where my money goes each month.', rating: 5 },
+  { name: 'Illustrative scenario', role: 'Subscription controls', text: 'A future user could organise demonstration cards by subscription and review proposed card controls in one place.', rating: 5 },
+  { name: 'Illustrative scenario', role: 'Travel planning', text: 'A future user could compare clearly disclosed foreign-exchange options once licensed providers and commercial terms are approved.', rating: 5 },
+  { name: 'Illustrative scenario', role: 'Spending insights', text: 'A future user could use categorisation and charts to understand activity supplied by a contracted account provider.', rating: 5 },
 ];
 
 export default function DigitalBankingPage() {
@@ -257,17 +258,17 @@ export default function DigitalBankingPage() {
   return (
     <>
       <Helmet>
-        <title>Digital Banking — Smart Cards & Instant Payments | CGC</title>
+        <title>Digital Finance Product Preview | City Gate Capital</title>
         <meta name="description" content="Preview proposed card controls, analytics, payment journeys, and savings tools using demonstration data. No card or financial account is issued." />
         <link rel="canonical" href="https://citygate.capital/digital-banking" />
-        <meta property="og:title" content="Digital Banking — Smart Cards, Analytics & Instant Payments" />
+        <meta property="og:title" content="Digital Finance Product Preview | City Gate Capital" />
         <meta property="og:description" content="Explore proposed card, analytics, and payment experiences using demonstration data. No live financial services are available." />
         <meta property="og:url" content="https://citygate.capital/digital-banking" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="Digital Banking — Smart Cards, Analytics & Instant Payments" />
+        <meta property="og:image:alt" content="City Gate Capital digital finance product preview" />
         <meta property="og:site_name" content="City Gate Capital" />
         <meta property="og:locale" content="en_GB" />
         <meta name="twitter:card" content="summary_large_image" />
@@ -322,7 +323,7 @@ export default function DigitalBankingPage() {
                 {cms.dbHeroSubtitle}
               </p>
               <div className="flex flex-wrap gap-3 mb-10">
-                {['Zero FX fees', 'Virtual cards', 'AI analytics', 'Metal card', 'Cashback'].map(tag => (
+                {['FX preview', 'Card controls', 'Analytics prototype', 'Card design', 'Rewards concept'].map(tag => (
                   <span key={tag} className="px-3 py-1.5 rounded-full text-xs font-medium text-primary bg-primary/10 border border-primary/20">{tag}</span>
                 ))}
               </div>
@@ -358,7 +359,7 @@ export default function DigitalBankingPage() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-2xl font-bold text-white">My Virtual Cards</h2>
-                <p className="text-white/50 text-sm mt-1">Generate, freeze, or delete your virtual cards.</p>
+                <p className="text-white/50 text-sm mt-1">Create and manage demonstration card records. No card is issued.</p>
               </div>
               <button
                 onClick={generateCard}
@@ -366,7 +367,7 @@ export default function DigitalBankingPage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C9A84C] text-black font-semibold text-sm hover:bg-[#E8C97A] transition-colors disabled:opacity-50"
               >
                 {generating ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-                {generating ? 'Generating…' : 'New Card'}
+                {generating ? 'Creating…' : 'New Demo Card'}
               </button>
             </div>
 
@@ -386,7 +387,7 @@ export default function DigitalBankingPage() {
                 <p className="text-white/50 text-sm mb-4">No virtual cards yet.</p>
                 <button onClick={generateCard} disabled={generating}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C9A84C] text-black font-semibold text-sm hover:bg-[#E8C97A] transition-colors">
-                  <Plus size={15} /> Generate Your First Card
+                  <Plus size={15} /> Create Your First Demo Card
                 </button>
               </div>
             ) : (
@@ -626,12 +627,12 @@ export default function DigitalBankingPage() {
           <div className="text-center mb-14">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-                Pricing
+                Proposed Plans
               </span>
               <h2 className="text-4xl font-bold text-foreground mb-4 tracking-tight">
-                Choose Your <span className="text-gold-gradient">Plan</span>
+                Explore <span className="text-gold-gradient">Plan Concepts</span>
               </h2>
-              <p className="text-foreground/50 max-w-sm mx-auto">Start free. Upgrade when you need more power.</p>
+              <p className="text-foreground/50 max-w-lg mx-auto">These concepts are not offers and cannot be purchased. Features, prices, eligibility, and providers require approval before launch.</p>
             </motion.div>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -650,7 +651,7 @@ export default function DigitalBankingPage() {
                 {plan.highlight && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-black"
                     style={{ background: 'linear-gradient(135deg, #C9A84C, #F0D080)' }}>
-                    Most Popular
+                    Featured Concept
                   </div>
                 )}
                 <p className="text-xs text-foreground/40 uppercase tracking-widest mb-1">{plan.name}</p>
@@ -670,7 +671,7 @@ export default function DigitalBankingPage() {
                 <Link to="/accounts" className={`block text-center py-3 rounded-xl text-sm font-bold transition-all ${plan.highlight
                   ? 'bg-gradient-to-r from-primary to-[#F0D080] text-black'
                   : 'glass border border-primary/20 text-foreground hover:border-primary/40'}`}>
-                  Get Started
+                  Explore Preview
                 </Link>
               </motion.div>
             ))}

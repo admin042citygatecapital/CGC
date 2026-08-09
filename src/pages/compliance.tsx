@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Shield, Globe, FileText, Lock, AlertTriangle, CheckCircle, ChevronRight, Mail, Scale, Eye } from 'lucide-react';
 
-const LAST_UPDATED = 'May 23, 2026';
+const LAST_UPDATED = 'August 9, 2026';
 const CANONICAL = 'https://citygate.capital/compliance';
 
 const regulatoryBadges = [
@@ -32,15 +32,15 @@ const verifiedSections = [
     content: [
       {
         subtitle: '1.1 Licensing & Registration',
-        body: `City Gate Capital Ltd operates under licences and registrations obtained from financial regulators in the jurisdictions where we provide services. We are registered with the Financial Conduct Authority (FCA) in the United Kingdom, FinCEN in the United States, AUSTRAC in Australia, and the Monetary Authority of Singapore (MAS), among others. Our regulatory status is reviewed and maintained on an ongoing basis.`,
+        body: `No financial-services licence or registration has been verified for publication. The legal entity, operating model, target jurisdiction, and required permissions must be confirmed by qualified counsel before launch.`,
       },
       {
         subtitle: '1.2 Regulatory Oversight',
-        body: `We are subject to ongoing supervision by our primary regulator and cooperate fully with all regulatory examinations, enquiries, and requests. Our compliance programme is reviewed annually by independent external auditors and updated to reflect changes in applicable law and regulatory guidance.`,
+        body: `No primary financial regulator or independent compliance-audit programme is identified for this preview. Any future oversight or audit claim requires documentary evidence and legal approval.`,
       },
       {
         subtitle: '1.3 Jurisdictional Coverage',
-        body: `We operate in 40+ jurisdictions and maintain a dedicated compliance team responsible for monitoring regulatory developments in each market. Where local licensing requirements apply, we either hold the required licence or partner with locally licensed entities.`,
+        body: `This preview does not operate financial services in any jurisdiction. Geographic availability must remain disabled until each proposed market has documented legal analysis, permissions, provider coverage, and consumer disclosures.`,
       },
     ],
   },
@@ -51,23 +51,23 @@ const verifiedSections = [
     content: [
       {
         subtitle: '2.1 AML Programme',
-        body: `City Gate Capital maintains a comprehensive AML/CFT programme that meets or exceeds the requirements of the Financial Action Task Force (FATF) Recommendations, the EU's Sixth Anti-Money Laundering Directive (AMLD6), the UK Money Laundering Regulations 2017, and equivalent legislation in all jurisdictions where we operate.`,
+        body: `A production AML/CFT programme has not been approved for this preview. Before launch, qualified specialists must establish risk assessments, policies, ownership, escalation, reporting, quality assurance, and jurisdiction-specific controls.`,
       },
       {
         subtitle: '2.2 Know Your Customer (KYC)',
-        body: `All customers are subject to identity verification before accessing our services. Our KYC process includes: government-issued ID verification, biometric liveness checks, address verification, PEP (Politically Exposed Person) screening, adverse media screening, and ongoing monitoring of customer profiles and transaction patterns.`,
+        body: `Production identity verification is disabled. City Gate Capital must contract and review a KYC provider, establish lawful data handling, configure verification and exception workflows, and test the integration before collecting identity documents.`,
       },
       {
         subtitle: '2.3 Transaction Monitoring',
-        body: `We operate a real-time transaction monitoring system that analyses all transactions against risk-based rules and machine learning models. Suspicious transactions are automatically flagged for review by our Financial Intelligence Unit (FIU). Where required by law, we file Suspicious Activity Reports (SARs) with the relevant financial intelligence authority.`,
+        body: `No live transactions are processed and no production transaction-monitoring programme is active. Monitoring rules, case management, reporting responsibilities, model governance where applicable, and regulator filing procedures must be approved before launch.`,
       },
       {
         subtitle: '2.4 Sanctions Screening',
-        body: `All customers and transactions are screened against international sanctions lists including OFAC (US), HM Treasury (UK), EU Consolidated List, UN Security Council, and other applicable lists. Matches are reviewed by our compliance team and, where confirmed, result in account restriction and regulatory reporting.`,
+        body: `Production sanctions, PEP, and adverse-media screening are not connected. Applicable lists, screening frequency, match handling, escalation, geographic restrictions, and reporting duties must be established with a contracted provider.`,
       },
       {
         subtitle: '2.5 Record Keeping',
-        body: `We retain all KYC documentation, transaction records, and compliance reports for a minimum of 5 years from the date of the transaction or account closure, or longer where required by applicable law.`,
+        body: `The preview does not collect production KYC documentation or execute transactions. A legally reviewed retention schedule and deletion process must be published before regulated data is collected.`,
       },
     ],
   },
@@ -78,15 +78,15 @@ const verifiedSections = [
     content: [
       {
         subtitle: '3.1 GDPR Compliance',
-        body: `City Gate Capital processes personal data in accordance with the EU General Data Protection Regulation (GDPR) and the UK GDPR. We have appointed a Data Protection Officer (DPO) and maintain a comprehensive data protection programme including data mapping, privacy impact assessments, and data subject rights procedures.`,
+        body: `The website processes limited preview-profile and operational data as described in the Privacy Policy. The applicable controller entity, privacy jurisdiction, representative or DPO requirements, data map, assessments, and rights procedures require final legal confirmation.`,
       },
       {
         subtitle: '3.2 Data Minimisation',
-        body: `We collect only the personal data necessary for the purposes described in our Privacy Policy. We do not collect or retain data beyond what is required for regulatory compliance or service delivery.`,
+        body: `The preview is designed to minimise collection and does not request production identity documents, card details, bank credentials, or funds. Collection and retention must be reviewed whenever a new provider or live feature is proposed.`,
       },
       {
         subtitle: '3.3 Cross-Border Transfers',
-        body: `International transfers of personal data are conducted under appropriate safeguards including Standard Contractual Clauses (SCCs), adequacy decisions, or other lawful transfer mechanisms as required by applicable data protection law.`,
+        body: `Hosting and service providers may process data across borders. Applicable transfer mechanisms, provider locations, contractual safeguards, and notices must be verified and documented before live-service data is processed.`,
       },
     ],
   },
@@ -97,19 +97,19 @@ const verifiedSections = [
     content: [
       {
         subtitle: '4.1 Security Standards',
-        body: `Our information security programme is certified to ISO 27001 and SOC 2 Type II. We maintain a comprehensive set of security controls including encryption at rest and in transit, access controls, network segmentation, vulnerability management, and incident response procedures.`,
+        body: `No ISO 27001 or SOC 2 certification is claimed. Implemented application controls include protected sessions, access controls, CSRF protection, rate limits, security headers, audit events, and encrypted storage for selected sensitive fields.`,
       },
       {
         subtitle: '4.2 Penetration Testing',
-        body: `We conduct annual penetration tests by independent, CREST-certified security firms, as well as continuous automated vulnerability scanning. Critical vulnerabilities are remediated within 24 hours; high vulnerabilities within 7 days.`,
+        body: `No independent annual penetration-test or fixed remediation-time claim is published. Before live launch, testing scope, assessor independence, remediation targets, retesting, and evidence retention must be formally approved.`,
       },
       {
         subtitle: '4.3 Payment Security',
-        body: `Our payment infrastructure is certified to PCI DSS Level 1 — the highest level of payment card industry security certification. Cardholder data is never stored on our servers; all card data is tokenised at the point of entry.`,
+        body: `No live payment infrastructure or PCI DSS certification is claimed. Card issuance and payment-data collection remain disabled until a contracted provider and validated PCI scope are in place.`,
       },
       {
         subtitle: '4.4 Business Continuity',
-        body: `We maintain a Business Continuity Plan (BCP) and Disaster Recovery Plan (DRP) that are tested annually. Our infrastructure is deployed across multiple availability zones with automatic failover to ensure 99.9% uptime.`,
+        body: `The preview uses managed hosting and health monitoring. Documented recovery objectives, backups, failover, incident ownership, continuity exercises, and any service-level commitment must be approved and tested before launch.`,
       },
     ],
   },
@@ -124,11 +124,11 @@ const verifiedSections = [
       },
       {
         subtitle: '5.2 Complaints Handling',
-        body: `We have a formal complaints handling procedure. Complaints can be submitted to complaints@citygate.capital. We acknowledge all complaints within 5 business days and aim to resolve them within 15 business days. If you are not satisfied with our response, you may refer your complaint to the relevant financial ombudsman or regulatory authority.`,
+        body: `Preview-related concerns may be submitted to complaints@citygate.capital. No regulated complaints timetable or ombudsman relationship is claimed. A jurisdiction-specific complaints policy, response timetable, escalation route, recordkeeping process, and external-redress disclosure must be approved before launch.`,
       },
       {
         subtitle: '5.3 Vulnerable Customers',
-        body: `We are committed to treating all customers fairly, including those who may be in vulnerable circumstances. Our customer support team is trained to identify and support vulnerable customers, and we offer additional assistance including extended response times and simplified communication.`,
+        body: `The live operating model must include an approved vulnerable-customer policy, accessible support, staff training, escalation procedures, monitoring, and appropriate adjustments before consumer financial services are offered.`,
       },
     ],
   },
@@ -139,11 +139,11 @@ const verifiedSections = [
     content: [
       {
         subtitle: '6.1 FATCA & CRS',
-        body: `City Gate Capital complies with the US Foreign Account Tax Compliance Act (FATCA) and the OECD Common Reporting Standard (CRS). We collect tax identification information from customers and report to relevant tax authorities as required by law.`,
+        body: `The preview does not collect tax identification information or make FATCA or CRS reports. Applicable classification, due-diligence, reporting, and recordkeeping duties must be determined for the final entity and account model.`,
       },
       {
         subtitle: '6.2 Crypto Tax Reporting',
-        body: `We provide customers with annual transaction summaries to assist with tax reporting obligations. In jurisdictions where we are required to report cryptocurrency transactions to tax authorities, we do so in accordance with applicable law.`,
+        body: `No live crypto transactions or tax reports are produced. Any future statements or reporting must reflect executed provider records and the legal obligations of the confirmed entity and jurisdiction.`,
       },
     ],
   },
@@ -154,19 +154,19 @@ const verifiedSections = [
     content: [
       {
         subtitle: '7.1 Board Oversight',
-        body: `Our Board of Directors maintains ultimate responsibility for our compliance programme. A dedicated Risk and Compliance Committee of the Board meets quarterly to review compliance performance, regulatory developments, and risk appetite.`,
+        body: `Governance ownership for a live compliance programme has not been documented for publication. Board or equivalent oversight, committee responsibilities, reporting cadence, and risk appetite must be formally established.`,
       },
       {
         subtitle: '7.2 Chief Compliance Officer',
-        body: `Our Chief Compliance Officer (CCO) reports directly to the Board and is responsible for the day-to-day management of our compliance programme. The CCO has the authority and resources to implement and enforce compliance policies across the organisation.`,
+        body: `No Chief Compliance Officer appointment is claimed. The live model must identify qualified accountable officers with documented authority, independence, resources, and escalation access.`,
       },
       {
         subtitle: '7.3 Training',
-        body: `All employees complete mandatory AML/CFT, data protection, and information security training upon joining and annually thereafter. Employees in compliance-sensitive roles receive additional specialist training.`,
+        body: `Role-based compliance, privacy, security, fraud, and operational training must be designed, delivered, assessed, and recorded before staff perform regulated or sensitive duties.`,
       },
       {
         subtitle: '7.4 Whistleblowing',
-        body: `We maintain a confidential whistleblowing channel that allows employees, contractors, and third parties to report compliance concerns without fear of retaliation. Reports can be submitted to whistleblowing@citygate.capital or through our anonymous reporting portal.`,
+        body: `A protected whistleblowing and escalation process, including ownership, confidentiality, non-retaliation, investigation, and recordkeeping requirements, must be approved before live operation.`,
       },
     ],
   },
@@ -177,11 +177,11 @@ const verifiedSections = [
     content: [
       {
         subtitle: '8.1 Compliance Team',
-        body: `For compliance-related enquiries, regulatory correspondence, or to report a concern, contact our Compliance team at compliance@citygate.capital. For data protection matters, contact our DPO at privacy@citygate.capital. For legal matters, contact legal@citygate.capital.`,
+        body: `Preview-related compliance, privacy, or legal enquiries may be sent to compliance@citygate.capital, privacy@citygate.capital, or legal@citygate.capital. These mailboxes do not by themselves establish appointed statutory officers or a regulated compliance function.`,
       },
       {
         subtitle: '8.2 Regulatory Correspondence',
-        body: `Regulatory authorities and law enforcement agencies should direct formal correspondence to: Compliance Department, City Gate Capital Ltd, International Financial Centre, London, United Kingdom. We respond to all regulatory requests within the timeframes required by applicable law.`,
+        body: `A verified legal-entity name, registered address, authorised regulatory contact, and formal service procedure must be published before regulated operations. Until then, enquiries may be sent to legal@citygate.capital.`,
       },
     ],
   },
@@ -240,7 +240,7 @@ export default function CompliancePage() {
     '@type': 'WebPage',
     name: 'Compliance — City Gate Capital',
     url: CANONICAL,
-    description: 'City Gate Capital\'s regulatory compliance framework: AML/CFT, KYC, data protection, information security, and consumer protection.',
+    description: 'City Gate Capital product-preview status, implemented safeguards, and requirements that remain before any regulated launch.',
     dateModified: LAST_UPDATED,
     publisher: {
       '@type': 'Organization',

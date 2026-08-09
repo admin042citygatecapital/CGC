@@ -2,7 +2,7 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle, MessageCircle, ArrowRight, ExternalLink } from 'lucide-react';
+import { Phone, Mail, Send, CheckCircle, MessageCircle, ArrowRight, ExternalLink } from 'lucide-react';
 
 interface SocialLink {
   platformId: string; url: string; enabled: boolean;
@@ -21,21 +21,10 @@ const PLATFORM_META: Record<string, { label: string; color: string; detail: stri
   discord:   { label: 'Discord',     color: '#5865F2', detail: 'Join our server' },
 };
 
-const offices = [
-  { city: 'New York',   address: '100 City Gate Plaza, NY 10004',     flag: '🇺🇸', hq: true  },
-  { city: 'London',     address: '1 Canada Square, Canary Wharf',     flag: '🇬🇧', hq: false },
-  { city: 'Singapore',  address: '1 Raffles Place, #20-61',           flag: '🇸🇬', hq: false },
-  { city: 'Dubai',      address: 'DIFC Gate Building, Level 15',      flag: '🇦🇪', hq: false },
-  { city: 'Toronto',    address: '100 King Street West, Suite 5600',  flag: '🇨🇦', hq: false },
-  { city: 'Sydney',     address: '1 Martin Place, Level 12',          flag: '🇦🇺', hq: false },
-  { city: 'Hong Kong',  address: 'Two IFC, 8 Finance Street',         flag: '🇭🇰', hq: false },
-  { city: 'Frankfurt',  address: 'Taunusanlage 8, 60329',             flag: '🇩🇪', hq: false },
-];
-
 const subjects = ['General Inquiry', 'Account Support', 'Partnership', 'Press & Media', 'Careers', 'Compliance', 'API & Developer', 'Enterprise Sales'];
 
 const contactChannels = [
-  { icon: MessageCircle, title: 'Live Chat',  detail: 'Available 24/7 in the app',  color: '#10B981', action: 'Start Chat',  href: '/support'                        },
+  { icon: MessageCircle, title: 'Website Chat', detail: 'Availability may vary',    color: '#10B981', action: 'Start Chat',  href: '/support'                        },
   { icon: Mail,          title: 'General',    detail: 'info@citygate.capital',      color: '#C9A84C', action: 'Send Email',  href: 'mailto:info@citygate.capital'    },
   { icon: Mail,          title: 'Support',    detail: 'support@citygate.capital',   color: '#9945FF', action: 'Get Help',    href: 'mailto:support@citygate.capital' },
   { icon: Phone,         title: 'Phone',      detail: '+44 7888 382458',            color: '#627EEA', action: 'Call Now',    href: 'tel:+447888382458'               },
@@ -81,11 +70,11 @@ export default function ContactPage() {
   return (
     <>
       <Helmet>
-        <title>Contact City Gate Capital | London, New York, Singapore</title>
-        <meta name="description" content="Contact City Gate Capital. Reach our team via live chat, email at info@citygate.capital, or call +44 7888 382458. Global offices in London, New York, Singapore, Dubai, and more." />
+        <title>Contact City Gate Capital</title>
+        <meta name="description" content="Contact the City Gate Capital product-preview team by website chat, email, contact form, or phone. Response times vary." />
         <link rel="canonical" href="https://citygate.capital/contact" />
         <meta property="og:title" content="Contact City Gate Capital — Get in Touch" />
-        <meta property="og:description" content="Reach our team via live chat, email, or phone. Global offices in London, New York, Singapore, and Dubai." />
+        <meta property="og:description" content="Contact the City Gate Capital product-preview team by website chat, email, contact form, or phone." />
         <meta property="og:url" content="https://citygate.capital/contact" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -99,7 +88,7 @@ export default function ContactPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Contact City Gate Capital" />
-        <meta name="twitter:description" content="Reach our team via live chat, email, or phone. 24/7 support available." />
+        <meta name="twitter:description" content="Contact the City Gate Capital product-preview team. Response times vary." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -116,16 +105,10 @@ export default function ContactPage() {
             telephone: '+447888382458',
             email: 'info@citygate.capital',
             url: 'https://citygate.capital',
-            address: { '@type': 'PostalAddress', streetAddress: '1 Canada Square, Canary Wharf', addressLocality: 'London', addressCountry: 'GB' },
             contactPoint: [
-              { '@type': 'ContactPoint', contactType: 'customer support', telephone: '+447888382458', email: 'support@citygate.capital', availableLanguage: 'English', hoursAvailable: { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] } },
+              { '@type': 'ContactPoint', contactType: 'product preview support', telephone: '+447888382458', email: 'support@citygate.capital', availableLanguage: 'English' },
               { '@type': 'ContactPoint', contactType: 'general inquiry', email: 'info@citygate.capital', availableLanguage: 'English' },
             ],
-            location: offices.map(o => ({
-              '@type': 'Place',
-              name: `City Gate Capital — ${o.city}`,
-              address: { '@type': 'PostalAddress', streetAddress: o.address, addressLocality: o.city },
-            })),
           },
         }) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -152,10 +135,10 @@ export default function ContactPage() {
               Let's <span className="text-gold-shimmer">Talk</span>
             </h1>
             <p className="text-xl text-foreground/50 mb-10 max-w-lg mx-auto">
-              Have a question, partnership inquiry, or need help? Our team is ready to assist you — 24 hours a day, 7 days a week.
+              Have a question, partnership inquiry, or need help with the product preview? Send a message and the team will respond when available.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              {['24/7 Support', '< 2 min response', 'Global offices', 'Dedicated managers'].map(tag => (
+              {['Product preview support', 'Email contact', 'Website chat', 'Partnership enquiries'].map(tag => (
                 <span key={tag} className="px-3 py-1.5 rounded-full text-xs font-medium text-primary bg-primary/10 border border-primary/20">{tag}</span>
               ))}
             </div>
@@ -222,11 +205,9 @@ export default function ContactPage() {
               <h2 className="text-2xl font-bold text-foreground mb-8 tracking-tight">Contact Information</h2>
               <div className="space-y-4 mb-12">
                 {[
-                  { icon: MapPin, title: 'Headquarters',   detail: '1 Canada Square, Canary Wharf, London', href: undefined },
                   { icon: Phone,  title: 'Phone',          detail: '+44 7888 382458',                       href: 'tel:+447888382458' },
                   { icon: Mail,   title: 'General',        detail: 'info@citygate.capital',                 href: 'mailto:info@citygate.capital' },
                   { icon: Mail,   title: 'Support',        detail: 'support@citygate.capital',              href: 'mailto:support@citygate.capital' },
-                  { icon: Clock,  title: 'Business Hours', detail: 'Mon–Fri: 9am–6pm GMT · Support: 24/7', href: undefined },
                 ].map((item) => (
                   <div key={item.title} className="flex items-start gap-4 p-4 glass rounded-2xl border border-primary/10 hover:border-primary/20 transition-colors group">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
@@ -244,22 +225,6 @@ export default function ContactPage() {
                 ))}
               </div>
 
-              {/* Global offices */}
-              <h3 className="text-lg font-bold text-foreground mb-5 tracking-tight">
-                Global <span className="text-gold-gradient">Offices</span>
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {offices.map((office) => (
-                  <div key={office.city} className={`glass-card rounded-xl p-3.5 transition-colors ${office.hq ? 'border border-primary/30' : 'gradient-border hover:border-primary/20'}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-base">{office.flag}</span>
-                      <span className="text-sm font-semibold text-foreground">{office.city}</span>
-                      {office.hq && <span className="text-[9px] text-primary font-bold uppercase tracking-wider ml-auto">HQ</span>}
-                    </div>
-                    <p className="text-xs text-foreground/55 leading-relaxed">{office.address}</p>
-                  </div>
-                ))}
-              </div>
             </motion.div>
 
             {/* Form */}
@@ -272,7 +237,7 @@ export default function ContactPage() {
                       <CheckCircle size={36} className="text-primary" />
                     </motion.div>
                     <h3 className="text-2xl font-bold text-foreground mb-3">Message Sent!</h3>
-                    <p className="text-foreground/50 text-sm mb-6 max-w-xs mx-auto">We'll get back to you within 2 business hours. Check your email for a confirmation.</p>
+                    <p className="text-foreground/50 text-sm mb-6 max-w-xs mx-auto">Your message was received. Response times vary; check your email for updates.</p>
                     <button onClick={() => setSubmitted(false)} className="text-xs text-primary hover:underline">Send another message</button>
                   </div>
                 </div>
@@ -280,7 +245,7 @@ export default function ContactPage() {
                 <form onSubmit={handleSubmit} className="glass-card rounded-3xl p-8 gradient-border space-y-5" style={{ boxShadow: 'var(--gold-glow)' }}>
                   <div>
                     <h2 className="text-xl font-bold text-foreground mb-1 tracking-tight">Send a Message</h2>
-                    <p className="text-xs text-foreground/55">We respond within 2 business hours.</p>
+                    <p className="text-xs text-foreground/55">Response times vary. Do not send financial, identity-document, or payment information.</p>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -388,7 +353,7 @@ export default function ContactPage() {
             <h2 className="text-3xl font-bold text-foreground mb-4 tracking-tight">
               Ready to <span className="text-gold-gradient">Get Started?</span>
             </h2>
-            <p className="text-foreground/50 mb-8 max-w-md mx-auto">Open your free account in under 5 minutes. No credit check, no paperwork.</p>
+            <p className="text-foreground/50 mb-8 max-w-md mx-auto">Create a demonstration profile to explore the preview. No bank account or financial service is opened.</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/accounts" className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />

@@ -89,7 +89,7 @@ const DEFAULT: WebsiteSettings = {
     { label: 'Transfers',       href: '/transfers' },
     { label: 'About',           href: '/about' },
   ],
-  navCTALabel: 'Open Account',
+  navCTALabel: 'Create Preview Profile',
   navCTALink: '/accounts',
   showSupportInNav: true,
   showLoginInNav: true,
@@ -379,7 +379,7 @@ export default function AdminWebsite() {
               <>
                 <h3 className="text-white font-semibold text-sm flex items-center gap-2"><Navigation size={14} className="text-primary" /> Navigation</h3>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <Field k="navCTALabel" label="Nav CTA Button Label" placeholder="Open Account" />
+                  <Field k="navCTALabel" label="Nav CTA Button Label" placeholder="Create Preview Profile" />
                   <Field k="navCTALink" label="Nav CTA Link" placeholder="/accounts" />
                 </div>
                 <Toggle k="showSupportInNav" label="Show Support Link" desc="Display Support in header" />

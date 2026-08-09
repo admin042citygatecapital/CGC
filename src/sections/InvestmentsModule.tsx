@@ -42,10 +42,10 @@ export function InvestmentsSection() {
               {[
                 {
                   icon: Wallet,
-                  label: 'Checking Account',
-                  desc: 'Everyday spending with zero monthly fees, instant card payments, and real-time balance updates.',
+                  label: 'Checking Account Preview',
+                  desc: 'Explore proposed everyday account, card, and balance screens using demonstration data.',
                   color: '#C9A84C',
-                  badge: 'Most Popular',
+                  badge: 'Preview',
                 },
                 {
                   icon: TrendingUp,

@@ -43,7 +43,7 @@ const faqs = [
   {
     category: 'Cards & Payments',
     q: 'How do I freeze my card?',
-    a: 'Open the app, go to Cards, select your card, and tap "Freeze". Your card is frozen instantly. You can unfreeze it just as quickly whenever you\'re ready.',
+    a: 'Card controls are demonstrations only. No payment card is issued in this environment, and the preview freeze control does not affect a real card.',
   },
   {
     category: 'Account & KYC',
@@ -53,12 +53,12 @@ const faqs = [
   {
     category: 'Getting Started',
     q: 'How do I contact support?',
-    a: 'You can reach us via live chat in the app (fastest), email at support@citygate.capital, or phone at +44 7888 382458. Premium and Elite customers have priority support with dedicated lines.',
+    a: 'You can use website chat when available, email support@citygate.capital, submit the contact form, or call +44 7888 382458. Response times are not guaranteed.',
   },
   {
     category: 'Security',
     q: 'What security features protect my account?',
-    a: 'Your account is protected by biometric authentication (Face ID / Touch ID), 256-bit AES encryption, 2-factor authentication, real-time fraud detection, and automatic session timeouts. We also offer hardware security key support.',
+    a: 'The preview includes password controls, optional two-factor authentication, protected sessions, security headers, rate limits, and administrative audit events. Do not infer biometric, hardware-key, fraud-monitoring, or certification coverage unless it is specifically enabled and verified.',
   },
   {
     category: 'Cards & Payments',
@@ -176,25 +176,25 @@ export default function SupportPage() {
   return (
     <>
       <Helmet>
-        <title>Customer Support — 24/7 Help & FAQ | City Gate Capital</title>
-        <meta name="description" content="Get help with your City Gate Capital account. 24/7 live chat with under 2-minute response, email support, phone support, and a comprehensive FAQ covering accounts, transfers, crypto, and cards." />
+        <title>Product Preview Support & FAQ | City Gate Capital</title>
+        <meta name="description" content="Get help with the City Gate Capital product preview through website chat when available, email, phone, the contact form, and preview-specific FAQs." />
         <link rel="canonical" href="https://citygate.capital/support" />
-        <meta property="og:title" content="Customer Support — 24/7 Help & FAQ" />
-        <meta property="og:description" content="24/7 live chat, email and phone support. Average response under 2 minutes. Comprehensive FAQ for all your banking questions." />
+        <meta property="og:title" content="City Gate Capital Product Preview Support" />
+        <meta property="og:description" content="Support channels and FAQs for the City Gate Capital product preview. Response times vary." />
         <meta property="og:url" content="https://citygate.capital/support" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/png" />
-        <meta property="og:image:alt" content="Customer Support — 24/7 Help & FAQ" />
+        <meta property="og:image:alt" content="City Gate Capital product preview support" />
         <meta property="og:site_name" content="City Gate Capital" />
         <meta property="og:locale" content="en_GB" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Customer Support — City Gate Capital" />
-        <meta name="twitter:description" content="24/7 live chat, email and phone support. Average response under 2 minutes." />
+        <meta name="twitter:description" content="Support channels and FAQs for the City Gate Capital product preview. Response times vary." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -232,7 +232,7 @@ export default function SupportPage() {
               How Can We <span className="text-gold-shimmer">Help?</span>
             </h1>
             <p className="text-xl text-foreground/50 mb-10 max-w-lg mx-auto">
-              World-class support available 24/7. Find answers instantly or reach our team directly.
+              Find preview-specific answers or contact the team through the available channels. Response times vary.
             </p>
             {/* Search */}
             <div className="relative max-w-xl mx-auto">
@@ -282,26 +282,26 @@ export default function SupportPage() {
             {[
               {
                 icon: MessageCircle,
-                title: 'Live Chat',
-                desc: 'Chat with our team in real time. Average response under 2 minutes. Available 24/7.',
+                title: 'Website Chat',
+                desc: 'Use website chat when the support team is available. Do not share passwords, identity documents, or payment information.',
                 action: 'Start Chat',
-                badge: '< 2 min',
+                badge: 'When available',
                 color: '#10B981',
               },
               {
                 icon: Mail,
                 title: 'Email Support',
-                desc: 'Send us a detailed message at support@citygate.capital. We respond within 2 business hours with a full resolution.',
+                desc: 'Send a message to support@citygate.capital. Response and resolution times vary.',
                 action: 'Send Email',
-                badge: '< 2 hrs',
+                badge: 'Email',
                 color: '#C9A84C',
               },
               {
                 icon: Phone,
                 title: 'Phone Support',
-                desc: 'Speak directly with a specialist at +44 7888 382458. Available Mon–Fri 9am–6pm GMT. Priority for Premium & Elite.',
+                desc: 'Call +44 7888 382458. Availability and response times vary; no priority-service commitment is represented.',
                 action: 'Call Now',
-                badge: 'Mon–Fri',
+                badge: 'Phone',
                 color: '#627EEA',
               },
             ].map((c, i) => (
@@ -429,7 +429,7 @@ export default function SupportPage() {
             <h2 className="text-3xl font-bold text-foreground mb-4 tracking-tight">
               Still Need <span className="text-gold-gradient">Help?</span>
             </h2>
-            <p className="text-foreground/50 mb-8 max-w-sm mx-auto">Our team is standing by 24/7. We'll get you sorted.</p>
+            <p className="text-foreground/50 mb-8 max-w-sm mx-auto">Use the contact form or available support channels. Response times vary.</p>
             {customer ? (
               <button onClick={() => setChatOpen(true)}
                 className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">

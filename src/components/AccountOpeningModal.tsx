@@ -294,11 +294,11 @@ function StepSecurity({ data, onChange, errors }: {
 
       {/* Security features */}
       <div className="rounded-2xl border border-primary/10 bg-white/[0.02] p-5 space-y-3">
-        <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest mb-3">Security Features Enabled</p>
+        <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest mb-3">Preview Access Controls</p>
         {[
-          { icon: Shield,      label: 'Two-Factor Authentication',  desc: 'SMS + Authenticator app' },
-          { icon: CreditCard,  label: 'Biometric Login',            desc: 'Face ID & Touch ID ready' },
-          { icon: Lock,        label: 'Session Encryption',         desc: '256-bit AES end-to-end' },
+          { icon: Shield,      label: 'Two-Factor Authentication',  desc: 'Optional authenticator setup' },
+          { icon: CreditCard,  label: 'No Payment Card Required',   desc: 'Do not enter card or bank details' },
+          { icon: Lock,        label: 'Protected Web Session',      desc: 'HTTPS and secure session controls' },
         ].map(({ icon: Icon, label, desc }) => (
           <div key={label} className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">

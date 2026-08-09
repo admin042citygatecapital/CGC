@@ -13,7 +13,7 @@
       },
       {
         "id": "tb2",
-        "label": "256-bit Encryption"
+        "label": "Encrypted Connections"
       },
       {
         "id": "tb3",
@@ -60,15 +60,15 @@
     },
     {
       "id": "tb2",
-      "label": "256-bit Encryption"
+        "label": "Encrypted Connections"
     },
     {
       "id": "tb3",
-      "label": "Biometric Auth"
+        "label": "Optional Two-Factor Authentication"
     },
     {
       "id": "tb4",
-      "label": "Global Multi-Currency Support"
+        "label": "Multi-Currency Prototype"
     },
     {
       "id": "tb5",
@@ -513,9 +513,9 @@
     ]
   },
   "finalCta": {
-    "badge": "Open in under 5 minutes",
-    "headline1": "Ready to Bank",
-    "headlineAccent": "Smarter?",
+    "badge": "Product preview access",
+    "headline1": "Ready to Explore",
+    "headlineAccent": "the Preview?",
     "subheadline": "Explore the City Gate Capital vision for global transfers, digital assets, investments, and everyday account management.",
     "ctaPrimary": "Create Preview Profile",
     "ctaSecondary": "Talk to Sales",
@@ -581,7 +581,7 @@
         },
         {
           "id": "pf6",
-          "label": "Standard support (48h)",
+          "label": "Email support channel",
           "included": true
         },
         {
@@ -639,7 +639,7 @@
         },
         {
           "id": "pf15",
-          "label": "Priority support 24/7",
+          "label": "Support concept preview",
           "included": true
         },
         {

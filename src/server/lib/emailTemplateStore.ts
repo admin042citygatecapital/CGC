@@ -47,134 +47,122 @@ const DEFAULTS: EmailTemplate[] = [
   {
     id: 'welcome',
     name: 'Welcome Email',
-    description: 'Sent immediately after a new account is registered.',
+    description: 'Sent immediately after a new preview profile is registered.',
     category: 'account',
     variables: ['{user_name}', '{email}', '{date}', '{account_number}'],
     subject: 'Welcome to City Gate Capital, {user_name}!',
     body: `<p>Dear {user_name},</p>
-<p>Welcome to <strong>City Gate Capital</strong>. Your account has been created successfully.</p>
-<p><strong>Account Details:</strong><br/>
+<p>Welcome to the <strong>City Gate Capital product preview</strong>. Your preview profile has been created successfully.</p>
+<p><strong>Preview Profile Details:</strong><br/>
 Email: {email}<br/>
 Account Number: {account_number}<br/>
 Date Joined: {date}</p>
-<p>To get started, please complete your KYC identity verification to unlock full banking access.</p>
-<p>If you have any questions, our support team is available 24/7.</p>
+<p>This environment uses demonstration data and does not offer deposits, custody, cards, trading, KYC approval, or live financial transactions. Do not upload real identity documents.</p>
+<p>If you have a question, contact support@citygate.capital. No response-time guarantee is offered.</p>
 <p>Best regards,<br/>The City Gate Capital Team</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'kyc_approved',
-    name: 'KYC Approved',
-    description: 'Sent when admin approves a KYC submission.',
+    name: 'KYC Preview Reviewed',
+    description: 'Preview-only notification; must not represent a real identity-verification decision.',
     category: 'kyc',
     variables: ['{user_name}', '{date}', '{account_number}'],
-    subject: 'Your Identity Has Been Verified — City Gate Capital',
+    subject: 'KYC Preview Review Complete — City Gate Capital',
     body: `<p>Dear {user_name},</p>
-<p>We are pleased to inform you that your identity verification (KYC) has been <strong>approved</strong>.</p>
-<p>You now have full access to all City Gate Capital services including:</p>
-<ul>
-  <li>International wire transfers</li>
-  <li>Cryptocurrency transactions</li>
-  <li>Virtual card issuance</li>
-  <li>Higher withdrawal limits</li>
-</ul>
-<p>Verification Date: {date}</p>
-<p>Best regards,<br/>City Gate Capital Compliance Team</p>`,
+<p>A demonstration KYC record in the City Gate Capital product preview has been marked as reviewed.</p>
+<p>This is not a real identity-verification decision and does not unlock banking, payments, cards, trading, custody, or financial services.</p>
+<p>Preview Review Date: {date}</p>
+<p>Best regards,<br/>The City Gate Capital Preview Team</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'kyc_rejected',
-    name: 'KYC Rejected',
-    description: 'Sent when admin rejects a KYC submission. Includes dynamic rejection reason.',
+    name: 'KYC Preview Needs Changes',
+    description: 'Preview-only notification for a demonstration KYC record.',
     category: 'kyc',
     variables: ['{user_name}', '{rejection_reason}', '{date}'],
-    subject: 'Action Required: KYC Verification Unsuccessful — City Gate Capital',
+    subject: 'KYC Preview Record Needs Changes — City Gate Capital',
     body: `<p>Dear {user_name},</p>
-<p>Unfortunately, your identity verification (KYC) submission could not be approved at this time.</p>
-<p><strong>Reason:</strong> {rejection_reason}</p>
-<p>Please log in to your account and resubmit your KYC with the correct documents. Ensure that:</p>
-<ul>
-  <li>All documents are clear and fully visible</li>
-  <li>Documents are not expired</li>
-  <li>Your selfie clearly shows your face alongside your ID</li>
-</ul>
-<p>If you believe this is an error, please contact our support team.</p>
-<p>Best regards,<br/>City Gate Capital Compliance Team</p>`,
+<p>A demonstration KYC record in the product preview was marked as needing changes.</p>
+<p><strong>Preview note:</strong> {rejection_reason}</p>
+<p>This is not a real identity-verification decision. Do not upload real identity documents to this environment.</p>
+<p>Best regards,<br/>The City Gate Capital Preview Team</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'deposit_confirmed',
-    name: 'Deposit Confirmed',
-    description: 'Sent when a deposit is confirmed on the account.',
+    name: 'Demo Deposit Recorded',
+    description: 'Preview-only notification for a demonstration deposit record.',
     category: 'transaction',
     variables: ['{user_name}', '{amount}', '{currency}', '{date}', '{transaction_id}', '{account_number}'],
-    subject: 'Deposit Confirmed: {amount} {currency} — City Gate Capital',
+    subject: 'Demo Deposit Recorded: {amount} {currency} — City Gate Capital Preview',
     body: `<p>Dear {user_name},</p>
-<p>Your deposit has been confirmed and credited to your account.</p>
-<p><strong>Transaction Details:</strong><br/>
+<p>A demonstration deposit record was created in the product preview. No money was received or credited.</p>
+<p><strong>Demo Record:</strong><br/>
 Amount: {amount} {currency}<br/>
 Transaction ID: {transaction_id}<br/>
 Account: {account_number}<br/>
 Date: {date}</p>
-<p>Your updated balance is now available in your dashboard.</p>
-<p>Best regards,<br/>City Gate Capital</p>`,
+<p>Any displayed balance is demonstration data and has no monetary value.</p>
+<p>Best regards,<br/>City Gate Capital Preview</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'withdrawal_approved',
-    name: 'Withdrawal Approved',
-    description: 'Sent when a withdrawal request is approved.',
+    name: 'Demo Withdrawal Updated',
+    description: 'Preview-only notification for a demonstration withdrawal record.',
     category: 'transaction',
     variables: ['{user_name}', '{amount}', '{currency}', '{date}', '{transaction_id}'],
-    subject: 'Withdrawal Approved: {amount} {currency} — City Gate Capital',
+    subject: 'Demo Withdrawal Updated: {amount} {currency} — City Gate Capital Preview',
     body: `<p>Dear {user_name},</p>
-<p>Your withdrawal request has been approved and is being processed.</p>
-<p><strong>Withdrawal Details:</strong><br/>
+<p>A demonstration withdrawal record was updated in the product preview. No withdrawal was approved or processed.</p>
+<p><strong>Demo Record:</strong><br/>
 Amount: {amount} {currency}<br/>
 Transaction ID: {transaction_id}<br/>
 Date: {date}</p>
-<p>Funds typically arrive within 1–3 business days depending on your bank.</p>
-<p>Best regards,<br/>City Gate Capital</p>`,
+<p>No funds will arrive because this environment cannot move money.</p>
+<p>Best regards,<br/>City Gate Capital Preview</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'transfer_sent',
-    name: 'Transfer Sent',
-    description: 'Sent to the sender when an outgoing transfer is processed.',
+    name: 'Demo Transfer Created',
+    description: 'Preview-only notification for a demonstration outgoing transfer.',
     category: 'transaction',
     variables: ['{user_name}', '{amount}', '{currency}', '{recipient_name}', '{date}', '{transaction_id}'],
-    subject: 'Transfer Sent: {amount} {currency} to {recipient_name}',
+    subject: 'Demo Transfer Created: {amount} {currency} — City Gate Capital Preview',
     body: `<p>Dear {user_name},</p>
-<p>Your transfer has been sent successfully.</p>
-<p><strong>Transfer Details:</strong><br/>
+<p>A demonstration transfer record was created. No funds or assets were sent.</p>
+<p><strong>Demo Record:</strong><br/>
 Amount: {amount} {currency}<br/>
 Recipient: {recipient_name}<br/>
 Transaction ID: {transaction_id}<br/>
 Date: {date}</p>
-<p>Best regards,<br/>City Gate Capital</p>`,
+<p>Best regards,<br/>City Gate Capital Preview</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'transfer_received',
-    name: 'Transfer Received',
-    description: 'Sent to the recipient when an incoming transfer arrives.',
+    name: 'Demo Incoming Transfer Created',
+    description: 'Preview-only notification for a demonstration incoming transfer.',
     category: 'transaction',
     variables: ['{user_name}', '{amount}', '{currency}', '{sender_name}', '{date}', '{transaction_id}'],
-    subject: 'You Received {amount} {currency} — City Gate Capital',
+    subject: 'Demo Incoming Transfer: {amount} {currency} — City Gate Capital Preview',
     body: `<p>Dear {user_name},</p>
-<p>You have received a transfer to your City Gate Capital account.</p>
-<p><strong>Transfer Details:</strong><br/>
+<p>A demonstration incoming-transfer record was created. You did not receive real funds or assets.</p>
+<p><strong>Demo Record:</strong><br/>
 Amount: {amount} {currency}<br/>
 From: {sender_name}<br/>
 Transaction ID: {transaction_id}<br/>
 Date: {date}</p>
-<p>Best regards,<br/>City Gate Capital</p>`,
+<p>Best regards,<br/>City Gate Capital Preview</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
@@ -262,6 +250,12 @@ export function loadTemplates(): EmailTemplate[] {
 
 export function getTemplate(id: TemplateId): EmailTemplate | undefined {
   return loadTemplates().find(t => t.id === id);
+}
+
+/** Return an immutable copy of the reviewed built-in template. */
+export function getDefaultTemplate(id: TemplateId): EmailTemplate | undefined {
+  const template = DEFAULTS.find(t => t.id === id);
+  return template ? { ...template } : undefined;
 }
 
 export function saveTemplate(id: TemplateId, patch: { subject?: string; body?: string }, updatedBy = 'admin'): EmailTemplate {

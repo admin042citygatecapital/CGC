@@ -30,7 +30,8 @@ import { getValidAccessToken, invalidateTokenCache, getResolvedAccountId } from 
 import { sendEmail as smtpSend } from './smtpTransport.js';
 import { enqueueEmail } from './emailQueue.js';
 import { escapeEmailHtml, renderBrandedEmail, websiteButton } from './emailLayout.js';
-import { getTemplate, renderTemplate, type TemplateId } from './emailTemplateStore.js';
+import { getDefaultTemplate, getTemplate, renderTemplate, type TemplateId } from './emailTemplateStore.js';
+import { hasLiveFinancialReadiness } from './platformMode.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -217,7 +218,15 @@ function configuredTemplate(
   vars: Record<string, string>,
   fallback: { subject: string; title: string; body: string },
 ): { subject: string; html: string } {
-  const template = getTemplate(id);
+  const financialTemplateIds = new Set<TemplateId>([
+    'kyc_approved', 'kyc_rejected', 'deposit_confirmed',
+    'withdrawal_approved', 'transfer_sent', 'transfer_received',
+  ]);
+  // Persisted admin copy must not make a preview look transactional. Until
+  // live readiness is genuinely implemented, use the reviewed safe default.
+  const template = financialTemplateIds.has(id) && !hasLiveFinancialReadiness()
+    ? getDefaultTemplate(id)
+    : getTemplate(id);
   if (!template) return { subject: fallback.subject, html: emailWrapper(fallback.title, fallback.body) };
   const safeVars = Object.fromEntries(Object.entries(vars).map(([key, value]) => [key, escapeEmailHtml(String(value))]));
   const rendered = renderTemplate(template, safeVars);
@@ -248,7 +257,7 @@ export async function sendVerificationEmail(to: string, name: string, token: str
     subject: 'Verify Your Email — City Gate Capital',
     html: emailWrapper('Verify Your Email Address',
       `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Thank you for registering with City Gate Capital. Please verify your email address to continue your account setup.</p>
+       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Thank you for registering for the City Gate Capital product preview. Please verify your email address to continue your preview-profile setup.</p>
        <p style="margin:28px 0;">${goldButton('Verify Email Address', url)}</p>
        <p style="color:rgba(255,255,255,0.4);font-size:13px;">This link expires in 24 hours. If you did not register, please ignore this email.</p>`
     ),
@@ -262,9 +271,9 @@ export async function sendWelcomeEmail(to: string, name: string) {
     date: new Date().toLocaleDateString('en-GB'),
     account_number: 'Available in your secure dashboard',
   }, {
-    subject: 'Welcome to City Gate Capital — Account Under Review',
+    subject: 'Welcome to the City Gate Capital Product Preview',
     title: 'Welcome to City Gate Capital',
-    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your email has been verified and your account is under review.</p>`,
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your email has been verified for the product preview. No banking or live financial service is available.</p>`,
   });
   await send({ to, ...content });
 }
@@ -275,9 +284,9 @@ export async function sendApprovalEmail(to: string, name: string) {
     date: new Date().toLocaleDateString('en-GB'),
     account_number: 'Available in your secure dashboard',
   }, {
-    subject: 'Account Approved — Welcome to City Gate Capital',
-    title: 'Your Account Has Been Approved',
-    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your account has been approved.</p>`,
+    subject: 'KYC Preview Review Complete — City Gate Capital',
+    title: 'KYC Preview Review Complete',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>A demonstration KYC record was reviewed. This is not a real identity-verification or financial-account approval.</p>`,
   });
   await send({ to, ...content });
 }
@@ -288,9 +297,9 @@ export async function sendRejectionEmail(to: string, name: string, reason: strin
     rejection_reason: reason,
     date: new Date().toLocaleDateString('en-GB'),
   }, {
-    subject: 'City Gate Capital — Application Status Update',
-    title: 'Account Application Update',
-    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your application could not be approved.</p><p><strong>Reason:</strong> ${escapeEmailHtml(reason)}</p>`,
+    subject: 'City Gate Capital — KYC Preview Status Update',
+    title: 'KYC Preview Status Update',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>A demonstration KYC record needs changes. This is not a real identity-verification decision.</p><p><strong>Preview note:</strong> ${escapeEmailHtml(reason)}</p>`,
   });
   await send({ to, ...content });
 }
@@ -298,9 +307,9 @@ export async function sendRejectionEmail(to: string, name: string, reason: strin
 export async function sendAdminNewUserAlert(adminEmail: string, user: { name: string; email: string; country?: string; ip?: string }) {
   await send({
     to: adminEmail,
-    subject: `New Registration: ${user.name} — City Gate Capital`,
-    html: emailWrapper('New User Registration',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;">A new user has registered and is awaiting KYC review:</p>
+    subject: `New Preview Registration: ${user.name} — City Gate Capital`,
+    html: emailWrapper('New Preview Registration',
+      `<p style="color:rgba(255,255,255,0.7);font-size:15px;">A new user has registered for the product preview. Production KYC collection is disabled:</p>
        <table style="width:100%;border-collapse:collapse;margin:16px 0;">
          ${[
            ['Name',    user.name],
@@ -514,10 +523,10 @@ export async function sendBalanceAdjustmentEmail(  to: string,
 
   await send({
     to,
-    subject: `Balance Updated — City Gate Capital`,
-    html: emailWrapper('Account Balance Updated',
+    subject: `Demo Balance Updated — City Gate Capital Preview`,
+    html: emailWrapper('Demonstration Balance Updated',
       `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Your City Gate Capital account balance has been updated by our finance team.</p>
+       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">A demonstration balance in the City Gate Capital product preview has been updated. It is not real money and cannot be deposited, withdrawn, or transferred.</p>
        <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:20px 24px;margin:24px 0;">
          <table style="width:100%;border-collapse:collapse;">
            <tr>
@@ -539,8 +548,8 @@ export async function sendBalanceAdjustmentEmail(  to: string,
          </table>
          ${note ? `<p style="color:rgba(255,255,255,0.4);font-size:12px;margin:12px 0 0;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">Note: ${note}</p>` : ''}
        </div>
-       <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.7;">If you have questions about this adjustment, please contact our support team.</p>
-       <p style="margin:28px 0;">${goldButton('View Your Account', 'https://citygate.capital/dashboard')}</p>
+       <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.7;">If you have questions about this demonstration record, please contact our support team.</p>
+       <p style="margin:28px 0;">${goldButton('View Product Preview', 'https://citygate.capital/dashboard')}</p>
        <p style="color:rgba(255,255,255,0.4);font-size:13px;">For support: <a href="mailto:support@citygate.capital" style="color:#C9A84C;">support@citygate.capital</a></p>`
     ),
   });

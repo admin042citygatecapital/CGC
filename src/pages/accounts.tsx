@@ -76,13 +76,13 @@ const accountTypes = [
 const kycSteps = [
   { icon: User,        step: '01', title: 'Create Preview',    desc: 'Enter your email and set a secure password to access the demonstration workspace.',                  color: '#C9A84C' },
   { icon: Camera,      step: '02', title: 'Review KYC Flow',   desc: 'Preview the identity-verification journey. A contracted KYC provider is required before launch.',  color: '#627EEA' },
-  { icon: Fingerprint, step: '03', title: 'Biometric Setup',   desc: 'Enable Face ID or Touch ID for secure, fast logins. Your biometric data never leaves your device.',  color: '#10B981' },
+  { icon: Fingerprint, step: '03', title: 'Security Preview',  desc: 'Review the proposed biometric interface; native biometric login is not active.',                   color: '#10B981' },
   { icon: DollarSign,  step: '04', title: 'Explore Demo Data', desc: 'Use demonstration balances and transactions. This environment cannot receive or move real funds.', color: '#9945FF' },
 ];
 
 const trustBadges = [
   { icon: Shield,      label: 'Preview Safeguard', desc: 'No live deposits',           color: '#C9A84C' },
-  { icon: Fingerprint, label: 'Biometric Auth',    desc: 'Face & Touch ID',           color: '#627EEA' },
+  { icon: Fingerprint, label: 'Biometric Concept', desc: 'Interface preview only',    color: '#627EEA' },
   { icon: FileText,    label: 'Launch Gated',      desc: 'Approvals required',         color: '#10B981' },
   { icon: Zap,         label: 'Guided Setup',      desc: 'Preview workflow',           color: '#9945FF' },
   { icon: Lock,        label: 'Secure Sessions',   desc: 'Protected account access', color: '#EC4899' },
@@ -214,14 +214,14 @@ export default function AccountsPage() {
             {/* Left copy */}
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
               <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-6 tracking-widest uppercase">
-                Open an Account
+                Preview Profiles
               </span>
               <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight">
-                Your Account,<br />
-                <span className="text-gold-shimmer">Your Rules</span>
+                Explore Proposed Profiles,<br />
+                <span className="text-gold-shimmer">Using Demo Data</span>
               </h1>
               <p className="text-lg text-foreground/50 mb-8 leading-relaxed max-w-lg">
-                Choose the account that fits your life. Open in under 5 minutes with instant AI-powered KYC. No branch visit, no paperwork, no credit check.
+                Compare proposed account experiences using demonstration data. Production KYC, credit decisions, deposits, cards, and financial services are unavailable.
               </p>
 
               {/* Feature pills */}
@@ -237,7 +237,7 @@ export default function AccountsPage() {
               <div className="flex flex-wrap gap-4">
                 <button onClick={() => { trackConversion('signup_started', location.pathname, { source: 'hero_cta' }); openModal(selectedType); }} className="group relative inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-bold text-black overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                  <span className="relative">Open Account</span>
+                  <span className="relative">Create Preview Profile</span>
                   <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
                 </button>
                 <button
@@ -499,9 +499,9 @@ export default function AccountsPage() {
                 KYC Verification
               </span>
               <h2 className="text-4xl font-bold text-foreground mb-4 tracking-tight">
-                Open in <span className="text-gold-gradient">Under 5 Minutes</span>
+                Explore the <span className="text-gold-gradient">Verification Preview</span>
               </h2>
-              <p className="text-foreground/55 max-w-md mx-auto text-sm">AI-powered identity verification means no waiting, no paperwork, no branch visits. Ever.</p>
+              <p className="text-foreground/55 max-w-md mx-auto text-sm">Review the proposed identity-verification journey. Real document collection and approval remain disabled until a contracted provider and legal review are in place.</p>
             </motion.div>
           </div>
           <div className="grid md:grid-cols-4 gap-6">
@@ -623,7 +623,7 @@ export default function AccountsPage() {
               Ready to <span className="text-gold-gradient">Get Started?</span>
             </h2>
             <p className="text-foreground/55 mb-8 max-w-md mx-auto relative text-sm leading-relaxed">
-              Open your account in under 5 minutes. No credit check, no paperwork, no branch visit required.
+              Create a demonstration profile to explore the interface. No bank account, credit decision, or regulated financial service is provided.
             </p>
             <div className="flex flex-wrap justify-center gap-4 relative">
               <button onClick={() => { trackConversion('signup_started', location.pathname, { source: 'bottom_cta' }); openModal(selectedType); }} className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
@@ -647,7 +647,7 @@ export default function AccountsPage() {
             className="flex-1 relative py-3.5 rounded-xl text-sm font-bold text-black text-center overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-            <span className="relative">Open Account — Free</span>
+            <span className="relative">Create Preview Profile</span>
           </button>
           <Link
             to="/contact"

@@ -5,7 +5,7 @@ import { ArrowRight, Shield, Globe, Users, TrendingUp, Award, Zap, Heart } from 
 
 const stats = [
   { value: 'Preview', label: 'Current Stage', sub: 'Product validation' },
-  { value: '24/7', label: 'Architecture', sub: 'Designed for availability' },
+  { value: 'Web', label: 'Architecture', sub: 'Managed preview deployment' },
   { value: '50+', label: 'Currencies', sub: 'Prototype coverage' },
   { value: '3', label: 'Account Views', sub: 'Personal, savings, business' },
   { value: '2FA', label: 'Account Security', sub: 'Supported in preview' },
@@ -13,12 +13,12 @@ const stats = [
 ];
 
 const values = [
-  { icon: Shield,   title: 'Security First',        desc: 'Every decision we make starts with one question: is this safe for our customers? Security is never a trade-off.',       color: '#C9A84C' },
-  { icon: Globe,    title: 'Borderless Finance',     desc: 'We believe financial services should work as seamlessly across borders as the internet does. Geography is not a barrier.', color: '#627EEA' },
-  { icon: TrendingUp, title: 'Relentless Innovation', desc: 'We ship fast, learn faster, and never stop improving the platform our customers depend on every single day.',            color: '#10B981' },
-  { icon: Users,    title: 'Customer Obsession',     desc: 'Our customers are at the centre of every product decision, every policy, every hire. Their success is our success.',     color: '#9945FF' },
-  { icon: Heart,    title: 'Radical Transparency',   desc: 'No hidden fees, no fine print surprises. We tell you exactly what things cost and why — always.',                        color: '#EC4899' },
-  { icon: Zap,      title: 'Speed & Simplicity',     desc: 'Complex financial infrastructure, beautifully simple experience. We do the hard work so you don\'t have to.',           color: '#F7931A' },
+  { icon: Shield,   title: 'Security by Design',     desc: 'Build and test protective controls before connecting regulated data or financial providers.',                          color: '#C9A84C' },
+  { icon: Globe,    title: 'Global Product Vision',  desc: 'Explore how multi-currency experiences could work after geographic approvals and provider coverage are confirmed.',   color: '#627EEA' },
+  { icon: TrendingUp, title: 'Measured Improvement', desc: 'Use the preview to test product decisions while keeping live financial operations disabled.',                         color: '#10B981' },
+  { icon: Users,    title: 'User-Centred Design',    desc: 'Design clear account, support, and administration workflows around user needs and accessibility.',                      color: '#9945FF' },
+  { icon: Heart,    title: 'Truthful Communication', desc: 'Clearly distinguish demonstrations, proposed terms, and verified live capabilities.',                                 color: '#EC4899' },
+  { icon: Zap,      title: 'Simple Experiences',     desc: 'Turn complex proposed workflows into understandable preview interfaces.',                                              color: '#F7931A' },
 ];
 
 const milestones = [
@@ -115,7 +115,7 @@ export default function AboutPage() {
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/accounts" className="group relative inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <span className="relative">Open Account</span>
+                <span className="relative">Create Preview Profile</span>
                 <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
               </Link>
               <Link to="/contact" className="inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-medium text-foreground/70 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors">
@@ -320,7 +320,7 @@ export default function AboutPage() {
             <h2 className="text-4xl font-bold text-foreground mb-5 tracking-tight">
               Join Our <span className="text-gold-gradient">Mission</span>
             </h2>
-            <p className="text-foreground/50 mb-8 max-w-md mx-auto">Be part of the future of banking. Open your account today — free, instant, no paperwork.</p>
+            <p className="text-foreground/50 mb-8 max-w-md mx-auto">Explore the proposed digital-finance experience with a demonstration profile. No bank account or financial service is opened.</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/accounts" className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />

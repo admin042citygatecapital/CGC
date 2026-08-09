@@ -88,7 +88,7 @@ const sections = [
       },
       {
         subtitle: '4.4 Declined Transactions',
-        body: `We may decline transactions that appear suspicious, violate our policies, exceed your limits, or are required to be blocked under applicable law. We will notify you of declined transactions where legally permitted.`,
+        body: `The preview does not submit or settle transactions. Demonstration actions may be rejected by software controls and should not be treated as a decision by a bank, payment provider, exchange, or custodian.`,
       },
     ],
   },
@@ -99,15 +99,15 @@ const sections = [
     content: [
       {
         subtitle: '5.1 Prohibited Activities',
-        body: `You must not use our services for: money laundering, terrorist financing, or any activity that violates applicable AML/CFT laws; purchasing, selling, or facilitating illegal goods or services; fraud, identity theft, or impersonation; market manipulation or insider trading; circumventing sanctions or export controls; operating unlicensed financial services; or any activity that violates applicable law.`,
+        body: `You must not misuse the preview for unlawful activity, fraud, impersonation, unauthorised access, malware, interference with the service, sanctions evasion, or any activity that violates applicable law. The preview must not be used to solicit, receive, hold, transfer, or trade real funds or assets.`,
       },
       {
-        subtitle: '5.2 Restricted Jurisdictions',
-        body: `Our services are not available to residents of jurisdictions subject to comprehensive sanctions (including but not limited to North Korea, Iran, Cuba, Syria, and the Crimea region). You represent that you are not located in, or acting on behalf of a person located in, a restricted jurisdiction.`,
+        subtitle: '5.2 Access Restrictions',
+        body: `We may restrict preview access where required for security, operational, sanctions, export-control, or other legal reasons. Any future financial service will require a documented, provider-supported country policy and jurisdiction-specific legal review before launch.`,
       },
       {
         subtitle: '5.3 Consequences',
-        body: `Violation of these prohibitions will result in immediate account suspension, forfeiture of any pending transactions, reporting to relevant law enforcement and regulatory authorities, and potential civil or criminal liability.`,
+        body: `We may suspend or terminate preview access when we reasonably believe these rules have been breached. We may preserve records or make a report where required by applicable law. There are no real balances or pending financial transactions to forfeit or settle in this environment.`,
       },
     ],
   },
@@ -171,11 +171,11 @@ const sections = [
     content: [
       {
         subtitle: '9.1 Termination by You',
-        body: `You may close your account at any time by contacting support@citygate.capital. Account closure is subject to the settlement of any pending transactions and the return of your balance, net of applicable fees.`,
+        body: `You may request closure of your preview profile by contacting support@citygate.capital. Because the preview does not hold funds or process live transactions, closing a profile does not involve returning a balance or settling a transaction.`,
       },
       {
         subtitle: '9.2 Termination by Us',
-        body: `We may suspend or terminate your account immediately if you breach these Terms, engage in prohibited activities, fail to complete KYC, or if we are required to do so by law or regulatory order. We will provide notice where legally permitted.`,
+        body: `We may suspend or terminate preview access if you breach these Terms, create a security risk, misuse the service, or if access must be restricted for legal or operational reasons. We will provide notice where reasonably practicable and legally permitted.`,
       },
       {
         subtitle: '9.3 Effect of Termination',
@@ -190,15 +190,15 @@ const sections = [
     content: [
       {
         subtitle: '10.1 Governing Law',
-        body: `These Terms are governed by the laws of England and Wales, without regard to conflict of law principles. If you are a consumer in the EEA, you also benefit from the mandatory consumer protection laws of your country of residence.`,
+        body: `These Terms govern access to the product-preview website only. The responsible legal entity and governing-law clause must be confirmed and published before regulated financial services are offered. Nothing in these Terms limits mandatory rights that apply to you under applicable law.`,
       },
       {
         subtitle: '10.2 Dispute Resolution',
-        body: `We encourage you to contact us first to resolve any dispute informally. If we cannot resolve a dispute within 30 days, either party may refer it to the courts of England and Wales, or to an alternative dispute resolution scheme where required by applicable law.`,
+        body: `We encourage you to contact us first about a preview-related concern. Available court, regulator, ombudsman, or alternative-dispute-resolution routes depend on the confirmed entity, jurisdiction, service, and your mandatory legal rights; no specific financial redress scheme is represented as available in this preview.`,
       },
       {
         subtitle: '10.3 Contact',
-        body: `For any questions about these Terms, contact legal@citygate.capital. Our registered address is City Gate Capital Ltd, International Financial Centre, London, United Kingdom.`,
+        body: `For questions about these Terms, contact legal@citygate.capital. A verified legal-entity name and registered address must be published before regulated services begin.`,
       },
     ],
   },

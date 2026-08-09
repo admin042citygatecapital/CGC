@@ -188,7 +188,7 @@ function PendingState({ submittedAt, onRefresh, refreshing }: {
         </p>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/15 border border-amber-500/20 text-xs font-semibold text-amber-400">
           <Sparkles size={11} />
-          Usually approved in under 5 minutes
+          Production review is not available
         </div>
       </div>
 
@@ -227,7 +227,7 @@ function PendingState({ submittedAt, onRefresh, refreshing }: {
           <div>
             <p className="text-sm font-semibold text-blue-400 mb-1">Taking longer than expected?</p>
             <p className="text-xs text-white/50 mb-3">
-              Your review has been in progress for {elapsed} minutes. If you need assistance, our support team is available 24/7.
+              This is a demonstration status shown for {elapsed} minutes. Production review and response times are not available.
             </p>
             <a href="/support" className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors">
               <Phone size={11} /> Contact Support
@@ -269,9 +269,9 @@ function ApprovedState({ name, onDashboard }: { name: string; onDashboard: () =>
       </p>
       <div className="grid grid-cols-3 gap-3 mb-8 text-left">
         {[
-          { icon: CheckCircle, label: 'Transfers', desc: 'Send & receive funds globally' },
-          { icon: CheckCircle, label: 'Withdrawals', desc: 'Withdraw to bank or crypto' },
-          { icon: CheckCircle, label: 'Virtual Cards', desc: 'Instant virtual card issuance' },
+          { icon: CheckCircle, label: 'Transfers', desc: 'Preview a proposed transfer journey' },
+          { icon: CheckCircle, label: 'Withdrawals', desc: 'Preview bank and crypto withdrawal screens' },
+          { icon: CheckCircle, label: 'Virtual Cards', desc: 'Preview the proposed card experience' },
         ].map(item => (
           <div key={item.label} className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-3">
             <item.icon size={14} className="text-emerald-400 mb-1.5" />
@@ -752,7 +752,7 @@ function KycPageInner() {
             <div className="flex items-center justify-center mb-5">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
                 <Clock size={11} />
-                Usually approved in under 5 minutes
+                Production KYC is disabled
               </div>
             </div>
           )}

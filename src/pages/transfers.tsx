@@ -12,28 +12,28 @@ import { useCustomerAuth } from '@/lib/customerAuth';
 import { newIdempotencyKey } from '@/lib/idempotency';
 
 const corridors = [
-  { from: '🇺🇸 USD', to: '🇬🇧 GBP', fee: '$0.99', time: 'Instant',  volume: 'Most popular' },
-  { from: '🇺🇸 USD', to: '🇪🇺 EUR', fee: '$0.99', time: 'Instant',  volume: 'High volume'  },
-  { from: '🇬🇧 GBP', to: '🇮🇳 INR', fee: '$1.49', time: '< 1 min', volume: 'Popular'       },
-  { from: '🇺🇸 USD', to: '🇯🇵 JPY', fee: '$0.99', time: 'Instant',  volume: 'Popular'       },
-  { from: '🇪🇺 EUR', to: '🇦🇺 AUD', fee: '$1.49', time: '< 1 min', volume: 'Growing'        },
-  { from: '🇺🇸 USD', to: '🇦🇪 AED', fee: '$1.99', time: '< 5 min', volume: 'Business'       },
-  { from: '🇺🇸 USD', to: '🇨🇦 CAD', fee: '$0.99', time: 'Instant',  volume: 'Popular'       },
-  { from: '🇬🇧 GBP', to: '🇦🇺 AUD', fee: '$1.49', time: '< 1 min', volume: 'Growing'        },
-  { from: '🇪🇺 EUR', to: '🇨🇭 CHF', fee: '$0.99', time: 'Instant',  volume: 'Business'       },
+  { from: '🇺🇸 USD', to: '🇬🇧 GBP', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
+  { from: '🇺🇸 USD', to: '🇪🇺 EUR', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
+  { from: '🇬🇧 GBP', to: '🇮🇳 INR', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
+  { from: '🇺🇸 USD', to: '🇯🇵 JPY', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
+  { from: '🇪🇺 EUR', to: '🇦🇺 AUD', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
+  { from: '🇺🇸 USD', to: '🇦🇪 AED', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
+  { from: '🇺🇸 USD', to: '🇨🇦 CAD', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
+  { from: '🇬🇧 GBP', to: '🇦🇺 AUD', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
+  { from: '🇪🇺 EUR', to: '🇨🇭 CHF', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
 ];
 
 const transferTypes = [
-  { icon: Zap,        title: 'Instant Transfer',     desc: 'Send money between City Gate accounts in seconds. Available 24/7, 365 days a year.',                    color: '#C9A84C', time: 'Instant' },
-  { icon: Globe,      title: 'International Wire',   desc: 'Send to any bank account worldwide. Arrives in 1–5 business days depending on destination.',            color: '#627EEA', time: '1–5 days' },
-  { icon: RefreshCw,  title: 'Scheduled Transfer',   desc: 'Set up recurring transfers on a daily, weekly, or monthly schedule. Never miss a payment.',             color: '#10B981', time: 'Scheduled' },
-  { icon: TrendingUp, title: 'Bulk Payments',        desc: 'Send to multiple recipients in one click. Perfect for payroll, supplier payments, and distributions.',  color: '#9945FF', time: 'Batch' },
+  { icon: Zap,        title: 'Transfer Simulation',  desc: 'Preview a proposed internal-transfer flow. No money is moved.',                                      color: '#C9A84C', time: 'Not live' },
+  { icon: Globe,      title: 'Wire Prototype',       desc: 'Explore proposed international-wire fields without sending an instruction to a bank.',                  color: '#627EEA', time: 'Not live' },
+  { icon: RefreshCw,  title: 'Schedule Prototype',   desc: 'Preview recurring-transfer controls using demonstration data.',                                        color: '#10B981', time: 'Demo' },
+  { icon: TrendingUp, title: 'Bulk Flow Prototype',  desc: 'Explore a proposed multi-recipient workflow without creating payments.',                                color: '#9945FF', time: 'Demo' },
 ];
 
 const testimonials = [
-  { name: 'Carlos M.',  role: 'Expat in Dubai',     text: 'I send money home to Mexico every month. The fees are a fraction of what Western Union charged me.', rating: 5 },
-  { name: 'Yuki T.',    role: 'Freelancer',          text: 'Getting paid in USD from US clients and converting to JPY is seamless. Real rates, no surprises.', rating: 5 },
-  { name: 'Amara O.',   role: 'Business Owner',      text: 'We pay 12 suppliers across 8 countries. The bulk payment feature saves us hours every week.', rating: 5 },
+  { name: 'Personal Transfer', role: 'Illustrative scenario', text: 'Explore how a future user could prepare a cross-border transfer after approved providers are connected.', rating: 5 },
+  { name: 'Currency Conversion', role: 'Illustrative scenario', text: 'Compare a proposed USD-to-JPY flow using indicative values without executing an exchange.', rating: 5 },
+  { name: 'Business Payments', role: 'Illustrative scenario', text: 'Review a proposed bulk-payment workflow without creating supplier payments.', rating: 5 },
 ];
 
 type ActiveTab = 'send' | 'deposit' | 'withdraw';
@@ -172,10 +172,10 @@ export default function TransfersPage() {
       <Helmet>
         <title>Transfers — Send, Deposit & Withdraw | CGC</title>
         <meta name="robots" content="noindex, nofollow" />
-        <meta name="description" content="Send money globally, deposit funds, and withdraw to your bank or crypto wallet. Instant transfers with transparent fees and real exchange rates." />
+        <meta name="description" content="Preview proposed transfer, deposit, and withdrawal interfaces using demonstration data. Live money movement is unavailable." />
         <link rel="canonical" href="https://citygate.capital/transfers" />
         <meta property="og:title" content="Transfers — Send, Deposit & Withdraw" />
-        <meta property="og:description" content="Instant global transfers, deposits, and withdrawals. Transparent fees, real exchange rates." />
+        <meta property="og:description" content="A demonstration of proposed transfer, deposit, and withdrawal interfaces. No live financial transactions are available." />
         <meta property="og:url" content="https://citygate.capital/transfers" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -228,10 +228,10 @@ export default function TransfersPage() {
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
               Move Money<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C9A84C] to-[#E8C97A]">Anywhere, Instantly</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C9A84C] to-[#E8C97A]">Preview the Journey</span>
             </h1>
             <p className="text-lg text-white/60 max-w-2xl mx-auto mb-10">
-              Send to anyone, deposit funds, or withdraw to your bank or crypto wallet — all with transparent fees and real exchange rates.
+              Explore proposed transfer, deposit, and withdrawal journeys using demonstration records. No real funds or assets can be moved.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#C9A84C] text-black font-semibold hover:bg-[#E8C97A] transition-colors">
@@ -433,7 +433,7 @@ export default function TransfersPage() {
                         <div className="grid grid-cols-2 gap-3">
                           {[
                             { id: 'bank_wire', label: 'Bank Wire', desc: '1–3 business days' },
-                            { id: 'crypto',    label: 'Crypto',    desc: 'Near-instant'       },
+                            { id: 'crypto',    label: 'Crypto',    desc: 'Preview only'       },
                           ].map(m => (
                             <button
                               key={m.id}
@@ -543,7 +543,7 @@ export default function TransfersPage() {
                         <div className="grid grid-cols-2 gap-3">
                           {[
                             { id: 'bank',   label: 'Bank Account', desc: '1–3 business days' },
-                            { id: 'crypto', label: 'Crypto Wallet', desc: 'Near-instant'      },
+                            { id: 'crypto', label: 'Crypto Wallet', desc: 'Preview only'      },
                           ].map(m => (
                             <button
                               key={m.id}
@@ -647,8 +647,8 @@ export default function TransfersPage() {
       <section className="py-20 bg-[#0D0D0D]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Every Way to Move Money</h2>
-            <p className="text-white/50 max-w-xl mx-auto">From instant peer-to-peer transfers to scheduled international wires — we have every payment type covered.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Preview Proposed Transfer Flows</h2>
+            <p className="text-white/50 max-w-xl mx-auto">Explore non-transactional prototypes for internal, international, scheduled, and bulk-payment experiences.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {transferTypes.map((t, i) => (
