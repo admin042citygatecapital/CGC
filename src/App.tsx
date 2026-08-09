@@ -8,7 +8,6 @@ type RouteObject,
 } from 'react-router-dom';
 
 import AppErrorBoundary from '@/components/AppErrorBoundary';
-import AriaChatWidget from '@/components/AriaChatWidget';
 import ClientOnly from '@/components/ClientOnly';
 import CookieBannerErrorBoundary from '@/components/CookieBannerErrorBoundary';
 import TawkWidget from '@/components/TawkWidget';
@@ -47,7 +46,6 @@ function LayoutWrapper() {
       {/* Single mount point — never re-mounts during navigation */}
       <ClientOnly>
         <TawkWidget />
-        <AriaChatWidget />
       </ClientOnly>
 
       {isStandalone ? (
