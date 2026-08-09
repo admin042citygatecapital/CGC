@@ -67,6 +67,10 @@ export default async function handler(_req: Request, res: Response) {
     status,
     timestamp:   new Date().toISOString(),
     version:     process.env.npm_package_version ?? '1.0.0',
+    release: {
+      commit: process.env.RENDER_GIT_COMMIT ?? 'local',
+      branch: process.env.RENDER_GIT_BRANCH ?? 'local',
+    },
     environment: process.env.NODE_ENV ?? 'development',
     uptime: {
       seconds: Math.floor(uptime),

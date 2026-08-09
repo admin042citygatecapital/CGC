@@ -53,7 +53,7 @@ describe('production platform mode', () => {
     expect(status).toHaveBeenCalledWith(503);
   });
 
-  it('requires live mode, explicit enablement, approvals, and named providers', async () => {
+  it('does not allow environment attestations alone to unlock live operations', async () => {
     process.env.NODE_ENV = 'production';
     process.env.PLATFORM_MODE = 'live';
     process.env.ENABLE_FINANCIAL_OPERATIONS = '1';
@@ -67,8 +67,8 @@ describe('production platform mode', () => {
     vi.resetModules();
     const { requireFinancialOperations } = await import('../../server/lib/platformMode.js');
     const { response, status } = responseMock();
-    expect(requireFinancialOperations(response)).toBe(true);
-    expect(status).not.toHaveBeenCalled();
+    expect(requireFinancialOperations(response)).toBe(false);
+    expect(status).toHaveBeenCalledWith(503);
   });
 
   it('blocks public registration unless explicitly enabled', async () => {

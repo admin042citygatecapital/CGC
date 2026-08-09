@@ -85,7 +85,7 @@ const trustBadges = [
   { icon: Fingerprint, label: 'Biometric Auth',    desc: 'Face & Touch ID',           color: '#627EEA' },
   { icon: FileText,    label: 'Launch Gated',      desc: 'Approvals required',         color: '#10B981' },
   { icon: Zap,         label: 'Guided Setup',      desc: 'Preview workflow',           color: '#9945FF' },
-  { icon: Lock,        label: '256-bit AES',       desc: 'Military-grade encryption', color: '#EC4899' },
+  { icon: Lock,        label: 'Secure Sessions',   desc: 'Protected account access', color: '#EC4899' },
   { icon: Globe,       label: 'Multi-Currency',    desc: 'Prototype coverage',        color: '#F7931A' },
   { icon: CreditCard,  label: 'Virtual Cards',     desc: 'Demonstration only',        color: '#14B8A6' },
   { icon: Star,        label: 'Responsive UI',     desc: 'Web preview',                color: '#F0D080' },
@@ -338,9 +338,9 @@ export default function AccountsPage() {
           <div className="text-center mb-12">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
               <h2 className="text-4xl font-bold text-foreground tracking-tight mb-3">
-                Choose Your <span className="text-gold-gradient">Account</span>
+                Explore a Proposed <span className="text-gold-gradient">Profile</span>
               </h2>
-              <p className="text-foreground/55 max-w-md mx-auto text-sm">All accounts include zero-fee crypto, multi-currency wallets, and instant transfers.</p>
+              <p className="text-foreground/55 max-w-md mx-auto text-sm">Compare illustrative profile concepts. No bank account, deposit, card, or financial service is opened.</p>
             </motion.div>
           </div>
 
@@ -628,7 +628,7 @@ export default function AccountsPage() {
             <div className="flex flex-wrap justify-center gap-4 relative">
               <button onClick={() => { trackConversion('signup_started', location.pathname, { source: 'bottom_cta' }); openModal(selectedType); }} className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <span className="relative">Open Free Account</span>
+                <span className="relative">Create Preview Profile</span>
                 <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
               </button>
               <Link to="/contact" className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-medium text-foreground/60 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors">

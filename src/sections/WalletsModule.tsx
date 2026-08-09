@@ -40,7 +40,7 @@ export function WalletsSection() {
             <GlassCard className="rounded-3xl p-6 mb-4" glow>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <p className="text-xs text-foreground/55 uppercase tracking-widest mb-0.5">Total Wallet Balance</p>
+                  <p className="text-xs text-foreground/55 uppercase tracking-widest mb-0.5">Demonstration Wallet Balance</p>
                   <p className="text-3xl font-bold text-foreground" style={{ fontFamily: 'var(--font-heading)' }}>$86,313</p>
                   <p className="text-xs text-emerald-400 flex items-center gap-1 mt-1"><TrendingUp size={10} /> +$2,140 today</p>
                 </div>
@@ -82,9 +82,9 @@ export function WalletsSection() {
 
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { icon: ArrowRight, label: 'Send'     },
-                  { icon: RefreshCw,  label: 'Exchange' },
-                  { icon: CreditCard, label: 'Top Up'   },
+                  { icon: ArrowRight, label: 'Preview Send'     },
+                  { icon: RefreshCw,  label: 'Preview Exchange' },
+                  { icon: CreditCard, label: 'Preview Top Up'   },
                 ].map(btn => (
                   <button key={btn.label} className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-primary/8 hover:bg-primary/15 transition-colors group">
                     <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center group-hover:bg-primary/25 transition-colors">
@@ -101,10 +101,10 @@ export function WalletsSection() {
                 <RefreshCw size={15} className="text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-foreground/55 mb-0.5">Live Exchange Rate</p>
+                <p className="text-xs text-foreground/55 mb-0.5">Illustrative Exchange Rate</p>
                 <p className="text-sm font-semibold text-foreground">1 USD = 0.9210 EUR</p>
               </div>
-              <span className="text-xs text-emerald-400 font-medium">Real rate</span>
+              <span className="text-xs text-emerald-400 font-medium">Sample rate</span>
             </GlassCard>
           </motion.div>
 

@@ -24,12 +24,6 @@ export default async function handler(req: Request, res: Response) {
   const phone    = sanitizeString(raw.phone);
   const country  = sanitizeString(raw.country);
   const ip       = req.ip ?? 'unknown';
-  // Optional KYC fields from the account opening modal
-  const dateOfBirth = sanitizeString(raw.dateOfBirth);
-  const address     = sanitizeString(raw.address);
-  const idType      = sanitizeString(raw.idType);
-  const idNumber    = sanitizeString(raw.idNumber);
-
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email and password are required' });
   }
@@ -66,11 +60,6 @@ export default async function handler(req: Request, res: Response) {
     emailVerifyExpiry: expiry,
     passwordHash,
     ip,
-    // KYC fields from account opening modal
-    dateOfBirth: dateOfBirth || undefined,
-    address:     address     || undefined,
-    idType:      idType      || undefined,
-    idNumber:    idNumber    || undefined,
   });
 
   appendAudit({ event: 'user_registered', userId: user.id, email, ip });
@@ -83,6 +72,7 @@ export default async function handler(req: Request, res: Response) {
     ok: true,
     message: 'Registration successful. Please check your email to verify your account.',
     userId: user.id,
-    documentUploadToken: issueKycUploadToken(user.id),
+    documentUploadToken: process.env.NODE_ENV === 'production' ? undefined : issueKycUploadToken(user.id),
+    kycAvailable: process.env.NODE_ENV !== 'production',
   });
 }

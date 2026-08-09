@@ -188,7 +188,7 @@ export default function TransfersPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Transfers — City Gate Capital" />
-        <meta name="twitter:description" content="Instant global transfers, deposits, and withdrawals. Transparent fees, real exchange rates." />
+        <meta name="twitter:description" content="Preview proposed transfer, deposit, and withdrawal experiences using demonstration data. No funds are moved." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -196,16 +196,15 @@ export default function TransfersPage() {
           '@id': 'https://citygate.capital/transfers#webpage',
           name: 'Transfers — Send, Deposit & Withdraw | City Gate Capital',
           url: 'https://citygate.capital/transfers',
-          description: 'Send money globally, deposit funds, and withdraw to your bank or crypto wallet. Instant transfers with transparent fees and real exchange rates.',
+          description: 'Preview proposed transfer, deposit, and withdrawal experiences using demonstration data. No funds are moved.',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
           mainEntity: {
-            '@type': 'FinancialProduct',
-            name: 'City Gate Capital International Transfers',
-            description: 'Instant global money transfers, deposits, and withdrawals with transparent fees and real mid-market exchange rates.',
-            provider: { '@id': 'https://citygate.capital/#organization' },
-            feesAndCommissionsSpecification: 'International transfers from $0.99. Internal transfers always free.',
-            areaServed: 'Worldwide',
+            '@type': 'WebApplication',
+            name: 'City Gate Capital Transfer Experience Preview',
+            description: 'A non-transactional product demonstration of proposed money-transfer interfaces.',
+            applicationCategory: 'FinanceApplication',
+            operatingSystem: 'Web',
           },
         }) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -700,12 +699,12 @@ export default function TransfersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Bank-Grade Security on Every Transfer</h2>
-              <p className="text-white/50 mb-8 leading-relaxed">Every transfer is protected by 256-bit encryption, real-time fraud monitoring, and multi-factor authentication. Your money is always safe.</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Security Controls for the Transfer Preview</h2>
+              <p className="text-white/50 mb-8 leading-relaxed">Account access uses protective controls, but this preview does not accept money or execute transfers. Provider security and monitoring must be validated before launch.</p>
               <div className="space-y-4">
                 {[
-                  { icon: Shield, text: '256-bit AES encryption on all transactions' },
-                  { icon: CheckCircle, text: 'Real-time fraud detection and blocking' },
+                  { icon: Shield, text: 'Protected account sessions and access controls' },
+                  { icon: CheckCircle, text: 'Transaction monitoring required before launch' },
                   { icon: Globe, text: 'Preview only — provider approval required' },
                   { icon: DollarSign, text: 'Demonstration funds — not insured' },
                 ].map((item, i) => (
@@ -720,10 +719,10 @@ export default function TransfersPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: 'Countries Supported', value: '180+' },
-                { label: 'Currencies', value: '50+' },
-                { label: 'Avg. Transfer Time', value: '< 30s' },
-                { label: 'Uptime SLA', value: '99.9%' },
+                { label: 'Live Countries', value: '0' },
+                { label: 'Prototype Currencies', value: '50+' },
+                { label: 'Funds Moved', value: '$0' },
+                { label: 'Settlement', value: 'Off' },
               ].map((s, i) => (
                 <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
                   <div className="text-3xl font-bold text-[#C9A84C] mb-1">{s.value}</div>
@@ -739,7 +738,8 @@ export default function TransfersPage() {
       <section className="py-20 bg-[#0A0A0A]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Trusted by Thousands</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Illustrative Transfer Scenarios</h2>
+            <p className="text-white/50">These examples are product scenarios, not customer testimonials.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
@@ -762,11 +762,11 @@ export default function TransfersPage() {
       {/* CTA */}
       <section className="py-20 bg-[#0D0D0D]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Ready to Move Money Smarter?</h2>
-          <p className="text-white/50 mb-10">Open a free account in minutes and start sending money globally with the lowest fees.</p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Explore the Transfer Experience</h2>
+          <p className="text-white/50 mb-10">Create a preview profile to explore the interface. Deposits, withdrawals, and live transfers are unavailable.</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/register" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#C9A84C] text-black font-semibold hover:bg-[#E8C97A] transition-colors">
-              Open Free Account <ArrowRight size={16} />
+              Create Preview Profile <ArrowRight size={16} />
             </Link>
             <Link to="/support" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border border-white/20 text-white hover:border-[#C9A84C]/50 transition-colors">
               Contact Support

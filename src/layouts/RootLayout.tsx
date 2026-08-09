@@ -24,7 +24,8 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   usePageViewTracking();
-  const isPreview = import.meta.env.VITE_PLATFORM_MODE !== 'live';
+  const isPreview = import.meta.env.VITE_PLATFORM_MODE !== 'live'
+    || import.meta.env.VITE_LAUNCH_APPROVED !== '1';
   return (
     <Website>
       {/* Skip-to-content link for keyboard/screen-reader users */}
@@ -37,8 +38,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
       </a>
       <LogoIntro />
       <Helmet>
-        <title>City Gate Capital — Secure Digital Banking for the Modern World</title>
-        <meta name="description" content="City Gate Capital offers premium digital banking, multi-currency wallets, crypto exchange, and international transfers. Open your account in minutes." />
+        <title>City Gate Capital — Digital Finance Product Preview</title>
+        <meta name="description" content="Explore a product preview of proposed multi-currency, wallet, transfer, card, analytics, and administration experiences. No live financial services are available." />
         {/* google-site-verification is injected server-side from the GOOGLE_SITE_VERIFICATION secret */}
         <meta property="og:site_name" content="City Gate Capital" />
         <meta property="og:type" content="website" />
@@ -73,7 +74,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             width: 200,
             height: 200,
           },
-          description: 'Premium digital banking for global citizens. Multi-currency wallets, crypto exchange, international transfers, and smart cards.',
+          description: 'Product preview of proposed multi-currency, wallet, transfer, card, analytics, and administration experiences.',
           contactPoint: [
             {
               '@type': 'ContactPoint',
@@ -97,10 +98,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             'https://linkedin.com/company/citygate-capital',
             'https://instagram.com/citygatecapital',
           ],
-          knowsAbout: [
-            'Digital Banking', 'Cryptocurrency', 'International Money Transfers',
-            'Multi-Currency Accounts', 'Fintech', 'Payment Processing',
-          ],
+          knowsAbout: ['Financial technology product design', 'Account security', 'Administrative workflows'],
         }) }} />
         {/* Global WebSite schema with Sitelinks Searchbox */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({

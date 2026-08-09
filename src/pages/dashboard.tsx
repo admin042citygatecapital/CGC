@@ -1219,7 +1219,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-1.5 text-xs text-foreground/30">
                           <Shield size={11} className="text-emerald-400" />
-                          <span>{isPreview ? 'Demo funds — not insured' : 'FDIC insured'}</span>
+                          <span>{isPreview ? 'Demo funds — not insured' : 'Protection depends on the account provider and published terms'}</span>
                         </div>
                         <span className="text-foreground/15">·</span>
                         <span className="text-xs text-foreground/30 font-mono">

@@ -261,7 +261,7 @@ export default function WalletPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Crypto & Fiat Wallet — City Gate Capital" />
-        <meta name="twitter:description" content="One wallet for every currency. 50+ crypto and fiat currencies, real exchange rates, zero hidden fees." />
+        <meta name="twitter:description" content="Preview a unified crypto and fiat wallet interface with demonstration balances. Live custody, exchange, and transfers are unavailable." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -465,22 +465,22 @@ export default function WalletPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
               <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-                Instant Exchange
+                Exchange Preview
               </span>
               <h2 className="text-4xl font-bold text-foreground mb-5 tracking-tight">
-                Swap Any Asset<br />
-                <span className="text-gold-gradient">In Seconds</span>
+                Explore Asset Swaps<br />
+                <span className="text-gold-gradient">Without Moving Funds</span>
               </h2>
               <p className="text-foreground/50 leading-relaxed mb-8">
-                Exchange between crypto and fiat currencies instantly at the real mid-market rate. No spread markup, no hidden fees — just the best rate available.
+                Explore how crypto and fiat conversions could appear using illustrative prices. This preview does not execute orders, settle transactions, or custody assets.
               </p>
               <div className="space-y-3">
                 {[
-                  'Real mid-market exchange rates',
-                  'Instant settlement on all pairs',
-                  'No spread markup or hidden fees',
-                  '50+ trading pairs available',
-                  'Automatic best-rate routing',
+                  'Illustrative market pricing',
+                  'No live settlement',
+                  'No customer assets accepted',
+                  'Prototype trading pairs',
+                  'Provider integration required before launch',
                 ].map(f => (
                   <div key={f} className="flex items-center gap-3 text-sm text-foreground/60">
                     <CheckCircle size={14} className="text-primary shrink-0" />

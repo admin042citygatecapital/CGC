@@ -9,7 +9,7 @@
     "trustBadges": [
       {
         "id": "tb1",
-        "label": "Bank-Grade Security"
+        "label": "Security Controls Preview"
       },
       {
         "id": "tb2",
@@ -56,7 +56,7 @@
   "trustBadges": [
     {
       "id": "tb1",
-      "label": "Bank-Grade Security"
+      "label": "Security Controls Preview"
     },
     {
       "id": "tb2",
@@ -79,7 +79,7 @@
     "eyebrow": "Platform Features",
     "headline1": "Everything You Need to",
     "headlineAccent": "Bank Smarter",
-    "subheadline": "One platform for all your financial needs — from everyday spending to global investments and crypto.",
+    "subheadline": "Explore proposed account, transfer, investment, and digital-asset experiences using demonstration data.",
     "items": [
       {
         "id": "f1",
@@ -103,7 +103,7 @@
       },
       {
         "id": "f5",
-        "title": "Bank-Grade Security",
+        "title": "Security Controls",
         "desc": "Account security controls and a production launch gate that keeps financial operations disabled."
       },
       {
@@ -117,11 +117,11 @@
     "eyebrow": "Smart Dashboard",
     "headline1": "Your Finances,",
     "headlineAccent": "Beautifully Clear",
-    "subheadline": "A real-time dashboard gives you a complete picture of your financial health — balances, spending trends, crypto portfolio, and upcoming payments.",
+    "subheadline": "A demonstration dashboard shows how balances, spending trends, portfolio data, and upcoming payments could appear after launch.",
     "featureBullets": [
       {
         "id": "db1",
-        "label": "Real-time analytics"
+        "label": "Demonstration analytics"
       },
       {
         "id": "db2",
@@ -149,37 +149,37 @@
     "featureBullets": [
       {
         "id": "tr1",
-        "title": "Bank-grade security",
-        "desc": "Every transfer is encrypted and monitored for fraud in real time."
+        "title": "Transfer security design",
+        "desc": "Preview the proposed encryption, monitoring, and approval controls for future provider-backed transfers."
       },
       {
         "id": "tr2",
-        "title": "50+ currencies supported",
-        "desc": "Send in the local currency — no double conversion, no extra fees."
+        "title": "Multi-currency scenarios",
+        "desc": "Explore illustrative currency corridors; availability, rates, fees, and settlement are not live."
       },
       {
         "id": "tr3",
-        "title": "Real-time notifications",
-        "desc": "Push alerts the moment your transfer is initiated, sent, and delivered."
+        "title": "Notification preview",
+        "desc": "Preview proposed alerts for initiation, processing, and delivery states."
       },
       {
         "id": "tr4",
         "title": "Batch & scheduled sends",
-        "desc": "Send to multiple recipients at once or schedule recurring transfers."
+        "desc": "Explore proposed batch and scheduled-payment controls without moving funds."
       }
     ]
   },
   "crypto": {
     "eyebrow": "Crypto Exchange",
-    "headline1": "Buy, Sell & Hold",
+    "headline1": "Explore Digital Assets",
     "headlineAccent": "50+ Cryptocurrencies",
-    "subheadline": "Trade crypto at real market prices with zero commission. Instant settlement, cold-storage security, and a portfolio dashboard that keeps you in control.",
+    "subheadline": "Preview paper-trading, portfolio, and custody workflows using demonstration balances. No live trading or custody is available.",
     "ctaLabel": "Explore Crypto Wallet",
     "featureBullets": [
       {
         "id": "cr1",
-        "title": "Instant Settlement",
-        "desc": "Trades execute in milliseconds. Your balance updates in real time — no waiting, no delays."
+        "title": "Settlement Simulation",
+        "desc": "Demonstration orders update sample balances without executing or settling a live trade."
       },
       {
         "id": "cr2",
@@ -189,17 +189,17 @@
       {
         "id": "cr3",
         "title": "Portfolio Analytics",
-        "desc": "Track performance, allocation, and P&L across all your crypto holdings in one dashboard."
+        "desc": "Explore sample performance, allocation, and P&L views using demonstration holdings."
       },
       {
         "id": "cr4",
         "title": "Auto-Rebalancing",
-        "desc": "Set target allocations and let City Gate Capital automatically rebalance your crypto portfolio."
+        "desc": "Preview proposed target-allocation controls; automatic rebalancing is not active."
       },
       {
         "id": "cr5",
-        "title": "Zero Commission",
-        "desc": "No trading fees. We earn on the spread — always transparent, always disclosed upfront."
+        "title": "Illustrative Pricing",
+        "desc": "Fees and spreads are not live commercial terms and require provider and legal approval before launch."
       }
     ]
   },
@@ -207,58 +207,58 @@
     "eyebrow": "Multi-Currency Wallet",
     "headline1": "One Wallet,",
     "headlineAccent": "Every Currency",
-    "subheadline": "Hold, exchange, and spend in 50+ fiat currencies and 50+ cryptocurrencies — all from a single account with real mid-market rates.",
-    "ctaLabel": "Open Your Wallet",
+    "subheadline": "Explore how fiat and digital-asset balances, conversions, and spending controls could work in a unified interface.",
+    "ctaLabel": "Preview the Wallet",
     "featureBullets": [
       {
         "id": "w1",
         "title": "50+ Fiat Currencies",
-        "desc": "Hold and spend in USD, EUR, GBP, JPY, AUD, CAD, CHF, and 43 more. Switch between currencies instantly at real rates."
+        "desc": "Preview sample balances in multiple currencies; holding, spending, and live conversion are unavailable."
       },
       {
         "id": "w2",
         "title": "50+ Cryptocurrencies",
-        "desc": "BTC, ETH, SOL, USDT, USDC, BNB and more — all in the same wallet alongside your fiat balances."
+        "desc": "Explore demonstration balances for selected digital assets alongside sample fiat balances."
       },
       {
         "id": "w3",
-        "title": "Instant Currency Exchange",
-        "desc": "Convert between any two currencies in seconds at the real mid-market rate. No spread markup, no hidden fees."
+        "title": "Currency Exchange Preview",
+        "desc": "Simulate conversions using illustrative rates; no currency is bought, sold, or settled."
       },
       {
         "id": "w4",
         "title": "Virtual & Physical Cards",
-        "desc": "Spend in any currency with your City Gate Capital card. The right currency is automatically selected at checkout."
+        "desc": "Preview proposed card and currency-selection controls; no payment card is issued in this environment."
       },
       {
         "id": "w5",
         "title": "Scheduled Conversions",
-        "desc": "Set target rates and let the platform auto-convert when the market hits your price. Never miss a rate again."
+        "desc": "Explore proposed target-rate controls without executing automatic conversions."
       },
       {
         "id": "w6",
         "title": "Net Worth in One View",
-        "desc": "See your total wealth across all currencies and assets consolidated into your home currency in real time."
+        "desc": "View demonstration totals across sample currencies and assets in a selected display currency."
       }
     ]
   },
   "security": {
     "eyebrow": "Security & Compliance",
-    "headline1": "Your Money is",
-    "headlineAccent": "Fort Knox Safe",
-    "subheadline": "Institutional-grade security, AI-powered fraud detection, and a 5-minute KYC process — so you're protected from day one.",
-    "zeroIncidentsHeadline": "Zero Security Incidents",
-    "zeroIncidentsSub": "Since founding in 2018 — a record we're proud of and committed to maintaining.",
+    "headline1": "Security by",
+    "headlineAccent": "Design",
+    "subheadline": "Review implemented account controls and the additional provider, compliance, and security work required before a financial launch.",
+    "zeroIncidentsHeadline": "No Live Financial Exposure",
+    "zeroIncidentsSub": "The preview does not accept deposits, custody assets, issue cards, or execute live transactions.",
     "featureBullets": [
       {
         "id": "sec1",
-        "title": "256-bit AES Encryption",
-        "desc": "Military-grade encryption for all data at rest and in transit. Your information is unreadable to anyone without your keys."
+        "title": "Encryption Controls",
+        "desc": "Sensitive application data uses encryption controls; production assurance still requires independent review and penetration testing."
       },
       {
         "id": "sec2",
-        "title": "Biometric Verification",
-        "desc": "Face ID, Touch ID and liveness detection on every login. Spoofing attempts are blocked automatically."
+        "title": "Biometric Interface Preview",
+        "desc": "The interface demonstrates biometric and liveness journeys; production biometric verification is not active."
       },
       {
         "id": "sec3",
@@ -267,18 +267,18 @@
       },
       {
         "id": "sec4",
-        "title": "AI Fraud Detection",
-        "desc": "Machine learning models monitor every transaction in real time and flag anomalies before they become problems."
+        "title": "Fraud-Control Design",
+        "desc": "The preview demonstrates risk signals and review workflows; live transaction monitoring requires an approved provider."
       }
     ]
   },
   "mobileApp": {
     "eyebrow": "Mobile App",
-    "headline1": "Banking in Your",
+    "headline1": "The Platform in Your",
     "headlineAccent": "Pocket",
-    "subheadline": "Powerful iOS and Android apps with full banking power. Send, receive, invest and manage everything from your phone.",
-    "awardLabel": "Bank-Grade Security",
-    "awardSub": "256-bit encryption · Biometric login",
+    "subheadline": "Preview the proposed mobile experience. Native iOS and Android applications and live financial functions are not yet available.",
+    "awardLabel": "Mobile Product Preview",
+    "awardSub": "Demonstration interface · No live transactions",
     "appChips": [
       {
         "id": "ac1",
@@ -309,64 +309,64 @@
       {
         "id": "ma1",
         "title": "Instant Notifications",
-        "desc": "Real-time push alerts for every transaction, transfer, and price movement."
+        "desc": "Preview proposed alerts for demonstration transactions, transfers, and price movements."
       },
       {
         "id": "ma2",
         "title": "Biometric Login",
-        "desc": "Face ID and Touch ID for instant, secure access — no passwords needed."
+        "desc": "Preview the intended Face ID and Touch ID experience; native biometric login is not active."
       },
       {
         "id": "ma3",
         "title": "Auto-sync Across Devices",
-        "desc": "Your data syncs instantly across all your devices. Always up to date."
+        "desc": "Explore the proposed cross-device experience; production synchronization is not yet offered."
       },
       {
         "id": "ma4",
         "title": "Portfolio Dashboard",
-        "desc": "Full crypto and fiat portfolio view with P&L, charts, and allocation breakdown."
+        "desc": "View sample fiat and digital-asset portfolios, charts, and allocations."
       },
       {
         "id": "ma5",
         "title": "One-tap Transfers",
-        "desc": "Send money to anyone in seconds. Saved recipients, instant confirmation."
+        "desc": "Preview saved-recipient and confirmation workflows without sending money."
       }
     ]
   },
   "pricing": {
-    "eyebrow": "Pricing",
+    "eyebrow": "Proposed Plans",
     "headline1": "Simple,",
     "headlineAccent": "Transparent",
-    "headline2": "Pricing",
-    "subheadline": "No hidden fees. No surprises. Start free and upgrade when you're ready.",
+    "headline2": "Concepts",
+    "subheadline": "Illustrative plan concepts for product research only. No paid banking plan is currently offered.",
     "trustStrip": [
       {
         "id": "pt1",
-        "label": "No contracts, cancel anytime"
+        "label": "No live subscriptions"
       },
       {
         "id": "pt2",
-        "label": "30-day money-back guarantee"
+        "label": "Illustrative prices only"
       },
       {
         "id": "pt3",
-        "label": "Bank-grade security on all plans"
+        "label": "Security review required"
       },
       {
         "id": "pt4",
-        "label": "Free plan forever — no credit card"
+        "label": "No payment card required for preview"
       }
     ]
   },
   "testimonials": {
-    "eyebrow": "Testimonials",
-    "headline1": "What Our",
-    "headlineAccent": "Customers",
-    "headline2": "Say",
+    "eyebrow": "Use Cases",
+    "headline1": "Illustrative",
+    "headlineAccent": "User",
+    "headline2": "Scenarios",
     "subheadline": "Illustrative scenarios showing how different audiences could use the proposed platform.",
-    "featuredQuote": "We moved our entire treasury operation to City Gate Capital. The API, the compliance tools, and the dedicated relationship manager make it completely seamless. It's the most sophisticated fintech platform I've used in 20 years of finance.",
-    "featuredName": "James W.",
-    "featuredRole": "Hedge Fund Manager · Zurich, Switzerland",
+    "featuredQuote": "This scenario illustrates how a treasury team could review controls and reporting after approved provider integrations become available.",
+    "featuredName": "Illustrative scenario",
+    "featuredRole": "Not a customer testimonial",
     "pressLabel": "",
     "pressLogos": [],
     "items": [
@@ -378,7 +378,7 @@
         "avatar": "S",
         "color": "#C9A84C",
         "rating": 5,
-        "text": "City Gate Capital transformed how I manage international payments. The exchange rates are unbeatable and the interface is stunning. I've saved thousands in fees."
+        "text": "This scenario illustrates how an entrepreneur could review proposed international-payment workflows and transparent fee disclosures."
       },
       {
         "id": "t2",
@@ -388,7 +388,7 @@
         "avatar": "D",
         "color": "#627EEA",
         "rating": 5,
-        "text": "Having both my crypto and fiat in one place is a game changer. The security features give me complete peace of mind. Nothing else comes close."
+        "text": "This scenario illustrates how a user could compare sample fiat and digital-asset portfolio views without live custody."
       },
       {
         "id": "t3",
@@ -398,7 +398,7 @@
         "avatar": "P",
         "color": "#10B981",
         "rating": 5,
-        "text": "Getting paid from clients worldwide used to be a nightmare. Now it's instant and I keep far more of my money. The app is beautiful too."
+        "text": "This scenario illustrates a proposed cross-border payment journey after licensed providers and approved corridors are available."
       },
       {
         "id": "t4",
@@ -418,7 +418,7 @@
         "avatar": "Y",
         "color": "#F7931A",
         "rating": 5,
-        "text": "The analytics dashboard is on par with Bloomberg terminals I've used. Real-time data, clean charts, and everything in one account."
+        "text": "This scenario illustrates how a portfolio manager could review sample analytics and market-data interfaces."
       },
       {
         "id": "t6",
@@ -428,7 +428,7 @@
         "avatar": "A",
         "color": "#F0D080",
         "rating": 5,
-        "text": "Sending money back home used to cost me 8% in fees. City Gate Capital charges $0.99. That's not a small difference — it's life-changing."
+        "text": "This scenario illustrates how a remittance user could compare disclosed rates and fees after an approved payment provider is connected."
       },
       {
         "id": "t7",
@@ -448,7 +448,7 @@
         "avatar": "J",
         "color": "#14B8A6",
         "rating": 5,
-        "text": "We moved our entire treasury operation to City Gate Capital. The API, the compliance tools, and the dedicated manager make it seamless."
+        "text": "This scenario illustrates a proposed treasury API and compliance workflow; no live treasury service is offered."
       }
     ]
   },
@@ -478,31 +478,31 @@
         "id": "fq3",
         "cat": "Accounts",
         "q": "How quickly can I open an account?",
-        "a": "Account opening takes under 5 minutes. Our AI-powered KYC verification is usually instant. You can fund your account and start transacting the same day — no branch visits, no paperwork."
+        "a": "You can create a preview profile to explore the interface. Live identity verification, funding, and transactions are not enabled."
       },
       {
         "id": "fq4",
         "cat": "Accounts",
         "q": "What currencies and crypto do you support?",
-        "a": "We support 50+ fiat currencies including USD, EUR, GBP, JPY, AUD, CAD, CHF, and 43 more. For crypto we support 50+ assets including BTC, ETH, SOL, USDT, USDC, BNB, ADA, and more. New assets are added regularly."
+        "a": "The preview displays selected fiat currencies and digital assets using sample or market data. Live availability will depend on approved providers and launch jurisdictions."
       },
       {
         "id": "fq5",
         "cat": "Pricing",
         "q": "Are there monthly fees?",
-        "a": "Our Standard account is completely free forever — no monthly fee, no minimum balance. Premium ($9/mo) and Elite ($29/mo) plans unlock unlimited transfers, physical metal cards, investment tools, and priority support."
+        "a": "Displayed plans and prices are illustrative concepts. No paid banking subscription, transfer allowance, card, or investment service is currently offered."
       },
       {
         "id": "fq6",
         "cat": "Pricing",
         "q": "Are there hidden fees on transfers?",
-        "a": "Never. We charge a transparent flat fee from $0.99 per transfer and always use the real mid-market exchange rate — no spread markup. You see the exact cost before you confirm every transaction."
+        "a": "The preview uses illustrative fees and rates. Final pricing, spreads, and disclosures will be published only after provider and legal approval."
       },
       {
         "id": "fq7",
         "cat": "Transfers",
         "q": "How do international transfers work?",
-        "a": "Enter the amount, select the destination currency and recipient. We show you the exact rate and fee upfront. Most transfers arrive within seconds to minutes; some corridors may take up to 1 business day depending on the destination bank."
+        "a": "The interface demonstrates amount, recipient, rate, fee, and status screens. It does not transmit or settle funds."
       },
       {
         "id": "fq8",
@@ -517,12 +517,12 @@
     "headline1": "Ready to Bank",
     "headlineAccent": "Smarter?",
     "subheadline": "Explore the City Gate Capital vision for global transfers, digital assets, investments, and everyday account management.",
-    "ctaPrimary": "Open Free Account",
+    "ctaPrimary": "Create Preview Profile",
     "ctaSecondary": "Talk to Sales",
     "featureStrip": [
       {
         "id": "fs1",
-        "label": "Bank-grade security"
+        "label": "Security controls preview"
       },
       {
         "id": "fs2",
@@ -530,15 +530,15 @@
       },
       {
         "id": "fs3",
-        "label": "Instant account opening"
+        "label": "Preview profile creation"
       },
       {
         "id": "fs4",
-        "label": "No contracts, cancel anytime"
+        "label": "No live subscription"
       },
       {
         "id": "fs5",
-        "label": "Free plan forever"
+        "label": "Free product preview"
       }
     ]
   },
@@ -552,31 +552,31 @@
       "highlight": false,
       "badge": "",
       "color": "#627EEA",
-      "cta": "Open Free Account",
+      "cta": "Explore Standard Preview",
       "features": [
         {
           "id": "pf1",
-          "label": "Multi-currency account (10 currencies)",
+          "label": "Multi-currency interface (10 samples)",
           "included": true
         },
         {
           "id": "pf2",
-          "label": "Virtual debit card",
+          "label": "Virtual card design preview",
           "included": true
         },
         {
           "id": "pf3",
-          "label": "5 international transfers / month",
+          "label": "Transfer workflow demonstrations",
           "included": true
         },
         {
           "id": "pf4",
-          "label": "Crypto wallet (10 assets)",
+          "label": "Digital-asset interface (10 samples)",
           "included": true
         },
         {
           "id": "pf5",
-          "label": "Mobile banking app",
+          "label": "Mobile interface preview",
           "included": true
         },
         {
@@ -610,31 +610,31 @@
       "highlight": true,
       "badge": "Most Popular",
       "color": "#C9A84C",
-      "cta": "Start Premium",
+      "cta": "Explore Premium Concept",
       "features": [
         {
           "id": "pf10",
-          "label": "Multi-currency account (50+ currencies)",
+          "label": "Expanded multi-currency prototype",
           "included": true
         },
         {
           "id": "pf11",
-          "label": "Virtual & physical metal card",
+          "label": "Virtual and physical card concepts",
           "included": true
         },
         {
           "id": "pf12",
-          "label": "Unlimited international transfers",
+          "label": "Expanded transfer workflow preview",
           "included": true
         },
         {
           "id": "pf13",
-          "label": "Crypto wallet (50+ assets)",
+          "label": "Expanded digital-asset interface",
           "included": true
         },
         {
           "id": "pf14",
-          "label": "Mobile banking app",
+          "label": "Mobile product concept",
           "included": true
         },
         {

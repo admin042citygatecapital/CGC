@@ -66,7 +66,7 @@ interface WebsiteSettings {
 
 const DEFAULT: WebsiteSettings = {
   siteName: 'City Gate Capital',
-  siteTagline: 'Secure Digital Banking for the Modern World',
+  siteTagline: 'Digital Finance Product Preview',
   logoUrl: '/assets/brand/city-gate-capital-horizontal.png',
   faviconUrl: '/assets/brand/city-gate-capital-favicon.png',
   primaryColor: '#C9A84C',
@@ -74,9 +74,9 @@ const DEFAULT: WebsiteSettings = {
   fontHeading: 'Space Grotesk',
   fontBody: 'Inter',
 
-  heroTitle: 'The Future of Banking is Here',
-  heroSubtitle: 'Secure, fast, and built for global citizens who demand more from their bank.',
-  heroCTA: 'Open Free Account',
+  heroTitle: 'Explore the Future of Digital Finance',
+  heroSubtitle: 'A product preview of proposed account, wallet, transfer, card, analytics, and administration experiences.',
+  heroCTA: 'Create Preview Profile',
   heroCTALink: '/accounts',
   heroSecondaryCTA: 'Explore Features',
   heroSecondaryCTALink: '/digital-banking',

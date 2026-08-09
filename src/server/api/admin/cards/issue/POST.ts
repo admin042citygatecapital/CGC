@@ -8,10 +8,12 @@ import crypto from 'node:crypto';
 import { createCard, appendCardActivity } from '../../../../lib/cardStore.js';
 import { findUserById } from '../../../../lib/userStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
+import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession;
   if (!session) return res.status(401).json({ error: 'Authentication required' });
+  if (!requireFinancialOperations(res)) return;
 
   const { userId, network } = req.body as { userId?: string; network?: string };
   if (!userId) return res.status(400).json({ error: 'userId is required' });

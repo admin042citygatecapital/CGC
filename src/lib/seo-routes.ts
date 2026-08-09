@@ -43,8 +43,6 @@ export const seoRoutes: SeoRoute[] = [
   { path: "/compliance", changefreq: "monthly", priority: 0.5, lastmod: "2026-07-12" },
   // /analytics and /newsletter are AdminOnly — excluded from sitemap
   // Auth pages — indexable so search engines can surface the login/register entry points
-  { path: "/login", changefreq: "monthly", priority: 0.6, lastmod: "2026-07-12" },
-  { path: "/register", changefreq: "monthly", priority: 0.7, lastmod: "2026-07-12" },
   // KYC — noindex in page Helmet, excluded from sitemap
   // Forgot/reset password — utility pages, not useful to crawlers
   // /dashboard/** — auth-gated, noindex in page Helmet, excluded from sitemap

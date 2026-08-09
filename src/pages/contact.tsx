@@ -392,7 +392,7 @@ export default function ContactPage() {
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/accounts" className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <span className="relative">Open Free Account</span>
+                <span className="relative">Create Preview Profile</span>
                 <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
               </Link>
               <Link to="/support" className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-medium text-foreground/70 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors">

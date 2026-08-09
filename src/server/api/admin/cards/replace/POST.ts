@@ -7,10 +7,12 @@ import type { Request, Response } from 'express';
 import { findCardById, updateCard, createCard, appendCardActivity } from '../../../../lib/cardStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 import crypto from 'node:crypto';
+import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession;
   if (!session) return res.status(401).json({ error: 'Authentication required' });
+  if (!requireFinancialOperations(res)) return;
 
   const { cardId } = req.body as { cardId?: string };
   if (!cardId) return res.status(400).json({ error: 'cardId is required' });

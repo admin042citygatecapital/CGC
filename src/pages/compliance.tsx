@@ -119,8 +119,8 @@ const verifiedSections = [
     icon: Shield,
     content: [
       {
-        subtitle: '5.1 Deposit Protection',
-        body: `Fiat currency deposits held in City Gate Capital accounts are safeguarded in accordance with applicable e-money regulations. In the UK, customer funds are held in segregated accounts at authorised credit institutions. In the US, funds are FDIC insured up to $250,000 per depositor through our banking partners.`,
+        subtitle: '5.1 Preview Funds and Deposit Protection',
+        body: `This product preview does not accept deposits or customer funds. Demonstration balances are not money, are not safeguarded deposits, and are not insured. Any future live service must identify the licensed provider, account structure, applicable protection, exclusions, and jurisdiction-specific disclosures before accepting funds.`,
       },
       {
         subtitle: '5.2 Complaints Handling',

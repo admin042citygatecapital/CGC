@@ -3,8 +3,8 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Shield, Lock, Eye, Database, Globe, Mail, ChevronRight, FileText } from 'lucide-react';
 
-const LAST_UPDATED = 'May 23, 2026';
-const EFFECTIVE_DATE = 'May 23, 2026';
+const LAST_UPDATED = 'August 8, 2026';
+const EFFECTIVE_DATE = 'August 8, 2026';
 const CANONICAL = 'https://citygate.capital/privacy-policy';
 
 const sections = [
@@ -15,15 +15,15 @@ const sections = [
     content: [
       {
         subtitle: '1.1 Information You Provide',
-        body: `When you open an account or use our services, we collect: full legal name, date of birth, nationality, government-issued identification documents (passport, national ID, driver's licence), residential address, email address, phone number, tax identification number, source of funds declarations, and any other information required for KYC/AML compliance under applicable law.`,
+        body: `When you create a preview profile or contact us, we may collect information you provide such as your name, email address, telephone number, country, support messages, communication preferences, and demonstration profile information. This environment does not perform live identity verification. Do not upload real identity documents, payment-card information, bank credentials, or funds.`,
       },
       {
         subtitle: '1.2 Information Collected Automatically',
-        body: `We automatically collect: IP address, device identifiers, browser type and version, operating system, referring URLs, pages visited, session duration, click-stream data, transaction metadata (amounts, timestamps, counterparty identifiers), geolocation data (where permitted), and biometric authentication data stored locally on your device.`,
+        body: `We may automatically collect IP address, browser and device information, referring URLs, pages visited, session activity, security events, and demonstration transaction metadata. The preview does not collect or process live transaction records or production biometric-verification results.`,
       },
       {
         subtitle: '1.3 Information from Third Parties',
-        body: `We receive information from identity verification providers, credit reference agencies, fraud prevention databases, sanctions screening services, correspondent banking partners, and publicly available sources including company registries and regulatory databases.`,
+        body: `We may receive limited technical or delivery information from service providers that support hosting, email, customer support, analytics, and security. Live identity-verification, banking, payment, custody, credit-reference, and sanctions-screening providers are not connected in this preview.`,
       },
     ],
   },
@@ -34,15 +34,15 @@ const sections = [
     content: [
       {
         subtitle: '2.1 Service Delivery',
-        body: `We use your information to open and maintain your account, process transactions, issue payment instruments, provide customer support, send account notifications, and deliver the features described in our Terms of Service.`,
+        body: `We use information to create and maintain preview profiles, authenticate users, provide demonstration features, respond to support requests, send requested communications, protect the website, and improve the product. We do not use preview information to accept deposits, move money, issue payment instruments, provide custody, or execute trades.`,
       },
       {
         subtitle: '2.2 Legal and Regulatory Obligations',
-        body: `We are required by law to verify your identity (KYC), screen against sanctions lists, monitor for suspicious activity (AML), report certain transactions to financial intelligence units, and retain records for the periods mandated by applicable law — typically 5–7 years after account closure.`,
+        body: `The preview is not performing regulated KYC, AML screening, transaction monitoring, or regulatory reporting. Before any regulated service is introduced, this policy and the related notices, retention schedules, consent flows, and provider disclosures will be reviewed and updated for the approved jurisdictions and operating entity.`,
       },
       {
         subtitle: '2.3 Security and Fraud Prevention',
-        body: `We analyse transaction patterns, device signals, and behavioural data to detect and prevent fraud, unauthorised access, money laundering, terrorist financing, and other financial crime. This processing is necessary for the performance of our contract with you and our legitimate interests in protecting the platform.`,
+        body: `We use session, device, access, and security-event information to prevent abuse, investigate suspicious access, and protect preview profiles. Demonstration transaction data may be used to test product controls, but no live financial-crime monitoring service is represented as active.`,
       },
       {
         subtitle: '2.4 Product Improvement',
@@ -57,15 +57,15 @@ const sections = [
     content: [
       {
         subtitle: '3.1 Contractual Necessity',
-        body: `Most processing is necessary to perform our contract with you — without it, we cannot provide the services you have requested.`,
+        body: `Where applicable, we process information needed to provide the preview features or communications you request and to administer our relationship with you.`,
       },
       {
         subtitle: '3.2 Legal Obligation',
-        body: `KYC, AML, sanctions screening, and record-keeping are required by financial services regulations in every jurisdiction in which we operate, including but not limited to the EU's AMLD6, the UK's Money Laundering Regulations 2017, and equivalent legislation in 40+ other jurisdictions.`,
+        body: `We process information when necessary to comply with laws that apply to the website operator, such as responding to valid legal process and maintaining required business records. This preview does not claim regulated financial operations in any jurisdiction.`,
       },
       {
         subtitle: '3.3 Legitimate Interests',
-        body: `We process certain data on the basis of our legitimate interests, including fraud prevention, network security, and improving our services. We have conducted balancing tests and concluded that our interests do not override your fundamental rights.`,
+        body: `We may rely on legitimate interests for website security, fraud and abuse prevention, support, service improvement, and limited operational analytics, subject to applicable privacy law and your rights.`,
       },
       {
         subtitle: '3.4 Consent',
@@ -80,7 +80,7 @@ const sections = [
     content: [
       {
         subtitle: '4.1 Service Providers',
-        body: `We share data with carefully vetted third-party processors including cloud infrastructure providers, identity verification vendors, payment processors, card scheme operators, fraud detection services, and customer support platforms. All processors are bound by data processing agreements requiring them to protect your data.`,
+        body: `We may share data with service providers used for hosting, databases, email delivery, customer support, security, and other website operations. We do not share preview-profile data with live banking, payment, card, trading, or custody providers because those services are not active. Provider contracts and privacy terms must be reviewed before any such integration is enabled.`,
       },
       {
         subtitle: '4.2 Regulatory and Law Enforcement',
@@ -103,11 +103,11 @@ const sections = [
     content: [
       {
         subtitle: '5.1 Transfer Mechanisms',
-        body: `City Gate Capital operates globally. Your data may be transferred to and processed in countries outside your home jurisdiction, including countries that may not provide the same level of data protection as your home country. Where we transfer data from the EEA or UK, we rely on Standard Contractual Clauses (SCCs), adequacy decisions, or other lawful transfer mechanisms.`,
+        body: `Website service providers may process information outside your country. Where applicable law requires a transfer mechanism, we will use an available lawful mechanism and provide additional information on request. Launch into a new jurisdiction requires a separate review of data locations and international-transfer safeguards.`,
       },
       {
         subtitle: '5.2 Safeguards',
-        body: `All international transfers are subject to appropriate technical and organisational safeguards including encryption in transit and at rest, access controls, and contractual protections. You may request a copy of the relevant transfer mechanism by contacting privacy@citygate.capital.`,
+        body: `We use access controls, transport encryption, contractual protections, and other measures appropriate to the preview. Specific transfer mechanisms and subprocessors must be confirmed in the final jurisdiction-specific privacy review.`,
       },
     ],
   },
@@ -118,11 +118,11 @@ const sections = [
     content: [
       {
         subtitle: '6.1 Retention Periods',
-        body: `We retain your personal data for as long as your account is active and for a minimum of 5 years after account closure, or longer where required by applicable law. Transaction records are retained for 7 years in most jurisdictions. Biometric data is deleted within 90 days of collection unless you have consented to longer retention.`,
+        body: `We retain preview-profile, support, communication, security, and operational records only for as long as reasonably necessary for the purposes described here, to resolve disputes, protect the service, and comply with applicable law. A jurisdiction-specific retention schedule will be adopted before regulated services begin.`,
       },
       {
         subtitle: '6.2 Deletion',
-        body: `After the applicable retention period, we securely delete or anonymise your data. You may request early deletion of data that is not subject to legal retention obligations by contacting privacy@citygate.capital.`,
+        body: `When information is no longer required, we delete or anonymise it where reasonably practicable. You may request deletion of eligible information by contacting privacy@citygate.capital.`,
       },
     ],
   },
@@ -152,7 +152,7 @@ const sections = [
     content: [
       {
         subtitle: '8.1 Technical Safeguards',
-        body: `We protect your data using 256-bit AES encryption at rest, TLS 1.3 in transit, hardware security modules (HSMs) for key management, multi-factor authentication for all staff access, zero-trust network architecture, and regular penetration testing by independent security firms.`,
+        body: `We use technical and organisational safeguards including HTTPS, access controls, secure authentication, restricted administrative routes, logging, and encryption controls where implemented. No system is completely secure, and independent penetration testing and launch-specific security assurance remain required before regulated services begin.`,
       },
       {
         subtitle: '8.2 Incident Response',
@@ -178,11 +178,11 @@ const sections = [
     content: [
       {
         subtitle: '10.1 Data Controller',
-        body: `City Gate Capital Ltd is the data controller for personal data processed in connection with our services. Registered address: City Gate Capital Ltd, International Financial Centre, London, United Kingdom.`,
+        body: `City Gate Capital is responsible for personal data processed through this product-preview website. The final legal-entity name, registered address, regulatory status, and jurisdiction-specific representative details must be confirmed and published before regulated services begin.`,
       },
       {
         subtitle: '10.2 Privacy Contact',
-        body: `For all privacy-related enquiries, requests, or complaints, contact our Data Protection Officer at: privacy@citygate.capital. We aim to respond to all requests within 5 business days.`,
+        body: `For privacy enquiries, requests, or complaints, contact privacy@citygate.capital. We will acknowledge and respond within the timeframe required by applicable law.`,
       },
       {
         subtitle: '10.3 Changes to This Policy',

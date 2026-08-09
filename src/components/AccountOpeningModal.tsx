@@ -15,12 +15,11 @@ Lock,
 Mail,Phone,
 Shield,
 TrendingUp,
-Upload,
 User,
 X,
 } from 'lucide-react';
 import { AnimatePresence,motion } from 'motion/react';
-import { useEffect,useRef,useState } from 'react';
+import { useEffect,useState } from 'react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -37,15 +36,8 @@ interface FormData {
   lastName: string;
   email: string;
   phone: string;
-  dob: string;
-  gender: string;
   nationality: string;
-  address: string;
   accountType: string;
-  // Step 2 — Identity
-  govIdNumber: string;
-  tin: string;
-  idFile: File | null;
   // Step 3 — Security
   password: string;
   confirmPassword: string;
@@ -57,9 +49,8 @@ interface FormData {
 
 const EMPTY_FORM: FormData = {
   firstName: '', lastName: '', email: '', phone: '',
-  dob: '', gender: '', nationality: '', address: '',
+  nationality: '',
   accountType: '',
-  govIdNumber: '', tin: '', idFile: null,
   password: '', confirmPassword: '',
   otp: '', termsAccepted: false, additionalNotes: '',
 };
@@ -78,7 +69,7 @@ const PLAN_COLORS = {
 
 const STEPS = [
   { label: 'Personal Info',  icon: User     },
-  { label: 'Identity',       icon: Camera   },
+  { label: 'KYC Preview',    icon: Camera   },
   { label: 'Security',       icon: Shield   },
   { label: 'Confirm',        icon: FileText },
 ];
@@ -159,27 +150,9 @@ function StepPersonal({ data, onChange, errors }: {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>Date of Birth *</Label>
-          <Input type="date" value={data.dob} onChange={e => onChange('dob', e.target.value)} />
-          <FieldError msg={errors.dob} />
-        </div>
-        <div>
-          <Label>Gender</Label>
-          <Select value={data.gender} onChange={e => onChange('gender', e.target.value)}>
-            <option value="">Select gender</option>
-            <option>Male</option>
-            <option>Female</option>
-            <option>Non-binary</option>
-            <option>Prefer not to say</option>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Account Type *</Label>
+          <Label>Preview Experience *</Label>
           <Select value={data.accountType} onChange={e => onChange('accountType', e.target.value)}>
-            <option value="">Select type</option>
+            <option value="">Select experience</option>
             <option>Personal</option>
             <option>Savings</option>
             <option>Business</option>
@@ -187,105 +160,41 @@ function StepPersonal({ data, onChange, errors }: {
           <FieldError msg={errors.accountType} />
         </div>
         <div>
-          <Label>Nationality *</Label>
+          <Label>Country or Region *</Label>
           <div className="relative">
             <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
-            <Input placeholder="e.g. American" value={data.nationality} onChange={e => onChange('nationality', e.target.value)} className="pl-9" />
+            <Input placeholder="e.g. United Kingdom" value={data.nationality} onChange={e => onChange('nationality', e.target.value)} className="pl-9" />
           </div>
           <FieldError msg={errors.nationality} />
         </div>
       </div>
 
-      <div>
-        <Label>Residential Address *</Label>
-        <textarea
-          rows={2}
-          placeholder="123 Main St, City, Country"
-          value={data.address}
-          onChange={e => onChange('address', e.target.value)}
-          className="w-full bg-white/[0.04] border border-primary/15 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-foreground/25 focus:outline-none focus:border-primary/40 transition-colors resize-none"
-        />
-        <FieldError msg={errors.address} />
-      </div>
+      <p className="text-xs text-foreground/35 leading-relaxed">
+        This creates a product-preview profile only. Do not enter identity-document, tax, bank, or payment-card information.
+      </p>
     </div>
   );
 }
 
 // ── Step 2: Identity Verification ─────────────────────────────────────────────
 
-function StepIdentity({ data, onChange, onFile, errors }: {
-  data: FormData;
-  onChange: (k: keyof FormData, v: string) => void;
-  onFile: (f: File | null) => void;
-  errors: Partial<Record<keyof FormData, string>>;
-}) {
-  const fileRef = useRef<HTMLInputElement>(null);
-
+function StepIdentity() {
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
         <div className="flex items-start gap-3">
           <Camera size={16} className="text-primary shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-foreground mb-1">AI-Powered Instant Verification</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Identity Verification Is Not Active</p>
             <p className="text-xs text-foreground/45 leading-relaxed">
-              Our AI engine processes your government ID in seconds. Your data is encrypted end-to-end and never stored in plain text.
+              This screen explains the proposed KYC journey. No KYC provider is connected and this website will not accept identity documents in production preview mode.
             </p>
           </div>
         </div>
       </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Government ID Number *</Label>
-          <Input placeholder="Passport / Driver's License" value={data.govIdNumber} onChange={e => onChange('govIdNumber', e.target.value)} />
-          <FieldError msg={errors.govIdNumber} />
-        </div>
-        <div>
-          <Label>Tax Identification Number</Label>
-          <Input placeholder="TIN / SSN (optional)" value={data.tin} onChange={e => onChange('tin', e.target.value)} />
-        </div>
-      </div>
-
-      {/* Upload box */}
-      <div>
-        <Label>Upload Passport or Driver's License <span className="text-foreground/30 font-normal">(optional — can be added later)</span></Label>
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className={`w-full rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200 ${
-            data.idFile
-              ? 'border-primary/40 bg-primary/5'
-              : 'border-primary/20 hover:border-primary/35 hover:bg-primary/3'
-          }`}
-        >
-          {data.idFile ? (
-            <div className="flex items-center justify-center gap-2">
-              <CheckCircle size={16} className="text-primary" />
-              <span className="text-sm font-medium text-primary">{data.idFile.name}</span>
-            </div>
-          ) : (
-            <>
-              <Upload size={22} className="text-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-foreground/50 mb-1">Click to upload or drag & drop</p>
-              <p className="text-xs text-foreground/25">JPG, PNG, PDF — max 10MB</p>
-            </>
-          )}
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*,.pdf"
-          className="hidden"
-          onChange={e => onFile(e.target.files?.[0] ?? null)}
-        />
-        <FieldError msg={errors.idFile} />
-      </div>
-
-      {/* Trust note */}
-      <div className="flex items-center gap-3 text-xs text-foreground/35">
-        <Lock size={12} className="text-primary shrink-0" />
-        <span>Preview workflow only · Do not upload real identity documents · Live KYC is not enabled</span>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 text-xs text-foreground/50 leading-relaxed space-y-2">
+        <p>Before live KYC is enabled, City Gate Capital must contract an approved provider and publish jurisdiction-specific consent, retention, and privacy notices.</p>
+        <p>For now, continue without entering a passport number, tax identifier, selfie, or document image.</p>
       </div>
     </div>
   );
@@ -418,15 +327,14 @@ function StepConfirm({ data, onChange, errors }: {
     <div className="space-y-5">
       {/* Summary */}
       <div className="rounded-2xl border border-primary/15 bg-white/[0.02] p-5">
-        <p className="text-xs font-semibold text-foreground/40 uppercase tracking-widest mb-4">Application Summary</p>
+        <p className="text-xs font-semibold text-foreground/40 uppercase tracking-widest mb-4">Preview Profile Summary</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
           {[
             ['Name',    `${data.firstName} ${data.lastName}`],
             ['Email',   data.email],
             ['Phone',   data.phone],
-            ['Account', data.accountType],
+            ['Experience', data.accountType],
             ['Country', data.nationality],
-            ['ID',      data.govIdNumber ? '••••••' + data.govIdNumber.slice(-3) : '—'],
           ].map(([label, value]) => (
             <div key={label}>
               <p className="text-[10px] text-foreground/30 uppercase tracking-wider">{label}</p>
@@ -447,7 +355,7 @@ function StepConfirm({ data, onChange, errors }: {
             <p className="text-xs text-foreground/50 leading-relaxed">
               After submitting, we'll send a verification link to{' '}
               <span className="text-primary font-medium">{data.email || 'your email'}</span>.
-              Click the link to activate your account — no code needed.
+              Click the link to activate your preview profile — no code needed.
             </p>
           </div>
         </div>
@@ -500,15 +408,15 @@ function SuccessScreen({ plan, name }: { plan: string; name: string }) {
         <CheckCircle size={36} className="text-black" />
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <h3 className="text-2xl font-bold text-foreground mb-2">Application Submitted!</h3>
+        <h3 className="text-2xl font-bold text-foreground mb-2">Preview Profile Created</h3>
         <p className="text-foreground/50 text-sm leading-relaxed max-w-xs mx-auto mb-6">
-          Welcome, {name}. Your <span className="text-primary font-semibold">{plan}</span> account application is under review. You'll receive a confirmation email within minutes.
+          Welcome, {name}. Your <span className="text-primary font-semibold">{plan}</span> preview profile was created. This is not a bank or payment account and cannot hold or move funds.
         </p>
         <div className="grid grid-cols-3 gap-3 max-w-xs mx-auto mb-6">
           {[
-            { label: 'Review Time', value: '< 5 min' },
-            { label: 'Account #',   value: `CGC-${Math.floor(Math.random() * 90000) + 10000}` },
-            { label: 'Status',      value: 'Pending' },
+            { label: 'Profile', value: plan },
+            { label: 'Email',   value: 'Verify' },
+            { label: 'Transactions', value: 'Disabled' },
           ].map(({ label, value }) => (
             <div key={label} className="rounded-xl bg-white/[0.04] border border-primary/10 p-3 text-center">
               <p className="text-[10px] text-foreground/35 mb-1">{label}</p>
@@ -516,7 +424,7 @@ function SuccessScreen({ plan, name }: { plan: string; name: string }) {
             </div>
           ))}
         </div>
-        <p className="text-xs text-foreground/30">Check your email for next steps and KYC instructions.</p>
+        <p className="text-xs text-foreground/30">Check your email for preview-profile verification and next steps.</p>
       </motion.div>
     </div>
   );
@@ -562,14 +470,8 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
       if (!form.lastName.trim())   errs.lastName    = 'Required';
       if (!form.email.includes('@')) errs.email     = 'Valid email required';
       if (!form.phone.trim())      errs.phone       = 'Required';
-      if (!form.dob)               errs.dob         = 'Required';
       if (!form.accountType)       errs.accountType = 'Select an account type';
       if (!form.nationality.trim()) errs.nationality = 'Required';
-      if (!form.address.trim())    errs.address     = 'Required';
-    }
-    if (step === 1) {
-      if (!form.govIdNumber.trim()) errs.govIdNumber = 'Required';
-      // idFile is optional — can be uploaded later via KYC portal
     }
     if (step === 2) {
       if (form.password.length < 8)               errs.password = 'Minimum 8 characters';
@@ -609,11 +511,6 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
           password: form.password,
           phone:    form.phone,
           country:  form.nationality,
-          // KYC fields
-          dateOfBirth: form.dob,
-          address:     form.address,
-          idType:      'Government ID',
-          idNumber:    form.govIdNumber,
         }),
       });
       const data = await res.json();
@@ -621,26 +518,6 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
         setSubmitError(data.error ?? 'Registration failed. Please try again.');
         setSubmitting(false);
         return;
-      }
-
-      // If an ID document was attached, upload it as base64 using the returned userId
-      if (form.idFile && data.userId) {
-        try {
-          const b64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = e => resolve(e.target?.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(form.idFile as File);
-          });
-          await fetch('/api/users/kyc-document', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${data.documentUploadToken}`,
-            },
-            body: JSON.stringify({ userId: data.userId, documentBase64: b64, documentKind: 'id' }),
-          });
-        } catch { /* non-critical — user can upload later */ }
       }
 
       trackConversion('signup_completed', '/accounts', { plan: form.accountType.toLowerCase() });
@@ -696,8 +573,8 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
                     <PlanIcon size={17} style={{ color: planColor }} />
                   </div>
                   <div>
-                    <p className="text-xs text-foreground/35 uppercase tracking-widest">Open Account</p>
-                    <p className="text-sm font-bold text-foreground">{form.accountType || initialPlan} Account</p>
+                    <p className="text-xs text-foreground/35 uppercase tracking-widest">Create Preview Profile</p>
+                    <p className="text-sm font-bold text-foreground">{form.accountType || initialPlan} Experience</p>
                   </div>
                 </div>
                 <button
@@ -756,7 +633,7 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
                       transition={{ duration: 0.2 }}
                     >
                       {step === 0 && <StepPersonal data={form} onChange={(k, v) => update(k, v)} errors={errors} />}
-                      {step === 1 && <StepIdentity data={form} onChange={(k, v) => update(k, v)} onFile={f => update('idFile', f)} errors={errors} />}
+                      {step === 1 && <StepIdentity />}
                       {step === 2 && <StepSecurity data={form} onChange={(k, v) => update(k, v)} errors={errors} />}
                       {step === 3 && <StepConfirm data={form} onChange={(k, v) => update(k, v)} errors={errors} />}
                     </motion.div>
@@ -801,7 +678,7 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
                       <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
                       <span className="relative flex items-center gap-1.5">
                         {submitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                        {submitting ? 'Submitting…' : 'Open My Account'}
+                        {submitting ? 'Submitting…' : 'Create Preview Profile'}
                       </span>
                     </button>
                   )}

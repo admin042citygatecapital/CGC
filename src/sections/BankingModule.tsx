@@ -458,7 +458,7 @@ export function TransfersSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }} className="space-y-4">
             <GlassCard className="rounded-3xl p-6" glow>
-              <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-5">New Transfer</p>
+              <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-5">Transfer Simulation · No funds moved</p>
               <div className="mb-3">
                 <p className="text-xs text-foreground/55 uppercase tracking-wide mb-2">You Send</p>
                 <div className="flex gap-3">
@@ -482,7 +482,7 @@ export function TransfersSection() {
                 </div>
               </div>
               <div className="space-y-2 p-4 rounded-xl bg-white/[0.02] border border-primary/8 mb-5">
-                {[{ label: 'Transfer fee', value: '$0.99', highlight: false }, { label: 'Exchange rate', value: '0.9210', highlight: false }, { label: 'Arrival', value: 'Instant', highlight: true }].map(row => (
+                {[{ label: 'Illustrative fee', value: '$0.99 example', highlight: false }, { label: 'Illustrative rate', value: '0.9210', highlight: false }, { label: 'Settlement', value: 'Not live', highlight: true }].map(row => (
                   <div key={row.label} className="flex justify-between text-xs">
                     <span className="text-foreground/55">{row.label}</span>
                     <span className={row.highlight ? 'text-emerald-400 font-semibold' : 'text-foreground/70'}>{row.value}</span>
@@ -491,20 +491,20 @@ export function TransfersSection() {
               </div>
               <Link to="/accounts" className="group relative flex items-center justify-center gap-2.5 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <Send size={15} className="relative" /><span className="relative">Send Now</span>
+                <Send size={15} className="relative" /><span className="relative">Preview Transfer</span>
                 <ArrowRight size={15} className="relative transition-transform group-hover:translate-x-1" />
               </Link>
             </GlassCard>
 
             <GlassCard className="rounded-2xl p-5">
-              <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-4">Recent Transfer</p>
+              <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-4">Sample Transfer</p>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-9 h-9 rounded-full bg-emerald-400/10 flex items-center justify-center shrink-0"><CheckCircle size={16} className="text-emerald-400" /></div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-foreground">$2,400 → £1,890 GBP</p>
                   <p className="text-xs text-foreground/55">To James W. · London, UK</p>
                 </div>
-                <span className="text-xs text-emerald-400 font-semibold bg-emerald-400/10 px-2 py-1 rounded-full">Delivered</span>
+                <span className="text-xs text-emerald-400 font-semibold bg-emerald-400/10 px-2 py-1 rounded-full">Demo state</span>
               </div>
               <div className="flex items-center gap-1">
                 {['Initiated','Processing','Sent','Delivered'].map((step, i) => (
@@ -519,17 +519,17 @@ export function TransfersSection() {
 
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.15 }}>
             <div className="grid grid-cols-3 gap-3 mb-6">
-              {[{ value: '180+', label: 'Countries' }, { value: '$0.99', label: 'From' }, { value: '<1min', label: 'Avg. Speed' }].map((s, i) => (
+              {[{ value: '0', label: 'Live corridors' }, { value: 'Sample', label: 'Fees' }, { value: 'Disabled', label: 'Settlement' }].map((s, i) => (
                 <StatBadge key={s.label} value={s.value} label={s.label} delay={0.1 + i * 0.08} />
               ))}
             </div>
-            <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-3">Popular Corridors</p>
+            <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-3">Illustrative Corridors</p>
             <div className="space-y-2 mb-6">
               {[
-                { from: '🇺🇸 USD', to: '🇬🇧 GBP', fee: '$0.99', time: 'Instant' },
-                { from: '🇺🇸 USD', to: '🇪🇺 EUR', fee: '$0.99', time: 'Instant' },
-                { from: '🇬🇧 GBP', to: '🇮🇳 INR', fee: '$1.49', time: '< 1 min' },
-                { from: '🇺🇸 USD', to: '🇦🇪 AED', fee: '$1.99', time: '< 5 min' },
+                { from: '🇺🇸 USD', to: '🇬🇧 GBP', fee: 'Example', time: 'Not live' },
+                { from: '🇺🇸 USD', to: '🇪🇺 EUR', fee: 'Example', time: 'Not live' },
+                { from: '🇬🇧 GBP', to: '🇮🇳 INR', fee: 'Example', time: 'Not live' },
+                { from: '🇺🇸 USD', to: '🇦🇪 AED', fee: 'Example', time: 'Not live' },
               ].map((c, i) => (
                 <motion.div key={i} initial={{ opacity: 0, x: 12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.07 }}
                   className="flex items-center gap-3 p-3.5 glass-card rounded-xl gradient-border hover:border-primary/25 transition-colors">

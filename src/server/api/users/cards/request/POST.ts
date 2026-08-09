@@ -5,6 +5,7 @@
 import type { Request, Response } from 'express';
 import { findUserBySessionToken } from '../../../../lib/userStore.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
+import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 
 export default async function handler(req: Request, res: Response) {
   const auth  = req.headers.authorization ?? '';
@@ -13,6 +14,7 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserBySessionToken(token);
   if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
+  if (!requireFinancialOperations(res)) return;
 
   if (user.kycStatus !== 'approved') {
     return res.status(403).json({ error: 'Identity verification (KYC) must be approved before requesting a card.' });

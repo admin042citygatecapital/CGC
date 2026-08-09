@@ -83,6 +83,12 @@ export default async function handler(req: Request, res: Response) {
   const hasKycData = kycFields.some(f => f !== undefined);
 
   if (hasKycData) {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(503).json({
+        error: 'Identity-document collection is unavailable until an approved KYC provider is integrated.',
+        code: 'KYC_PROVIDER_REQUIRED',
+      });
+    }
     if (user.kycStatus === 'approved') {
       return res.status(400).json({ error: 'KYC is already approved and cannot be resubmitted.' });
     }

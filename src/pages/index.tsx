@@ -57,10 +57,10 @@ export default function HomePage() {
   return (
     <>
       <Helmet>
-        <title>City Gate Capital — Secure Digital Banking</title>
+        <title>City Gate Capital — Digital Finance Product Preview</title>
         <meta name="description" content="Explore the City Gate Capital product preview for multi-currency accounts, wallets, transfers, cards, analytics, and secure administration." />
         <link rel="canonical" href="https://citygate.capital/" />
-        <meta property="og:title" content="City Gate Capital — Secure Digital Banking for the Modern World" />
+        <meta property="og:title" content="City Gate Capital — Digital Finance Product Preview" />
         <meta property="og:description" content="A product preview for multi-currency accounts, wallets, transfers, cards, analytics, and secure administration." />
         <meta property="og:url" content="https://citygate.capital/" />
         <meta property="og:type" content="website" />
@@ -73,8 +73,8 @@ export default function HomePage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
-        <meta name="twitter:title" content="City Gate Capital — Secure Digital Banking" />
-        <meta name="twitter:description" content="Multi-currency wallets, crypto exchange, international transfers, and smart cards — all in one premium platform." />
+        <meta name="twitter:title" content="City Gate Capital — Digital Finance Product Preview" />
+        <meta name="twitter:description" content="Preview proposed multi-currency, wallet, transfer, card, analytics, and administration experiences without live financial transactions." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',
@@ -89,10 +89,8 @@ export default function HomePage() {
                 url: 'https://citygate.capital/assets/brand/city-gate-capital-seal.png',
                 width: 200, height: 200,
               },
-              description: 'Premium digital banking with multi-currency wallets, crypto exchange, international transfers, and smart cards.',
-              areaServed: 'Worldwide',
-              numberOfEmployees: { '@type': 'QuantitativeValue', value: 500 },
-              knowsAbout: ['Digital Banking','Cryptocurrency','International Money Transfers','Multi-Currency Accounts','Fintech','Payment Processing'],
+              description: 'Product preview of proposed financial-technology interfaces and administration workflows.',
+              knowsAbout: ['Financial technology product design','Account security','Administrative workflows'],
               sameAs: ['https://twitter.com/CityGateCapital','https://linkedin.com/company/citygate-capital','https://instagram.com/citygatecapital'],
               contactPoint: [
                 {
@@ -125,36 +123,26 @@ export default function HomePage() {
               '@type': 'WebPage',
               '@id': 'https://citygate.capital/#webpage',
               url: 'https://citygate.capital/',
-              name: 'City Gate Capital — Secure Digital Banking',
+              name: 'City Gate Capital — Digital Finance Product Preview',
               isPartOf: { '@id': 'https://citygate.capital/#website' },
               about: { '@id': 'https://citygate.capital/#organization' },
               dateModified: '2026-07-11',
             },
             {
-              '@type': 'FinancialService',
-              '@id': 'https://citygate.capital/#financialservice',
+              '@type': 'WebApplication',
+              '@id': 'https://citygate.capital/#product-preview',
               name: 'City Gate Capital',
               url: 'https://citygate.capital',
-              description: 'Premium digital banking, crypto wallets, and international transfers for global citizens.',
-              serviceType: ['Digital Banking','Cryptocurrency Exchange','International Money Transfer','Savings Account'],
-              areaServed: 'Worldwide',
-              provider: { '@id': 'https://citygate.capital/#organization' },
-              hasOfferCatalog: {
-                '@type': 'OfferCatalog',
-                name: 'Banking Plans',
-                itemListElement: [
-                  { '@type': 'Offer', name: 'Standard Account', description: 'Free personal account with multi-currency wallet and crypto.', price: '0', priceCurrency: 'USD' },
-                  { '@type': 'Offer', name: 'Premium Account', description: 'Priority support, metal card, and advanced analytics.', price: '9', priceCurrency: 'USD' },
-                  { '@type': 'Offer', name: 'Elite Account', description: 'Dedicated account manager, unlimited transfers, and private banking.', price: '29', priceCurrency: 'USD' },
-                ],
-              },
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              description: 'A non-transactional product preview. It does not accept deposits, provide custody, issue cards, or execute live financial transactions.',
             },
           ],
         })}</script>
       </Helmet>
 
       {/* sr-only h1 — visible h1 is rendered inside HeroSection */}
-      <h1 className="sr-only">City Gate Capital — Secure Digital Banking for the Modern World</h1>
+      <h1 className="sr-only">City Gate Capital — Digital Finance Product Preview</h1>
 
       {/* ── Live Ticker Strip ────────────────────────────────── */}
       <div className="relative z-10 bg-[#060606] border-b border-primary/10 overflow-hidden mt-[72px]">
@@ -218,10 +206,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-              Simple Pricing
+              Proposed Plan Concepts
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              Banking that fits <span className="text-gold-gradient">your life</span>
+              Explore possible <span className="text-gold-gradient">product tiers</span>
             </h2>
           </div>
           <PricingSection />
@@ -233,10 +221,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-              Customer Stories
+              Illustrative Use Cases
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              What our <span className="text-gold-gradient">customers say</span>
+              Proposed <span className="text-gold-gradient">user scenarios</span>
             </h2>
           </div>
           <TestimonialsSection />

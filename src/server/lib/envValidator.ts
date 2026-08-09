@@ -111,7 +111,7 @@ const REGISTRY: EnvVarSpec[] = [
   {
     name:        'ZOHO_CLIENT_ID',
     aliases:     ['CLIENTID'],
-    level:       'WARNING',
+    level:       'INFO',
     service:     'Zoho Mail / Email Delivery',
     description: 'Zoho OAuth Client ID from accounts.zoho.com/developerconsole',
     isPublic:    true,
@@ -119,14 +119,14 @@ const REGISTRY: EnvVarSpec[] = [
   {
     name:        'ZOHO_CLIENT_SECRET',
     aliases:     ['CLIENTSECRET'],
-    level:       'WARNING',
+    level:       'INFO',
     service:     'Zoho Mail / Email Delivery',
     description: 'Zoho OAuth Client Secret from accounts.zoho.com/developerconsole',
   },
   {
     name:        'ZOHO_REFRESH_TOKEN',
     aliases:     ['REFRESHTOKEN'],
-    level:       'WARNING',
+    level:       'INFO',
     service:     'Zoho Mail / Email Delivery',
     description: 'Zoho OAuth Refresh Token. Obtain by visiting /api/zoho/connect as admin.',
   },
@@ -142,6 +142,12 @@ const REGISTRY: EnvVarSpec[] = [
 
   // ── Manual SMTP fallback ───────────────────────────────────────────────────
   {
+    name:        'RESEND_API_KEY',
+    level:       isProd ? 'CRITICAL' : 'INFO',
+    service:     'Resend Email Delivery',
+    description: 'Resend API key used by the production email transport.',
+  },
+  {
     name:        'MAIL_PASSWORD',
     level:       'INFO',
     service:     'Manual SMTP (fallback)',
@@ -156,6 +162,28 @@ const REGISTRY: EnvVarSpec[] = [
     service:     'Database',
     validate:     validatePostgresUrl,
     description: 'PostgreSQL connection string. Production must use PostgreSQL; flat-file storage is development-only.',
+  },
+
+  // ── Financial launch attestations ──────────────────────────────────────────
+  {
+    name: 'LIVE_COMPLIANCE_APPROVAL_ID', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Reference to documented legal/compliance approval for the selected jurisdiction and operating model.',
+  },
+  {
+    name: 'KYC_PROVIDER', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted production identity-verification provider identifier.',
+  },
+  {
+    name: 'AML_SCREENING_PROVIDER', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted production sanctions, PEP, and AML screening provider identifier.',
+  },
+  {
+    name: 'PAYMENT_PROVIDER', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted production payment or banking-rail provider identifier.',
+  },
+  {
+    name: 'CUSTODY_PROVIDER', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted custody provider identifier when custody is in scope.',
   },
 
   // ── Application URLs ───────────────────────────────────────────────────────

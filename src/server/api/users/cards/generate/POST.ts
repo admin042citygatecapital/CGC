@@ -5,6 +5,7 @@
 import type { Request, Response } from 'express';
 import { findUserBySessionToken } from '../../../../lib/userStore.js';
 import { createCard, getCardsForUser } from '../../../../lib/cardStore.js';
+import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 import crypto from 'node:crypto';
 
 const MAX_CARDS = 10;
@@ -40,6 +41,7 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserBySessionToken(token);
   if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
+  if (!requireFinancialOperations(res)) return;
 
   const existing = await getCardsForUser(user.id);
   if (existing.length >= MAX_CARDS) {

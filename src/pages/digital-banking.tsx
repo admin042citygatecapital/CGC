@@ -51,24 +51,24 @@ interface DbCms {
 }
 
 const DB_CMS_DEFAULTS: DbCms = {
-  dbHeroTitle:        'Banking That Works for You',
+  dbHeroTitle:        'Preview Digital Finance Controls',
   dbHeroSubtitle:     'Preview smart cards, analytics, payment journeys, and automated insights in one beautifully designed demonstration platform.',
-  dbHeroCTA:          'Open Account',
+  dbHeroCTA:          'Create Preview Profile',
   dbHeroSecondaryCTA: 'Book a Demo',
-  dbCtaTitle:         'Start Banking Smarter Today',
+  dbCtaTitle:         'Explore the Product Preview',
   dbCtaSubtitle:      'Create a preview profile to explore the interface. Live cards and payments are not available.',
-  dbCtaPrimary:       'Open Free Account',
+  dbCtaPrimary:       'Create Preview Profile',
   dbCtaSecondary:     'Book a Demo',
   // Feature card defaults (match hardcoded cardFeatures order)
   dbFeature1Title: 'Virtual Cards',     dbFeature1Desc: 'Preview virtual-card controls and custom demonstration spend limits.',
   dbFeature2Title: 'Freeze & Unfreeze', dbFeature2Desc: "Lock your card in one tap if it's lost or stolen. Unlock just as fast — no phone call required.",
   dbFeature3Title: 'Instant Alerts',    dbFeature3Desc: 'Preview notification behaviour for demonstration transactions.',
-  dbFeature4Title: 'Auto Top-up',       dbFeature4Desc: 'Set rules to automatically top up your card from your main balance when it falls below a threshold.',
-  dbFeature5Title: 'Spend Analytics',   dbFeature5Desc: 'AI categorises every purchase and shows you exactly where your money goes with beautiful visual charts.',
+  dbFeature4Title: 'Top-up Simulation', dbFeature4Desc: 'Explore proposed top-up rules without linking a bank or moving funds.',
+  dbFeature5Title: 'Spend Analytics Preview', dbFeature5Desc: 'Explore illustrative purchase categorisation and charts.',
   dbFeature6Title: 'Contactless Pay',   dbFeature6Desc: 'Proposed wallet integrations shown for design purposes; no cards are issued.',
   dbFeature7Title: 'FX Preview',        dbFeature7Desc: 'Explore currency-conversion screens with illustrative rates and fees.',
-  dbFeature8Title: '3D Secure',         dbFeature8Desc: 'Every online transaction is protected by 3D Secure authentication and real-time fraud detection.',
-  dbFeature9Title: 'AI Insights',       dbFeature9Desc: 'Personalised financial insights powered by AI. Know your patterns, optimise your spending automatically.',
+  dbFeature8Title: 'Payment Security Design', dbFeature8Desc: 'Provider authentication and fraud controls must be validated before launch.',
+  dbFeature9Title: 'Insights Prototype', dbFeature9Desc: 'Explore proposed insights generated from demonstration activity.',
   // Stats defaults
   dbStat1Value: '1',      dbStat1Label: 'Unified Preview',
   dbStat2Value: '$0',     dbStat2Label: 'Live Funds Processed',
@@ -258,10 +258,10 @@ export default function DigitalBankingPage() {
     <>
       <Helmet>
         <title>Digital Banking — Smart Cards & Instant Payments | CGC</title>
-        <meta name="description" content="Next-generation digital banking with virtual & physical cards, AI-powered spending analytics, instant payments, and auto-savings. Free Standard account available." />
+        <meta name="description" content="Preview proposed card controls, analytics, payment journeys, and savings tools using demonstration data. No card or financial account is issued." />
         <link rel="canonical" href="https://citygate.capital/digital-banking" />
         <meta property="og:title" content="Digital Banking — Smart Cards, Analytics & Instant Payments" />
-        <meta property="og:description" content="Smart cards, real-time analytics, instant payments and AI-powered insights in one platform. Free to start." />
+        <meta property="og:description" content="Explore proposed card, analytics, and payment experiences using demonstration data. No live financial services are available." />
         <meta property="og:url" content="https://citygate.capital/digital-banking" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -274,7 +274,7 @@ export default function DigitalBankingPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Digital Banking — City Gate Capital" />
-        <meta name="twitter:description" content="Smart cards, real-time analytics, instant payments and AI-powered insights in one platform." />
+        <meta name="twitter:description" content="A non-transactional preview of proposed card, analytics, and payment experiences." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -282,14 +282,15 @@ export default function DigitalBankingPage() {
           '@id': 'https://citygate.capital/digital-banking#webpage',
           name: 'Digital Banking — City Gate Capital',
           url: 'https://citygate.capital/digital-banking',
-          description: 'Next-generation digital banking with virtual & physical cards, AI-powered analytics, and instant payments.',
+          description: 'A non-transactional preview of proposed card, analytics, and payment experiences.',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
           mainEntity: {
-            '@type': 'FinancialProduct',
-            name: 'City Gate Capital Digital Banking',
-            description: 'Virtual and physical cards, AI analytics, instant payments, and auto-savings.',
-            provider: { '@id': 'https://citygate.capital/#organization' },
+            '@type': 'WebApplication',
+            name: 'City Gate Capital Digital Finance Preview',
+            description: 'A demonstration interface that does not issue cards or move customer funds.',
+            applicationCategory: 'FinanceApplication',
+            operatingSystem: 'Web',
           },
         }) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({

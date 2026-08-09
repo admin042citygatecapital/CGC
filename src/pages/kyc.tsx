@@ -860,9 +860,9 @@ function KycPageInner() {
           {showForm && (
             <div className="grid grid-cols-3 gap-4 mt-6">
               {[
-                { icon: Lock,       title: 'Bank-Grade Security',  desc: 'AES-256 encryption on all documents' },
-                { icon: Clock,      title: 'Under 5 Minutes',      desc: 'Typical review turnaround time' },
-                { icon: BadgeCheck, title: 'Instant Activation',   desc: 'Full access granted on approval' },
+                { icon: Lock,       title: 'No Document Collection', desc: 'Production uploads are disabled' },
+                { icon: Clock,      title: 'Provider Required',      desc: 'Review timing is not yet available' },
+                { icon: BadgeCheck, title: 'Launch Gated',           desc: 'No live account is activated' },
               ].map(item => (
                 <div key={item.title} className="rounded-2xl border border-white/6 bg-white/[0.02] p-4 text-center">
                   <item.icon size={18} className="text-primary mx-auto mb-2" />

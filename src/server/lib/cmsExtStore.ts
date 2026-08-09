@@ -205,10 +205,10 @@ export function getFeatureCards(page?: string): FeatureCard[] {
   const all = readJsonl<FeatureCard>(FILES.features);
   if (all.length === 0) {
     const defaults: FeatureCard[] = [
-      { id: randomUUID(), title: 'Multi-Currency Wallets', description: 'Hold, send and receive in 30+ currencies with real mid-market rates.', icon: 'Wallet', imageUrl: '', badge: 'Popular', order: 1, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: randomUUID(), title: 'Instant Transfers', description: 'Send money globally in seconds. No hidden fees, no delays.', icon: 'Zap', imageUrl: '', badge: '', order: 2, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: randomUUID(), title: 'Virtual Cards', description: 'Create disposable virtual cards for secure online shopping.', icon: 'CreditCard', imageUrl: '', badge: 'New', order: 3, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: randomUUID(), title: 'Crypto Exchange', description: 'Buy, sell and swap 50+ cryptocurrencies at competitive rates.', icon: 'TrendingUp', imageUrl: '', badge: '', order: 4, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: randomUUID(), title: 'Multi-Currency Wallet Preview', description: 'Explore a demonstration interface for proposed multi-currency features. No funds are held or transferred.', icon: 'Wallet', imageUrl: '', badge: 'Preview', order: 1, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: randomUUID(), title: 'Transfer Simulation', description: 'Explore proposed global transfer flows without moving money.', icon: 'Zap', imageUrl: '', badge: '', order: 2, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: randomUUID(), title: 'Virtual Card Prototype', description: 'Preview proposed virtual-card controls. No payment card is issued.', icon: 'CreditCard', imageUrl: '', badge: 'Preview', order: 3, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: randomUUID(), title: 'Paper Exchange', description: 'Explore illustrative crypto exchange flows without custody or order execution.', icon: 'TrendingUp', imageUrl: '', badge: '', order: 4, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ];
     writeJsonl(FILES.features, defaults);
     return page ? defaults.filter(f => f.page === page) : defaults;

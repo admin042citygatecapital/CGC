@@ -56,7 +56,7 @@ export function TradingSection({ livePrices = [] }: TradingSectionProps) {
               {hasLive && (
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live
+                  Live market data · Paper trading only
                 </span>
               )}
             </div>

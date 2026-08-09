@@ -12,12 +12,23 @@ const LIVE_READINESS_ENV = [
 ] as const;
 
 /**
+ * This must remain false until the placeholder ledger mutations have been
+ * replaced by contracted provider adapters with reconciliation, idempotency,
+ * signed webhooks, and provider-specific integration tests.
+ *
+ * Deliberately requiring a reviewed code change prevents environment labels
+ * alone from turning demonstration routes into purported live transactions.
+ */
+export const LIVE_PROVIDER_ADAPTERS_IMPLEMENTED = false;
+
+/**
  * A live launch requires named, externally approved integrations in addition to
  * the operational switch. These values are readiness attestations, not secrets.
  * Provider adapters must still validate their own credentials and webhooks.
  */
 export function hasLiveFinancialReadiness(): boolean {
-  return LIVE_READINESS_ENV.every((name) => Boolean(process.env[name]?.trim()))
+  return LIVE_PROVIDER_ADAPTERS_IMPLEMENTED
+    && LIVE_READINESS_ENV.every((name) => Boolean(process.env[name]?.trim()))
     && process.env.ENABLE_TRANSACTION_MONITORING === '1'
     && process.env.ENABLE_SIGNED_PROVIDER_WEBHOOKS === '1';
 }

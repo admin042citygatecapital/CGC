@@ -9,6 +9,13 @@ import { verifyKycUploadToken } from '../../../lib/purposeToken.js';
 const kycDirectory = privateSubdirectory('kyc-documents');
 
 export default async function handler(req: Request, res: Response) {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(503).json({
+      error: 'Identity-document collection is unavailable until an approved KYC provider is integrated.',
+      code: 'KYC_PROVIDER_REQUIRED',
+    });
+  }
+
   const { userId, documentBase64, documentKind = 'id' } = req.body as {
     userId?: string;
     documentBase64?: string;

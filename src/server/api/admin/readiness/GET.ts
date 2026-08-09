@@ -25,6 +25,13 @@ import { APP_ENV, isProd } from '../../../lib/envConfig.js';
 import { getValidAccessToken } from '../../../lib/zohoTokenStore.js';
 import { seoRoutes } from '../../../../lib/seo-routes.js';
 import { getStorageBackend } from '../../../lib/supabaseStorage.js';
+import { verifyManualSmtp } from '../../../lib/smtpTransport.js';
+import { isDatabaseConfigured, testConnection } from '../../../db/db.js';
+import {
+  LIVE_PROVIDER_ADAPTERS_IMPLEMENTED,
+  hasLiveFinancialReadiness,
+  platformMode,
+} from '../../../lib/platformMode.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -72,10 +79,6 @@ function dirReadable(path: string): boolean {
   try { fs.accessSync(path, fs.constants.R_OK); return true; } catch { return false; }
 }
 
-function dirWritable(path: string): boolean {
-  try { fs.accessSync(path, fs.constants.W_OK); return true; } catch { return false; }
-}
-
 async function timed<T>(fn: () => Promise<T>): Promise<{ result: T; ms: number }> {
   const t0 = Date.now();
   const result = await fn();
@@ -113,44 +116,42 @@ function checkAdminAuth(): ReadinessCheck {
 }
 
 function checkCustomerAuth(): ReadinessCheck {
-  const usersFile = '/private/users/users.jsonl';
-  const exists = fs.existsSync(usersFile);
-  const readable = exists ? dirReadable(usersFile) : true; // ok if not yet created
-  const writable = dirWritable('/private/users') || !fs.existsSync('/private/users');
-
-  if (!readable) {
-    return {
-      id: 'customer_auth', name: 'Customer Authentication', subsystem: 'Authentication',
-      status: 'FAIL', critical: true,
-      message: 'User store file is not readable.',
-      detail: `Cannot read ${usersFile}. Check file permissions.`,
-    };
-  }
-  if (!writable) {
-    return {
-      id: 'customer_auth', name: 'Customer Authentication', subsystem: 'Authentication',
-      status: 'WARN', critical: false,
-      message: 'User store directory may not be writable.',
-      detail: '/private/users is not writable. New registrations will fail.',
-    };
-  }
-
-  let userCount = 0;
-  if (exists) {
-    try {
-      const lines = fs.readFileSync(usersFile, 'utf8').split('\n').filter(l => l.trim());
-      userCount = lines.length;
-    } catch { /* non-fatal */ }
-  }
-
-  return {
-    id: 'customer_auth', name: 'Customer Authentication', subsystem: 'Authentication',
-    status: 'PASS', critical: true,
-    message: `Customer auth store accessible. ${userCount} user record(s) found.`,
-  };
+  const sessionSecret = s('SESSION_SECRET', 'JWT_SECRET');
+  const configured = isDatabaseConfigured() && sessionSecret.length >= 32;
+  return configured
+    ? {
+        id: 'customer_auth', name: 'Customer Authentication', subsystem: 'Authentication',
+        status: 'PASS', critical: true,
+        message: 'Customer authentication is backed by PostgreSQL and a configured session secret.',
+      }
+    : {
+        id: 'customer_auth', name: 'Customer Authentication', subsystem: 'Authentication',
+        status: isProd ? 'FAIL' : 'WARN', critical: isProd,
+        message: 'Customer authentication prerequisites are incomplete.',
+        detail: 'Production requires PostgreSQL and a session secret of at least 32 characters.',
+      };
 }
 
-async function checkZohoSmtp(): Promise<ReadinessCheck> {
+async function checkEmailDelivery(): Promise<ReadinessCheck> {
+  const resendKey = s('RESEND_API_KEY');
+  if (resendKey) {
+    const { result, ms } = await timed(() => verifyManualSmtp());
+    return result.ok
+      ? {
+          id: 'email_delivery', name: 'Resend Email Delivery', subsystem: 'Email',
+          status: 'PASS', critical: false,
+          message: 'Resend API connectivity succeeded. Email delivery is operational.',
+          durationMs: ms,
+        }
+      : {
+          id: 'email_delivery', name: 'Resend Email Delivery', subsystem: 'Email',
+          status: 'FAIL', critical: false,
+          message: 'Resend is configured but its API check failed.',
+          detail: result.error,
+          durationMs: ms,
+        };
+  }
+
   const clientId     = s('ZOHO_CLIENT_ID',     'CLIENTID');
   const clientSecret = s('ZOHO_CLIENT_SECRET', 'CLIENTSECRET');
   const refreshToken = s('ZOHO_REFRESH_TOKEN', 'REFRESHTOKEN');
@@ -162,10 +163,10 @@ async function checkZohoSmtp(): Promise<ReadinessCheck> {
       !refreshToken && 'ZOHO_REFRESH_TOKEN',
     ].filter(Boolean).join(', ');
     return {
-      id: 'zoho_smtp', name: 'Zoho SMTP / Email Delivery', subsystem: 'Email',
+      id: 'email_delivery', name: 'Email Delivery', subsystem: 'Email',
       status: 'FAIL', critical: false,
-      message: `Zoho OAuth credentials incomplete. Missing: ${missing}.`,
-      detail: 'Emails will not be sent. Visit /api/zoho/connect as admin to complete OAuth.',
+      message: `No production email transport is configured. Missing RESEND_API_KEY; Zoho fallback is incomplete (${missing}).`,
+      detail: 'Configure RESEND_API_KEY, or complete all Zoho OAuth credentials.',
     };
   }
 
@@ -183,7 +184,7 @@ async function checkZohoSmtp(): Promise<ReadinessCheck> {
 
     if (token) {
       return {
-        id: 'zoho_smtp', name: 'Zoho SMTP / Email Delivery', subsystem: 'Email',
+        id: 'email_delivery', name: 'Zoho Email Delivery (Legacy Fallback)', subsystem: 'Email',
         status: 'PASS', critical: false,
         message: 'Zoho OAuth token exchange succeeded. Email delivery is operational.',
         detail: `Token obtained in ${ms}ms.`,
@@ -191,7 +192,7 @@ async function checkZohoSmtp(): Promise<ReadinessCheck> {
       };
     } else {
       return {
-        id: 'zoho_smtp', name: 'Zoho SMTP / Email Delivery', subsystem: 'Email',
+        id: 'email_delivery', name: 'Zoho Email Delivery (Legacy Fallback)', subsystem: 'Email',
         status: 'FAIL', critical: false,
         message: 'Zoho token exchange failed. Credentials may be invalid or expired.',
         detail: 'Re-run OAuth flow: admin login → visit /api/zoho/connect → save ZOHO_REFRESH_TOKEN.',
@@ -200,7 +201,7 @@ async function checkZohoSmtp(): Promise<ReadinessCheck> {
     }
   } catch (err) {
     return {
-      id: 'zoho_smtp', name: 'Zoho SMTP / Email Delivery', subsystem: 'Email',
+      id: 'email_delivery', name: 'Zoho Email Delivery (Legacy Fallback)', subsystem: 'Email',
       status: 'WARN', critical: false,
       message: 'Zoho token exchange timed out or threw an error.',
       detail: err instanceof Error ? err.message : String(err),
@@ -227,51 +228,52 @@ function checkSmartsupp(): ReadinessCheck {
 }
 
 async function checkDatabase(): Promise<ReadinessCheck> {
-  const dirs = [
-    '/private',
-    '/private/users',
-    '/private/admin',
-    '/private/transactions',
-    '/private/email',
-    '/private/smtp',
-    '/private/cms',
-    '/private/logs',
-  ];
-
-  const issues: string[] = [];
-  const missing: string[] = [];
-
-  for (const dir of dirs) {
-    if (!fs.existsSync(dir)) {
-      missing.push(dir);
-      continue;
-    }
-    if (!dirReadable(dir)) issues.push(`${dir}: not readable`);
-    if (!dirWritable(dir)) issues.push(`${dir}: not writable`);
-  }
-
-  if (issues.length > 0) {
+  if (!isDatabaseConfigured()) {
     return {
-      id: 'database', name: 'Database (Flat-file JSONL)', subsystem: 'Database',
+      id: 'database', name: 'PostgreSQL Database', subsystem: 'Database',
+      status: isProd ? 'FAIL' : 'WARN', critical: isProd,
+      message: 'DATABASE_URL is not configured.',
+      detail: 'Production requires managed PostgreSQL. Flat-file storage is development-only.',
+    };
+  }
+  const result = await testConnection();
+  return result.ok
+    ? {
+        id: 'database', name: 'PostgreSQL Database', subsystem: 'Database',
+        status: 'PASS', critical: true,
+        message: `PostgreSQL connection succeeded in ${result.latencyMs ?? 0}ms.`,
+        durationMs: result.latencyMs,
+      }
+    : {
+        id: 'database', name: 'PostgreSQL Database', subsystem: 'Database',
+        status: 'FAIL', critical: true,
+        message: 'PostgreSQL is configured but the connection check failed.',
+        detail: result.error,
+        durationMs: result.latencyMs,
+      };
+}
+
+function checkFinancialLaunchGate(): ReadinessCheck {
+  if (platformMode !== 'live') {
+    return {
+      id: 'financial_launch', name: 'Financial Launch Gate', subsystem: 'Compliance & Providers',
       status: 'FAIL', critical: true,
-      message: `${issues.length} storage directory permission issue(s) found.`,
-      detail: issues.join('; '),
+      message: 'Product preview mode is active; live financial operations remain disabled.',
+      detail: 'This is the safe expected state until legal approvals, contracted providers, production adapters, signed webhooks, monitoring, and reconciliation are complete.',
     };
   }
-
-  if (missing.length > 0) {
+  if (!LIVE_PROVIDER_ADAPTERS_IMPLEMENTED || !hasLiveFinancialReadiness()) {
     return {
-      id: 'database', name: 'Database (Flat-file JSONL)', subsystem: 'Database',
-      status: 'WARN', critical: false,
-      message: `${missing.length} storage director(ies) not yet created (will be auto-created on first write).`,
-      detail: missing.join(', '),
+      id: 'financial_launch', name: 'Financial Launch Gate', subsystem: 'Compliance & Providers',
+      status: 'FAIL', critical: true,
+      message: 'Live mode was requested, but the verified financial launch gate is incomplete.',
+      detail: 'Environment labels cannot unlock money movement. Reviewed provider adapters and all readiness attestations are required.',
     };
   }
-
   return {
-    id: 'database', name: 'Database (Flat-file JSONL)', subsystem: 'Database',
+    id: 'financial_launch', name: 'Financial Launch Gate', subsystem: 'Compliance & Providers',
     status: 'PASS', critical: true,
-    message: `All ${dirs.length} storage directories are readable and writable.`,
+    message: 'Financial launch gate is satisfied.',
   };
 }
 
@@ -436,15 +438,15 @@ export default async function handler(_req: Request, res: Response): Promise<voi
   const t0 = Date.now();
 
   // Run async checks in parallel, sync checks inline
-  const [zohoCheck, dbCheck] = await Promise.all([
-    checkZohoSmtp(),
+  const [emailCheck, dbCheck] = await Promise.all([
+    checkEmailDelivery(),
     checkDatabase(),
   ]);
 
   const checks: ReadinessCheck[] = [
     checkAdminAuth(),
     checkCustomerAuth(),
-    zohoCheck,
+    emailCheck,
     checkSmartsupp(),
     dbCheck,
     checkAdminRouteProtection(),
@@ -454,6 +456,7 @@ export default async function handler(_req: Request, res: Response): Promise<voi
     checkEnvironmentDetection(),
     checkCspHeaders(),
     checkStorageBackend(),
+    checkFinancialLaunchGate(),
   ];
 
   const pass     = checks.filter(c => c.status === 'PASS').length;
