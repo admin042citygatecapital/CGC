@@ -65,6 +65,7 @@ export default function TawkWidget() {
   const [availability, setAvailability] = useState<TawkAvailability>('offline');
   const [chatOpen, setChatOpen] = useState(false);
   const pendingOpen = useRef(false);
+  const chatOpenRef = useRef(false);
   const showLauncher = shouldOfferBankingSupport(location.pathname);
 
   const applyContext = useCallback(() => {
@@ -75,6 +76,7 @@ export default function TawkWidget() {
   }, [customer, location.pathname]);
 
   const openLoadedWidget = useCallback(() => {
+    chatOpenRef.current = true;
     safely(() => {
       window.Tawk_API?.showWidget?.();
       window.Tawk_API?.maximize?.();
@@ -95,16 +97,21 @@ export default function TawkWidget() {
       if (pendingOpen.current) {
         pendingOpen.current = false;
         openLoadedWidget();
-      } else {
+      } else if (!chatOpenRef.current) {
         safely(() => api.hideWidget?.());
       }
     };
-    api.onChatMaximized = () => setChatOpen(true);
+    api.onChatMaximized = () => {
+      chatOpenRef.current = true;
+      setChatOpen(true);
+    };
     api.onChatMinimized = () => {
+      chatOpenRef.current = false;
       setChatOpen(false);
       safely(() => api.hideWidget?.());
     };
     api.onChatEnded = () => {
+      chatOpenRef.current = false;
       setChatOpen(false);
       safely(() => api.hideWidget?.());
     };
@@ -130,6 +137,29 @@ export default function TawkWidget() {
     script.charset = 'UTF-8';
     script.src = `https://embed.tawk.to/${PROPERTY_ID}/${WIDGET_ID}`;
     script.setAttribute('crossorigin', '*');
+    script.onload = () => {
+      let attempts = 0;
+      const openWhenReady = () => {
+        if (!pendingOpen.current) return;
+        const api = window.Tawk_API;
+        if (typeof api?.showWidget === 'function' && typeof api.maximize === 'function') {
+          pendingOpen.current = false;
+          setStatus('ready');
+          setAvailability(api.getStatus?.() ?? 'offline');
+          applyContext();
+          openLoadedWidget();
+          return;
+        }
+        attempts += 1;
+        if (attempts < 40) {
+          window.setTimeout(openWhenReady, 250);
+        } else {
+          pendingOpen.current = false;
+          setStatus('error');
+        }
+      };
+      openWhenReady();
+    };
     script.onerror = () => {
       window.__cityGateTawkLoaded = false;
       pendingOpen.current = false;
@@ -138,7 +168,7 @@ export default function TawkWidget() {
       console.warn('[Tawk] Banking support could not be loaded.');
     };
     document.head.appendChild(script);
-  }, [configureCallbacks]);
+  }, [applyContext, configureCallbacks, openLoadedWidget]);
 
   const openSupport = useCallback(() => {
     if (status === 'ready') {
@@ -152,15 +182,16 @@ export default function TawkWidget() {
   useEffect(() => {
     if (!showLauncher) {
       pendingOpen.current = false;
+      chatOpenRef.current = false;
       setChatOpen(false);
       safely(() => window.Tawk_API?.hideWidget?.());
       return;
     }
     if (status === 'ready') {
       applyContext();
-      if (!chatOpen) safely(() => window.Tawk_API?.hideWidget?.());
+      if (!chatOpenRef.current) safely(() => window.Tawk_API?.hideWidget?.());
     }
-  }, [applyContext, chatOpen, showLauncher, status]);
+  }, [applyContext, showLauncher, status]);
 
   if (!showLauncher || chatOpen) return null;
 
