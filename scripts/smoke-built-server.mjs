@@ -50,8 +50,11 @@ try {
   if (!robots?.includes('noindex')) throw new Error('Preview server did not emit the required X-Robots-Tag header.');
   const page = await fetch(`${origin}/login`);
   const html = await page.text();
-  if (!page.ok || !html.includes('Product preview')) {
-    throw new Error(`Server-rendered preview disclosure is missing from the login page (status ${page.status}).\n${output}`);
+  if (!page.ok) {
+    throw new Error(`Server-rendered login page failed (status ${page.status}).\n${output}`);
+  }
+  if (html.includes('City Gate Capital is not operating as a bank in this environment')) {
+    throw new Error(`The removed product-preview banner is still present on the login page.\n${output}`);
   }
   const dashboard = await fetch(`${origin}/dashboard/trading`);
   const dashboardHtml = await dashboard.text();
@@ -78,7 +81,7 @@ try {
     }, 3_000);
     socket.once('open', () => {
       clearTimeout(timer);
-      socket.close();
+      socket.terminate();
       resolve();
     });
     socket.once('error', error => {
@@ -91,7 +94,7 @@ try {
   console.log(JSON.stringify({
     ok: true,
     status: response.status,
-    previewDisclosure: true,
+    previewBannerRemoved: true,
     streamingSsr: true,
     noIndex: true,
     mediaAssets: true,
@@ -99,6 +102,12 @@ try {
     health: body,
   }));
 } finally {
-  if (child.exitCode === null) child.kill();
+  if (child.exitCode === null) {
+    child.kill();
+    await Promise.race([
+      new Promise(resolve => child.once('exit', resolve)),
+      new Promise(resolve => setTimeout(resolve, 2_000)),
+    ]);
+  }
   rmSync(smokeRoot, { recursive: true, force: true });
 }

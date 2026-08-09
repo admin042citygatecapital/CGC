@@ -14,7 +14,6 @@ type RouteObject,
 } from 'react-router-dom';
 
 import PageSkeleton from './components/PageSkeleton';
-import PreviewBanner from './components/PreviewBanner';
 import RootLayout from './layouts/RootLayout';
 import { AdminAuthProvider } from './lib/adminAuth';
 import { CustomerAuthProvider } from './lib/customerAuth';
@@ -36,7 +35,6 @@ function SSRLayoutWrapper() {
   if (isStandalone) {
     return (
       <>
-        <PreviewBanner />
         <Suspense fallback={<PageSkeleton admin />}>
           <Outlet />
         </Suspense>
@@ -45,7 +43,6 @@ function SSRLayoutWrapper() {
   }
   return (
     <>
-      <PreviewBanner />
       <Suspense fallback={<PageSkeleton />}>
         <RootLayout>
           <Outlet />

@@ -85,7 +85,6 @@
 | `/api/cms/content` | GET | Public CMS content (60s cache) | Public | Global 200/min |
 | `/api/settings/rates` | GET | Public exchange rates & fees | Public | Global 200/min |
 | `/api/settings/social` | GET | Public social media links | Public | Global 200/min |
-| `/api/settings/preview` | GET | Admin-managed product-preview notice | Public | Global 200/min |
 | `/api/contact` | POST | Submit contact form | Public | 10/hr/IP |
 | `/api/newsletter/subscribe` | POST | Subscribe to newsletter | Public | 5/hr/IP |
 | `/api/newsletter/unsubscribe` | GET | Unsubscribe from newsletter | Public | Global 200/min |

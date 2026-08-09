@@ -10,7 +10,6 @@ type RouteObject,
 import AppErrorBoundary from '@/components/AppErrorBoundary';
 import AriaChatWidget from '@/components/AriaChatWidget';
 import ClientOnly from '@/components/ClientOnly';
-import PreviewBanner from '@/components/PreviewBanner';
 import CookieBannerErrorBoundary from '@/components/CookieBannerErrorBoundary';
 import TawkWidget from '@/components/TawkWidget';
 import AiroErrorBoundary from '../export-plugins/AiroErrorBoundary';
@@ -45,7 +44,6 @@ function LayoutWrapper() {
 
   return (
     <>
-      <PreviewBanner />
       {/* Single mount point — never re-mounts during navigation */}
       <ClientOnly>
         <TawkWidget />

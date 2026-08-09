@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   Save, CheckCircle, Palette, Navigation, Image, Type,
-  Layout, Code, Eye, Smartphone, Monitor, Tablet, ShieldCheck, AlertCircle,
+  Layout, Code, Eye, Smartphone, Monitor, Tablet, AlertCircle,
 } from 'lucide-react';
 import AdminLayout from '@/layouts/AdminLayout';
 import { useAdminAuth, authHeaders } from '@/lib/adminAuth';
@@ -51,12 +51,6 @@ interface WebsiteSettings {
   announcementEnabled: boolean;
   announcementText: string;
   announcementLink: string;
-
-  // Product preview safeguard
-  previewNoticeText: string;
-  previewNoticePosition: 'top' | 'bottom';
-  previewNoticeTone: 'amber' | 'neutral';
-  previewNoticeCompact: boolean;
 
   // Theme
   darkMode: boolean;
@@ -106,11 +100,6 @@ const DEFAULT: WebsiteSettings = {
   announcementText: 'Product preview: balances and transactions are demonstrations.',
   announcementLink: '/accounts',
 
-  previewNoticeText: 'Product preview — City Gate Capital is not operating as a bank in this environment. Balances and trading are demonstrations; deposits, custody, insurance, and live financial transactions are unavailable.',
-  previewNoticePosition: 'bottom',
-  previewNoticeTone: 'amber',
-  previewNoticeCompact: false,
-
   darkMode: true,
   borderRadius: 'rounded',
   animationsEnabled: true,
@@ -122,7 +111,6 @@ const TABS = [
   { id: 'nav',       label: 'Navigation',  icon: Navigation },
   { id: 'footer',    label: 'Footer',      icon: Layout },
   { id: 'announce',  label: 'Announcement', icon: Type },
-  { id: 'preview',   label: 'Preview Notice', icon: ShieldCheck },
   { id: 'theme',     label: 'Theme',       icon: Code },
 ];
 
@@ -442,43 +430,6 @@ export default function AdminWebsite() {
                   <div className={`px-4 py-2 text-center text-xs font-medium text-black transition-opacity ${cfg.announcementEnabled ? 'opacity-100' : 'opacity-30'}`}
                     style={{ background: `linear-gradient(90deg, ${cfg.primaryColor}, #F0D080)` }}>
                     {cfg.announcementText || 'Announcement text here'}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Product preview safeguard */}
-            {tab === 'preview' && (
-              <>
-                <h3 className="text-white font-semibold text-sm flex items-center gap-2"><ShieldCheck size={14} className="text-primary" /> Product Preview Notice</h3>
-                <div className="p-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.05]">
-                  <p className="text-amber-100/90 text-sm font-medium">Preview mode is server-enforced</p>
-                  <p className="text-amber-100/50 text-xs mt-1">You can manage the wording and appearance here. The notice remains visible until the deployment passes live-readiness checks and is switched to live mode.</p>
-                </div>
-                <TextArea k="previewNoticeText" label="Public Preview Notice" rows={5} />
-                <p className="text-white/25 text-xs -mt-3">Use 40–600 characters and clearly describe which services are demonstrations or unavailable.</p>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Position</label>
-                    <select value={cfg.previewNoticePosition} onChange={e => set('previewNoticePosition', e.target.value as WebsiteSettings['previewNoticePosition'])}
-                      className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/40 transition-colors">
-                      <option value="bottom" className="bg-[#0A0A0A]">Bottom of screen</option>
-                      <option value="top" className="bg-[#0A0A0A]">Top of screen</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Appearance</label>
-                    <select value={cfg.previewNoticeTone} onChange={e => set('previewNoticeTone', e.target.value as WebsiteSettings['previewNoticeTone'])}
-                      className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/40 transition-colors">
-                      <option value="amber" className="bg-[#0A0A0A]">Amber compliance</option>
-                      <option value="neutral" className="bg-[#0A0A0A]">Neutral dark</option>
-                    </select>
-                  </div>
-                </div>
-                <Toggle k="previewNoticeCompact" label="Compact Height" desc="Use a slimmer notice on smaller screens" />
-                <div className="rounded-xl overflow-hidden border border-white/8">
-                  <div className={`px-4 text-center text-[11px] font-medium ${cfg.previewNoticeCompact ? 'py-1' : 'py-2'} ${cfg.previewNoticeTone === 'amber' ? 'bg-[#17120a] text-amber-100' : 'bg-[#111318] text-white/80'}`}>
-                    {cfg.previewNoticeText}
                   </div>
                 </div>
               </>

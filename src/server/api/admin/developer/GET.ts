@@ -229,7 +229,6 @@ const ROUTE_CATALOGUE: Array<{
   { method:'POST', path:'/api/users/support',                     group:'Customer',         auth:'customer',description:'Create support ticket' },
   { method:'GET',  path:'/api/settings/rates',                    group:'Public',           auth:'public',  description:'Public exchange rates' },
   { method:'GET',  path:'/api/settings/social',                   group:'Public',           auth:'public',  description:'Social media links' },
-  { method:'GET',  path:'/api/settings/preview',                  group:'Public',           auth:'public',  description:'Admin-managed preview notice' },
   { method:'GET',  path:'/api/analytics/summary',                 group:'Analytics',        auth:'admin',   description:'Analytics summary' },
   { method:'POST', path:'/api/analytics/event',                   group:'Analytics',        auth:'public',  description:'Track analytics event' },
   { method:'GET',  path:'/api/analytics/conversions',             group:'Analytics',        auth:'admin',   description:'Conversion funnel data' },
