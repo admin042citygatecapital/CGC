@@ -9,6 +9,7 @@
 import type { Request, Response } from 'express';
 import { findUserById, updateUser, generateVerifyToken } from '../../../../lib/userStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
+import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
 import {
   sendVerificationEmail,
   sendApprovalEmail,
@@ -59,15 +60,14 @@ export default async function handler(req: Request, res: Response) {
       }
 
       case 'approve': {
-        await updateUser(userId, {
-          status: 'active',
-          kycStatus: 'approved',
-          approvedAt: new Date().toISOString(),
-          approvedBy: adminId,
-        });
+        const compliance = await evaluateFinancialAccess({ ...user, status: 'active' });
+        if (!compliance.allowed) {
+          return res.status(409).json({ error: `Override cannot bypass compliance: ${compliance.message}`, code: compliance.code, compliance });
+        }
+        await updateUser(userId, { status: 'active', approvedAt: new Date().toISOString(), approvedBy: adminId });
         await sendApprovalEmail(user.email, user.name);
         appendAudit({ event: 'admin_override_approve', userId, email: user.email, adminId });
-        return res.json({ ok: true, message: `Account approved and activation email sent to ${user.email}` });
+        return res.json({ ok: true, message: `Account activated for ${user.email} after KYC and AML clearance.` });
       }
 
       case 'activate': {

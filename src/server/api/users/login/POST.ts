@@ -114,6 +114,8 @@ export default async function handler(req: Request, res: Response) {
       email:     user.email,
       status:    user.status,
       kycStatus: user.kycStatus,
+      amlStatus: user.amlStatus ?? 'not_screened',
+      amlRiskLevel: user.amlRiskLevel ?? 'unrated',
       balance:   user.balance ?? 0,
     },
   });

@@ -10,6 +10,7 @@ import { createNotification } from '../../../lib/notificationStore.js';
 import { isOneOf, sanitizeNote } from '../../../lib/inputValidator.js';
 import { requireIdempotency } from '../../../lib/idempotency.js';
 import { requireFinancialOperations } from '../../../lib/platformMode.js';
+import { requireCustomerFinancialAccess } from '../../../lib/complianceGate.js';
 
 const VALID_CURRENCIES = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'] as const;
 const VALID_METHODS = ['bank_wire', 'crypto'] as const;
@@ -23,10 +24,7 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserBySessionToken(token);
   if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
-  if (user.status !== 'active') return res.status(403).json({ error: 'Your account must be active before requesting a deposit.' });
-  if (user.kycStatus !== 'approved') {
-    return res.status(403).json({ error: 'Your identity verification (KYC) must be approved before requesting a deposit.' });
-  }
+  if (!await requireCustomerFinancialAccess(user, res)) return;
 
   const { amount, currency = 'USD', method = 'bank_wire', note } = req.body ?? {};
 

@@ -150,6 +150,8 @@ export default async function handler(req: Request, res: Response) {
       country:     updated.country   ?? '',
       status:      updated.status,
       kycStatus:   updated.kycStatus,
+      amlStatus:   updated.amlStatus ?? 'not_screened',
+      amlRiskLevel: updated.amlRiskLevel ?? 'unrated',
       balance:     updated.balance   ?? 0,
       avatarUrl:   (updated as any).avatarUrl ?? '',
       walletBtc:   updated.walletBtc  ?? '',

@@ -19,6 +19,8 @@ import { stripDangerousKeys } from './inputValidator.js';
 
 export type UserStatus = 'pending_verification' | 'pending_kyc' | 'pending_approval' | 'active' | 'suspended' | 'frozen' | 'rejected';
 export type KYCStatus  = 'not_submitted' | 'submitted' | 'approved' | 'rejected';
+export type AMLStatus  = 'not_screened' | 'pending' | 'cleared' | 'review' | 'blocked';
+export type AMLRiskLevel = 'unrated' | 'low' | 'medium' | 'high';
 
 // Map DB row → legacy UserRecord shape (camelCase)
 export interface UserRecord {
@@ -29,6 +31,12 @@ export interface UserRecord {
   country?: string;
   status: UserStatus;
   kycStatus: KYCStatus;
+  amlStatus: AMLStatus;
+  amlRiskLevel: AMLRiskLevel;
+  amlReviewedAt?: string;
+  amlReviewedBy?: string;
+  amlReviewReason?: string;
+  amlNextReviewAt?: string;
   emailVerified: boolean;
   emailVerifyToken?: string;
   emailVerifyExpiry?: string;
@@ -82,6 +90,10 @@ export interface UserRecord {
   trustedDevices?: unknown;
 }
 
+export type CreateUserInput =
+  Omit<UserRecord, 'id' | 'createdAt' | 'updatedAt' | 'loginAttempts' | 'amlStatus' | 'amlRiskLevel'>
+  & Partial<Pick<UserRecord, 'amlStatus' | 'amlRiskLevel'>>;
+
 // ── DB row → UserRecord ───────────────────────────────────────────────────────
 
 function toRecord(u: User): UserRecord {
@@ -93,6 +105,12 @@ function toRecord(u: User): UserRecord {
     country:             u.country ?? undefined,
     status:              u.status as UserStatus,
     kycStatus:           u.kycStatus as KYCStatus,
+    amlStatus:           u.amlStatus as AMLStatus,
+    amlRiskLevel:        u.amlRiskLevel as AMLRiskLevel,
+    amlReviewedAt:       u.amlReviewedAt?.toISOString() ?? undefined,
+    amlReviewedBy:       u.amlReviewedBy ?? undefined,
+    amlReviewReason:     u.amlReviewReason ?? undefined,
+    amlNextReviewAt:     u.amlNextReviewAt?.toISOString() ?? undefined,
     emailVerified:       u.emailVerified,
     emailVerifyToken:    u.emailVerifyToken ?? undefined,
     emailVerifyExpiry:   u.emailVerifyExpiry?.toISOString() ?? undefined,
@@ -203,7 +221,7 @@ export async function findUserByVerifyToken(token: string): Promise<UserRecord |
 }
 
 export async function createUser(
-  data: Omit<UserRecord, 'id' | 'createdAt' | 'updatedAt' | 'loginAttempts'>
+  data: CreateUserInput
 ): Promise<UserRecord> {
   if (!isDatabaseConfigured()) {
     const ff = await getFlatFile();
@@ -221,6 +239,8 @@ export async function createUser(
     country:            data.country ?? null,
     status:             (data.status ?? 'pending_verification') as User['status'],
     kycStatus:          (data.kycStatus ?? 'not_submitted') as User['kycStatus'],
+    amlStatus:          data.amlStatus ?? 'not_screened',
+    amlRiskLevel:       data.amlRiskLevel ?? 'unrated',
     emailVerified:      data.emailVerified ?? false,
     emailVerifyToken:   data.emailVerifyToken ?? null,
     emailVerifyExpiry:  data.emailVerifyExpiry ? new Date(data.emailVerifyExpiry) : null,
@@ -254,6 +274,12 @@ export async function updateUser(id: string, patch: Partial<UserRecord>): Promis
   if (safe.country !== undefined)            dbPatch.country            = safe.country ?? null;
   if (safe.status !== undefined)             dbPatch.status             = safe.status as User['status'];
   if (safe.kycStatus !== undefined)          dbPatch.kycStatus          = safe.kycStatus as User['kycStatus'];
+  if (safe.amlStatus !== undefined)          dbPatch.amlStatus          = safe.amlStatus;
+  if (safe.amlRiskLevel !== undefined)       dbPatch.amlRiskLevel       = safe.amlRiskLevel;
+  if (safe.amlReviewedAt !== undefined)      dbPatch.amlReviewedAt      = safe.amlReviewedAt ? new Date(safe.amlReviewedAt) : null;
+  if (safe.amlReviewedBy !== undefined)      dbPatch.amlReviewedBy      = safe.amlReviewedBy ?? null;
+  if (safe.amlReviewReason !== undefined)    dbPatch.amlReviewReason    = safe.amlReviewReason ?? null;
+  if (safe.amlNextReviewAt !== undefined)    dbPatch.amlNextReviewAt    = safe.amlNextReviewAt ? new Date(safe.amlNextReviewAt) : null;
   if (safe.emailVerified !== undefined)      dbPatch.emailVerified      = safe.emailVerified;
   if (safe.emailVerifyToken !== undefined)   dbPatch.emailVerifyToken   = safe.emailVerifyToken ?? null;
   if (safe.emailVerifyExpiry !== undefined)  dbPatch.emailVerifyExpiry  = safe.emailVerifyExpiry ? new Date(safe.emailVerifyExpiry) : null;

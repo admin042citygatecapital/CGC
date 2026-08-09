@@ -11,6 +11,7 @@ import {
 } from '../../../../lib/transactionStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 import { safeParseId, sanitizeString, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
+import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
 
 const VALID_TYPES: TxType[]      = ['deposit','withdrawal','transfer','crypto_buy','crypto_sell','wire_transfer','fee','refund','manual_credit','manual_debit'];
 const VALID_STATUSES: TxStatus[] = ['pending','completed','failed','rejected','flagged'];
@@ -61,6 +62,12 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserById(userId);
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
+  if (safeStatus === 'completed') {
+    const compliance = await evaluateFinancialAccess(user);
+    if (!compliance.allowed) {
+      return res.status(409).json({ ok: false, error: compliance.message, code: compliance.code, compliance });
+    }
+  }
 
   const tx = await createTransaction({
     type:        safeType,

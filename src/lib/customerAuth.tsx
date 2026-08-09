@@ -13,6 +13,8 @@ export interface CustomerUser {
   country:   string;
   status:    string;
   kycStatus: string;
+  amlStatus: string;
+  amlRiskLevel: string;
   balance:   number;
   avatarUrl:  string;
   walletBtc:  string;

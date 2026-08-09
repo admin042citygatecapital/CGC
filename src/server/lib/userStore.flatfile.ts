@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { stripDangerousKeys } from './inputValidator.js';
-import type { UserRecord } from './userStore.js';
+import type { CreateUserInput, UserRecord } from './userStore.js';
 
 const INACTIVITY_MS   = (parseInt(process.env.SESSION_CUSTOMER_TIMEOUT_MINUTES ?? '60', 10)) * 60_000;
 const ABSOLUTE_TTL_MS = (parseInt(process.env.SESSION_CUSTOMER_MAX_HOURS       ?? '8',  10)) * 3_600_000;
@@ -67,12 +67,14 @@ export function findUserBySessionToken(token: string): UserRecord | undefined {
   return users[idx];
 }
 
-export function createUser(data: Omit<UserRecord, 'id' | 'createdAt' | 'updatedAt' | 'loginAttempts'>): UserRecord {
+export function createUser(data: CreateUserInput): UserRecord {
   const users = loadAllUsers();
   const user: UserRecord = {
     ...data,
     id: 'usr_' + crypto.randomBytes(8).toString('hex'),
     loginAttempts: 0,
+    amlStatus: data.amlStatus ?? 'not_screened',
+    amlRiskLevel: data.amlRiskLevel ?? 'unrated',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

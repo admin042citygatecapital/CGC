@@ -9,6 +9,7 @@ import { createCard, appendCardActivity } from '../../../../lib/cardStore.js';
 import { findUserById } from '../../../../lib/userStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 import { requireFinancialOperations } from '../../../../lib/platformMode.js';
+import { requireCustomerFinancialAccess } from '../../../../lib/complianceGate.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession;
@@ -20,6 +21,7 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
+  if (!await requireCustomerFinancialAccess(user, res)) return;
 
   const net = (network === 'mastercard' ? 'mastercard' : 'visa') as 'visa' | 'mastercard';
 

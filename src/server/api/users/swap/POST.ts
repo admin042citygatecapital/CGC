@@ -17,6 +17,7 @@ import { readRatesConfig } from '../../../lib/ratesStore.js';
 import { isOneOf } from '../../../lib/inputValidator.js';
 import { requireIdempotency } from '../../../lib/idempotency.js';
 import { requireFinancialOperations } from '../../../lib/platformMode.js';
+import { requireCustomerFinancialAccess } from '../../../lib/complianceGate.js';
 
 // Explicit asset allowlist — prevents arbitrary string injection into transaction records
 const SUPPORTED_ASSETS = ['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','NGN','BTC','ETH','SOL','USDT','BNB'] as const;
@@ -81,9 +82,7 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserBySessionToken(token);
   if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
-  if (user.kycStatus !== 'approved') {
-    return res.status(403).json({ error: 'Your identity verification (KYC) must be approved before you can exchange assets.' });
-  }
+  if (!await requireCustomerFinancialAccess(user, res)) return;
 
   const { fromAsset, toAsset, amount } = req.body as {
     fromAsset?: string;

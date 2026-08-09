@@ -14,6 +14,7 @@ import { readRatesConfig } from '../../../lib/ratesStore.js';
 import { sanitizeString, sanitizeNote, isOneOf } from '../../../lib/inputValidator.js';
 import { requireIdempotency } from '../../../lib/idempotency.js';
 import { requireFinancialOperations } from '../../../lib/platformMode.js';
+import { requireCustomerFinancialAccess } from '../../../lib/complianceGate.js';
 
 const VALID_CURRENCIES = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'] as const;
 
@@ -48,10 +49,7 @@ export default async function handler(req: Request, res: Response) {
   const user = await findUserBySessionToken(token);
   if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
 
-  // KYC gate
-  if (user.kycStatus !== 'approved') {
-    return res.status(403).json({ error: 'Your identity verification (KYC) must be approved before you can make transfers. Please complete verification in your profile.' });
-  }
+  if (!await requireCustomerFinancialAccess(user, res)) return;
 
   const { recipient, amount, currency = 'USD', note } = req.body ?? {};
 

@@ -15,6 +15,7 @@ import { appendBalanceTx } from '../../../../lib/balanceStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 import { sendBalanceAdjustmentEmail } from '../../../../lib/emailService.js';
 import { safeParseId, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
+import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
 
 const VALID_TYPES      = ['credit','debit'] as const;
 const SUPPORTED_CURRENCIES = ['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','NGN','BTC','ETH','SOL','USDT','BNB'] as const;
@@ -66,6 +67,13 @@ export default async function handler(req: Request, res: Response) {
   const user = await findUserById(userId);
   if (!user) {
     return res.status(404).json({ success: false, error: 'User not found' });
+  }
+  const compliance = await evaluateFinancialAccess(user);
+  if (!compliance.allowed) {
+    return res.status(409).json({ success: false, error: compliance.message, code: compliance.code, compliance });
+  }
+  if (safeNote.length < 10) {
+    return res.status(400).json({ success: false, error: 'A balance-adjustment rationale of at least 10 characters is required.' });
   }
 
   // Create a transaction record in the specified currency

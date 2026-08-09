@@ -94,6 +94,8 @@ export default function AdminBanking() {
   const [typeFilter, setTypeFilter] = useState<'all' | 'withdrawal' | 'deposit' | 'wire_transfer'>('all');
   const [rejectModal, setRejectModal] = useState<{ txId: string; ref: string } | null>(null);
   const [rejectNote, setRejectNote] = useState('');
+  const [approveModal, setApproveModal] = useState<{ txId: string; ref: string } | null>(null);
+  const [approveNote, setApproveNote] = useState('');
 
   // Balance adjustment form
   const [balanceForm, setBalanceForm] = useState({ userId: '', amount: '', currency: 'USD', type: 'credit', note: '' });
@@ -257,19 +259,22 @@ export default function AdminBanking() {
   }
 
   // ── Transaction actions ──────────────────────────────────────────────────────
-  async function approveTransaction(txId: string) {
-    setAL(txId + 'approve');
+  async function approveTransaction() {
+    if (!approveModal) return;
+    setAL(approveModal.txId + 'approve');
     try {
       const res = await fetch('/api/admin/transactions/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ transactionId: txId }),
+        body: JSON.stringify({ transactionId: approveModal.txId, note: approveNote }),
       });
       const d = await res.json();
       if (res.ok) { showToast('Transaction approved'); fetchPending(); }
       else showToast(d.error ?? 'Approval failed', false);
     } catch { showToast('Network error', false); }
     setAL(null);
+    setApproveModal(null);
+    setApproveNote('');
   }
 
   async function rejectTransaction() {
@@ -345,6 +350,37 @@ export default function AdminBanking() {
               }`}>
               {toast.ok ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
               {toast.msg}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Approval modal — forces an auditable rationale and server-side KYC/AML recheck */}
+        <AnimatePresence>
+          {approveModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+                className="w-full max-w-md rounded-2xl border border-white/8 p-6"
+                style={{ background: 'rgba(15,15,15,0.98)' }}>
+                <h3 className="text-white font-bold mb-2">Approve Transaction</h3>
+                <p className="text-white/40 text-sm mb-3">Ref: <span className="text-white/70 font-mono">{approveModal.ref}</span></p>
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 p-3 mb-4 text-[11px] text-amber-100/65 leading-relaxed">
+                  The server will recheck account status, verified email, current KYC, AML clearance, review expiry, and transaction flags before completion.
+                </div>
+                <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Approval rationale (required)</label>
+                <textarea rows={3} value={approveNote} onChange={e => setApproveNote(e.target.value)} maxLength={500}
+                  placeholder="Describe documents and compliance evidence reviewed."
+                  className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-emerald-500/40 resize-none mb-4" />
+                <div className="flex gap-3">
+                  <button onClick={() => { setApproveModal(null); setApproveNote(''); }}
+                    className="flex-1 py-2.5 rounded-xl border border-white/8 text-white/50 text-sm hover:bg-white/[0.04]">Cancel</button>
+                  <button onClick={approveTransaction} disabled={!!actionLoading || approveNote.trim().length < 10}
+                    className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/30 flex items-center justify-center gap-2 disabled:opacity-40">
+                    {actionLoading ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
+                    Approve
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -522,7 +558,7 @@ export default function AdminBanking() {
                         </div>
 
                         <div className="flex gap-2">
-                          <button onClick={() => approveTransaction(tx.id)} disabled={!!actionLoading}
+                          <button onClick={() => setApproveModal({ txId: tx.id, ref: tx.reference })} disabled={!!actionLoading || tx.flagged}
                             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/25 transition-colors disabled:opacity-50">
                             {isApproving ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
                             Approve

@@ -30,6 +30,8 @@ export default async function handler(req: Request, res: Response) {
       country:   user.country   ?? '',
       status:    user.status,
       kycStatus: user.kycStatus,
+      amlStatus: user.amlStatus ?? 'not_screened',
+      amlRiskLevel: user.amlRiskLevel ?? 'unrated',
       balance:   user.balance ?? 0,
       avatarUrl: user.avatarUrl ?? '',
       // Crypto withdrawal addresses

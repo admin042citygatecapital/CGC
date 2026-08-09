@@ -8,6 +8,8 @@ import { findCardById, updateCard, createCard, appendCardActivity } from '../../
 import { appendAudit } from '../../../../lib/auditLog.js';
 import crypto from 'node:crypto';
 import { requireFinancialOperations } from '../../../../lib/platformMode.js';
+import { requireCustomerFinancialAccess } from '../../../../lib/complianceGate.js';
+import { findUserById } from '../../../../lib/userStore.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession;
@@ -21,6 +23,9 @@ export default async function handler(req: Request, res: Response) {
   if (!oldCard || oldCard.status === 'deleted') {
     return res.status(404).json({ error: 'Card not found or already deleted' });
   }
+  const user = await findUserById(oldCard.userId);
+  if (!user) return res.status(409).json({ error: 'Card customer no longer exists' });
+  if (!await requireCustomerFinancialAccess(user, res)) return;
 
   // Mark old card as replaced
   await updateCard(cardId, { status: 'replaced' });

@@ -106,6 +106,14 @@ export const users = pgTable('users', {
   country:             text('country'),
   status:              userStatusEnum('status').notNull().default('pending_verification'),
   kycStatus:           kycStatusEnum('kyc_status').notNull().default('not_submitted'),
+  // AML is an explicit compliance decision, separate from identity verification.
+  // Only "cleared" permits a financial operation; all other values fail closed.
+  amlStatus:           text('aml_status').$type<'not_screened' | 'pending' | 'cleared' | 'review' | 'blocked'>().notNull().default('not_screened'),
+  amlRiskLevel:        text('aml_risk_level').$type<'unrated' | 'low' | 'medium' | 'high'>().notNull().default('unrated'),
+  amlReviewedAt:       timestamp('aml_reviewed_at', { withTimezone: true }),
+  amlReviewedBy:       text('aml_reviewed_by'),
+  amlReviewReason:     text('aml_review_reason'),
+  amlNextReviewAt:     timestamp('aml_next_review_at', { withTimezone: true }),
   emailVerified:       boolean('email_verified').notNull().default(false),
   emailVerifyToken:    text('email_verify_token'),
   emailVerifyExpiry:   timestamp('email_verify_expiry', { withTimezone: true }),
@@ -169,6 +177,7 @@ export const users = pgTable('users', {
   uniqueIndex('users_email_idx').on(t.email),
   index('users_status_idx').on(t.status),
   index('users_kyc_status_idx').on(t.kycStatus),
+  index('users_aml_status_idx').on(t.amlStatus),
   index('users_created_at_idx').on(t.createdAt),
 ]);
 

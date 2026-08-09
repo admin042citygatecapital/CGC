@@ -1732,6 +1732,7 @@ export default function DashboardPage() {
                   {[
                     { label: 'Account', value: customer.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), ok: customer.status === 'active' },
                     { label: 'KYC', value: customer.kycStatus.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), ok: customer.kycStatus === 'approved' },
+                    { label: 'AML', value: customer.amlStatus.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), ok: customer.amlStatus === 'cleared' },
                   ].map(({ label, value, ok }) => (
                     <div key={label} className="rounded-xl p-3 border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                       <p className="text-[10px] text-foreground/30 mb-1">{label}</p>
@@ -1883,13 +1884,13 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-3 px-4 py-3">
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: customer.kycStatus === 'approved' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', border: `1px solid ${customer.kycStatus === 'approved' ? 'rgba(16,185,129,0.22)' : 'rgba(245,158,11,0.22)'}` }}>
-                      <ShieldCheck size={13} className={customer.kycStatus === 'approved' ? 'text-emerald-400' : 'text-amber-400'} />
+                      style={{ background: customer.kycStatus === 'approved' && customer.amlStatus === 'cleared' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', border: `1px solid ${customer.kycStatus === 'approved' && customer.amlStatus === 'cleared' ? 'rgba(16,185,129,0.22)' : 'rgba(245,158,11,0.22)'}` }}>
+                      <ShieldCheck size={13} className={customer.kycStatus === 'approved' && customer.amlStatus === 'cleared' ? 'text-emerald-400' : 'text-amber-400'} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-foreground/40">Security Score</p>
-                      <p className={`text-xs font-semibold ${customer.kycStatus === 'approved' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                        {customer.kycStatus === 'approved' ? 'High — Fully Verified' : 'Medium — KYC Pending'}
+                      <p className={`text-xs font-semibold ${customer.kycStatus === 'approved' && customer.amlStatus === 'cleared' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        {customer.kycStatus === 'approved' && customer.amlStatus === 'cleared' ? 'KYC and AML controls cleared' : `KYC ${customer.kycStatus.replace(/_/g, ' ')} · AML ${customer.amlStatus.replace(/_/g, ' ')}`}
                       </p>
                     </div>
                     <Link to="/dashboard/security" className="text-[10px] text-foreground/25 hover:text-primary transition-colors">

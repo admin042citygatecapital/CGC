@@ -12,6 +12,7 @@ import { readRatesConfig } from '../../../lib/ratesStore.js';
 import { isOneOf, sanitizeString, sanitizeNote } from '../../../lib/inputValidator.js';
 import { requireIdempotency } from '../../../lib/idempotency.js';
 import { requireFinancialOperations } from '../../../lib/platformMode.js';
+import { requireCustomerFinancialAccess } from '../../../lib/complianceGate.js';
 
 const VALID_CURRENCIES = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'] as const;
 const MAX_TRANSFER = 1_000_000_000;
@@ -46,9 +47,7 @@ export default async function handler(req: Request, res: Response) {
   const user = await findUserBySessionToken(token);
   if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
 
-  if (user.kycStatus !== 'approved') {
-    return res.status(403).json({ error: 'Identity verification (KYC) must be approved before making transfers.' });
-  }
+  if (!await requireCustomerFinancialAccess(user, res)) return;
 
   if (req.body?.type === 'internal_transfer') {
     return res.status(409).json({ error: 'Internal wallet transfers are not available until a separate trading cash account is configured.' });

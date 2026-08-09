@@ -37,6 +37,28 @@ describe('admin authorization policy', () => {
     expect(status).not.toHaveBeenCalled();
   });
 
+  it('allows a compliance administrator to review AML and approve gated transactions', () => {
+    const next = vi.fn() as NextFunction;
+    const aml = responseMock();
+    requireAdminAuthorization(request('COMPLIANCE_ADMIN', '/kyc/aml', 'POST'), aml.response, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect(aml.status).not.toHaveBeenCalled();
+
+    const approvalNext = vi.fn() as NextFunction;
+    const approval = responseMock();
+    requireAdminAuthorization(request('COMPLIANCE_ADMIN', '/transactions/approve', 'POST'), approval.response, approvalNext);
+    expect(approvalNext).toHaveBeenCalledOnce();
+    expect(approval.status).not.toHaveBeenCalled();
+  });
+
+  it('blocks finance administrators from changing AML decisions', () => {
+    const { response, status } = responseMock();
+    const next = vi.fn() as NextFunction;
+    requireAdminAuthorization(request('FINANCE_ADMIN', '/kyc/aml', 'POST'), response, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(status).toHaveBeenCalledWith(403);
+  });
+
   it('blocks a support administrator from balance adjustments', () => {
     const { response, status } = responseMock();
     const next = vi.fn() as NextFunction;

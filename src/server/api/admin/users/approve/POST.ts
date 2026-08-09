@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 import { sendApprovalEmail } from '../../../../lib/emailService.js';
+import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -16,16 +17,20 @@ export default async function handler(req: Request, res: Response) {
     return res.status(409).json({ error: 'User is already active' });
   }
 
-  await updateUser(userId, {
-    status: 'active',
-    kycStatus: 'approved',
-    approvedAt: new Date().toISOString(),
-    approvedBy: session.adminId,
-  });
+  const compliance = await evaluateFinancialAccess({ ...user, status: 'active' });
+  if (!compliance.allowed) {
+    return res.status(409).json({
+      error: `Account activation blocked: ${compliance.message}`,
+      code: compliance.code,
+      compliance,
+    });
+  }
+
+  await updateUser(userId, { status: 'active', approvedAt: new Date().toISOString(), approvedBy: session.adminId });
 
   appendAudit({ event: 'admin_user_approve', adminId: session.adminId, userId, email: user.email });
 
   await sendApprovalEmail(user.email, user.name);
 
-  return res.json({ ok: true, message: `${user.name} has been approved and notified.` });
+  return res.json({ ok: true, message: `${user.name} has been activated after KYC and AML clearance.` });
 }

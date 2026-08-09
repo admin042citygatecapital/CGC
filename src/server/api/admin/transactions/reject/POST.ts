@@ -9,7 +9,8 @@ import { appendAudit } from '../../../../lib/auditLog.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
-  const { txId, reason = '' } = req.body ?? {};
+  const txId = req.body?.txId ?? req.body?.transactionId;
+  const reason = req.body?.reason ?? '';
 
   if (!txId)   return res.status(400).json({ success: false, error: 'txId is required' });
   if (!reason) return res.status(400).json({ success: false, error: 'reason is required' });

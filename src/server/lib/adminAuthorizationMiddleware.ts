@@ -47,6 +47,10 @@ const RULES: readonly Rule[] = [
   { prefix: '/users', roles: ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'], methods: ['GET'] },
 
   { prefix: '/balance', roles: ['FINANCE_ADMIN'] },
+  { prefix: '/transactions', roles: ['FINANCE_ADMIN', 'COMPLIANCE_ADMIN'], methods: ['GET'] },
+  { prefix: '/transactions/approve', roles: ['FINANCE_ADMIN', 'COMPLIANCE_ADMIN'] },
+  { prefix: '/transactions/reject', roles: ['FINANCE_ADMIN', 'COMPLIANCE_ADMIN'] },
+  { prefix: '/transactions/freeze', roles: ['FINANCE_ADMIN', 'COMPLIANCE_ADMIN'] },
   { prefix: '/transactions', roles: ['FINANCE_ADMIN'] },
   { prefix: '/cards', roles: ['FINANCE_ADMIN'] },
   { prefix: '/rates', roles: ['FINANCE_ADMIN'] },

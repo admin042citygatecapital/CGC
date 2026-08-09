@@ -129,10 +129,12 @@ function KycDrawer({ user, onClose, onAction, processing }: {
   const [showSelfie, setShowSelfie]   = useState(false);
   const [drawerTab, setDrawerTab]     = useState<'details' | 'notes' | 'history'>('details');
   const [rejectMode, setRejectMode]   = useState(false);
+  const [approveMode, setApproveMode] = useState(false);
   const [infoMode, setInfoMode]       = useState(false);
   const [extendMode, setExtendMode]   = useState(false);
   const [reasonCode, setReasonCode]   = useState('');
   const [reasonText, setReasonText]   = useState('');
+  const [approvalNote, setApprovalNote] = useState('');
   const [infoMsg, setInfoMsg]         = useState('');
   const [extendMonths, setExtendMonths] = useState('12');
   const [noteText, setNoteText]       = useState('');
@@ -542,7 +544,7 @@ function KycDrawer({ user, onClose, onAction, processing }: {
 
         {/* Action footer */}
         <div className="px-5 py-4 border-t border-white/8 shrink-0 space-y-2">
-          {isPending && !rejectMode && !infoMode && !extendMode && (
+          {isPending && !rejectMode && !approveMode && !infoMode && !extendMode && (
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => onAction('flag')}
                 className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 transition-colors">
@@ -556,7 +558,7 @@ function KycDrawer({ user, onClose, onAction, processing }: {
                 className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">
                 <ShieldX size={12} /> Reject
               </button>
-              <button onClick={() => onAction('approve')} disabled={processing}
+              <button onClick={() => setApproveMode(true)} disabled={processing}
                 className="relative flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-black overflow-hidden disabled:opacity-60">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
                 <span className="relative flex items-center gap-1.5">
@@ -566,6 +568,32 @@ function KycDrawer({ user, onClose, onAction, processing }: {
               </button>
             </div>
           )}
+          <AnimatePresence>
+            {approveMode && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3 overflow-hidden">
+                <div>
+                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Approve KYC evidence</p>
+                  <p className="text-[10px] text-white/35 mt-1">Document the evidence reviewed. Approval will move the customer to AML pending; it will not enable financial access.</p>
+                </div>
+                <textarea value={approvalNote} onChange={e => setApprovalNote(e.target.value)} maxLength={500}
+                  placeholder="Evidence reviewed, document authenticity result, identity match and decision rationale…" rows={3}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-foreground placeholder-foreground/30 focus:outline-none focus:border-emerald-500/40 resize-none" />
+                <div className="flex gap-2">
+                  <button onClick={() => { setApproveMode(false); setApprovalNote(''); }}
+                    className="flex-1 py-2 rounded-xl text-xs font-semibold text-foreground/50 bg-white/5 hover:bg-white/8 transition-colors">
+                    Cancel
+                  </button>
+                  <button onClick={() => onAction('approve', { note: approvalNote })}
+                    disabled={approvalNote.trim().length < 10 || processing}
+                    className="flex-1 py-2 rounded-xl text-xs font-bold text-black bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5">
+                    {processing ? <Loader2 size={11} className="animate-spin" /> : <ShieldCheck size={11} />}
+                    Approve & send to AML
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {isApproved && !extendMode && (
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => setExtendMode(true)}

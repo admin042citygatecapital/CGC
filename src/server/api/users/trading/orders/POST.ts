@@ -11,6 +11,7 @@ import {
   type AssetClass, type OrderSide, type OrderType,
 } from '../../../../lib/tradingStore.js';
 import { requirePaperTrading } from '../../../../lib/platformMode.js';
+import { requireCustomerFinancialAccess } from '../../../../lib/complianceGate.js';
 
 export default async (req: Request, res: Response) => {
   try {
@@ -20,9 +21,7 @@ export default async (req: Request, res: Response) => {
     if (!token) return res.status(401).json({ error: 'Authentication required' });
     const user = await findUserBySessionToken(token);
     if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
-    if (user.status !== 'active' || user.kycStatus !== 'approved') {
-      return res.status(403).json({ error: 'An active, KYC-approved account is required to trade.' });
-    }
+    if (!await requireCustomerFinancialAccess(user, res)) return;
 
     const {
       symbol, assetClass, side, type: orderType, quantity,

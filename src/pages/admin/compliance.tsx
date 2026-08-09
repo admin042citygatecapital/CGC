@@ -23,7 +23,11 @@ Eye,Flag,
 Loader2,
 RefreshCw,
 Scale,
-Users
+Save,
+ShieldCheck,
+ShieldX,
+Users,
+X
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCallback,useEffect,useState } from 'react';
@@ -49,6 +53,17 @@ interface KycUser {
   status: string; kycSubmittedAt?: string; country?: string;
 }
 
+type AmlStatus = 'not_screened' | 'pending' | 'cleared' | 'review' | 'blocked';
+type AmlRiskLevel = 'unrated' | 'low' | 'medium' | 'high';
+
+interface AmlUser {
+  id: string; name: string; email: string; country?: string;
+  status: string; kycStatus: string; amlStatus: AmlStatus;
+  amlRiskLevel: AmlRiskLevel; amlReviewedAt?: string;
+  amlReviewedBy?: string; amlReviewReason?: string; amlNextReviewAt?: string;
+  financialAccess: { allowed: boolean; code?: string; message: string };
+}
+
 const SEV_CFG = {
   low:      { color: '#10B981', bg: 'rgba(16,185,129,0.12)',  label: 'Low' },
   medium:   { color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  label: 'Medium' },
@@ -61,6 +76,14 @@ const STATUS_CFG = {
   investigating: { color: '#627EEA', label: 'Investigating' },
   resolved:      { color: '#10B981', label: 'Resolved' },
   escalated:     { color: '#EF4444', label: 'Escalated' },
+};
+
+const AML_CFG: Record<AmlStatus, { color: string; label: string }> = {
+  not_screened: { color: '#94A3B8', label: 'Not screened' },
+  pending:      { color: '#F59E0B', label: 'Pending' },
+  cleared:      { color: '#10B981', label: 'Cleared' },
+  review:       { color: '#F97316', label: 'Manual review' },
+  blocked:      { color: '#EF4444', label: 'Blocked' },
 };
 
 // Regulatory checklist items
@@ -84,23 +107,32 @@ export default function AdminCompliance() {
   const navigate = useNavigate();
   const [flags, setFlags]       = useState<SecurityFlag[]>([]);
   const [kycQueue, setKycQueue] = useState<KycUser[]>([]);
+  const [amlUsers, setAmlUsers] = useState<AmlUser[]>([]);
+  const [selectedAml, setSelectedAml] = useState<AmlUser | null>(null);
+  const [amlForm, setAmlForm] = useState<{ amlStatus: AmlStatus; amlRiskLevel: AmlRiskLevel; reason: string; nextReviewAt: string }>({
+    amlStatus: 'pending', amlRiskLevel: 'unrated', reason: '', nextReviewAt: '',
+  });
+  const [amlSaving, setAmlSaving] = useState(false);
+  const [amlError, setAmlError] = useState('');
   const [loading, setLoading]   = useState(true);
   const [checklist, setChecklist] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem('cgc_compliance_checklist') ?? '{}'); } catch { return {}; }
   });
-  const [activeTab, setActiveTab] = useState<'flags' | 'kyc' | 'checklist'>('flags');
+  const [activeTab, setActiveTab] = useState<'flags' | 'aml' | 'kyc' | 'checklist'>('aml');
 
   useEffect(() => { if (!authLoading && !admin) navigate('/admin/login'); }, [admin, authLoading, navigate]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [flagsRes, kycRes] = await Promise.all([
+      const [flagsRes, kycRes, amlRes] = await Promise.all([
         fetch('/api/admin/security/threats', { headers: authHeaders() }),
         fetch('/api/admin/kyc/queue', { headers: authHeaders() }),
+        fetch('/api/admin/kyc/aml?status=all&limit=100', { headers: authHeaders() }),
       ]);
       if (flagsRes.ok) { const d = await flagsRes.json(); setFlags(d.threats ?? d.flags ?? []); }
-      if (kycRes.ok)   { const d = await kycRes.json();   setKycQueue(d.queue ?? d.users ?? []); }
+      if (kycRes.ok)   { const d = await kycRes.json();   setKycQueue(d.data ?? d.queue ?? d.users ?? []); }
+      if (amlRes.ok)   { const d = await amlRes.json();   setAmlUsers(d.data ?? []); }
     } finally { setLoading(false); }
   }, []);
 
@@ -114,23 +146,65 @@ export default function AdminCompliance() {
     });
   }
 
+  function openAmlDecision(user: AmlUser) {
+    const oneYear = new Date();
+    oneYear.setFullYear(oneYear.getFullYear() + 1);
+    setSelectedAml(user);
+    setAmlError('');
+    setAmlForm({
+      amlStatus: user.amlStatus,
+      amlRiskLevel: user.amlRiskLevel,
+      reason: user.amlReviewReason ?? '',
+      nextReviewAt: user.amlNextReviewAt?.slice(0, 10) ?? oneYear.toISOString().slice(0, 10),
+    });
+  }
+
+  async function saveAmlDecision() {
+    if (!selectedAml) return;
+    setAmlSaving(true);
+    setAmlError('');
+    try {
+      const response = await fetch('/api/admin/kyc/aml', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({
+          userId: selectedAml.id,
+          ...amlForm,
+          nextReviewAt: amlForm.amlStatus === 'cleared' ? new Date(`${amlForm.nextReviewAt}T12:00:00Z`).toISOString() : undefined,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) setAmlError(data.error ?? 'Unable to save AML decision.');
+      else {
+        setSelectedAml(null);
+        await fetchData();
+      }
+    } catch {
+      setAmlError('Network error while saving the AML decision.');
+    } finally {
+      setAmlSaving(false);
+    }
+  }
+
   const openFlags     = flags.filter(f => f.status === 'open' || f.status === 'escalated');
   const criticalFlags = flags.filter(f => f.severity === 'critical' || f.severity === 'high');
   const pendingKyc    = kycQueue.filter(u => u.kycStatus === 'submitted');
+  const pendingAml    = amlUsers.filter(u => u.amlStatus !== 'cleared' && u.amlStatus !== 'blocked');
   const checklistPct  = CHECKLIST.length ? Math.round((CHECKLIST.filter(c => checklist[c.id]).length / CHECKLIST.length) * 100) : 0;
 
   const metrics = [
     { label: 'Open Flags',       value: openFlags.length,     color: '#EF4444', icon: Flag,         href: null },
     { label: 'Critical/High',    value: criticalFlags.length, color: '#DC2626', icon: AlertCircle,  href: null },
     { label: 'Pending KYC',      value: pendingKyc.length,    color: '#F59E0B', icon: Clock,        href: '/admin/kyc' },
-    { label: 'Compliance Score', value: `${checklistPct}%`,   color: checklistPct >= 80 ? '#10B981' : '#F59E0B', icon: Scale, href: null },
+    { label: 'Pending AML',      value: pendingAml.length,    color: '#F97316', icon: ShieldCheck,  href: null },
+    { label: 'Readiness Checklist', value: `${checklistPct}%`, color: checklistPct >= 80 ? '#10B981' : '#F59E0B', icon: Scale, href: null },
   ];
 
   return (
     <>
       <Helmet>
         <title>Compliance — City Gate Capital Admin</title>
-        <meta name="description" content="AML compliance centre — suspicious activity flags, KYC queue, regulatory checklist and SAR management." />
+        <meta name="description" content="Internal KYC and AML decision controls for the City Gate Capital product preview." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/admin/compliance" />
       </Helmet>
@@ -142,7 +216,7 @@ export default function AdminCompliance() {
             <h1 className="text-white text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)' }}>
               <Scale size={18} style={{ color: '#C9A84C' }} /> Compliance Centre
             </h1>
-            <p className="text-white/30 text-xs mt-0.5">AML monitoring, KYC oversight & regulatory compliance</p>
+            <p className="text-white/30 text-xs mt-0.5">KYC decisions, AML clearance and financial-access controls</p>
           </div>
           <button onClick={fetchData}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-white/50 hover:text-white text-xs transition-colors">
@@ -151,7 +225,7 @@ export default function AdminCompliance() {
         </div>
 
         {/* Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
           {metrics.map((m, i) => (
             <motion.div key={m.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               {m.href ? (
@@ -180,8 +254,9 @@ export default function AdminCompliance() {
         <div className="flex gap-1 mb-5 bg-white/[0.03] rounded-xl p-1 w-fit">
           {([
             { id: 'flags',     label: `AML Flags (${openFlags.length})` },
+            { id: 'aml',       label: `AML Decisions (${pendingAml.length})` },
             { id: 'kyc',       label: `KYC Queue (${pendingKyc.length})` },
-            { id: 'checklist', label: `Regulatory Checklist (${checklistPct}%)` },
+            { id: 'checklist', label: `Readiness Checklist (${checklistPct}%)` },
           ] as const).map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
               className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
@@ -238,6 +313,56 @@ export default function AdminCompliance() {
               </div>
             )}
 
+            {/* Persisted AML decisions */}
+            {activeTab === 'aml' && (
+              <div className="rounded-2xl border border-white/[0.05] overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <div className="px-5 py-3.5 border-b border-white/[0.05] flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-white/60 text-xs font-semibold uppercase tracking-[0.12em]">Customer AML Decisions</p>
+                    <p className="text-white/25 text-[10px] mt-1">Financial operations remain blocked unless KYC is current and AML is cleared.</p>
+                  </div>
+                  <span className="text-[10px] text-amber-300/70 border border-amber-500/20 bg-amber-500/8 px-2.5 py-1.5 rounded-lg">
+                    Provider screening evidence must be reviewed externally
+                  </span>
+                </div>
+                {amlUsers.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2 text-white/20">
+                    <Users size={24} />
+                    <p className="text-sm">No customer compliance records</p>
+                  </div>
+                ) : amlUsers.map((user, i) => {
+                  const cfg = AML_CFG[user.amlStatus] ?? AML_CFG.not_screened;
+                  return (
+                    <div key={user.id} className={`flex items-center gap-3 px-5 py-4 hover:bg-white/[0.025] transition-colors ${i < amlUsers.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${cfg.color}18`, border: `1px solid ${cfg.color}30` }}>
+                        {user.amlStatus === 'cleared' ? <ShieldCheck size={15} style={{ color: cfg.color }} /> : <ShieldX size={15} style={{ color: cfg.color }} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-white/80 text-xs font-semibold">{user.name}</p>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ color: cfg.color, background: `${cfg.color}15` }}>{cfg.label}</span>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-white/40">Risk: {user.amlRiskLevel}</span>
+                        </div>
+                        <p className="text-white/35 text-[10px] mt-1">{user.email} · KYC {user.kycStatus.replace(/_/g, ' ')} · {user.country ?? 'Country unknown'}</p>
+                        <p className={`text-[10px] mt-1 ${user.financialAccess.allowed ? 'text-emerald-400/70' : 'text-amber-300/60'}`}>
+                          {user.financialAccess.allowed ? 'Financial gate: permitted' : `Financial gate: blocked — ${user.financialAccess.message}`}
+                        </p>
+                      </div>
+                      <div className="hidden md:block text-right shrink-0">
+                        <p className="text-white/25 text-[9px] uppercase">Next review</p>
+                        <p className="text-white/50 text-[10px]">{user.amlNextReviewAt ? new Date(user.amlNextReviewAt).toLocaleDateString('en-GB') : 'Not scheduled'}</p>
+                      </div>
+                      <button onClick={() => openAmlDecision(user)}
+                        className="px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:brightness-110"
+                        style={{ background: 'rgba(201,168,76,0.12)', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.2)' }}>
+                        Decide
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {/* KYC Queue */}
             {activeTab === 'kyc' && (
               <div className="rounded-2xl border border-white/[0.05] overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)' }}>
@@ -279,7 +404,10 @@ export default function AdminCompliance() {
             {activeTab === 'checklist' && (
               <div className="rounded-2xl border border-white/[0.05] overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)' }}>
                 <div className="px-5 py-3.5 border-b border-white/[0.05] flex items-center justify-between">
-                  <p className="text-white/60 text-xs font-semibold uppercase tracking-[0.12em]">Regulatory Compliance Checklist</p>
+                  <div>
+                    <p className="text-white/60 text-xs font-semibold uppercase tracking-[0.12em]">Readiness Planning Checklist</p>
+                    <p className="text-white/25 text-[10px] mt-1">Browser-local planning aid only; checked items are not proof of legal or regulatory completion.</p>
+                  </div>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
                       <div className="h-full rounded-full transition-all" style={{ width: `${checklistPct}%`, background: checklistPct >= 80 ? '#10B981' : '#F59E0B' }} />
@@ -315,6 +443,75 @@ export default function AdminCompliance() {
           </>
         )}
       </AdminLayout>
+
+      {selectedAml && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button aria-label="Close AML decision" className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setSelectedAml(null)} />
+          <div className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#111] shadow-2xl p-6">
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <p className="text-white font-semibold">AML decision · {selectedAml.name}</p>
+                <p className="text-white/35 text-xs mt-1">{selectedAml.email}</p>
+              </div>
+              <button onClick={() => setSelectedAml(null)} className="p-2 rounded-lg text-white/35 hover:text-white hover:bg-white/5"><X size={16} /></button>
+            </div>
+
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/7 p-3 mb-5 text-[11px] leading-relaxed text-amber-100/65">
+              Record only a documented human decision supported by the approved KYC/AML provider, sanctions and PEP screening, source-of-funds review where required, and your applicable policy. This screen does not perform those checks.
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <label className="space-y-1.5">
+                <span className="text-[10px] uppercase tracking-wider text-white/35">AML decision</span>
+                <select value={amlForm.amlStatus} onChange={event => setAmlForm(form => ({ ...form, amlStatus: event.target.value as AmlStatus }))}
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-primary/50">
+                  <option value="not_screened">Not screened</option>
+                  <option value="pending">Pending</option>
+                  <option value="cleared">Cleared</option>
+                  <option value="review">Manual review</option>
+                  <option value="blocked">Blocked</option>
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-[10px] uppercase tracking-wider text-white/35">Risk level</span>
+                <select value={amlForm.amlRiskLevel} onChange={event => setAmlForm(form => ({ ...form, amlRiskLevel: event.target.value as AmlRiskLevel }))}
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-primary/50">
+                  <option value="unrated">Unrated</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+            </div>
+
+            {amlForm.amlStatus === 'cleared' && (
+              <label className="block space-y-1.5 mt-4">
+                <span className="text-[10px] uppercase tracking-wider text-white/35">Mandatory next review date</span>
+                <input type="date" value={amlForm.nextReviewAt} min={new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)}
+                  onChange={event => setAmlForm(form => ({ ...form, nextReviewAt: event.target.value }))}
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none focus:border-primary/50" />
+              </label>
+            )}
+
+            <label className="block space-y-1.5 mt-4">
+              <span className="text-[10px] uppercase tracking-wider text-white/35">Decision rationale</span>
+              <textarea value={amlForm.reason} onChange={event => setAmlForm(form => ({ ...form, reason: event.target.value }))}
+                maxLength={500} rows={4} placeholder="Document evidence reviewed, match disposition, source-of-funds assessment, and reason for this decision."
+                className="w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-primary/50" />
+            </label>
+
+            {amlError && <p className="mt-3 text-xs text-red-400">{amlError}</p>}
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={() => setSelectedAml(null)} className="px-4 py-2.5 rounded-xl border border-white/10 text-xs text-white/50 hover:text-white">Cancel</button>
+              <button onClick={saveAmlDecision} disabled={amlSaving}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-black text-xs font-bold disabled:opacity-50">
+                {amlSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                Save audited decision
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
