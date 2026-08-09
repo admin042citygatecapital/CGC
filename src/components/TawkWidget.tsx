@@ -79,6 +79,10 @@ export default function TawkWidget() {
       window.Tawk_API?.showWidget?.();
       window.Tawk_API?.maximize?.();
     });
+    // Tawk can report `onLoad` just before the consent-enabled iframe is ready
+    // to accept `maximize`. Retry once after the frame has mounted so the
+    // visitor's first click consistently opens the conversation.
+    window.setTimeout(() => safely(() => window.Tawk_API?.maximize?.()), 300);
     setChatOpen(true);
   }, []);
 
