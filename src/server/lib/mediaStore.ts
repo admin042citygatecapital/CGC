@@ -7,9 +7,9 @@
 import fs   from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { mediaDirectory } from './storagePaths.js';
+import { mediaDirectory, privateSubdirectory } from './storagePaths.js';
 
-const META_DIR  = '/private/media';
+const META_DIR  = privateSubdirectory('media');
 const META_FILE = path.join(META_DIR, 'index.jsonl');
 const ASSET_DIR = mediaDirectory;
 

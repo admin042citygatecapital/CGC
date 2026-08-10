@@ -11,8 +11,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { privateSubdirectory } from './storagePaths.js';
 
-const DIR = '/private/cms';
+const DIR = privateSubdirectory('cms');
 const FILES = {
   heroMedia:  path.join(DIR, 'hero_media.json'),
   logo:       path.join(DIR, 'logo.json'),

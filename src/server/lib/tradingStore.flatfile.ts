@@ -5,8 +5,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { TradingPosition, TradingOrder, TradeRecord, WatchlistEntry, AssetClass } from './tradingStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const TRADING_DIR = '/private/trading';
+const TRADING_DIR = privateSubdirectory('trading');
 function ensureDir() { if (!fs.existsSync(TRADING_DIR)) fs.mkdirSync(TRADING_DIR, { recursive: true }); }
 function fp(name: string) { ensureDir(); return path.join(TRADING_DIR, name); }
 function readAll<T>(file: string): T[] {

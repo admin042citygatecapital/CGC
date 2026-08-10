@@ -28,6 +28,7 @@ import { getStorageBackend } from '../../../lib/supabaseStorage.js';
 import { verifyManualSmtp } from '../../../lib/smtpTransport.js';
 import { isDatabaseConfigured, testConnection } from '../../../db/db.js';
 import { getOperationalBackupStatus } from '../../../lib/operationalBackup.js';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 import {
   LIVE_PROVIDER_ADAPTERS_IMPLEMENTED,
   getLiveFinancialReadinessGaps,
@@ -283,14 +284,15 @@ function checkFinancialLaunchGate(): ReadinessCheck {
 function checkAdminRouteProtection(): ReadinessCheck {
   // Structural check — the middleware is registered in entry.ts.
   // We verify the session store is accessible as a proxy for auth working.
-  const dirOk = dirReadable('/private/admin') || !fs.existsSync('/private/admin');
+  const adminDirectory = privateSubdirectory('admin');
+  const dirOk = dirReadable(adminDirectory) || !fs.existsSync(adminDirectory);
 
   if (!dirOk) {
     return {
       id: 'admin_routes', name: 'Admin Route Protection', subsystem: 'Security',
       status: 'FAIL', critical: true,
       message: 'Admin session store directory is not accessible.',
-      detail: '/private/admin is not readable. Admin auth middleware cannot persist sessions.',
+      detail: `${adminDirectory} is not readable. Admin auth middleware cannot persist sessions.`,
     };
   }
 

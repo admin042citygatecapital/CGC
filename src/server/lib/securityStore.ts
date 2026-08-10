@@ -6,14 +6,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { privateSubdirectory } from './storagePaths.js';
 
 // ── File paths ────────────────────────────────────────────────────────────────
 
-const FLAGS_FILE      = '/private/security/flags.jsonl';
-const IP_FILE         = '/private/security/ip-lists.json';
-const RULES_FILE      = '/private/security/flag-rules.json';
-const POLICY_FILE     = '/private/security/2fa-policy.json';
-const USER_SESS_FILE  = '/private/security/user-sessions.jsonl';
+const FLAGS_FILE      = privateSubdirectory('security/flags.jsonl');
+const IP_FILE         = privateSubdirectory('security/ip-lists.json');
+const RULES_FILE      = privateSubdirectory('security/flag-rules.json');
+const POLICY_FILE     = privateSubdirectory('security/2fa-policy.json');
+const USER_SESS_FILE  = privateSubdirectory('security/user-sessions.jsonl');
 
 function ensureDir(file: string) {
   const dir = path.dirname(file);
@@ -395,7 +396,7 @@ export function terminateAllUserSessions(userId?: string): number {
 
 // ── Audit Log (enhanced) ──────────────────────────────────────────────────────
 
-const AUDIT_FILE = '/private/admin/audit.jsonl';
+const AUDIT_FILE = privateSubdirectory('admin/audit.jsonl');
 
 export interface AuditEntry {
   id:       string;

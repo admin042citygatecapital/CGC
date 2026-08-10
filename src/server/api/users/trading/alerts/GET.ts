@@ -6,8 +6,9 @@ import type { Request, Response } from 'express';
 import { findUserBySessionToken } from '../../../../lib/userStore.js';
 import { getLivePrice } from '../../../../lib/tradingStore.js';
 import fs from 'node:fs';
+import { privateSubdirectory } from '../../../../lib/storagePaths.js';
 
-const ALERTS_FILE = '/private/trading/alerts.jsonl';
+const ALERTS_FILE = privateSubdirectory('trading/alerts.jsonl');
 
 interface PriceAlert {
   id: string; userId: string; symbol: string; assetClass: string;

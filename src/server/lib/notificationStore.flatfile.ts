@@ -5,8 +5,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import type { Notification } from './notificationStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const NOTIF_FILE = '/private/notifications/notifications.jsonl';
+const NOTIF_FILE = privateSubdirectory('notifications/notifications.jsonl');
 
 function ensureDir() {
   const dir = path.dirname(NOTIF_FILE);

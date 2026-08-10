@@ -3,8 +3,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { privateSubdirectory } from './storagePaths.js';
 
-const STORE_PATH = '/private/cms/links.json';
+const STORE_PATH = privateSubdirectory('cms/links.json');
 
 export interface ExternalLink {
   id: string;

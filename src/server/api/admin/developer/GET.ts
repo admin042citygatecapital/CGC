@@ -14,6 +14,7 @@ import fs   from 'node:fs';
 import path from 'node:path';
 import os   from 'node:os';
 import { buildEnvReport } from '../../../lib/envValidator.js';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
 // ─── Route catalogue (static — derived from entry.ts registration) ────────────
 
@@ -253,31 +254,31 @@ interface DbFile {
 
 function scanDbFiles(): DbFile[] {
   const KNOWN: Array<{ name: string; path: string; type: 'jsonl' | 'json' }> = [
-    { name: 'Users',           path: '/private/users/users.jsonl',                type: 'jsonl' },
-    { name: 'Transactions',    path: '/private/transactions/transactions.jsonl',  type: 'jsonl' },
-    { name: 'Balance Txns',    path: '/private/balance/transactions.jsonl',       type: 'jsonl' },
-    { name: 'Cards',           path: '/private/cards/cards.jsonl',                type: 'jsonl' },
-    { name: 'Wallets',         path: '/private/wallets/addresses.jsonl',          type: 'jsonl' },
-    { name: 'Support Convs',   path: '/private/support/conversations.jsonl',      type: 'jsonl' },
-    { name: 'Notifications',   path: '/private/notifications/notifications.jsonl',type: 'jsonl' },
-    { name: 'Newsletter Subs', path: '/private/newsletter/subscribers.jsonl',     type: 'jsonl' },
-    { name: 'Newsletter Log',  path: '/private/newsletter/sent-log.jsonl',        type: 'jsonl' },
-    { name: 'Security Flags',  path: '/private/security/flags.jsonl',             type: 'jsonl' },
-    { name: 'Email Queue',     path: '/private/email/queue.jsonl',                type: 'jsonl' },
-    { name: 'Email Logs',      path: '/private/email/logs.jsonl',                 type: 'jsonl' },
-    { name: 'Audit Log',       path: '/private/admin/audit.jsonl',                type: 'jsonl' },
-    { name: 'Audit (legacy)',  path: '/private/audit/log.jsonl',                  type: 'jsonl' },
-    { name: 'Analytics Events',path: '/private/analytics/events.jsonl',           type: 'jsonl' },
-    { name: 'Access Log',      path: '/private/logs/access.jsonl',                type: 'jsonl' },
-    { name: 'Login Log',       path: '/private/logs/login.jsonl',                 type: 'jsonl' },
-    { name: 'Threats Log',     path: '/private/logs/threats.jsonl',               type: 'jsonl' },
-    { name: 'Fee History',     path: '/private/cms/fee-history.jsonl',            type: 'jsonl' },
-    { name: 'App Config',      path: '/private/app_config.json',                  type: 'json'  },
-    { name: 'KYC Settings',    path: '/private/kyc/settings.json',                type: 'json'  },
-    { name: 'SMTP Config',     path: '/private/smtp/config.json',                 type: 'json'  },
-    { name: 'Security IP Lists',path: '/private/security/ip-lists.json',          type: 'json'  },
-    { name: 'Security 2FA',    path: '/private/security/2fa-policy.json',         type: 'json'  },
-    { name: 'Security Flags Config', path: '/private/security/flag-rules.json',   type: 'json'  },
+    { name: 'Users',           path: privateSubdirectory('users/users.jsonl'),                 type: 'jsonl' },
+    { name: 'Transactions',    path: privateSubdirectory('transactions/transactions.jsonl'),   type: 'jsonl' },
+    { name: 'Balance Txns',    path: privateSubdirectory('balance/transactions.jsonl'),        type: 'jsonl' },
+    { name: 'Cards',           path: privateSubdirectory('cards/cards.jsonl'),                 type: 'jsonl' },
+    { name: 'Wallets',         path: privateSubdirectory('wallets/wallets.json'),              type: 'json'  },
+    { name: 'Support Convs',   path: privateSubdirectory('support/conversations.jsonl'),       type: 'jsonl' },
+    { name: 'Notifications',   path: privateSubdirectory('notifications/notifications.jsonl'), type: 'jsonl' },
+    { name: 'Newsletter Subs', path: privateSubdirectory('newsletter/subscribers.jsonl'),      type: 'jsonl' },
+    { name: 'Newsletter Log',  path: privateSubdirectory('newsletter/sent-log.jsonl'),         type: 'jsonl' },
+    { name: 'Security Flags',  path: privateSubdirectory('security/flags.jsonl'),              type: 'jsonl' },
+    { name: 'Email Queue',     path: privateSubdirectory('email/queue.jsonl'),                 type: 'jsonl' },
+    { name: 'Email Logs',      path: privateSubdirectory('email/logs.jsonl'),                  type: 'jsonl' },
+    { name: 'Audit Log',       path: privateSubdirectory('admin/audit.jsonl'),                 type: 'jsonl' },
+    { name: 'Audit (legacy)',  path: privateSubdirectory('audit/log.jsonl'),                   type: 'jsonl' },
+    { name: 'Analytics Events',path: privateSubdirectory('analytics/events.jsonl'),            type: 'jsonl' },
+    { name: 'Access Log',      path: privateSubdirectory('logs/access.jsonl'),                 type: 'jsonl' },
+    { name: 'Login Log',       path: privateSubdirectory('logs/login.jsonl'),                  type: 'jsonl' },
+    { name: 'Threats Log',     path: privateSubdirectory('logs/threats.jsonl'),                type: 'jsonl' },
+    { name: 'Fee History',     path: privateSubdirectory('cms/fee-history.jsonl'),             type: 'jsonl' },
+    { name: 'App Config',      path: privateSubdirectory('app_config.json'),                   type: 'json'  },
+    { name: 'KYC Settings',    path: privateSubdirectory('kyc/settings.json'),                 type: 'json'  },
+    { name: 'SMTP Config',     path: privateSubdirectory('smtp/config.json'),                  type: 'json'  },
+    { name: 'Security IP Lists',path: privateSubdirectory('security/ip-lists.json'),           type: 'json'  },
+    { name: 'Security 2FA',    path: privateSubdirectory('security/2fa-policy.json'),          type: 'json'  },
+    { name: 'Security Flags Config', path: privateSubdirectory('security/flag-rules.json'),    type: 'json'  },
   ];
 
   return KNOWN.map(f => {
@@ -387,8 +388,8 @@ function getDependencyHealth() {
 
 function getErrorMonitor() {
   // Read recent threat/error entries from logs
-  const THREATS_FILE = '/private/logs/threats.jsonl';
-  const ACCESS_FILE  = '/private/logs/access.jsonl';
+  const THREATS_FILE = privateSubdirectory('logs/threats.jsonl');
+  const ACCESS_FILE  = privateSubdirectory('logs/access.jsonl');
 
   let recentErrors: Array<{ ts: string; type: string; detail: string; ip?: string }> = [];
   let http5xx = 0;

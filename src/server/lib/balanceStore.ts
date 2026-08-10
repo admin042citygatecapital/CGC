@@ -4,8 +4,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { privateSubdirectory } from './storagePaths.js';
 
-const TX_FILE = '/private/balance/transactions.jsonl';
+const TX_FILE = privateSubdirectory('balance/transactions.jsonl');
 
 export type BalanceTxType = 'manual_credit' | 'manual_debit';
 

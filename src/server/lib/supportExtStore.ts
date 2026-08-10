@@ -10,8 +10,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { privateSubdirectory } from './storagePaths.js';
 
-const DIR = '/private/support';
+const DIR = privateSubdirectory('support');
 const FILES = {
   messages:     path.join(DIR, 'messages.jsonl'),
   contactForms: path.join(DIR, 'contact_forms.jsonl'),

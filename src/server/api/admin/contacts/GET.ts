@@ -5,8 +5,9 @@
  */
 import type { Request, Response } from 'express';
 import { readFileSync, existsSync } from 'node:fs';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
-const STORE_FILE = '/private/contacts/submissions.jsonl';
+const STORE_FILE = privateSubdirectory('contacts/submissions.jsonl');
 
 interface Submission {
   id: string; firstName: string; lastName: string; email: string;

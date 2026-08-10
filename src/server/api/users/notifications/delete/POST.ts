@@ -6,8 +6,9 @@
 import type { Request, Response } from 'express';
 import { findUserBySessionToken } from '../../../../lib/userStore.js';
 import fs from 'node:fs';
+import { privateSubdirectory } from '../../../../lib/storagePaths.js';
 
-const NOTIF_FILE = '/private/notifications/notifications.jsonl';
+const NOTIF_FILE = privateSubdirectory('notifications/notifications.jsonl');
 
 export default async function handler(req: Request, res: Response) {
   const auth  = req.headers.authorization ?? '';

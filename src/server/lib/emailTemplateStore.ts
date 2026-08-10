@@ -12,8 +12,9 @@ import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { config as configTable } from '../db/schema.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const DATA_DIR  = '/private/email';
+const DATA_DIR  = privateSubdirectory('email');
 const DATA_FILE = path.join(DATA_DIR, 'templates.json');
 const CONFIG_KEY = 'email_templates';
 

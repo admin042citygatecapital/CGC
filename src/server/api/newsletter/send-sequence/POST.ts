@@ -13,8 +13,9 @@ import { getActiveSubscribers } from '../../../lib/subscriberStore.js';
 import { NURTURE_SEQUENCE } from '../../../lib/nurtureSequence.js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
-const SEQUENCE_LOG_DIR = '/private/newsletter';
+const SEQUENCE_LOG_DIR = privateSubdirectory('newsletter');
 const STEP_LOG_FILE    = path.join(SEQUENCE_LOG_DIR, 'sequence-steps.json');
 const SENT_LOG_FILE    = path.join(SEQUENCE_LOG_DIR, 'sent-log.jsonl');
 

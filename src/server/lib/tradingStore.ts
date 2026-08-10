@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import { eq, desc, and, sql as drizzleSql } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { tradingPositions, tradingOrders, tradingTrades, tradingWatchlist } from '../db/schema.js';
+import { privateSubdirectory } from './storagePaths.js';
 import type {
   TradingPosition as DbPosition,
   TradingOrder as DbOrder,
@@ -424,7 +425,7 @@ export interface PriceAlert {
   createdAt:   string;
 }
 
-const ALERTS_FILE = '/private/trading/alerts.jsonl';
+const ALERTS_FILE = privateSubdirectory('trading/alerts.jsonl');
 
 export function getAlerts(userId: string): PriceAlert[] {
   try {

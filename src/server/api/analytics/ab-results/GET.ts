@@ -1,8 +1,9 @@
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import type { AnalyticsEvent } from '../event/POST.js';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
-const DATA_FILE = '/private/analytics/events.jsonl';
+const DATA_FILE = privateSubdirectory('analytics/events.jsonl');
 
 function readEvents(): AnalyticsEvent[] {
   if (!fs.existsSync(DATA_FILE)) return [];

@@ -7,8 +7,9 @@ import type { Request, Response } from 'express';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { appendAudit } from '../../../lib/auditLog.js';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
-const STORE_DIR  = '/private/admin';
+const STORE_DIR  = privateSubdirectory('admin');
 const STORE_FILE = join(STORE_DIR, 'settings.json');
 
 export default function handler(req: Request, res: Response) {

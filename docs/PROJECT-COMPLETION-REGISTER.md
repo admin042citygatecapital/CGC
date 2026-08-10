@@ -44,6 +44,8 @@ This register reconciles the original shared project conversation (230 user mess
 - Removed unmeasured newsletter open/click percentages from administration reporting; campaign delivery records now state that engagement tracking is not configured and the UI displays “Not tracked.”
 - Removed API reference files from the public asset tree and placed downloads behind administrator authentication and security-role authorization.
 - Reclassified the 2026-06-04 API documents as a historical reference snapshot, removed stale route-count claims from the administration page and identified the current Developer Center/source registry as authoritative.
+- Routed active flat-file fallback stores and administrator diagnostics through `PRIVATE_DATA_ROOT` instead of a fixed `/private` path, preserving deployment portability and test isolation.
+- Added a regression test that performs representative balance/security writes under a temporary root and rejects fixed private-data literals in active API/store source.
 
 ## Work that is genuinely incomplete
 

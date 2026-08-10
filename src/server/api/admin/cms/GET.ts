@@ -4,8 +4,9 @@
  */
 import type { Request, Response } from 'express';
 import { readFileSync, existsSync } from 'node:fs';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
-const STORE_FILE = '/private/admin/cms.json';
+const STORE_FILE = privateSubdirectory('admin/cms.json');
 
 export default function handler(req: Request, res: Response) {
 

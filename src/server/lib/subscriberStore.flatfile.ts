@@ -5,8 +5,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import type { Subscriber } from './subscriberStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const SUB_FILE = '/private/subscribers/subscribers.jsonl';
+const SUB_FILE = privateSubdirectory('subscribers/subscribers.jsonl');
 
 function ensureDir() { const dir = path.dirname(SUB_FILE); if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); }
 function loadAll(): Subscriber[] {

@@ -20,6 +20,7 @@ import { queryTransactions }   from './transactionStore.js';
 import { readRatesConfig }     from './ratesStore.js';
 import { queryConversations }  from './supportStore.js';
 import { loadAlerts }          from './securityCenterStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -645,7 +646,7 @@ export function supportReport(q: ReportQuery) {
 
 // ─── 10. EMAILS REPORT ───────────────────────────────────────────────────────
 
-const EMAIL_LOG_FILE = '/private/email/email-log.jsonl';
+const EMAIL_LOG_FILE = privateSubdirectory('email/email-log.jsonl');
 
 interface EmailLogEntry {
   id: string; ts: string; to: string; subject: string;
@@ -743,7 +744,7 @@ export function securityReport(q: ReportQuery) {
   const unresolved = inPeriod.filter(a => !a.resolved).length;
 
   // Login history from security log
-  const LOGIN_LOG = '/private/security/login-log.jsonl';
+  const LOGIN_LOG = privateSubdirectory('security/login-log.jsonl');
   let loginEvents: Array<{ ts: string; result: string; actor: string; ip: string }> = [];
   try {
     if (fs.existsSync(LOGIN_LOG)) {

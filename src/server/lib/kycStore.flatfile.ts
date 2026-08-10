@@ -4,9 +4,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { KycSettings, KycNote } from './kycStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const SETTINGS_FILE = '/private/kyc/settings.json';
-const NOTES_FILE    = '/private/kyc/admin-notes.jsonl';
+const SETTINGS_FILE = privateSubdirectory('kyc/settings.json');
+const NOTES_FILE    = privateSubdirectory('kyc/admin-notes.jsonl');
 
 const DEFAULT_SETTINGS: KycSettings = { expiryMonths: 12, renewalReminderDays: 30, autoRestrictExpired: true, updatedAt: new Date().toISOString() };
 

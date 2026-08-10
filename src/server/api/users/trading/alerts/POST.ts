@@ -9,8 +9,9 @@ import { type AssetClass } from '../../../../lib/tradingStore.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { privateSubdirectory } from '../../../../lib/storagePaths.js';
 
-const ALERTS_DIR  = '/private/trading';
+const ALERTS_DIR  = privateSubdirectory('trading');
 const ALERTS_FILE = path.join(ALERTS_DIR, 'alerts.jsonl');
 
 interface PriceAlert {

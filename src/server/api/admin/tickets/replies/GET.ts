@@ -4,8 +4,9 @@
  */
 import type { Request, Response } from 'express';
 import { readFileSync, existsSync } from 'node:fs';
+import { privateSubdirectory } from '../../../../lib/storagePaths.js';
 
-const REPLIES_FILE = '/private/tickets/replies.jsonl';
+const REPLIES_FILE = privateSubdirectory('tickets/replies.jsonl');
 
 interface Reply {
   id: string; ticketId: string; from: string;

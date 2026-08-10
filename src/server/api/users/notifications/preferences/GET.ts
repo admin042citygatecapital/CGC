@@ -6,8 +6,9 @@ import type { Request, Response } from 'express';
 import { findUserBySessionToken } from '../../../../lib/userStore.js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { privateSubdirectory } from '../../../../lib/storagePaths.js';
 
-const PREFS_DIR  = '/private/notification-prefs';
+const PREFS_DIR  = privateSubdirectory('notification-prefs');
 const prefsFile  = (userId: string) => path.join(PREFS_DIR, `${userId}.json`);
 
 export interface NotifPrefs {

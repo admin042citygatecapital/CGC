@@ -7,9 +7,10 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { getSecret } from '#airo/secrets';
 import type { VirtualCard, CardActivity } from './cardStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const CARDS_FILE    = '/private/cards/cards.jsonl';
-const ACTIVITY_FILE = '/private/cards/activity.jsonl';
+const CARDS_FILE    = privateSubdirectory('cards/cards.jsonl');
+const ACTIVITY_FILE = privateSubdirectory('cards/activity.jsonl');
 const ENC_PREFIX    = 'enc:';
 const ALGORITHM     = 'aes-256-gcm';
 

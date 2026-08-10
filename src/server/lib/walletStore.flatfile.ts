@@ -4,8 +4,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { WalletAddress } from './walletStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const WALLETS_FILE = '/private/wallets/wallets.json';
+const WALLETS_FILE = privateSubdirectory('wallets/wallets.json');
 
 const DEFAULTS: WalletAddress[] = [
   { id: 'btc', symbol: 'BTC', name: 'Bitcoin', network: 'Bitcoin Network', address: '', minDeposit: 0.0001, confirmations: 3, enabled: true, updatedAt: new Date().toISOString() },

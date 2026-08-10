@@ -7,8 +7,9 @@ import type { Request, Response } from 'express';
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { appendAudit } from '../../../../lib/auditLog.js';
+import { privateSubdirectory } from '../../../../lib/storagePaths.js';
 
-const STORE_DIR  = '/private/tickets';
+const STORE_DIR  = privateSubdirectory('tickets');
 const REPLIES_FILE = join(STORE_DIR, 'replies.jsonl');
 
 export default function handler(req: Request, res: Response) {

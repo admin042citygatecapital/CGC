@@ -1,8 +1,9 @@
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
-const DATA_DIR = '/private/analytics';
+const DATA_DIR = privateSubdirectory('analytics');
 const DATA_FILE = path.join(DATA_DIR, 'events.jsonl');
 
 /** All event types tracked across the site */

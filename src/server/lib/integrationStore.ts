@@ -11,8 +11,9 @@
 import fs   from 'node:fs';
 import path from 'node:path';
 import { getSecret } from '#airo/secrets';
+import { privateSubdirectory } from './storagePaths.js';
 
-const DIR  = '/private/config';
+const DIR  = privateSubdirectory('config');
 const FILE = path.join(DIR, 'integrations.json');
 
 // ─── Integration IDs ──────────────────────────────────────────────────────────

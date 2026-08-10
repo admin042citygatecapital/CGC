@@ -459,9 +459,9 @@ export default function NewsletterPage() {
               <div>
                 <p className="text-xs font-semibold text-yellow-400 mb-1">Email delivery not yet configured</p>
                 <p className="text-xs text-foreground/40 leading-relaxed">
-                  Emails are currently <strong className="text-foreground/60">logged to /private/newsletter/sent-log.jsonl</strong> but not delivered.
+                  Emails are currently <strong className="text-foreground/60">recorded in private server storage</strong> but not delivered.
                   To enable real delivery, connect an SMTP provider (e.g. SendGrid, Mailgun, or Resend) via the email integration.
-                  The sequence logic, templates, and subscriber tracking are fully operational.
+                  The preview sequence workflow, templates, and subscriber records remain available for testing.
                 </p>
               </div>
             </div>

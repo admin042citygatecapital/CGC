@@ -6,8 +6,9 @@ import type { Request, Response } from 'express';
 import { findUserBySessionToken } from '../../../lib/userStore.js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
-const BENE_DIR  = '/private/beneficiaries';
+const BENE_DIR  = privateSubdirectory('beneficiaries');
 const beneFile  = (userId: string) => path.join(BENE_DIR, `${userId}.json`);
 
 export interface Beneficiary {

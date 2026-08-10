@@ -6,8 +6,9 @@
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import { findUserById } from '../../../../../lib/userStore.js';
+import { privateSubdirectory } from '../../../../../lib/storagePaths.js';
 
-const DEVICES_FILE = '/private/users/devices.jsonl';
+const DEVICES_FILE = privateSubdirectory('users/devices.jsonl');
 
 interface DeviceRecord {
   userId: string;

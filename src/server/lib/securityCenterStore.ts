@@ -17,8 +17,9 @@
 import fs   from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { privateSubdirectory } from './storagePaths.js';
 
-const DIR = '/private/security';
+const DIR = privateSubdirectory('security');
 function ensureDir(file: string) {
   const d = path.dirname(file);
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
