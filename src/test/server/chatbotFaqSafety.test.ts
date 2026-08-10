@@ -62,6 +62,23 @@ describe('chatbot FAQ safety', () => {
     expect(fs.readFileSync(path.join(chatbotDir, 'faq.jsonl'), 'utf8')).not.toMatch(/typically settle/i);
   });
 
+  it('runs the FAQ safety migration during server initialisation', async () => {
+    const chatbotDir = path.join(root, 'chatbot');
+    const legacy = {
+      id: 'legacy-card',
+      question: 'How do I freeze my card?',
+      answer: 'Go to Dashboard → Cards → select your card → tap "Freeze".',
+      category: 'Cards', enabled: true, triggerKeywords: ['freeze card'],
+      viewCount: 0, helpfulCount: 0,
+      createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+    fs.writeFileSync(path.join(chatbotDir, 'faq.jsonl'), `${JSON.stringify(legacy)}\n`, 'utf8');
+
+    const store = await import('../../server/lib/smartsuppStore.js');
+    expect(store.initializeFaqSafety()).toBe(1);
+    expect(fs.readFileSync(path.join(chatbotDir, 'faq.jsonl'), 'utf8')).toContain('No payment card is issued');
+  });
+
   it('rejects unsafe answers through the administration endpoint', async () => {
     const handler = (await import('../../server/api/admin/smartsupp/faq/POST.js')).default;
     const result = response();

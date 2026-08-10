@@ -452,6 +452,10 @@ export function getFaq(opts: { category?: string; enabled?: boolean } = {}): Faq
   return all;
 }
 
+export function initializeFaqSafety(): number {
+  return getFaq().length;
+}
+
 export function upsertFaq(data: Partial<FaqEntry> & { id?: string }): FaqEntry {
   const unsupportedClaim = findUnsupportedFaqClaim(`${data.question ?? ''}\n${data.answer ?? ''}`);
   if (unsupportedClaim) throw new UnsupportedFaqClaimError(unsupportedClaim);

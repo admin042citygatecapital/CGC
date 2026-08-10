@@ -20,6 +20,7 @@ import admin_operations_post from "./api/admin/operations/POST";
 import admin_security_logs_get from "./api/admin/security/logs/GET";
 import admin_trading_logs_get from "./api/admin/trading/logs/GET";
 import admin_users_id_get from "./api/admin/users/[id]/GET";
+import { initializeFaqSafety } from "./lib/smartsuppStore";
 
 // <api-imports>
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
@@ -353,6 +354,8 @@ function normalizeCommerceApiBaseUrlEnv() {
 }
 
 normalizeCommerceApiBaseUrlEnv();
+
+initializeFaqSafety();
 
 const app = express();
 
