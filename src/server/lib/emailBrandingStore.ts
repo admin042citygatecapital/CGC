@@ -6,6 +6,7 @@
  */
 import { eq } from 'drizzle-orm';
 import { getSecret } from '#airo/secrets';
+import { DEFAULT_BUSINESS_ADDRESS, normalizeBusinessAddress } from '../../lib/businessLocation.js';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { config as configTable } from '../db/schema.js';
 
@@ -39,7 +40,7 @@ function environmentDefaults(): EmailBrandingConfig {
     websiteButtonLabel: env('EMAIL_WEBSITE_BUTTON_LABEL', 'Open City Gate Capital'),
     supportEmail: env('EMAIL_SUPPORT_ADDRESS', 'support@citygate.capital'),
     supportPhone: env('EMAIL_SUPPORT_PHONE', '+44 7888 382458'),
-    postalAddress: env('EMAIL_POSTAL_ADDRESS', '1 Canada Square, Canary Wharf, London'),
+    postalAddress: normalizeBusinessAddress(env('EMAIL_POSTAL_ADDRESS', DEFAULT_BUSINESS_ADDRESS)),
     primaryColor: env('EMAIL_PRIMARY_COLOR', '#C9A84C'),
     footerMessage: env('EMAIL_FOOTER_MESSAGE', 'Secure access to your City Gate Capital account and services.'),
     updatedAt: new Date().toISOString(),
@@ -50,7 +51,8 @@ function environmentDefaults(): EmailBrandingConfig {
 let cache: Partial<EmailBrandingConfig> | null = null;
 
 export function loadEmailBranding(): EmailBrandingConfig {
-  return { ...environmentDefaults(), ...(cache ?? {}) };
+  const branding = { ...environmentDefaults(), ...(cache ?? {}) };
+  return { ...branding, postalAddress: normalizeBusinessAddress(branding.postalAddress) };
 }
 
 function normalizeUrl(value: string, field: string): string {
@@ -117,4 +119,3 @@ export async function loadEmailBrandingFromDb(): Promise<void> {
     console.warn(JSON.stringify({ event: 'emailBranding.load.skipped', error: String(error) }));
   }
 }
-

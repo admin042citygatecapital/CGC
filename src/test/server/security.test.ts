@@ -121,6 +121,7 @@ describe('securityHeaders', () => {
     expect(csp).toContain('https://embed.tawk.to');
     expect(csp).toContain('wss://*.tawk.to');
     expect(csp).toContain('frame-src https://*.tawk.to https://*.tawk.link');
+    expect(csp).toContain('https://www.google.com https://maps.google.com');
   });
 
   it('sets HSTS on HTTPS requests', async () => {

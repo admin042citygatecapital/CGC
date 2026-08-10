@@ -78,7 +78,7 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
       "manifest-src 'self'",
       "media-src 'self' blob:",
       "object-src 'none'",
-      "frame-src https://*.tawk.to https://*.tawk.link",
+      "frame-src https://*.tawk.to https://*.tawk.link https://www.google.com https://maps.google.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       // form-action: self only — prevents form hijacking to external URLs

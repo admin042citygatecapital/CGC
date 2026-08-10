@@ -2,7 +2,8 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, Send, CheckCircle, MessageCircle, ArrowRight, ExternalLink } from 'lucide-react';
+import { Phone, Mail, Send, CheckCircle, MessageCircle, ArrowRight, ExternalLink, MapPin, Navigation } from 'lucide-react';
+import { resolveBusinessLocation, type BusinessLocation } from '@/lib/businessLocation';
 
 interface SocialLink {
   platformId: string; url: string; enabled: boolean;
@@ -36,12 +37,31 @@ export default function ContactPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', company: '', subject: 'General Inquiry', message: '' });
   const [socials, setSocials] = useState<SocialLink[]>([]);
+  const [businessLocation, setBusinessLocation] = useState<BusinessLocation>(() => resolveBusinessLocation({}));
 
   useEffect(() => {
     fetch('/api/settings/social')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (Array.isArray(d?.links)) setSocials(d.links.filter((l: SocialLink) => l.showInContact)); })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadLocation = () => {
+      fetch('/api/settings/website', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (active && d?.data?.location?.address) setBusinessLocation(d.data.location as BusinessLocation);
+        })
+        .catch(() => {});
+    };
+    loadLocation();
+    const timer = window.setInterval(loadLocation, 15_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -109,6 +129,7 @@ export default function ContactPage() {
               { '@type': 'ContactPoint', contactType: 'product preview support', telephone: '+447888382458', email: 'support@citygate.capital', availableLanguage: 'English' },
               { '@type': 'ContactPoint', contactType: 'general inquiry', email: 'info@citygate.capital', availableLanguage: 'English' },
             ],
+            address: businessLocation.address,
           },
         }) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -208,6 +229,7 @@ export default function ContactPage() {
                   { icon: Phone,  title: 'Phone',          detail: '+44 7888 382458',                       href: 'tel:+447888382458' },
                   { icon: Mail,   title: 'General',        detail: 'info@citygate.capital',                 href: 'mailto:info@citygate.capital' },
                   { icon: Mail,   title: 'Support',        detail: 'support@citygate.capital',              href: 'mailto:support@citygate.capital' },
+                  { icon: MapPin, title: 'Office',         detail: businessLocation.address,               href: businessLocation.directionsUrl },
                 ].map((item) => (
                   <div key={item.title} className="flex items-start gap-4 p-4 glass rounded-2xl border border-primary/10 hover:border-primary/20 transition-colors group">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
@@ -223,6 +245,31 @@ export default function ContactPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-primary/15 bg-black/20 shadow-2xl shadow-black/20">
+                <iframe
+                  title="City Gate Capital office on Google Maps"
+                  src={businessLocation.mapEmbedUrl}
+                  className="h-80 w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-primary/10 px-4 py-4">
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <MapPin size={16} className="mt-0.5 shrink-0 text-primary" />
+                    <p className="text-sm leading-relaxed text-foreground/65">{businessLocation.address}</p>
+                  </div>
+                  <a
+                    href={businessLocation.directionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-primary/20 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  >
+                    <Navigation size={13} /> Get directions
+                  </a>
+                </div>
               </div>
 
             </motion.div>

@@ -5,9 +5,11 @@ import { motion } from 'motion/react';
 import {
   Save, CheckCircle, Palette, Navigation, Image, Type,
   Layout, Code, Eye, Smartphone, Monitor, Tablet, AlertCircle,
+  MapPin, ExternalLink,
 } from 'lucide-react';
 import AdminLayout from '@/layouts/AdminLayout';
 import { useAdminAuth, authHeaders } from '@/lib/adminAuth';
+import { DEFAULT_BUSINESS_ADDRESS, resolveBusinessLocation } from '@/lib/businessLocation';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -91,7 +93,7 @@ const DEFAULT: WebsiteSettings = {
   footerTagline: 'Premium digital banking for the modern world. Secure, fast, and built for global citizens who demand more.',
   footerEmail: 'info@citygate.capital',
   footerPhone: '+44 7888 382458',
-  footerAddress: '1 Canada Square, Canary Wharf, London',
+  footerAddress: DEFAULT_BUSINESS_ADDRESS,
   footerCopyright: '© {year} City Gate Capital Ltd. All rights reserved.',
   showNewsletterInFooter: true,
   showTrustBadgesInFooter: true,
@@ -131,7 +133,12 @@ export default function AdminWebsite() {
   useEffect(() => {
     fetch('/api/admin/website', { headers: authHeaders() })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.settings) setCfg(prev => ({ ...prev, ...d.settings })); })
+      .then(d => {
+        if (d?.settings) {
+          const location = resolveBusinessLocation(d.settings);
+          setCfg(prev => ({ ...prev, ...d.settings, footerAddress: location.address }));
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -202,6 +209,8 @@ export default function AdminWebsite() {
       </div>
     </div>
   );
+
+  const businessLocation = resolveBusinessLocation({ footerAddress: cfg.footerAddress });
 
   return (
     <>
@@ -411,7 +420,38 @@ export default function AdminWebsite() {
                   <Field k="footerEmail" label="Contact Email" placeholder="info@citygate.capital" />
                   <Field k="footerPhone" label="Phone Number" placeholder="+44 7888 382458" />
                 </div>
-                <Field k="footerAddress" label="Address" placeholder="1 Canada Square, London" />
+                <TextArea k="footerAddress" label="Business Address" rows={3} />
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
+                    <div className="flex items-start gap-2">
+                      <MapPin size={15} className="mt-0.5 shrink-0 text-primary" />
+                      <div>
+                        <p className="text-xs font-semibold text-white">Live Google Map Preview</p>
+                        <p className="mt-0.5 max-w-xl text-[11px] text-white/40">{businessLocation.address}</p>
+                      </div>
+                    </div>
+                    <a
+                      href={businessLocation.directionsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-[#F0D080]"
+                    >
+                      Open in Google Maps <ExternalLink size={12} />
+                    </a>
+                  </div>
+                  <iframe
+                    key={businessLocation.mapEmbedUrl}
+                    title="Business address map preview"
+                    src={businessLocation.mapEmbedUrl}
+                    className="h-72 w-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                  />
+                </div>
+                <p className="text-[11px] leading-relaxed text-white/35">
+                  The preview changes while you type. Select Save Changes to publish the address and map to the contact page and footer.
+                </p>
                 <Field k="footerCopyright" label="Copyright Text (use {year} for dynamic year)" placeholder="© {year} City Gate Capital Ltd." />
                 <Toggle k="showNewsletterInFooter" label="Newsletter Signup" desc="Show newsletter form in footer" />
                 <Toggle k="showTrustBadgesInFooter" label="Trust Badges" desc="Show preview safeguards and launch-status badges" />

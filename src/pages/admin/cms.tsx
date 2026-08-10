@@ -52,7 +52,7 @@ const INITIAL = {
   ogImage: 'https://citygate.capital/api/og',
   footerEmail: 'info@citygate.capital',
   footerPhone: '+44 7888 382458',
-  footerAddress: '1 Canada Square, Canary Wharf, London',
+  footerAddress: 'Citygate, 51 Mosley Street, Manchester, M2 3HQ, United Kingdom',
   welcomeEmailSubject: 'Welcome to City Gate Capital',
   welcomeEmailBody: 'Dear {{name}},\n\nWelcome to the City Gate Capital product preview. Your demonstration profile has been created successfully. No live financial account or payment service has been opened.\n\nBest regards,\nCity Gate Capital Team',
   bannerText: 'Product preview: balances and transactions are demonstrations.',
