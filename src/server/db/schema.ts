@@ -96,6 +96,14 @@ export const emailQueueStatusEnum = pgEnum('email_queue_status', [
 
 export const accountTierEnum = pgEnum('account_tier', ['personal', 'savings', 'business']);
 
+export const sponsorEvidenceStatusEnum = pgEnum('sponsor_evidence_status', [
+  'draft', 'submitted', 'approved', 'rejected', 'expired',
+]);
+
+export const sponsorPackageStatusEnum = pgEnum('sponsor_package_status', [
+  'draft', 'submitted', 'approved', 'rejected',
+]);
+
 // ── users ─────────────────────────────────────────────────────────────────────
 
 export const users = pgTable('users', {
@@ -701,6 +709,67 @@ export const socialShareEvents = pgTable('social_share_events', {
   index('social_share_events_status_idx').on(t.status),
 ]);
 
+// Sponsor-readiness stores controlled evidence metadata only. Original files,
+// identity documents, credentials, and provider secrets are intentionally out
+// of scope. Events are append-only and form the immutable review history.
+export const sponsorPackages = pgTable('sponsor_packages', {
+  id:              text('id').primaryKey(),
+  version:         text('version').notNull(),
+  jurisdiction:    text('jurisdiction').notNull(),
+  legalEntityState:text('legal_entity_state').notNull().default('unverified'),
+  status:          sponsorPackageStatusEnum('status').notNull().default('draft'),
+  submittedBy:     text('submitted_by'),
+  submittedAt:     timestamp('submitted_at', { withTimezone: true }),
+  reviewedBy:      text('reviewed_by'),
+  reviewedAt:      timestamp('reviewed_at', { withTimezone: true }),
+  reviewNote:      text('review_note'),
+  updatedAt:       timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const sponsorEvidence = pgTable('sponsor_evidence', {
+  id:            text('id').primaryKey(),
+  packageId:     text('package_id').notNull(),
+  controlKey:    text('control_key').notNull(),
+  title:         text('title').notNull(),
+  status:        sponsorEvidenceStatusEnum('status').notNull().default('draft'),
+  referenceType: text('reference_type').$type<'url' | 'internal'>().notNull(),
+  reference:     text('reference').notNull(),
+  sha256:        text('sha256'),
+  owner:         text('owner').notNull(),
+  issuedAt:      timestamp('issued_at', { withTimezone: true }),
+  expiresAt:     timestamp('expires_at', { withTimezone: true }),
+  notes:         text('notes'),
+  createdBy:     text('created_by').notNull(),
+  lastEditedBy:  text('last_edited_by').notNull(),
+  submittedBy:   text('submitted_by'),
+  submittedAt:   timestamp('submitted_at', { withTimezone: true }),
+  reviewedBy:    text('reviewed_by'),
+  reviewedAt:    timestamp('reviewed_at', { withTimezone: true }),
+  reviewNote:    text('review_note'),
+  createdAt:     timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:     timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('sponsor_evidence_package_control_idx').on(t.packageId, t.controlKey),
+  index('sponsor_evidence_status_idx').on(t.status),
+  index('sponsor_evidence_expiry_idx').on(t.expiresAt),
+]);
+
+export const sponsorEvidenceEvents = pgTable('sponsor_evidence_events', {
+  id:         text('id').primaryKey(),
+  packageId:  text('package_id').notNull(),
+  evidenceId: text('evidence_id'),
+  action:     text('action').notNull(),
+  actorId:    text('actor_id').notNull(),
+  actorRole:  adminRoleEnum('actor_role').notNull(),
+  fromStatus: text('from_status'),
+  toStatus:   text('to_status'),
+  details:    jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('sponsor_evidence_events_evidence_idx').on(t.evidenceId, t.createdAt),
+  index('sponsor_evidence_events_package_idx').on(t.packageId, t.createdAt),
+]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -731,3 +800,6 @@ export type Subscriber           = typeof subscribers.$inferSelect;
 export type OperationsItemRow    = typeof operationsItems.$inferSelect;
 export type SocialProfileRow     = typeof socialProfiles.$inferSelect;
 export type SocialShareEventRow  = typeof socialShareEvents.$inferSelect;
+export type SponsorPackageRow    = typeof sponsorPackages.$inferSelect;
+export type SponsorEvidenceRow   = typeof sponsorEvidence.$inferSelect;
+export type SponsorEvidenceEventRow = typeof sponsorEvidenceEvents.$inferSelect;

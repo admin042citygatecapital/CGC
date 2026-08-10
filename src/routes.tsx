@@ -100,6 +100,7 @@ const AdminRates           = lazy(() => import('./pages/admin/rates'));
 const AdminKyc             = lazy(() => import('./pages/admin/kyc'));
 const AdminDocumentation   = lazy(() => import('./pages/admin/documentation'));
 const AdminReadiness       = lazy(() => import('./pages/admin/readiness'));
+const AdminSponsorReadiness = lazy(() => import('./pages/admin/sponsor-readiness'));
 const AdminDeveloper       = lazy(() => import('./pages/admin/developer'));
 const AdminEmailCenter     = lazy(() => import('./pages/admin/email'));
 const AdminAudit           = lazy(() => import('./pages/admin/audit'));
@@ -183,6 +184,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/kyc',             element: <AdminOnly><AdminKyc /></AdminOnly> },
   { path: '/admin/documentation',   element: <AdminOnly><AdminDocumentation /></AdminOnly> },
   { path: '/admin/readiness',       element: <AdminOnly><AdminReadiness /></AdminOnly> },
+  { path: '/admin/sponsor-readiness', element: <AdminOnly><AdminSponsorReadiness /></AdminOnly> },
   { path: '/admin/developer',       element: <AdminOnly><AdminDeveloper /></AdminOnly> },
   { path: '/admin/audit',           element: <AdminOnly><AdminAudit /></AdminOnly> },
   { path: '/admin/email',           element: <AdminOnly><AdminEmailCenter /></AdminOnly> },

@@ -1,0 +1,91 @@
+import { Helmet } from '@dr.pogodin/react-helmet';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Download, FileCheck2, Loader2, LockKeyhole, Pencil, RefreshCw, Send, ShieldCheck } from 'lucide-react';
+import AdminLayout from '@/layouts/AdminLayout';
+import { authHeaders, useAdminAuth } from '@/lib/adminAuth';
+
+type EvidenceStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'expired';
+interface Evidence { id: string; controlKey: string; title: string; effectiveStatus: EvidenceStatus; referenceType: 'url' | 'internal'; reference: string; sha256: string | null; owner: string; issuedAt: string | null; expiresAt: string | null; notes: string | null; reviewNote: string | null; }
+interface Control { key: string; title: string; category: string; ownerRole: string; phase: number; description: string; status: EvidenceStatus | 'missing'; evidence: Evidence[]; }
+interface Readiness { package: { id: string; version: string; status: string; label: string }; productProfile: { currencies: readonly string[]; audiences: readonly string[]; excluded: readonly string[]; phases: ReadonlyArray<{ phase: number; name: string; scope: string }> }; controls: Control[]; summary: { total: number; approved: number; outstanding: number; percent: number; fullyReviewed: boolean; sponsorSubmissionReady: boolean }; financialOperationsLocked: boolean; }
+interface FormState { id?: string; controlKey: string; title: string; referenceType: 'url' | 'internal'; reference: string; sha256: string; owner: string; issuedAt: string; expiresAt: string; notes: string; }
+const EMPTY: FormState = { controlKey: '', title: '', referenceType: 'internal', reference: '', sha256: '', owner: '', issuedAt: '', expiresAt: '', notes: '' };
+
+function badge(status: string): string {
+  if (status === 'approved') return 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20';
+  if (status === 'submitted') return 'bg-sky-400/10 text-sky-300 border-sky-400/20';
+  if (status === 'rejected' || status === 'expired') return 'bg-red-400/10 text-red-300 border-red-400/20';
+  return 'bg-amber-400/10 text-amber-300 border-amber-400/20';
+}
+
+export default function SponsorReadinessPage() {
+  const { admin } = useAdminAuth();
+  const [data, setData] = useState<Readiness | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [category, setCategory] = useState('all');
+  const [phase, setPhase] = useState('all');
+  const [form, setForm] = useState<FormState>(EMPTY);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError('');
+    try {
+      const response = await fetch('/api/admin/sponsor-readiness', { credentials: 'same-origin' });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || 'Unable to load sponsor readiness.');
+      setData(body);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load sponsor readiness.'); }
+    finally { setLoading(false); }
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+
+  const categories = useMemo(() => [...new Set(data?.controls.map(control => control.category) ?? [])], [data]);
+  const visible = useMemo(() => data?.controls.filter(control => (category === 'all' || control.category === category) && (phase === 'all' || String(control.phase) === phase)) ?? [], [data, category, phase]);
+  const owned = (control: Control) => admin?.role === 'SUPER_ADMIN' || admin?.role === control.ownerRole;
+
+  async function mutate(path: string, body?: unknown) {
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const response = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: body === undefined ? undefined : JSON.stringify(body) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Operation failed.');
+      setNotice('Saved successfully.'); await load(); return true;
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Operation failed.'); return false; }
+    finally { setBusy(false); }
+  }
+
+  function begin(control: Control, evidence?: Evidence) {
+    setForm(evidence ? { id: evidence.id, controlKey: evidence.controlKey, title: evidence.title, referenceType: evidence.referenceType, reference: evidence.reference, sha256: evidence.sha256 ?? '', owner: evidence.owner, issuedAt: evidence.issuedAt?.slice(0, 10) ?? '', expiresAt: evidence.expiresAt?.slice(0, 10) ?? '', notes: evidence.notes ?? '' } : { ...EMPTY, controlKey: control.key, title: control.title, owner: admin?.name || admin?.email || '' });
+    setTimeout(() => document.getElementById('evidence-form')?.scrollIntoView({ behavior: 'smooth' }), 0);
+  }
+
+  async function save() {
+    const ok = await mutate('/api/admin/sponsor-readiness/evidence', { ...form, issuedAt: form.issuedAt || null, expiresAt: form.expiresAt || null, sha256: form.sha256 || null, notes: form.notes || null });
+    if (ok) setForm(EMPTY);
+  }
+
+  async function review(id: string, decision: 'approved' | 'rejected') {
+    const note = window.prompt(`${decision === 'approved' ? 'Approval' : 'Rejection'} note (minimum 10 characters):`);
+    if (note) await mutate(`/api/admin/sponsor-readiness/evidence/${encodeURIComponent(id)}/review`, { decision, note });
+  }
+
+  async function packageReview(decision: 'approved' | 'rejected') {
+    const note = window.prompt(`Final package ${decision} note (minimum 10 characters):`);
+    if (note) await mutate('/api/admin/sponsor-readiness/package/review', { decision, note });
+  }
+
+  return <><Helmet><title>Sponsor Readiness — City Gate Capital Admin</title><meta name="robots" content="noindex, nofollow" /></Helmet><AdminLayout title="Sponsor Readiness"><main className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+    <section className="rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-400/[0.08] to-transparent p-5 sm:p-7"><div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5"><div><div className="flex items-center gap-2 text-amber-300 text-sm font-semibold"><ShieldCheck className="w-5 h-5" />UK sponsor-readiness workspace</div><h1 className="text-2xl sm:text-3xl font-bold text-white mt-2">Provider pack and control evidence</h1><p className="text-white/50 text-sm mt-2 max-w-3xl">Prepare a reviewed submission for a UK authorised sponsor. This workspace stores controlled references and hashes only.</p></div><div className="flex flex-wrap gap-2"><button onClick={() => void load()} className="px-3 py-2 rounded-lg border border-white/10 text-white/70 text-sm flex gap-2 items-center"><RefreshCw className="w-4 h-4" />Refresh</button><a href="/api/admin/sponsor-readiness/export" className="px-3 py-2 rounded-lg bg-amber-400 text-black font-semibold text-sm flex gap-2 items-center"><Download className="w-4 h-4" />Export provider pack</a></div></div><div className="mt-5 rounded-xl border border-red-400/20 bg-red-400/[0.06] p-4 flex gap-3"><LockKeyhole className="w-5 h-5 text-red-300 shrink-0" /><div><p className="text-red-200 font-semibold text-sm">Financial operations remain locked</p><p className="text-red-200/60 text-xs mt-1">Evidence and package approval cannot activate balances, payments, FX, cards, crypto or provider adapters.</p></div></div></section>
+    {error && <div className="rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-red-200 text-sm">{error}</div>}{notice && <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-emerald-200 text-sm">{notice}</div>}
+    {loading && !data ? <div className="py-16 text-center text-white/40"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Loading controls…</div> : data && <>
+      <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">{[['Progress', `${data.summary.percent}%`], ['Approved controls', `${data.summary.approved}/${data.summary.total}`], ['Outstanding', data.summary.outstanding], ['Package', data.package.label]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4"><p className="text-white/35 text-xs uppercase tracking-wide">{label}</p><p className="text-white font-bold text-lg mt-1 break-words">{value}</p></div>)}</section>
+      <section className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5"><h2 className="text-white font-semibold">Phased product profile</h2><div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 mt-4">{data.productProfile.phases.map(item => <div key={item.phase} className="rounded-xl border border-white/[0.06] bg-black/20 p-4"><p className="text-amber-300 text-xs font-semibold">PHASE {item.phase}</p><p className="text-white font-medium mt-1">{item.name}</p><p className="text-white/40 text-xs leading-relaxed mt-2">{item.scope}</p></div>)}</div><p className="text-white/35 text-xs mt-4">Currencies: {data.productProfile.currencies.join(', ')} · End-state: {data.productProfile.audiences.join(' and ')} · Excluded: {data.productProfile.excluded.join(' and ')}</p></section>
+      <section><div className="flex flex-wrap gap-2 items-center justify-between mb-4"><h2 className="text-white text-lg font-semibold">Required controls</h2><div className="flex gap-2"><select value={category} onChange={event => setCategory(event.target.value)} className="bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white/70 text-sm"><option value="all">All categories</option>{categories.map(value => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select><select value={phase} onChange={event => setPhase(event.target.value)} className="bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white/70 text-sm"><option value="all">All phases</option>{[1,2,3,4].map(value => <option key={value} value={value}>Phase {value}</option>)}</select></div></div>
+        <div className="grid lg:grid-cols-2 gap-3">{visible.map(control => { const latest = control.evidence[control.evidence.length - 1]; return <article key={control.key} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4"><div className="flex gap-3 justify-between"><div><p className="text-white font-medium">{control.title}</p><p className="text-white/35 text-xs mt-1">{control.category.replaceAll('_', ' ')} · Phase {control.phase} · {control.ownerRole.replace('_ADMIN', '').toLowerCase()}</p></div><span className={`h-fit border rounded-full px-2 py-1 text-[10px] uppercase ${badge(control.status)}`}>{control.status}</span></div><p className="text-white/45 text-xs leading-relaxed mt-3">{control.description}</p>{latest && <div className="mt-3 rounded-lg bg-black/20 p-3 text-xs text-white/45"><p className="truncate">{latest.reference}</p><p className="mt-1">Owner: {latest.owner}{latest.reviewNote ? ` · Review: ${latest.reviewNote}` : ''}</p></div>}<div className="flex flex-wrap gap-2 mt-3">{owned(control) && <button onClick={() => begin(control, latest)} className="px-2.5 py-1.5 rounded-lg border border-white/10 text-white/65 text-xs flex items-center gap-1"><Pencil className="w-3 h-3" />{latest ? 'Edit metadata' : 'Add evidence'}</button>}{latest && owned(control) && ['draft','rejected','expired'].includes(latest.effectiveStatus) && <button disabled={busy} onClick={() => void mutate(`/api/admin/sponsor-readiness/evidence/${latest.id}/submit`)} className="px-2.5 py-1.5 rounded-lg bg-sky-400/10 text-sky-300 text-xs flex items-center gap-1"><Send className="w-3 h-3" />Submit</button>}{latest?.effectiveStatus === 'submitted' && owned(control) && <><button disabled={busy} onClick={() => void review(latest.id, 'approved')} className="px-2.5 py-1.5 rounded-lg bg-emerald-400/10 text-emerald-300 text-xs">Approve</button><button disabled={busy} onClick={() => void review(latest.id, 'rejected')} className="px-2.5 py-1.5 rounded-lg bg-red-400/10 text-red-300 text-xs">Reject</button></>}</div></article>; })}</div></section>
+      {form.controlKey && <section id="evidence-form" className="rounded-2xl border border-amber-400/20 bg-white/[0.025] p-5"><div className="flex justify-between"><div><h2 className="text-white font-semibold">{form.id ? 'Edit' : 'Add'} evidence metadata</h2><p className="text-white/35 text-xs mt-1">No file uploads, credentials or customer data.</p></div><button onClick={() => setForm(EMPTY)} className="text-white/40 text-sm">Cancel</button></div><div className="grid md:grid-cols-2 gap-3 mt-4">{([['title','Title'],['owner','Owner'],['reference','Controlled URL or internal reference'],['sha256','SHA-256 digest'],['issuedAt','Issue date'],['expiresAt','Expiry date']] as const).map(([key,label]) => <label key={key} className="text-white/50 text-xs">{label}<input type={key.endsWith('At') ? 'date' : 'text'} value={form[key]} onChange={event => setForm(current => ({ ...current, [key]: event.target.value }))} className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-white text-sm" /></label>)}<label className="text-white/50 text-xs">Reference type<select value={form.referenceType} onChange={event => setForm(current => ({ ...current, referenceType: event.target.value as 'url'|'internal' }))} className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-white text-sm"><option value="internal">Internal reference</option><option value="url">HTTPS URL</option></select></label><label className="text-white/50 text-xs md:col-span-2">Notes<textarea value={form.notes} onChange={event => setForm(current => ({ ...current, notes: event.target.value }))} rows={3} className="mt-1 w-full rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-white text-sm" /></label></div><button disabled={busy} onClick={() => void save()} className="mt-4 px-4 py-2 rounded-lg bg-amber-400 text-black font-semibold text-sm">{busy ? 'Saving…' : 'Save draft metadata'}</button></section>}
+      <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5"><div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between"><div><div className="flex items-center gap-2"><FileCheck2 className="w-5 h-5 text-amber-300" /><h2 className="text-white font-semibold">Final package approval</h2></div><p className="text-white/40 text-xs mt-2">All controls must be current and approved. Final submission and review require two different super-administrators.</p></div>{admin?.role === 'SUPER_ADMIN' && <div className="flex gap-2">{data.package.status !== 'submitted' && <button disabled={!data.summary.fullyReviewed || busy} onClick={() => void mutate('/api/admin/sponsor-readiness/package/submit')} className="px-3 py-2 rounded-lg bg-sky-400/10 text-sky-300 disabled:opacity-30 text-sm">Submit package</button>}{data.package.status === 'submitted' && <><button onClick={() => void packageReview('approved')} className="px-3 py-2 rounded-lg bg-emerald-400/10 text-emerald-300 text-sm">Final approve</button><button onClick={() => void packageReview('rejected')} className="px-3 py-2 rounded-lg bg-red-400/10 text-red-300 text-sm">Reject</button></>}</div>}</div></section>
+    </>}
+  </main></AdminLayout></>;
+}

@@ -271,6 +271,10 @@ export default function ReadinessPage() {
                 Environment validation &amp; subsystem health checks
               </p>
             </div>
+            <div className="flex items-center gap-2">
+            <a href="/admin/sponsor-readiness" className="flex items-center gap-2 px-4 py-2 bg-amber-400/10 text-amber-300 border border-amber-400/20 rounded-lg text-sm">
+              <Shield className="w-4 h-4" /> Sponsor readiness
+            </a>
             <button
               onClick={fetchReports}
               disabled={loading}
@@ -279,6 +283,7 @@ export default function ReadinessPage() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Running…' : 'Re-run checks'}
             </button>
+            </div>
           </div>
 
           {/* Overall status banner */}

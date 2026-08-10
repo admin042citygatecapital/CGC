@@ -125,6 +125,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Settings',         href: '/admin/settings',      icon: Settings,           badge: null, desc: 'Platform configuration' },
       { label: 'API Docs',         href: '/admin/documentation', icon: BookOpen,           badge: null, desc: 'Internal API reference' },
       { label: 'Readiness',        href: '/admin/readiness',     icon: CheckSquare,        badge: null, desc: 'Deployment health checks' },
+      { label: 'Sponsor Readiness', href: '/admin/sponsor-readiness', icon: ShieldCheck, badge: null, desc: 'UK sponsor controls and provider pack' },
       { label: 'Developer',        href: '/admin/developer',     icon: Terminal,           badge: null, desc: 'Routes, DB, perf & build info' },
     ],
   },
