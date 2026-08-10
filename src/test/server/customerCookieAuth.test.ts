@@ -103,6 +103,42 @@ describe('customer cookie authentication boundary', () => {
     }
   });
 
+  it('accepts the owned production domain when APP_URL still names the hosting service', () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalPublicUrl = process.env.PUBLIC_URL;
+    const originalAppUrl = process.env.APP_URL;
+    process.env.NODE_ENV = 'production';
+    delete process.env.PUBLIC_URL;
+    process.env.APP_URL = 'https://city-gate-capital-preview-2026.onrender.com';
+    try {
+      const accepted = responseDouble();
+      const acceptedNext = vi.fn();
+      const headers = { origin: 'https://citygate.capital', 'sec-fetch-site': 'same-origin' };
+      requireCustomerSameOrigin({
+        method: 'POST',
+        headers,
+        get(name: string) { return headers[name.toLowerCase() as keyof typeof headers]; },
+      } as unknown as Request, accepted.res, acceptedNext);
+      expect(acceptedNext).toHaveBeenCalledOnce();
+
+      const rejected = responseDouble();
+      const hostileHeaders = { origin: 'https://attacker.example', 'sec-fetch-site': 'cross-site' };
+      requireCustomerSameOrigin({
+        method: 'POST',
+        headers: hostileHeaders,
+        get(name: string) { return hostileHeaders[name.toLowerCase() as keyof typeof hostileHeaders]; },
+      } as unknown as Request, rejected.res, vi.fn());
+      expect(rejected.result.status).toBe(403);
+    } finally {
+      if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = originalNodeEnv;
+      if (originalPublicUrl === undefined) delete process.env.PUBLIC_URL;
+      else process.env.PUBLIC_URL = originalPublicUrl;
+      if (originalAppUrl === undefined) delete process.env.APP_URL;
+      else process.env.APP_URL = originalAppUrl;
+    }
+  });
+
   it('uses an HttpOnly, Strict, API-scoped session cookie', () => {
     const options = customerSessionCookieOptions();
     expect(options).toMatchObject({

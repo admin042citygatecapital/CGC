@@ -38,24 +38,31 @@ export function resolveCustomerSessionToken(req: Request): string | null {
   return /^[a-f0-9]{64}$/i.test(token) ? token : null;
 }
 
-function expectedOrigin(req: Request): string | null {
+function allowedOrigins(req: Request): Set<string> {
+  const origins = new Set<string>();
+  const configuredUrl = process.env.PUBLIC_URL ?? process.env.APP_URL ?? process.env.VITE_PUBLIC_URL;
   try {
-    const configuredUrl = process.env.PUBLIC_URL ?? process.env.APP_URL ?? process.env.VITE_PUBLIC_URL;
-    if (configuredUrl) return new URL(configuredUrl).origin;
+    if (configuredUrl) origins.add(new URL(configuredUrl).origin);
+  } catch { /* invalid configuration remains fail-closed */ }
+
+  if (process.env.NODE_ENV === 'production') {
+    // The owned canonical host remains valid even if an older Render URL is
+    // still present in APP_URL. Do not derive production trust from Host.
+    origins.add('https://citygate.capital');
+  } else {
     const host = req.get('host');
-    return host ? `${req.protocol}://${host}` : null;
-  } catch {
-    return null;
+    if (host) origins.add(`${req.protocol}://${host}`);
   }
+  return origins;
 }
 
 /** Cookie-authenticated customer writes must originate from this exact site. */
 export function requireCustomerSameOrigin(req: Request, res: Response, next: NextFunction): void {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
-  const expected = expectedOrigin(req);
+  const allowed = allowedOrigins(req);
   const supplied = req.get('origin');
   const fetchSite = req.get('sec-fetch-site');
-  if (!expected || supplied !== expected || (fetchSite && fetchSite !== 'same-origin')) {
+  if (!supplied || !allowed.has(supplied) || (fetchSite && fetchSite !== 'same-origin')) {
     res.status(403).json({ error: 'Same-origin customer request required', code: 'CUSTOMER_CSRF_REJECTED' });
     return;
   }
