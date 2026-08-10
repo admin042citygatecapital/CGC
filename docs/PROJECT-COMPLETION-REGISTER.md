@@ -54,6 +54,10 @@ This register reconciles the original shared project conversation (230 user mess
 - Removed URL queries and fragments from analytics page paths, reduced referrers to origins in both the JSON body and HTTP request, allowlisted metadata and excluded transfer amounts and arbitrary personal fields.
 - Corrected the public Cookie Policy to match actual browser storage and added a working footer preference control above other page overlays.
 - Added server, browser-storage and end-to-end privacy regressions proving that no event is sent before consent, consented events are accepted, sensitive URL parameters are excluded and reports remain protected.
+- Replaced browser-readable customer bearer credentials with a host-only Secure, HttpOnly, SameSite=Strict session cookie scoped to `/api/users`; login no longer returns a token and legacy local storage is cleared.
+- Added exact-origin enforcement for every customer mutation, including login and registration, so missing-origin, cross-site and lookalike-subdomain requests fail closed while financial-operation locks remain unchanged.
+- Connected customer session/device listing and revocation to the PostgreSQL session store, exposed only non-reusable hashed session IDs, scoped revocation to the authenticated owner and cleared the cookie when the current session is revoked.
+- Updated the Cookie Policy, API guide, OpenAPI snapshot, Postman reference and environment template to describe the cookie-only customer contract; added server and browser regressions for cookie flags, bearer rejection, CSRF rejection and session revocation.
 
 ## Work that is genuinely incomplete
 

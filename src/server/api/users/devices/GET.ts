@@ -1,30 +1,29 @@
 /**
  * GET /api/users/devices
  * Returns the customer's trusted/active devices derived from session metadata.
- * Since we use a single-session model, we return the current session as the only device.
+ * Every active session is represented as a device without exposing credentials.
  */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken } from '../../../lib/userStore.js';
+import { listCustomerSessions } from '../../../lib/customerSessionStore.js';
 
 export default async function handler(req: Request, res: Response) {
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-
-  const user = await findUserBySessionToken(token);
-  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
-
-  // Single-session model: return current session as one device entry
-  const devices = user.sessionToken ? [{
-    id:          'current',
-    name:        'Current Session',
-    type:        'browser',
-    trusted:     true,
-    lastSeenAt:  user.sessionLastSeenAt ?? user.sessionCreatedAt ?? new Date().toISOString(),
-    createdAt:   user.sessionCreatedAt  ?? new Date().toISOString(),
-    ip:          user.lastLoginIp ?? '',
-    isCurrent:   true,
-  }] : [];
+  const user = req.customerUser;
+  const token = req.customerToken;
+  if (!user || !token) return res.status(401).json({ error: 'Authentication required' });
+  const sessions = await listCustomerSessions(user.id, token);
+  const devices = sessions.map(session => ({
+    id: session.id,
+    name: session.isCurrent ? 'Current Session' : 'Active Session',
+    type: /mobile|android|iphone/i.test(session.ua) ? 'mobile' : 'desktop',
+    browser: session.ua || 'Browser',
+    os: '',
+    ip: session.ip,
+    location: '',
+    lastSeen: session.lastSeenAt,
+    addedAt: session.createdAt,
+    current: session.isCurrent,
+    trusted: session.isCurrent,
+  }));
 
   return res.json({ devices });
 }

@@ -6,6 +6,7 @@ import { appendAudit } from '../../../lib/auditLog.js';
 import { appendLoginEvent } from '../../../lib/loginLog.js';
 import { sanitizeString, isValidEmail } from '../../../lib/inputValidator.js';
 import { isRateLimited } from '../../../lib/rateLimiter.js';
+import { CUSTOMER_SESSION_COOKIE, customerSessionCookieOptions } from '../../../lib/customerSessionConfig.js';
 
 // Per-email brute-force lockout (separate from IP rate limit)
 const failMap = new Map<string, { count: number; lockedUntil: number }>();
@@ -105,9 +106,10 @@ export default async function handler(req: Request, res: Response) {
   appendAudit({ event: 'user_login_success', userId: user.id, email, ip, ua });
   await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'success', ip, ua, sessionId: sessionToken.slice(0, 8) });
 
+  res.cookie(CUSTOMER_SESSION_COOKIE, sessionToken, customerSessionCookieOptions());
+
   return res.json({
     ok: true,
-    token: sessionToken,
     user: {
       id:        user.id,
       name:      user.name,

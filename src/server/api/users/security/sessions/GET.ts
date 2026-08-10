@@ -3,25 +3,21 @@
  * Returns active sessions for the customer.
  */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken } from '../../../../lib/userStore.js';
+import { listCustomerSessions } from '../../../../lib/customerSessionStore.js';
 
 export default async function handler(req: Request, res: Response) {
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-
-  const user = await findUserBySessionToken(token);
-  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
-
-  const sessions = user.sessionToken ? [{
-    id:          'sess_current',
-    description: 'Current session',
-    createdAt:   user.sessionCreatedAt  ?? new Date().toISOString(),
-    lastSeenAt:  user.sessionLastSeenAt ?? new Date().toISOString(),
-    expiresAt:   user.sessionExpiresAt  ?? '',
-    ip:          user.lastLoginIp ?? '',
-    isCurrent:   true,
-  }] : [];
+  const user = req.customerUser;
+  const token = req.customerToken;
+  if (!user || !token) return res.status(401).json({ error: 'Authentication required' });
+  const rows = await listCustomerSessions(user.id, token);
+  const sessions = rows.map(session => ({
+    id: session.id,
+    device: session.ua || 'Browser session',
+    ip: session.ip,
+    location: '',
+    lastSeen: session.lastSeenAt,
+    current: session.isCurrent,
+  }));
 
   return res.json({ sessions });
 }

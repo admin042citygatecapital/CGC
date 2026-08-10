@@ -1,6 +1,6 @@
 /**
  * Customer authentication context — completely isolated from admin auth.
- * Uses a separate cookie key and separate API endpoints.
+ * Uses a separate Secure, HttpOnly cookie and separate API endpoints.
  * Admin sessions and customer sessions NEVER share state.
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
@@ -40,25 +40,23 @@ interface CustomerAuthCtx {
 }
 
 const Ctx = createContext<CustomerAuthCtx | null>(null);
-const TOKEN_KEY = 'cgc_customer_token'; // Separate key from admin's cgc_admin_token
+const LEGACY_TOKEN_KEY = 'cgc_customer_token';
+const SESSION_READY = 'cookie-session';
 
 export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   const [customer, setCustomer] = useState<CustomerUser | null>(null);
-  // Always initialise to null so server and client render the same initial
-  // markup (fixes React hydration mismatch). The stored token is read inside
-  // the verify useEffect, which only runs on the client after hydration.
+  // `token` is retained as a non-secret readiness sentinel while older pages
+  // migrate to a boolean session API. It is never an authentication credential.
   const [token,    setToken]    = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // On mount: verify existing customer session
   useEffect(() => {
     if (typeof window === 'undefined') { setLoading(false); return; }
-    const stored = localStorage.getItem(TOKEN_KEY);
-    if (!stored) { setLoading(false); return; }
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
 
     fetch('/api/users/session', {
       credentials: 'same-origin',
-      headers: { Authorization: `Bearer ${stored}` },
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
@@ -81,14 +79,12 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
             idNumber:    data.user.idNumber    ?? '',
             kycSubmittedAt: data.user.kycSubmittedAt ?? '',
           });
-          setToken(stored);
+          setToken(SESSION_READY);
         } else {
-          localStorage.removeItem(TOKEN_KEY);
           setToken(null);
         }
       })
       .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
         setToken(null);
       })
       .finally(() => setLoading(false));
@@ -97,6 +93,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     const res  = await fetch('/api/users/login', {
       method:  'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ email, password }),
     });
@@ -104,10 +101,8 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
 
     if (!res.ok) return { error: data.error ?? 'Login failed', code: data.code };
 
-    if (data.token && typeof window !== 'undefined') {
-      localStorage.setItem(TOKEN_KEY, data.token);
-    }
-    setToken(data.token ?? null);
+    if (typeof window !== 'undefined') localStorage.removeItem(LEGACY_TOKEN_KEY);
+    setToken(SESSION_READY);
     setCustomer(data.user ? {
       ...data.user,
       phone:       data.user.phone       ?? '',
@@ -130,15 +125,14 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
     // Invalidate the session server-side (fire-and-forget — don't block the UI)
-    if (stored) {
+    if (token) {
       fetch('/api/users/logout', {
         method:  'POST',
-        headers: { Authorization: `Bearer ${stored}` },
+        credentials: 'same-origin',
       }).catch(() => { /* ignore network errors on logout */ });
     }
-    if (typeof window !== 'undefined') localStorage.removeItem(TOKEN_KEY);
+    if (typeof window !== 'undefined') localStorage.removeItem(LEGACY_TOKEN_KEY);
     setToken(null);
     setCustomer(null);
   }

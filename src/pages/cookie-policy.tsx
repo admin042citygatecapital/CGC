@@ -18,7 +18,7 @@ const cookieTable: CookieRow[] = [
   { name: 'cgc_admin_sid',                purpose: 'Secure administrator session cookie',                       duration: '8 hours by default', type: 'Essential'  },
   { name: 'csrf_token',                   purpose: 'Protects authenticated administrative changes from CSRF',   duration: '2 hours',            type: 'Security'   },
   { name: 'cgc_trusted_device',           purpose: 'Optional administrator trusted-device token',               duration: '30 days by default', type: 'Security'   },
-  { name: 'cgc_customer_token',           purpose: 'Preview customer session credential in browser storage',    duration: 'Until logout',        type: 'Essential'  },
+  { name: 'cgc_customer_sid',             purpose: 'Secure HttpOnly preview customer session cookie',           duration: '8 hours by default', type: 'Essential'  },
   { name: 'cgc_analytics_consent_v1',     purpose: 'Records the visitor analytics choice in browser storage',   duration: '1 year',              type: 'Essential'  },
   { name: 'cgc_sid',                      purpose: 'Random analytics identifier scoped to one browser tab',      duration: 'Browser tab',         type: 'Analytics'  },
   { name: 'cgc_ab_*',                     purpose: 'Consented first-party experiment assignment',               duration: 'Until consent ends',  type: 'Analytics'  },

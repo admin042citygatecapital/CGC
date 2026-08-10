@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "City Gate Capital API",
-    "description": "REFERENCE SNAPSHOT — NOT THE CURRENT PRODUCTION CONTRACT. Generated 2026-06-04. Verify every request against the current Developer Center and source route registry. Financial mutation routes remain preview-locked and do not move money, issue cards, approve regulated KYC or execute trades.\n\nBase URL: https://citygate.capital\n\nAuthentication:\n- Customer: Cookie `cgc_customer_token` or `Authorization: Bearer <token>`\n- Admin: Cookie `cgc_admin_sid` or `Authorization: Bearer <token>`\n- CSRF: Obtain token from GET /api/csrf, send as `X-CSRF-Token` header",
+    "description": "REFERENCE SNAPSHOT — NOT THE CURRENT PRODUCTION CONTRACT. Generated 2026-06-04. Verify every request against the current Developer Center and source route registry. Financial mutation routes remain preview-locked and do not move money, issue cards, approve regulated KYC or execute trades.\n\nBase URL: https://citygate.capital\n\nAuthentication:\n- Customer: Secure, HttpOnly cookie `cgc_customer_sid`; login returns no bearer token\n- Admin: Cookie `cgc_admin_sid` or `Authorization: Bearer <token>`\n- CSRF: Customer mutations require the exact site Origin. Public protected forms use the token from GET /api/csrf as `X-CSRF-Token`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "cgc-api-v1-2026-06-04",
     "version": { "major": 1, "minor": 0, "patch": 0 }
@@ -9,7 +9,6 @@
   "variable": [
     { "key": "baseUrl", "value": "https://citygate.capital", "type": "string" },
     { "key": "adminToken", "value": "", "type": "string", "description": "Admin Bearer token from POST /api/admin/auth/login" },
-    { "key": "customerToken", "value": "", "type": "string", "description": "Customer Bearer token from POST /api/users/login" },
     { "key": "csrfToken", "value": "", "type": "string", "description": "CSRF token from GET /api/csrf" }
   ],
   "auth": {
@@ -94,8 +93,8 @@
             "description": "Customer login. Rate limited: 5/15min/IP."
           }
         },
-        { "name": "Get Session", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/session", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "description": "Verify customer session and get user data" } },
-        { "name": "Logout", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/logout", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }], "description": "Logout customer session" } },
+        { "name": "Get Session", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/session", "description": "Verify the customer cookie session and get user data" } },
+        { "name": "Logout", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/logout", "header": [{ "key": "Origin", "value": "{{baseUrl}}" }], "description": "Logout the customer cookie session" } },
         {
           "name": "Request Password Reset",
           "request": {
@@ -120,7 +119,7 @@
     },
     {
       "name": "Customer — Wallet & Transactions",
-      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+      "auth": { "type": "noauth" },
       "item": [
         { "name": "Get Balance", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/balance", "description": "Get all wallet balances (currencies, primary amount, total USD)" } },
         { "name": "Get Transactions", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/transactions", "description": "Get customer transaction history" } },
@@ -132,7 +131,7 @@
     },
     {
       "name": "Customer — Cards",
-      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+      "auth": { "type": "noauth" },
       "item": [
         { "name": "List Cards", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/cards", "description": "List customer's virtual cards" } },
         { "name": "Generate Card", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/generate", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"label\": \"Shopping Card\",\n  \"currency\": \"USD\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Generate a new virtual card" } },
@@ -142,7 +141,7 @@
     },
     {
       "name": "Customer — Profile & Support",
-      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }] },
+      "auth": { "type": "noauth" },
       "item": [
         { "name": "Update Profile", "request": { "method": "PATCH", "url": "{{baseUrl}}/api/users/me", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phone\": \"+44123456789\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Update customer profile" } },
         { "name": "Get Notifications", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/notifications", "description": "Get customer notifications" } },

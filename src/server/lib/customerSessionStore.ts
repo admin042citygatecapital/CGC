@@ -14,12 +14,92 @@ import { eq, lt, and } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { customerSessions, users } from '../db/schema.js';
 import type { UserRecord } from './userStore.js';
+import {
+  CUSTOMER_SESSION_ABSOLUTE_MS,
+  CUSTOMER_SESSION_INACTIVITY_MS,
+} from './customerSessionConfig.js';
 
-const INACTIVITY_MS   = (parseInt(process.env.SESSION_CUSTOMER_TIMEOUT_MINUTES ?? '60', 10)) * 60_000;
-const ABSOLUTE_TTL_MS = (parseInt(process.env.SESSION_CUSTOMER_MAX_HOURS       ?? '8',  10)) * 3_600_000;
+const INACTIVITY_MS = CUSTOMER_SESSION_INACTIVITY_MS;
+const ABSOLUTE_TTL_MS = CUSTOMER_SESSION_ABSOLUTE_MS;
 
 export function generateCustomerToken(): string {
   return crypto.randomBytes(32).toString('hex');
+}
+
+export interface CustomerSessionView {
+  id: string;
+  ip: string;
+  ua: string;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  isCurrent: boolean;
+}
+
+function publicSessionId(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex').slice(0, 24);
+}
+
+/** List active sessions without exposing their bearer credentials. */
+export async function listCustomerSessions(
+  userId: string,
+  currentToken: string,
+): Promise<CustomerSessionView[]> {
+  const now = Date.now();
+  if (!isDatabaseConfigured()) {
+    const store = await import('./userStore.flatfile.js');
+    const user = store.findUserById(userId);
+    if (!user?.sessionToken) return [];
+    const createdAt = user.sessionCreatedAt ?? new Date(now).toISOString();
+    const lastSeenAt = user.sessionLastSeenAt ?? createdAt;
+    const expiresAt = user.sessionExpiresAt ?? new Date(new Date(createdAt).getTime() + ABSOLUTE_TTL_MS).toISOString();
+    if (new Date(expiresAt).getTime() <= now || new Date(lastSeenAt).getTime() + INACTIVITY_MS <= now) return [];
+    return [{
+      id: publicSessionId(user.sessionToken),
+      ip: user.lastLoginIp ?? '',
+      ua: '',
+      createdAt,
+      lastSeenAt,
+      expiresAt,
+      isCurrent: user.sessionToken === currentToken,
+    }];
+  }
+
+  const rows = await getDb().select().from(customerSessions).where(eq(customerSessions.userId, userId));
+  return rows
+    .filter(row => row.expiresAt.getTime() > now && row.lastSeenAt.getTime() + INACTIVITY_MS > now)
+    .map(row => ({
+      id: publicSessionId(row.token),
+      ip: row.ip ?? '',
+      ua: row.ua ?? '',
+      createdAt: row.createdAt.toISOString(),
+      lastSeenAt: row.lastSeenAt.toISOString(),
+      expiresAt: row.expiresAt.toISOString(),
+      isCurrent: row.token === currentToken,
+    }));
+}
+
+/** Revoke one session owned by this user, addressed by its non-secret ID. */
+export async function revokeCustomerSession(userId: string, sessionId: string): Promise<boolean> {
+  if (!/^[a-f0-9]{24}$/i.test(sessionId)) return false;
+  if (!isDatabaseConfigured()) {
+    const store = await import('./userStore.flatfile.js');
+    const token = store.findUserById(userId)?.sessionToken;
+    if (!token || publicSessionId(token) !== sessionId) return false;
+    await deleteCustomerSession(token);
+    return true;
+  }
+
+  const rows = await getDb().select({ token: customerSessions.token })
+    .from(customerSessions)
+    .where(eq(customerSessions.userId, userId));
+  const match = rows.find(row => publicSessionId(row.token) === sessionId);
+  if (!match) return false;
+  await getDb().delete(customerSessions).where(and(
+    eq(customerSessions.userId, userId),
+    eq(customerSessions.token, match.token),
+  ));
+  return true;
 }
 
 /**

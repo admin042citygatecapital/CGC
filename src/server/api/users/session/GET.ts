@@ -1,22 +1,12 @@
 /**
  * GET /api/users/session
- * Verifies a customer session token (Authorization: Bearer <token>).
+ * Verifies the secure customer session cookie.
  * Returns the user object if valid, 401 if not.
  * Completely separate from /api/admin/auth/verify — no admin state shared.
  */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken } from '../../../lib/userStore.js';
-
 export default async function handler(req: Request, res: Response) {
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-
-  const user = await findUserBySessionToken(token);
-
+  const user = req.customerUser;
   if (!user) {
     return res.status(401).json({ error: 'Invalid or expired session' });
   }

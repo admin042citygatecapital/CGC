@@ -1,25 +1,21 @@
 /**
  * POST /api/users/security/sessions/revoke
- * Revoke a session. In the single-session model, this logs the user out.
+ * Revoke one session owned by the authenticated customer.
  */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken, updateUser } from '../../../../../lib/userStore.js';
+import crypto from 'node:crypto';
+import { revokeCustomerSession } from '../../../../../lib/customerSessionStore.js';
+import { clearCustomerSessionCookie } from '../../../../../lib/customerSessionConfig.js';
 
 export default async function handler(req: Request, res: Response) {
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token) return res.status(401).json({ error: 'No token provided' });
+  const user = req.customerUser;
+  const token = req.customerToken;
+  if (!user || !token) return res.status(401).json({ error: 'Authentication required' });
+  const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId : '';
+  const currentId = crypto.createHash('sha256').update(token).digest('hex').slice(0, 24);
+  const revoked = await revokeCustomerSession(user.id, sessionId);
+  if (!revoked) return res.status(404).json({ error: 'Session not found' });
+  if (sessionId === currentId) clearCustomerSessionCookie(res);
 
-  const user = await findUserBySessionToken(token);
-  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
-
-  // Clear the session
-  await updateUser(user.id, {
-    sessionToken:      undefined,
-    sessionCreatedAt:  undefined,
-    sessionLastSeenAt: undefined,
-    sessionExpiresAt:  undefined,
-  } as Parameters<typeof updateUser>[1]);
-
-  return res.json({ ok: true });
+  return res.json({ ok: true, currentSessionRevoked: sessionId === currentId });
 }

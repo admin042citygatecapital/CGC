@@ -37,16 +37,32 @@ test('customer login establishes a persistent browser session and financial writ
   await page.goto('/login');
   await page.getByLabel('Email address').fill(E2E_CUSTOMER.email);
   await page.getByLabel('Password', { exact: true }).fill(E2E_CUSTOMER.password);
+  const loginResponsePromise = page.waitForResponse(response =>
+    response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/users/login',
+  );
   await page.locator('button[type="submit"]').click();
+  const loginResponse = await loginResponsePromise;
+  expect(loginResponse.status()).toBe(200);
+  await expect(loginResponse.json()).resolves.not.toHaveProperty('token');
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page).toHaveTitle(/Dashboard/i);
   await page.reload();
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  const token = await page.evaluate(() => localStorage.getItem('cgc_customer_token'));
-  expect(token).toMatch(/^[a-f0-9]{64}$/);
+  expect(await page.evaluate(() => localStorage.getItem('cgc_customer_token'))).toBeNull();
+  expect(await page.evaluate(() => document.cookie)).not.toContain('cgc_customer_sid');
+  const sessionCookie = (await page.context().cookies()).find(cookie => cookie.name === 'cgc_customer_sid');
+  expect(sessionCookie).toMatchObject({ httpOnly: true, sameSite: 'Strict', path: '/api/users' });
+
+  const missingOrigin = await page.request.post('/api/users/transfer', {
+    headers: { 'Idempotency-Key': 'e2e-preview-csrf-0001' },
+    data: { recipient: 'Locked Preview Recipient', amount: 10, currency: 'GBP' },
+  });
+  expect(missingOrigin.status()).toBe(403);
+  await expect(missingOrigin.json()).resolves.toMatchObject({ code: 'CUSTOMER_CSRF_REJECTED' });
+
   const response = await page.request.post('/api/users/transfer', {
-    headers: { Authorization: `Bearer ${token}`, 'Idempotency-Key': 'e2e-preview-lock-0001' },
+    headers: { Origin: new URL(page.url()).origin, 'Idempotency-Key': 'e2e-preview-lock-0001' },
     data: { recipient: 'Locked Preview Recipient', amount: 10, currency: 'GBP' },
   });
   expect(response.status()).toBe(503);

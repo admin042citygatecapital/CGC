@@ -1,29 +1,20 @@
 /**
  * POST /api/users/devices/revoke
- * Revoke a trusted device. In the single-session model, revoking "current" logs the user out.
+ * Revoke the session represented by a customer device.
  */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken, updateUser } from '../../../../lib/userStore.js';
+import crypto from 'node:crypto';
+import { revokeCustomerSession } from '../../../../lib/customerSessionStore.js';
+import { clearCustomerSessionCookie } from '../../../../lib/customerSessionConfig.js';
 
 export default async function handler(req: Request, res: Response) {
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-
-  const user = await findUserBySessionToken(token);
-  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
-
-  const { deviceId } = req.body ?? {};
-
-  // In single-session model, revoking any device clears the session
-  if (deviceId === 'current' || deviceId) {
-    await updateUser(user.id, {
-      sessionToken:      undefined,
-      sessionCreatedAt:  undefined,
-      sessionLastSeenAt: undefined,
-      sessionExpiresAt:  undefined,
-    } as Parameters<typeof updateUser>[1]);
-  }
-
-  return res.json({ ok: true });
+  const user = req.customerUser;
+  const token = req.customerToken;
+  if (!user || !token) return res.status(401).json({ error: 'Authentication required' });
+  const deviceId = typeof req.body?.deviceId === 'string' ? req.body.deviceId : '';
+  const currentId = crypto.createHash('sha256').update(token).digest('hex').slice(0, 24);
+  const revoked = await revokeCustomerSession(user.id, deviceId);
+  if (!revoked) return res.status(404).json({ error: 'Device session not found' });
+  if (deviceId === currentId) clearCustomerSessionCookie(res);
+  return res.json({ ok: true, currentSessionRevoked: deviceId === currentId });
 }

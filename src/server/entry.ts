@@ -325,7 +325,7 @@ import { requireAdminAuth } from "./lib/adminAuthMiddleware";
 import { requireAdminAuthorization } from "./lib/adminAuthorizationMiddleware";
 import { csrfProtect } from "./api/csrf/GET";
 import { auditAdminMutation } from "./lib/adminMutationAuditMiddleware";
-import { requireCustomerAuth } from "./lib/customerAuthMiddleware";
+import { requireCustomerAuth, requireCustomerSameOrigin } from "./lib/customerAuthMiddleware";
 import { sendEmail as smtpSendEmail } from "./lib/smtpTransport";
 import { seoRoutes } from "../lib/seo-routes";
 import { logStartupCredentialState } from "./lib/zohoTokenStore";
@@ -467,6 +467,10 @@ app.use('/api/admin', auditAdminMutation);
 // Customer APIs are protected centrally.  Keep the small unauthenticated
 // onboarding/reset surface explicit so newly added /api/users routes are not
 // accidentally exposed by relying on each handler to authenticate itself.
+// Every customer mutation, including public login and registration, must come
+// from the exact website origin. This prevents login CSRF as well as attacks
+// against cookie-authenticated routes.
+app.use('/api/users', requireCustomerSameOrigin);
 app.use('/api/users', (req: Request, res: Response, next: NextFunction) => {
   const PUBLIC_SUFFIXES = new Set([
     '/register',

@@ -99,7 +99,7 @@
 
 ## Customer API Endpoints
 
-All customer endpoints require a valid customer session cookie (`cgc_customer_token`).
+All protected customer endpoints require the Secure, HttpOnly customer session cookie (`cgc_customer_sid`). Browser JavaScript cannot read this credential, and customer bearer tokens are not accepted.
 
 ### Authentication
 
@@ -403,8 +403,9 @@ All admin endpoints (except auth) require a valid admin session. Auth is resolve
 ## Authentication
 
 ### Customer Authentication
-- **Cookie**: `cgc_customer_token` (HttpOnly, SameSite=Strict)
-- **Header**: `Authorization: Bearer <token>`
+- **Cookie**: `cgc_customer_sid` (Secure, HttpOnly, SameSite=Strict, scoped to `/api/users`)
+- `POST /api/users/login` sets the cookie and does not return the session credential in JSON
+- Customer bearer authentication is not supported
 - Session verified via `GET /api/users/session`
 
 ### Admin Authentication
@@ -418,3 +419,4 @@ All admin endpoints (except auth) require a valid admin session. Auth is resolve
 - Required on: `POST /api/contact`, `POST /api/accounts/apply`
 - Token obtained from: `GET /api/csrf`
 - Sent as: `X-CSRF-Token` header or `_csrf` body field
+- Every non-safe `/api/users` request also requires an exact same-origin `Origin` header; cross-site and missing-origin requests are rejected
