@@ -15,6 +15,19 @@ import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { emailQueue as emailQueueTable } from '../db/schema.js';
 
 export type EmailStatus = 'queued' | 'sent' | 'failed' | 'retrying';
+type DatabaseEmailStatus = typeof emailQueueTable.$inferSelect.status;
+
+/** Keep the admin-facing `retrying` label separate from the database enum's `sending` value. */
+export function toPublicEmailStatus(status: DatabaseEmailStatus): EmailStatus {
+  if (status === 'sending') return 'retrying';
+  if (status === 'cancelled') return 'failed';
+  return status;
+}
+
+export function toDatabaseEmailStatus(status: EmailStatus | undefined): DatabaseEmailStatus | undefined {
+  if (status === 'retrying') return 'sending';
+  return status;
+}
 
 export interface QueuedEmail {
   id:            string;
@@ -41,7 +54,7 @@ function rowToEmail(row: typeof emailQueueTable.$inferSelect): QueuedEmail {
     to:            row.to,
     subject:       row.subject,
     html:          row.html,
-    status:        (row.status as EmailStatus) ?? 'queued',
+    status:        toPublicEmailStatus(row.status),
     attempts:      row.attempts,
     maxAttempts:   row.maxAttempts,
     errorMessage:  row.lastError ?? '',
@@ -152,7 +165,7 @@ export async function updateQueuedEmail(id: string, patch: Partial<QueuedEmail>)
   const db = getDb();
   await db.update(emailQueueTable)
     .set({
-      status:      patch.status as 'queued' | 'sending' | 'sent' | 'failed' | 'cancelled' | undefined,
+      status:      toDatabaseEmailStatus(patch.status),
       attempts:    patch.attempts,
       lastError:   patch.errorMessage,
       scheduledAt: patch.lastAttemptAt ? new Date(patch.lastAttemptAt) : undefined,
