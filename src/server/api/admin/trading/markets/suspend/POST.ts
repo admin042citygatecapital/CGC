@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import {
   suspendMarket, resumeMarket, appendFreezeEvent, appendTradingLog,
 } from '../../../../../lib/tradingAdminStore.js';
+import { requirePaperTrading } from '../../../../../lib/platformMode.js';
 
 export default async (req: Request, res: Response) => {
   try {
@@ -12,6 +13,7 @@ export default async (req: Request, res: Response) => {
     };
 
     if (!marketId || !action) return res.status(400).json({ error: 'marketId and action required' });
+    if (action === 'resume' && !requirePaperTrading(res)) return;
 
     const session = req.adminSession;
     const adminId    = session?.email ?? 'admin';

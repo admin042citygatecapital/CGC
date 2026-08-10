@@ -57,22 +57,17 @@ export default async function handler(_req: Request, res: Response) {
     BNB:  r.BNB_USD,
   };
 
-  // ── Transactions — real financial KPIs ───────────────────────────────────
+  // ── Persistent preview transaction records ────────────────────────────────
   const CREDIT_TYPES   = new Set(['deposit', 'manual_credit', 'refund', 'crypto_sell']);
   const DEBIT_TYPES    = new Set(['withdrawal', 'manual_debit', 'fee', 'transfer', 'wire_transfer', 'crypto_buy']);
-  const CRYPTO_SYMBOLS = new Set(['BTC', 'ETH', 'USDT', 'BNB', 'SOL']);
 
-  // Load all completed/approved transactions (no pagination — full ledger scan)
+  // This is the application preview register, not a sponsor or core ledger.
   const { data: allTxs } = await queryTransactions({ limit: 100_000 });
   const completedTxs = allTxs.filter(t => (t.status as string) === 'completed' || (t.status as string) === 'approved');
 
   // All-time totals
   let totalDepositsUsd    = 0;
   let totalWithdrawalsUsd = 0;
-  let cryptoAumUsd        = 0;
-
-  // Per-crypto running balance (for cryptoBalances panel)
-  const cryptoNet: Record<string, number> = {};
 
   for (const tx of completedTxs) {
     const rate = TO_USD[tx.currency] ?? 1;
@@ -81,17 +76,6 @@ export default async function handler(_req: Request, res: Response) {
     if (CREDIT_TYPES.has(tx.type)) totalDepositsUsd += usd;
     if (DEBIT_TYPES.has(tx.type))  totalWithdrawalsUsd += usd;
 
-    // Track net crypto holdings across all users
-    if (CRYPTO_SYMBOLS.has(tx.currency)) {
-      if (!cryptoNet[tx.currency]) cryptoNet[tx.currency] = 0;
-      if (CREDIT_TYPES.has(tx.type)) cryptoNet[tx.currency] += Number(tx.amount ?? 0);
-      if (DEBIT_TYPES.has(tx.type))  cryptoNet[tx.currency] -= Number(tx.amount ?? 0);
-    }
-  }
-
-  // Crypto AUM = sum of all positive crypto net balances in USD
-  for (const [sym, bal] of Object.entries(cryptoNet)) {
-    if (bal > 0) cryptoAumUsd += bal * (TO_USD[sym] ?? 1);
   }
 
   // Monthly revenue = fees collected this calendar month
@@ -141,22 +125,7 @@ export default async function handler(_req: Request, res: Response) {
   const { total: resolvedThisMonth } = await queryConversations({ status: 'resolved', dateRange: '30d', limit: 1 });
   const ticketChange = resolvedThisMonth > 0 ? -(resolvedThisMonth) : 0;
 
-  // ── cryptoBalances panel — real net holdings ──────────────────────────────
-  const CRYPTO_META: Record<string, { name: string }> = {
-    BTC:  { name: 'Bitcoin'  },
-    ETH:  { name: 'Ethereum' },
-    USDT: { name: 'Tether'   },
-    BNB:  { name: 'BNB'      },
-    SOL:  { name: 'Solana'   },
-  };
-
-  const cryptoBalances = Object.entries(CRYPTO_META).map(([symbol, meta]) => {
-    const balance = Math.max(0, cryptoNet[symbol] ?? 0);
-    const usd     = balance * (TO_USD[symbol] ?? 1);
-    return { symbol, name: meta.name, balance, usd, change: 0 };
-  }).filter(c => c.balance > 0 || c.symbol === 'BTC'); // always show BTC even if zero
-
-  // ── Daily activity (last 30 days) — real tx counts + deposit volume ───────
+  // ── Daily activity (last 30 days) — fee records and activity counts ───────
   const dailyRevenue = Array.from({ length: 30 }, (_, i) => {
     const date     = new Date(now - (29 - i) * 86400000).toISOString().slice(0, 10);
     const dayStart = `${date}T00:00:00.000Z`;
@@ -164,7 +133,7 @@ export default async function handler(_req: Request, res: Response) {
     const dayUsers = users.filter(u => u.createdAt >= dayStart && u.createdAt <= dayEnd).length;
     const dayTxs   = completedTxs.filter(t => t.createdAt >= dayStart && t.createdAt <= dayEnd);
     const dayRevenue = dayTxs
-      .filter(t => CREDIT_TYPES.has(t.type))
+      .filter(t => t.type === 'fee')
       .reduce((s, t) => s + Number(t.amount ?? 0) * (TO_USD[t.currency] ?? 1), 0);
     return {
       date,
@@ -220,7 +189,6 @@ export default async function handler(_req: Request, res: Response) {
       pendingWithdrawals:   { value: pendingWithdrawals,                change: 0,               trend: 'neutral' },
       pendingTransfers:     { value: pendingTransfers,                  change: 0,               trend: 'neutral' },
       totalRevenue:         { value: Math.round(totalRevenueUsd),       change: 0,               trend: 'neutral' },
-      cryptoAUM:            { value: Math.round(cryptoAumUsd),          change: 0,               trend: 'neutral' },
       monthlyRevenue:       { value: Math.round(monthlyRevenueUsd),     change: 0,               trend: 'neutral' },
       openTickets:          { value: openTickets,                       change: ticketChange,    trend: ticketChange < 0 ? 'down' : 'neutral' },
     },
@@ -232,8 +200,9 @@ export default async function handler(_req: Request, res: Response) {
       kyc: { approved: kycApproved, submitted: kycSubmitted, rejected: kycRejected, notStarted: kycNotStarted },
     },
     dailyRevenue,
-    cryptoBalances,
     recentActivity,
     exchangeRates: cfg.rates,
+    dataClassification: 'synthetic_preview',
+    authoritativeSource: 'application_stores',
   });
 }

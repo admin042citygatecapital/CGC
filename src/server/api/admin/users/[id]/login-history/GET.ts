@@ -34,16 +34,21 @@ export default async function handler(req: Request, res: Response) {
     )
     .slice(0, limit);
 
-  // Synthetic fallback if no audit events found
-  const synthetic = history.length === 0 && user.lastLoginAt ? [{
-    id:         'synthetic_0',
+  // A clearly identified summary derived from the persisted user record. It is
+  // not an audit event and must not be presented as immutable event evidence.
+  const derivedSummary = history.length === 0 && user.lastLoginAt ? [{
+    id:         'derived_last_login',
     adminId:    user.id,
     adminEmail: user.email,
     action:     'login_success',
     ip:         user.lastLoginIp ?? '—',
     ts:         new Date(user.lastLoginAt),
-    meta:       {},
+    meta:       { derivedFrom: 'user.lastLoginAt', auditEvent: false },
   }] : [];
 
-  return res.json({ data: [...history, ...synthetic], total: history.length + synthetic.length });
+  return res.json({
+    data: [...history, ...derivedSummary],
+    total: history.length + derivedSummary.length,
+    dataClassification: derivedSummary.length > 0 ? 'audit_events_with_derived_summary' : 'audit_events',
+  });
 }

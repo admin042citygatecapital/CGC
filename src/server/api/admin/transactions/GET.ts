@@ -1,42 +1,48 @@
+/**
+ * GET /api/admin/transactions
+ *
+ * Compatibility route for the persistent administration transaction register.
+ * Records come from the configured transaction store; this route must never
+ * generate illustrative customers, references, dates, or monetary amounts.
+ */
 import type { Request, Response } from 'express';
+import {
+  queryTransactions,
+  txStats,
+  type TxCurrency,
+  type TxStatus,
+  type TxType,
+} from '../../../lib/transactionStore.js';
 
-const TYPES    = ['deposit','withdrawal','transfer','crypto_buy','crypto_sell','fee','refund'];
-const STATUSES = ['completed','pending','failed','flagged'];
-const CURRENCIES = ['USD','EUR','GBP','BTC','ETH','USDT','CHF','JPY'];
-const USERS = ['Alice Morgan','Bob Keller','Carol Thompson','David Rivera','Emma Santos','Frank Liu','Grace Walker','Henry Park'];
-
-function seed(n: number) {
-  return Array.from({ length: n }, (_, i) => ({
-    id: `tx_${String(i + 1).padStart(7, '0')}`,
-    type: TYPES[i % TYPES.length],
-    user: USERS[i % USERS.length],
-    userId: `usr_${String((i % 20) + 1).padStart(5, '0')}`,
-    amount: parseFloat((Math.random() * 50000 + 10).toFixed(2)),
-    currency: CURRENCIES[i % CURRENCIES.length],
-    status: STATUSES[i % STATUSES.length],
-    reference: `REF${String(i + 100000).padStart(8, '0')}`,
-    description: ['Bank transfer','Crypto purchase','Withdrawal request','Fee charge','Refund'][i % 5],
-    createdAt: new Date(Date.now() - i * 1800000).toISOString(),
-    flagged: i % 23 === 0,
-  }));
+function positiveInt(value: unknown, fallback: number): number {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-const TXS = seed(500);
+export default async function handler(req: Request, res: Response) {
+  const page = positiveInt(req.query.page, 1);
+  const limit = Math.min(100, positiveInt(req.query.limit, 25));
+  const type = String(req.query.type ?? '').trim();
+  const status = String(req.query.status ?? '').trim();
+  const currency = String(req.query.currency ?? '').trim();
+  const search = String(req.query.search ?? '').trim();
 
-export default function handler(req: Request, res: Response) {
-  const page   = parseInt(String(req.query.page  ?? '1'));
-  const limit  = parseInt(String(req.query.limit ?? '25'));
-  const type   = String(req.query.type   ?? '');
-  const status = String(req.query.status ?? '');
-  const search = String(req.query.search ?? '').toLowerCase();
+  const result = await queryTransactions({
+    page,
+    limit,
+    type: type ? type as TxType : undefined,
+    status: status ? status as TxStatus : undefined,
+    currency: currency ? currency as TxCurrency : undefined,
+    search: search || undefined,
+  });
 
-  let filtered = TXS;
-  if (type)   filtered = filtered.filter(t => t.type === type);
-  if (status) filtered = filtered.filter(t => t.status === status);
-  if (search) filtered = filtered.filter(t => t.user.toLowerCase().includes(search) || t.id.includes(search) || t.reference.toLowerCase().includes(search));
-
-  const total = filtered.length;
-  const data  = filtered.slice((page - 1) * limit, page * limit);
-
-  return res.json({ data, total, page, limit, pages: Math.ceil(total / limit) });
+  return res.json({
+    ...result,
+    stats: await txStats(),
+    page,
+    limit,
+    pages: Math.max(1, Math.ceil(result.total / limit)),
+    dataClassification: 'synthetic_preview',
+    authoritativeSource: 'application_transaction_store',
+  });
 }

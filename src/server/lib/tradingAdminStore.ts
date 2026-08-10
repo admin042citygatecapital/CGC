@@ -154,7 +154,7 @@ export function getMarkets(): MarketConfig[] {
   if (stored.length > 0) return stored;
   // Seed defaults on first call
   const now = new Date().toISOString();
-  const seeded = DEFAULT_MARKETS.map(m => ({ ...m, id: randomUUID(), createdAt: now, updatedAt: now }));
+  const seeded = DEFAULT_MARKETS.map(m => ({ ...m, status: 'disabled' as const, id: randomUUID(), createdAt: now, updatedAt: now }));
   writeAll('markets.jsonl', seeded);
   return seeded;
 }
@@ -232,7 +232,17 @@ export function getProviders(): ProviderConfig[] {
   const stored = readAll<ProviderConfig>('providers.jsonl');
   if (stored.length > 0) return stored;
   const now = new Date().toISOString();
-  const seeded = DEFAULT_PROVIDERS.map(p => ({ ...p, id: randomUUID(), updatedAt: now }));
+  const seeded = DEFAULT_PROVIDERS.map(p => ({
+    ...p,
+    status: 'disabled' as const,
+    lastChecked: '',
+    latencyMs: null,
+    errorRate: 0,
+    uptime24h: 0,
+    notes: 'Provider planning record only; no live adapter or health monitor is connected.',
+    id: randomUUID(),
+    updatedAt: now,
+  }));
   writeAll('providers.jsonl', seeded);
   return seeded;
 }

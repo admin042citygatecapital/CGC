@@ -1,6 +1,6 @@
 /**
  * /admin/media — Media Library
- * Upload · Browse · Delete · Replace · Optimize
+ * Upload · Browse · Delete · Replace
  * Supports: Images · Videos · PDFs · Documents
  */
 import AdminLayout from '@/layouts/AdminLayout';
@@ -32,6 +32,8 @@ Zap
 } from 'lucide-react';
 import { AnimatePresence,motion } from 'motion/react';
 import { useCallback,useEffect,useRef,useState } from 'react';
+
+const MEDIA_OPTIMIZATION_CONFIGURED = false;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -253,7 +255,7 @@ export default function AdminMediaPage() {
     <>
       <Helmet>
         <title>Media Library — City Gate Capital Admin</title>
-        <meta name="description" content="Admin media library — upload, browse, delete, replace and optimize images, videos, PDFs and documents." />
+        <meta name="description" content="Admin media library for uploading, browsing, replacing and managing stored assets." />
         <link rel="canonical" href="https://citygate.capital/admin/media" />
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
@@ -272,7 +274,6 @@ export default function AdminMediaPage() {
                 { label: 'PDFs',         value: stats.pdfs,           color: '#EF4444', icon: FileText },
                 { label: 'Documents',    value: stats.documents,      color: '#3B82F6', icon: File },
                 { label: 'Total Size',   value: fmtSize(stats.totalSize), color: '#10B981', icon: Download, isStr: true },
-                { label: 'Optimized',    value: stats.optimizedCount, color: '#F59E0B', icon: Zap },
               ].map(s => {
                 const Icon = s.icon;
                 return (
@@ -282,7 +283,7 @@ export default function AdminMediaPage() {
                         <Icon size={11} style={{ color: s.color }} />
                       </div>
                     </div>
-                    <p className="text-xl font-bold text-white">{(s as any).isStr ? s.value : s.value}</p>
+                    <p className="text-xl font-bold text-white">{s.value}</p>
                     <p className="text-white/30 text-[10px] font-medium mt-0.5">{s.label}</p>
                   </div>
                 );
@@ -417,7 +418,7 @@ export default function AdminMediaPage() {
                             <button onClick={() => setSelected(rec)} className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10"><Eye size={10} /></button>
                             <button onClick={() => setEditing({ ...rec })} className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10"><Edit2 size={10} /></button>
                             <button onClick={() => copyUrl(rec.url)} className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10"><Copy size={10} /></button>
-                            {rec.type === 'image' && !rec.optimized && (
+                            {MEDIA_OPTIMIZATION_CONFIGURED && rec.type === 'image' && !rec.optimized && (
                               <button onClick={() => handleOptimize(rec.id)} disabled={optimizing === rec.id} className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400/60 hover:text-amber-400 hover:bg-amber-500/20 disabled:opacity-40">
                                 {optimizing === rec.id ? <Loader2 size={10} className="animate-spin" /> : <Zap size={10} />}
                               </button>
@@ -506,7 +507,7 @@ export default function AdminMediaPage() {
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 text-white/60 hover:text-white hover:bg-white/10">
                     <Edit2 size={11} /> Edit
                   </button>
-                  {selected.type === 'image' && !selected.optimized && (
+                  {MEDIA_OPTIMIZATION_CONFIGURED && selected.type === 'image' && !selected.optimized && (
                     <button onClick={() => { handleOptimize(selected.id); setSelected(null); }}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-400 hover:bg-amber-500/20">
                       <Zap size={11} /> Optimize
@@ -638,7 +639,7 @@ function MediaCard({
               <div className="flex gap-1 justify-center">
                 <button onClick={onEdit}     className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20"><Edit2 size={9} /></button>
                 <button onClick={onCopy}     className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20"><Copy size={9} /></button>
-                {rec.type === 'image' && !rec.optimized && (
+                {MEDIA_OPTIMIZATION_CONFIGURED && rec.type === 'image' && !rec.optimized && (
                   <button onClick={onOptimize} disabled={optimizing} className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 hover:bg-amber-500/30 disabled:opacity-40">
                     {optimizing ? <Loader2 size={9} className="animate-spin" /> : <Zap size={9} />}
                   </button>

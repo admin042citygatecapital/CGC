@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import {
   createMediaRecord, updateMediaRecord, deleteMediaRecord,
-  markOptimized, getMedia,
+  getMedia,
 } from '../../../lib/mediaStore.js';
 import { uploadMedia, deleteMedia } from '../../../lib/supabaseStorage.js';
 
@@ -37,11 +37,10 @@ export default async function handler(req: Request, res: Response) {
       if (!id) return res.status(400).json({ error: 'id required' });
       const rec = getMedia(id);
       if (!rec) return res.status(404).json({ error: 'Not found' });
-      // Simulate optimization: report ~20-40% size reduction
-      const savings = Math.floor(rec.size * (0.2 + Math.random() * 0.2));
-      const optimizedSize = rec.size - savings;
-      const updated = markOptimized(id, optimizedSize);
-      return res.json({ ok: true, record: updated, savedBytes: savings });
+      return res.status(501).json({
+        error: 'Media optimization is not configured. The original file was not changed.',
+        code: 'OPTIMIZER_NOT_CONFIGURED',
+      });
     }
 
     // ── Upload (base64 payload) ───────────────────────────────────────────────

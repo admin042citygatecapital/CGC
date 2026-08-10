@@ -1757,7 +1757,7 @@ export default function AdminTradingPage() {
     <>
       <Helmet>
         <title>Trading Administration — City Gate Capital Admin</title>
-        <meta name="description" content="Full trading administration: markets, providers, fees, spreads, freeze controls, risk monitoring." />
+        <meta name="description" content="Preview trading-planning administration. Live providers and trading operations are disabled." />
         <link rel="canonical" href="https://citygate.capital/admin/trading" />
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
@@ -1783,6 +1783,11 @@ export default function AdminTradingPage() {
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh
             </button>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3">
+            <Lock className="mt-0.5 h-4 w-4 shrink-0 text-amber-200" />
+            <div><p className="text-sm font-semibold text-amber-100">Planning workspace only</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">Markets, providers, fees and risk values are proposed preview configuration. No execution venue, custody provider or live trading adapter is connected. Provider health metrics are unavailable, and production activation controls remain locked.</p></div>
           </div>
 
           {/* Loading */}

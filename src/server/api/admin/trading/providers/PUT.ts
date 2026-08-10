@@ -1,10 +1,12 @@
 import type { Request, Response } from 'express';
 import { getProviders, upsertProvider, appendTradingLog } from '../../../../lib/tradingAdminStore.js';
+import { requirePaperTrading } from '../../../../lib/platformMode.js';
 
 export default async (req: Request, res: Response) => {
   try {
     const { id, ...updates } = req.body as { id: string; [k: string]: unknown };
     if (!id) return res.status(400).json({ error: 'Provider id required' });
+    if (updates.status === 'active' && !requirePaperTrading(res)) return;
 
     const all = getProviders();
     const idx = all.findIndex(p => p.id === id);

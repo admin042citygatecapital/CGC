@@ -1,10 +1,12 @@
 import type { Request, Response } from 'express';
 import { getMarket, upsertMarket, appendTradingLog } from '../../../../lib/tradingAdminStore.js';
+import { requirePaperTrading } from '../../../../lib/platformMode.js';
 
 export default async (req: Request, res: Response) => {
   try {
     const market = req.body;
     if (!market?.id) return res.status(400).json({ error: 'Market id required' });
+    if (market.status === 'active' && !requirePaperTrading(res)) return;
 
     const existing = getMarket(market.id);
     if (!existing) return res.status(404).json({ error: 'Market not found' });

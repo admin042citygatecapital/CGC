@@ -25,6 +25,12 @@ This register reconciles the original shared project conversation (230 user mess
 - Replaced crypto controls with a read-only deferred-capability view and clearly marked synthetic database activity.
 - Added production financial-operation guards to administrator balance adjustment, transaction creation/approval, wallet-address mutation and customer financial-field mutation paths.
 - Added these invariants to automated tests and the unsupported-claims scanner.
+- Replaced the random 500-record administration transaction feed with the persistent application transaction store.
+- Converted transaction administration into a read-only, explicitly labelled demonstration register; exported rows carry the same classification.
+- Removed crypto AUM/holdings claims from the executive dashboard and replaced them with the financial-operation lock and sponsor-readiness boundary.
+- Corrected the daily chart to count fee records rather than incorrectly treating deposits as revenue.
+- Forced legacy market/provider planning records to appear disabled in preview, removed invented provider-health presentation, and guarded every activation path.
+- Removed simulated media-optimization savings; the API now reports that no optimizer is configured without altering stored metadata.
 
 ## Work that is genuinely incomplete
 

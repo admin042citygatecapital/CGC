@@ -1,14 +1,14 @@
 /**
  * /admin — City Gate Capital Executive Dashboard
  *
- * 24-panel live command centre:
+ * Administration command centre:
  *  ① Customer KPIs      — Total / Active / Suspended / Pending KYC
  *  ② Financial KPIs     — Deposits / Withdrawals / Transfers / Revenue
  *  ③ Pending Flows      — Pending Deposits / Withdrawals / Transfers
  *  ④ Exchange Rates     — USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
- *  ⑤ Crypto Market      — BTC, ETH, SOL, BNB, USDT with AUM allocation bars
- *  ⑥ Revenue Chart      — 14-day dual bar (revenue + volume)
- *  ⑦ Live Notifications — real-time activity feed, 15 s poll
+ *  ⑤ Preview status     — financial locks and sponsor-readiness boundary
+ *  ⑥ Fee Activity       — 14-day fee-record and activity chart
+ *  ⑦ Notifications      — administrative activity feed, 15 s poll
  *  ⑧ System Health      — API, DB, Email, Server, Storage, Memory, CPU,
  *                          Queue, Cloudflare, SSL — each with live status
  *
@@ -22,7 +22,6 @@ Activity,
 ArrowDownRight,
 ArrowUpRight,
 BarChart2,Bell,
-Bitcoin,
 CheckCircle,
 ChevronRight,
 Clock,
@@ -65,7 +64,6 @@ interface Stats {
     kyc: { approved: number; submitted: number; rejected: number; notStarted: number };
   };
   dailyRevenue: { date: string; revenue: number; transactions: number; newUsers: number }[];
-  cryptoBalances: { symbol: string; name: string; balance: number; usd: number; change: number }[];
   recentActivity: { id: string; type: string; user: string; amount: number | null; currency: string | null; ts: string; status: string; ip?: string }[];
   exchangeRates: {
     BTC_USD: number; ETH_USD: number; SOL_USD: number; BNB_USD: number; USDT_USD: number;
@@ -241,68 +239,25 @@ function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section: Crypto Market
+// Section: Preview data boundary
 // ─────────────────────────────────────────────────────────────────────────────
-function CryptoMarketPanel({ rates, balances }: {
-  rates: Stats['exchangeRates'] | null;
-  balances: Stats['cryptoBalances'];
-}) {
-  const coins = rates ? [
-    { symbol: 'BTC', name: 'Bitcoin',  price: rates.BTC_USD,  color: '#F7931A' },
-    { symbol: 'ETH', name: 'Ethereum', price: rates.ETH_USD,  color: '#627EEA' },
-    { symbol: 'SOL', name: 'Solana',   price: rates.SOL_USD,  color: '#9945FF' },
-    { symbol: 'BNB', name: 'BNB',      price: rates.BNB_USD,  color: '#F3BA2F' },
-    { symbol: 'USDT',name: 'Tether',   price: rates.USDT_USD, color: '#26A17B' },
-  ] : [];
-
-  const totalAum = balances.reduce((s, b) => s + b.usd, 0);
-
+function PreviewDataPanel() {
   return (
     <div className="rounded-2xl border border-white/[0.05] p-4" style={{ background: 'rgba(255,255,255,0.025)' }}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Bitcoin size={13} className="text-white/40" />
-          <h3 className="text-white font-semibold text-sm">Crypto Market</h3>
-        </div>
-        <span className="text-[11px] text-white/30">AUM: <span className="text-white/60 font-semibold">{fmt(totalAum, '$')}</span></span>
+      <div className="mb-4 flex items-center gap-2">
+        <Lock size={13} className="text-amber-300" />
+        <h3 className="text-sm font-semibold text-white">Preview financial boundary</h3>
       </div>
-      {!rates ? (
-        <div className="space-y-2.5">{[1,2,3,4,5].map(i => <div key={i} className="h-9 rounded-lg bg-white/[0.03] animate-pulse" />)}</div>
-      ) : (
-        <div className="space-y-2">
-          {coins.map(c => {
-            const bal = balances.find(b => b.symbol === c.symbol);
-            const aumPct = totalAum > 0 && bal ? (bal.usd / totalAum) * 100 : 0;
-            return (
-              <div key={c.symbol} className="py-1.5 border-b border-white/[0.04] last:border-0">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold text-black shrink-0"
-                      style={{ background: c.color }}>{c.symbol.slice(0, 1)}</div>
-                    <div>
-                      <p className="text-white/70 text-[11px] font-semibold leading-none">{c.symbol}</p>
-                      <p className="text-white/25 text-[9px]">{c.name}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-white font-mono text-xs font-semibold">
-                      {c.symbol === 'USDT' ? '$1.0000' : c.symbol === 'JPY' ? `$${c.price.toFixed(6)}` : `$${c.price >= 1000 ? c.price.toLocaleString() : c.price.toFixed(2)}`}
-                    </p>
-                    {bal && bal.usd > 0 && (
-                      <p className="text-white/30 text-[9px]">{fmt(bal.usd, '$')} AUM</p>
-                    )}
-                  </div>
-                </div>
-                {aumPct > 0 && (
-                  <div className="h-0.5 rounded-full bg-white/[0.05] overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${aumPct}%`, background: c.color }} />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <div className="space-y-2 text-xs">
+        {[['Money movement', 'Disabled'], ['Sponsor ledger', 'Not connected'], ['Custody and crypto', 'Deferred'], ['Provider adapters', 'Not implemented']].map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between border-b border-white/[0.04] py-2 last:border-0">
+            <span className="text-white/40">{label}</span><span className="font-semibold text-amber-200/75">{value}</span>
+          </div>
+        ))}
+      </div>
+      <Link to="/admin/sponsor-readiness" className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-amber-300/15 bg-amber-300/[0.07] py-2 text-[11px] font-semibold text-amber-200 transition-colors hover:bg-amber-300/[0.1]">
+        Sponsor-readiness workspace <ChevronRight size={10} />
+      </Link>
     </div>
   );
 }
@@ -544,7 +499,7 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section: Revenue Chart
+// Section: Fee activity chart
 // ─────────────────────────────────────────────────────────────────────────────
 function RevenueChart({ data }: { data: Stats['dailyRevenue'] }) {
   const slice   = data.slice(-14);
@@ -559,9 +514,9 @@ function RevenueChart({ data }: { data: Stats['dailyRevenue'] }) {
         <div>
           <div className="flex items-center gap-2">
             <BarChart2 size={13} className="text-white/40" />
-            <h3 className="text-white font-semibold text-sm">Revenue & Volume</h3>
+            <h3 className="text-white font-semibold text-sm">Recorded fees & activity</h3>
           </div>
-          <p className="text-white/25 text-[10px] mt-0.5">14-day · gold = revenue · blue = transactions</p>
+          <p className="text-white/25 text-[10px] mt-0.5">14-day preview register · gold = fee records · blue = activity</p>
         </div>
         <div className="text-right">
           <p className="text-white font-bold text-sm tabular-nums">{fmt(totalRev, '$')}</p>
@@ -663,18 +618,18 @@ export default function AdminDashboard() {
 
   // ── Financial KPI cards ─────────────────────────────────────────────────────
   const financialCards = [
-    { label: 'Total Deposits',    value: fmt(k.totalDeposits?.value, '$'),    change: k.totalDeposits?.change ?? 0,    icon: TrendingUp,   color: '#10B981', href: '/admin/transactions', sub: 'All-time completed',     sparkKey: 'revenue' },
-    { label: 'Total Withdrawals', value: fmt(k.totalWithdrawals?.value, '$'), change: k.totalWithdrawals?.change ?? 0, icon: TrendingDown, color: '#EF4444', href: '/admin/transactions', sub: 'All-time completed',     sparkKey: 'revenue' },
-    { label: 'Total Transfers',   value: fmt(k.totalTransfers?.value, '$'),   change: k.totalTransfers?.change ?? 0,   icon: Send,         color: '#627EEA', href: '/admin/transactions', sub: 'Domestic + wire',        sparkKey: 'revenue' },
-    { label: 'Total Revenue',     value: fmt(k.totalRevenue?.value, '$'),     change: k.totalRevenue?.change ?? 0,     icon: DollarSign,   color: '#C9A84C', href: '/admin/reports',      sub: 'All fees collected',     sparkKey: 'revenue' },
+    { label: 'Recorded Deposits',    value: fmt(k.totalDeposits?.value, '$'),    change: k.totalDeposits?.change ?? 0,    icon: TrendingUp,   color: '#10B981', href: '/admin/transactions', sub: 'Synthetic preview records', sparkKey: 'revenue' },
+    { label: 'Recorded Withdrawals', value: fmt(k.totalWithdrawals?.value, '$'), change: k.totalWithdrawals?.change ?? 0, icon: TrendingDown, color: '#EF4444', href: '/admin/transactions', sub: 'Synthetic preview records', sparkKey: 'revenue' },
+    { label: 'Recorded Transfers',   value: fmt(k.totalTransfers?.value, '$'),   change: k.totalTransfers?.change ?? 0,   icon: Send,         color: '#627EEA', href: '/admin/transactions', sub: 'Synthetic preview records', sparkKey: 'revenue' },
+    { label: 'Recorded Fees',        value: fmt(k.totalRevenue?.value, '$'),     change: k.totalRevenue?.change ?? 0,     icon: DollarSign,   color: '#C9A84C', href: '/admin/reports',      sub: 'Not recognised revenue',   sparkKey: 'revenue' },
   ];
 
   // ── Pending flow cards ──────────────────────────────────────────────────────
   const pendingCards = [
-    { label: 'Pending Deposits',    value: String(k.pendingDeposits?.value ?? 0),    change: 0, icon: TrendingUp,   color: '#F59E0B', href: '/admin/transactions', sub: 'Awaiting processing' },
-    { label: 'Pending Withdrawals', value: String(k.pendingWithdrawals?.value ?? 0), change: 0, icon: TrendingDown, color: '#F59E0B', href: '/admin/transactions', sub: 'Awaiting processing' },
-    { label: 'Pending Transfers',   value: String(k.pendingTransfers?.value ?? 0),   change: 0, icon: Send,         color: '#F59E0B', href: '/admin/transactions', sub: 'Awaiting processing' },
-    { label: 'Monthly Revenue',     value: fmt(k.monthlyRevenue?.value, '$'),        change: k.monthlyRevenue?.change ?? 0, icon: BarChart2, color: '#8B5CF6', href: '/admin/reports', sub: 'This calendar month' },
+    { label: 'Pending Deposit Records',    value: String(k.pendingDeposits?.value ?? 0),    change: 0, icon: TrendingUp,   color: '#F59E0B', href: '/admin/transactions', sub: 'No provider execution' },
+    { label: 'Pending Withdrawal Records', value: String(k.pendingWithdrawals?.value ?? 0), change: 0, icon: TrendingDown, color: '#F59E0B', href: '/admin/transactions', sub: 'No provider execution' },
+    { label: 'Pending Transfer Records',   value: String(k.pendingTransfers?.value ?? 0),   change: 0, icon: Send,         color: '#F59E0B', href: '/admin/transactions', sub: 'No provider execution' },
+    { label: 'Monthly Fee Records',        value: fmt(k.monthlyRevenue?.value, '$'),        change: k.monthlyRevenue?.change ?? 0, icon: BarChart2, color: '#8B5CF6', href: '/admin/reports', sub: 'Not recognised revenue' },
   ];
 
   const hour = new Date().getHours();
@@ -684,7 +639,7 @@ export default function AdminDashboard() {
     <>
       <Helmet>
         <title>Executive Dashboard — City Gate Capital Admin</title>
-        <meta name="description" content="City Gate Capital live executive dashboard — customers, financials, system health, exchange rates, crypto market." />
+        <meta name="description" content="City Gate Capital preview administration dashboard for customers, synthetic records, readiness and system health." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/admin" />
       </Helmet>
@@ -710,6 +665,11 @@ export default function AdminDashboard() {
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
             Refresh
           </button>
+        </div>
+
+        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3">
+          <Lock size={15} className="mt-0.5 shrink-0 text-amber-200" />
+          <div><p className="text-sm font-semibold text-amber-100">Product-preview administration</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">Financial figures below summarize persistent synthetic application records. They are not bank balances, safeguarded funds, assets under management, recognised revenue, or provider-ledger entries. Money movement and provider adapters remain disabled.</p></div>
         </div>
 
         {loading ? (
@@ -741,7 +701,7 @@ export default function AdminDashboard() {
             {/* ── Section 2: Financial KPIs ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
-                <DollarSign size={10} /> Financials
+                <DollarSign size={10} /> Demonstration financial records
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {financialCards.map((c, i) => (
@@ -755,7 +715,7 @@ export default function AdminDashboard() {
             {/* ── Section 3: Pending Flows ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
-                <Clock size={10} /> Pending Flows
+                <Clock size={10} /> Pending demonstration records
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {pendingCards.map((c, i) => (
@@ -766,10 +726,10 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* ── Section 4: Charts + Rates + Crypto ── */}
+            {/* ── Section 4: Preview analytics, rates and boundary ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
-                <BarChart2 size={10} /> Markets & Analytics
+                <BarChart2 size={10} /> Preview analytics & configuration
               </p>
               <div className="grid lg:grid-cols-3 gap-4">
                 {/* Revenue chart — spans 1 col on lg */}
@@ -778,15 +738,14 @@ export default function AdminDashboard() {
                 </div>
                 {/* Exchange rates */}
                 <ExchangeRatesPanel rates={stats?.exchangeRates ?? null} />
-                {/* Crypto market */}
-                <CryptoMarketPanel rates={stats?.exchangeRates ?? null} balances={stats?.cryptoBalances ?? []} />
+                <PreviewDataPanel />
               </div>
             </section>
 
             {/* ── Section 5: Notifications + System Health ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
-                <Activity size={10} /> Live Operations
+                <Activity size={10} /> Operational activity
               </p>
               <div className="grid lg:grid-cols-2 gap-4">
                 {/* Live notifications */}

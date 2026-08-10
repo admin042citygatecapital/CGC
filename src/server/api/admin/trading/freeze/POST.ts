@@ -1,10 +1,12 @@
 import type { Request, Response } from 'express';
 import { appendFreezeEvent, appendTradingLog } from '../../../../lib/tradingAdminStore.js';
+import { requirePaperTrading } from '../../../../lib/platformMode.js';
 
 export default async (req: Request, res: Response) => {
   try {
     const { action, reason } = req.body as { action: 'freeze' | 'unfreeze'; reason?: string };
     if (!action) return res.status(400).json({ error: 'action required (freeze | unfreeze)' });
+    if (action === 'unfreeze' && !requirePaperTrading(res)) return;
 
     const session    = req.adminSession;
     const adminId    = session?.email ?? 'admin';
