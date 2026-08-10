@@ -27,7 +27,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
   // Publishing the informational website is deliberately independent from
   // enabling regulated financial operations. PLATFORM_MODE remains the
   // fail-closed control for deposits, transfers, custody and trading.
-  const isPublicSitePublished = import.meta.env.VITE_PUBLIC_SITE_PUBLISHED === '1';
+  // Default to published for production builds. System/preview hosts are still
+  // blocked from indexing by the server's host-aware X-Robots-Tag middleware.
+  const isPublicSitePublished = import.meta.env.VITE_PUBLIC_SITE_PUBLISHED !== '0';
   return (
     <Website>
       {/* Skip-to-content link for keyboard/screen-reader users */}

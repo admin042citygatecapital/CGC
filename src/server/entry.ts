@@ -9,6 +9,7 @@ import { securityHeaders, enforceHttps, removeFingerprinting, requestSizeGuard, 
 import { pathHardeningMiddleware } from "./lib/pathHardeningMiddleware";
 import { rateLimitMiddleware } from "./lib/rateLimiter";
 import { httpLogger } from "./lib/httpLogger";
+import { isSystemHost } from "./seo-host";
 import cookieParser from "cookie-parser";
 import compression from "compression";
 import { closeConnection } from "./db/db";
@@ -349,8 +350,10 @@ const app = express();
 // informational site may be indexed while PLATFORM_MODE remains preview and
 // all money-moving routes stay fail-closed.
 if (process.env.PUBLIC_SITE_PUBLISHED !== '1') {
-  app.use((_req, res, next) => {
-    res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  app.use((req, res, next) => {
+    if (isSystemHost(req)) {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
     next();
   });
 }
