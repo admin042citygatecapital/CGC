@@ -41,6 +41,7 @@ const PUBLIC_CUSTOMER_PATHS = new Set([
 export function classifyRouteAuth(path: string): DeveloperRouteEntry['auth'] {
   if (path.startsWith('/api/admin/')) return PUBLIC_ADMIN_PATHS.has(path) ? 'public' : 'admin';
   if (path.startsWith('/api/users/')) return PUBLIC_CUSTOMER_PATHS.has(path) ? 'public' : 'customer';
+  if (path === '/api/analytics/event') return 'public';
   if (path.startsWith('/api/analytics/')) return 'admin';
   if (path === '/api/newsletter/send-sequence' || path.startsWith('/api/newsletter/subscribers')) return 'admin';
   if (path === '/api/zoho/connect' || path === '/api/zoho/status') return 'admin';

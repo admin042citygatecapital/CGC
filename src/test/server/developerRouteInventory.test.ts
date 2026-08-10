@@ -33,7 +33,7 @@ describe('Developer Center route inventory', () => {
       'POST /api/analytics/event',
       'GET /api/health',
     ]);
-    expect(catalogue.find(route => route.path === '/api/analytics/event')).toMatchObject({ auth: 'admin' });
+    expect(catalogue.find(route => route.path === '/api/analytics/event')).toMatchObject({ auth: 'public' });
     expect(catalogue.some(route => route.path === '/api/admin/removed-control')).toBe(false);
   });
 
@@ -43,7 +43,8 @@ describe('Developer Center route inventory', () => {
     expect(classifyRouteAuth('/api/admin/readiness')).toBe('admin');
     expect(classifyRouteAuth('/api/users/login')).toBe('public');
     expect(classifyRouteAuth('/api/users/logout')).toBe('customer');
-    expect(classifyRouteAuth('/api/analytics/event')).toBe('admin');
+    expect(classifyRouteAuth('/api/analytics/event')).toBe('public');
+    expect(classifyRouteAuth('/api/analytics/summary')).toBe('admin');
     expect(classifyRouteAuth('/api/newsletter/send-sequence')).toBe('admin');
     expect(classifyRouteAuth('/api/zoho/connect')).toBe('admin');
     expect(classifyRouteAuth('/api/zoho/status')).toBe('admin');

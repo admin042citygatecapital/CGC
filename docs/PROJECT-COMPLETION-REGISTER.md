@@ -49,6 +49,11 @@ This register reconciles the original shared project conversation (230 user mess
 - Replaced the Developer Center's manually counted route display with the running Express route registry, current authentication classification and preview-locked financial descriptions.
 - Removed the unauthenticated `/api/test-email` email-sending endpoint; administrator email testing remains available through the protected administration API.
 - Restricted Zoho OAuth initiation and secret diagnostics to security/super administrators, escaped callback output and removed OAuth credentials from redirect URLs and browser history.
+- Replaced the legacy AIRO/GoDaddy Signals loader with consent-gated first-party analytics, including one-year consent expiry, Global Privacy Control/Do Not Track enforcement and immediate identifier removal on withdrawal.
+- Opened only the data-minimised analytics event intake to public visitors while preserving administrator authentication for every analytics report; added a dedicated per-IP event rate limit.
+- Removed URL queries and fragments from analytics page paths, reduced referrers to origins in both the JSON body and HTTP request, allowlisted metadata and excluded transfer amounts and arbitrary personal fields.
+- Corrected the public Cookie Policy to match actual browser storage and added a working footer preference control above other page overlays.
+- Added server, browser-storage and end-to-end privacy regressions proving that no event is sent before consent, consented events are accepted, sensitive URL parameters are excluded and reports remain protected.
 
 ## Work that is genuinely incomplete
 

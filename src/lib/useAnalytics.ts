@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { getAnalyticsConsent, onConsentChange } from './analytics-consent';
 
 /** All supported event types — must match backend EventType */
 export type EventType =
@@ -38,18 +39,28 @@ async function sendEvent(
   page: string,
   meta?: Record<string, string | number | boolean>
 ): Promise<void> {
+  if (!getAnalyticsConsent()) return;
   try {
+    const safePage = page.split(/[?#]/, 1)[0];
+    let referrer: string | undefined;
+    if (typeof document !== 'undefined' && document.referrer) {
+      try { referrer = new URL(document.referrer).origin; } catch { /* ignore malformed referrers */ }
+    }
     await fetch('/api/analytics/event', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CGC-Analytics-Consent': 'granted',
+      },
       body: JSON.stringify({
         type,
-        page,
-        referrer: typeof document !== 'undefined' ? (document.referrer || undefined) : undefined,
+        page: safePage.startsWith('/') ? safePage : '/',
+        referrer,
         sessionId: getSessionId(),
         meta,
       }),
       keepalive: true,
+      referrerPolicy: 'origin',
     });
   } catch {
     // Silently ignore — analytics must never break the app
@@ -78,7 +89,7 @@ export async function trackEvent(
  * trackConversion('plan_selected', '/accounts', { plan: 'premium', billing: 'monthly' });
  *
  * // User submits a transfer
- * trackConversion('transfer_initiated', '/transfers', { amount: 500, currency: 'USD', corridor: 'US-MX' });
+ * trackConversion('transfer_initiated', '/transfers', { currency: 'USD', corridor: 'US-MX' });
  */
 export function trackConversion(
   type: 'signup_started' | 'signup_completed' | 'account_open' | 'transfer_initiated' | 'plan_selected',
@@ -94,13 +105,20 @@ export function trackConversion(
  */
 export function usePageViewTracking(): void {
   const location = useLocation();
+  const [consented, setConsented] = useState(() => getAnalyticsConsent());
   const lastTracked = useRef<string>('');
 
+  useEffect(() => onConsentChange(setConsented), []);
+
   useEffect(() => {
-    const page = location.pathname + location.search;
+    if (!consented) {
+      lastTracked.current = '';
+      return;
+    }
+    const page = location.pathname;
     // Deduplicate — React StrictMode double-fires effects in dev
     if (lastTracked.current === page) return;
     lastTracked.current = page;
     void sendEvent('pageview', page);
-  }, [location.pathname, location.search]);
+  }, [consented, location.pathname]);
 }

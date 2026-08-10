@@ -105,7 +105,7 @@ export default function TransfersPage() {
       const data = await res.json();
       if (!res.ok) { setSendError(data.error ?? 'Transfer failed.'); return; }
       setSendSuccess(true);
-      trackConversion('transfer_initiated', '/transfers', { amount: sendAmount });
+      trackConversion('transfer_initiated', '/transfers', { currency: sendForm.currency });
     } catch { setSendError('Network error. Please try again.'); }
     finally { setSendBusy(false); }
   }

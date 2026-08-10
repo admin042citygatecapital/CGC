@@ -481,8 +481,18 @@ app.use('/api/users', (req: Request, res: Response, next: NextFunction) => {
   return requireCustomerAuth(req, res, next);
 });
 
-// ── Analytics & newsletter subscriber routes require admin auth ─────────────
-app.use('/api/analytics', requireAdminAuth);
+// Public visitors may submit consented, data-minimised events. Analytics reports
+// and every other analytics route remain administrator-only.
+app.use('/api/analytics/event', rateLimitMiddleware(
+  (req) => `analytics:${req.ip ?? 'unknown'}`,
+  { windowMs: 60_000, max: 30 },
+  'Analytics event rate limit exceeded.',
+));
+app.use('/api/analytics', (req: Request, res: Response, next: NextFunction) => {
+  const suffix = req.path.endsWith('/') && req.path.length > 1 ? req.path.slice(0, -1) : req.path;
+  if (req.method === 'POST' && suffix === '/event') return next();
+  return requireAdminAuth(req, res, next);
+});
 app.use('/api/newsletter/subscribers', requireAdminAuth);
 app.use('/api/newsletter/send-sequence', requireAdminAuth);
 app.use('/api/newsletter/subscribers', csrfProtect);

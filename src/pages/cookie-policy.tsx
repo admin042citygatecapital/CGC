@@ -3,8 +3,8 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Cookie, Shield, BarChart2, Settings, ChevronRight, Mail, ToggleLeft, Globe } from 'lucide-react';
 
-const LAST_UPDATED = 'May 23, 2026';
-const EFFECTIVE_DATE = 'May 23, 2026';
+const LAST_UPDATED = 'August 10, 2026';
+const EFFECTIVE_DATE = 'August 10, 2026';
 const CANONICAL = 'https://citygate.capital/cookie-policy';
 
 interface CookieRow {
@@ -15,14 +15,13 @@ interface CookieRow {
 }
 
 const cookieTable: CookieRow[] = [
-  { name: 'cgc_admin_sid',    purpose: 'Admin session authentication',                  duration: '24 hours',   type: 'Essential'  },
-  { name: 'cgc_csrf',         purpose: 'Cross-site request forgery protection',          duration: 'Session',    type: 'Security'   },
-  { name: 'cgc_session',      purpose: 'User session state',                             duration: '30 days',    type: 'Essential'  },
-  { name: 'cgc_pref',         purpose: 'User preferences (language, theme)',             duration: '1 year',     type: 'Functional' },
-  { name: '_ga',              purpose: 'Google Analytics — distinguishes users',         duration: '2 years',    type: 'Analytics'  },
-  { name: '_ga_*',            purpose: 'Google Analytics — session persistence',         duration: '2 years',    type: 'Analytics'  },
-  { name: 'cgc_consent',      purpose: 'Records your cookie consent choices',            duration: '1 year',     type: 'Essential'  },
-  { name: 'cgc_device_id',    purpose: 'Device fingerprint for fraud prevention',        duration: '90 days',    type: 'Security'   },
+  { name: 'cgc_admin_sid',                purpose: 'Secure administrator session cookie',                       duration: '8 hours by default', type: 'Essential'  },
+  { name: 'csrf_token',                   purpose: 'Protects authenticated administrative changes from CSRF',   duration: '2 hours',            type: 'Security'   },
+  { name: 'cgc_trusted_device',           purpose: 'Optional administrator trusted-device token',               duration: '30 days by default', type: 'Security'   },
+  { name: 'cgc_customer_token',           purpose: 'Preview customer session credential in browser storage',    duration: 'Until logout',        type: 'Essential'  },
+  { name: 'cgc_analytics_consent_v1',     purpose: 'Records the visitor analytics choice in browser storage',   duration: '1 year',              type: 'Essential'  },
+  { name: 'cgc_sid',                      purpose: 'Random analytics identifier scoped to one browser tab',      duration: 'Browser tab',         type: 'Analytics'  },
+  { name: 'cgc_ab_*',                     purpose: 'Consented first-party experiment assignment',               duration: 'Until consent ends',  type: 'Analytics'  },
 ];
 
 const typeColors: Record<CookieRow['type'], string> = {
@@ -44,7 +43,7 @@ const sections = [
       },
       {
         subtitle: '1.2 First-Party vs Third-Party',
-        body: `First-party cookies are set by City Gate Capital directly. Third-party cookies are set by our service providers (such as analytics platforms) when you use our services. We carefully vet all third-party providers and require them to process data only as instructed.`,
+        body: `First-party storage is set by City Gate Capital directly. The optional website analytics described in this policy is first-party and does not load Google Analytics, advertising pixels, or the legacy AIRO Signals tracker.`,
       },
     ],
   },
@@ -67,7 +66,7 @@ const sections = [
       },
       {
         subtitle: '2.4 Analytics Cookies',
-        body: `We use analytics cookies (including Google Analytics) to understand how visitors use our platform — which pages are most visited, where users drop off, and how features are used. This data is aggregated and anonymised. Analytics cookies require your consent.`,
+        body: `With consent, our first-party analytics records a relative page path without query strings, the referring site's origin, a random browser-tab session identifier, a broad device category, and allowlisted feature labels. Event records exclude form contents, credentials, full referring URLs, and IP addresses. Analytics storage is removed when consent expires or is withdrawn.`,
       },
     ],
   },
@@ -78,7 +77,7 @@ const sections = [
     content: [
       {
         subtitle: '3.1 Specific Cookies',
-        body: `The table below lists the specific cookies currently in use on citygate.capital. This list is updated when we add or remove cookies.`,
+        body: `The table below lists the principal cookies and browser-storage keys currently used on citygate.capital. This list is updated when the implementation changes.`,
       },
     ],
     hasTable: true,
@@ -90,11 +89,11 @@ const sections = [
     content: [
       {
         subtitle: '4.1 Cookie Banner',
-        body: `When you first visit our site, we display a cookie consent banner. You can accept all cookies, reject non-essential cookies, or customise your preferences. Your choices are saved in the cgc_consent cookie for 1 year.`,
+        body: `When you first visit our site, we display a consent banner unless your browser sends a recognised privacy opt-out signal. You can accept or decline optional analytics. Your choice is saved in cgc_analytics_consent_v1 for up to 1 year.`,
       },
       {
         subtitle: '4.2 Changing Your Preferences',
-        body: `You can change your cookie preferences at any time by clicking "Cookie Settings" in the footer of our website, or by contacting privacy@citygate.capital. Note that withdrawing consent for analytics or functional cookies does not affect the lawfulness of processing before withdrawal.`,
+        body: `You can change your analytics choice at any time by clicking "Cookie settings" in the footer. Withdrawal removes the analytics session identifier and stored experiment assignments and stops future analytics events.`,
       },
       {
         subtitle: '4.3 Browser Controls',
@@ -102,7 +101,7 @@ const sections = [
       },
       {
         subtitle: '4.4 Opt-Out Tools',
-        body: `To opt out of Google Analytics specifically, you can install the Google Analytics Opt-out Browser Add-on at tools.google.com/dlpage/gaoptout. For broader advertising opt-outs, visit youronlinechoices.eu (EU) or optout.aboutads.info (US).`,
+        body: `We honour Global Privacy Control and the browser Do Not Track value "1" as analytics opt-outs. These signals override a stored analytics acceptance.`,
       },
     ],
   },
@@ -113,11 +112,11 @@ const sections = [
     content: [
       {
         subtitle: '5.1 Analytics',
-        body: `We use Google Analytics (Google LLC, USA) for website analytics. Google may transfer data to the USA under Standard Contractual Clauses. Google's privacy policy is available at policies.google.com/privacy.`,
+        body: `Website usage events are handled by City Gate Capital's first-party endpoint and stored in private application storage. Administrative reports require an authenticated administrator session.`,
       },
       {
         subtitle: '5.2 Security',
-        body: `We use fraud detection and device fingerprinting services to protect our platform. These services process device signals and behavioural data for security purposes only and are not used for advertising.`,
+        body: `Security cookies protect authenticated administration, including CSRF protection and an optional trusted-device token. These controls are not used for advertising.`,
       },
       {
         subtitle: '5.3 No Advertising Cookies',

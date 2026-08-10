@@ -5,7 +5,7 @@ import { E2E_ADMIN, E2E_CUSTOMER } from './test-credentials.js';
 test('public homepage supports WCAG A/AA and keyboard skip navigation', async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(
-      'c2_analytics_consent',
+      'cgc_analytics_consent_v1',
       JSON.stringify({ analytics: false, timestamp: Date.now() }),
     );
   });

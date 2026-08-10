@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { privateSubdirectory } from '../../../lib/storagePaths.js';
 
 const DATA_DIR = privateSubdirectory('analytics');
@@ -39,7 +40,7 @@ export interface AnalyticsEvent {
   page: string;
   referrer?: string;
   sessionId?: string;
-  /** Free-form metadata — e.g. { plan: 'premium', amount: 500, currency: 'USD' } */
+  /** Allowlisted, data-minimised metadata only. */
   meta?: Record<string, string | number | boolean>;
   timestamp: string;
   /** Derived from User-Agent — no PII stored */
@@ -51,6 +52,11 @@ const ALL_TYPES = new Set<string>([
   'signup_started', 'signup_completed', 'account_open',
   'transfer_initiated', 'plan_selected',
   'ab_impression', 'ab_conversion',
+]);
+
+const ALLOWED_META_KEYS = new Set([
+  'source', 'plan', 'billing', 'currency', 'corridor',
+  'experiment', 'variant', 'ab_variant', 'label', 'target',
 ]);
 
 function detectDevice(ua: string): 'mobile' | 'tablet' | 'desktop' {
@@ -65,12 +71,59 @@ function ensureDir() {
   }
 }
 
+function sanitizePage(value: unknown): string | null {
+  if (typeof value !== 'string' || value.length === 0 || value.length > 1_000) return null;
+  const hasControlCharacter = [...value].some(character => {
+    const code = character.charCodeAt(0);
+    return code < 32 || code === 127;
+  });
+  if (!value.startsWith('/') || value.startsWith('//') || hasControlCharacter) return null;
+  const pathname = value.split(/[?#]/, 1)[0].slice(0, 200);
+  return pathname || '/';
+}
+
+function sanitizeReferrer(value: unknown): string | undefined {
+  if (typeof value !== 'string' || value.length > 2_000) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.origin.slice(0, 200) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function sanitizeSessionId(value: unknown): string | undefined {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{8,64}$/.test(value)) return undefined;
+  return value;
+}
+
+function sanitizeMeta(value: unknown): Record<string, string | number | boolean> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const safe: Record<string, string | number | boolean> = {};
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    if (!ALLOWED_META_KEYS.has(key)) continue;
+    if (typeof item === 'string') safe[key] = item.slice(0, 80);
+    else if (typeof item === 'boolean') safe[key] = item;
+    else if (typeof item === 'number' && Number.isFinite(item)) safe[key] = item;
+  }
+  return Object.keys(safe).length ? safe : undefined;
+}
+
 export default function handler(req: Request, res: Response) {
   try {
-    const { type = 'pageview', page, referrer, sessionId, meta } = req.body as Partial<AnalyticsEvent>;
+    if (req.get('X-CGC-Analytics-Consent') !== 'granted') {
+      return res.status(403).json({ error: 'Analytics consent required' });
+    }
 
-    if (!page || typeof page !== 'string') {
-      return res.status(400).json({ error: 'page is required' });
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+      return res.status(400).json({ error: 'Invalid event payload' });
+    }
+
+    const { type = 'pageview', page, referrer, sessionId, meta } = req.body as Partial<AnalyticsEvent>;
+    const safePage = sanitizePage(page);
+
+    if (!safePage) {
+      return res.status(400).json({ error: 'page must be a relative path' });
     }
 
     const rawType = String(type);
@@ -78,12 +131,12 @@ export default function handler(req: Request, res: Response) {
 
     const ua = req.headers['user-agent'] ?? '';
     const event: AnalyticsEvent = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: randomUUID(),
       type: safeType,
-      page: page.slice(0, 200),
-      referrer: referrer ? String(referrer).slice(0, 500) : undefined,
-      sessionId: sessionId ? String(sessionId).slice(0, 64) : undefined,
-      meta: meta && typeof meta === 'object' ? meta : undefined,
+      page: safePage,
+      referrer: sanitizeReferrer(referrer),
+      sessionId: sanitizeSessionId(sessionId),
+      meta: sanitizeMeta(meta),
       timestamp: new Date().toISOString(),
       device: detectDevice(ua),
     };

@@ -232,6 +232,13 @@ export default function Footer() {
             © {new Date().getFullYear()} City Gate Capital Ltd. All rights reserved.
           </p>
           <div className="flex items-center gap-5 text-xs text-foreground/50">
+            <button
+              type="button"
+              onClick={() => window.revokeAnalyticsConsent?.()}
+              className="transition-colors hover:text-primary"
+            >
+              Cookie settings
+            </button>
             <div className="flex items-center gap-1.5">
               <Globe size={11} />
               <span>Financial technology website</span>

@@ -1,17 +1,48 @@
-const CONSENT_KEY = 'c2_analytics_consent';
+export const ANALYTICS_CONSENT_KEY = 'cgc_analytics_consent_v1';
+const CONSENT_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
 
-interface ConsentData {
+export interface ConsentData {
   analytics: boolean;
   timestamp: number;
+}
+
+export function clearAnalyticsStorage(): void {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem(ANALYTICS_CONSENT_KEY);
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith('cgc_ab_')) localStorage.removeItem(key);
+    }
+  }
+  if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('cgc_sid');
 }
 
 function parseConsent(raw: string | null): ConsentData | null {
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as ConsentData;
+    const parsed = JSON.parse(raw) as Partial<ConsentData>;
+    if (typeof parsed.analytics !== 'boolean' || !Number.isFinite(parsed.timestamp)) return null;
+    if ((parsed.timestamp as number) > Date.now() || Date.now() - (parsed.timestamp as number) > CONSENT_MAX_AGE_MS) {
+      return null;
+    }
+    return parsed as ConsentData;
   } catch {
     return null;
   }
+}
+
+export function getStoredAnalyticsConsent(): ConsentData | null {
+  if (typeof localStorage === 'undefined') return null;
+  const raw = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+  const consent = parseConsent(raw);
+  if (raw && !consent) clearAnalyticsStorage();
+  return consent;
+}
+
+export function hasBrowserPrivacyOptOut(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const browser = navigator as Navigator & { globalPrivacyControl?: boolean };
+  return browser.globalPrivacyControl === true || browser.doNotTrack === '1';
 }
 
 /**
@@ -19,9 +50,11 @@ function parseConsent(raw: string | null): ConsentData | null {
  * Reads the stored consent set by CookieBanner.
  */
 export function getAnalyticsConsent(): boolean {
-  if (typeof localStorage === 'undefined') return false;
-  const consent = parseConsent(localStorage.getItem(CONSENT_KEY));
-  return consent?.analytics === true;
+  if (hasBrowserPrivacyOptOut()) {
+    clearAnalyticsStorage();
+    return false;
+  }
+  return getStoredAnalyticsConsent()?.analytics === true;
 }
 
 /**

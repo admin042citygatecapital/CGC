@@ -14,7 +14,8 @@
  *   // variant === 'control' | 'urgency' | 'benefit'
  */
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
+import { getAnalyticsConsent, onConsentChange } from './analytics-consent';
 
 const STORAGE_KEY_PREFIX = 'cgc_ab_';
 
@@ -26,6 +27,7 @@ const STORAGE_KEY_PREFIX = 'cgc_ab_';
  */
 export function getVariant<T extends string>(experimentId: string, variants: T[]): T {
   if (variants.length === 0) throw new Error('variants must be non-empty');
+  if (!getAnalyticsConsent()) return variants[0];
   const key = `${STORAGE_KEY_PREFIX}${experimentId}`;
   try {
     const stored = localStorage.getItem(key);
@@ -68,17 +70,22 @@ async function sendABEvent(
   page: string,
   meta?: Record<string, string | number | boolean>
 ): Promise<void> {
+  if (!getAnalyticsConsent()) return;
   try {
     await fetch('/api/analytics/event', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CGC-Analytics-Consent': 'granted',
+      },
       body: JSON.stringify({
         type: eventType,
-        page,
+        page: page.split(/[?#]/, 1)[0],
         sessionId: getSessionId(),
         meta: { experiment: experimentId, variant, ...meta },
       }),
       keepalive: true,
+      referrerPolicy: 'origin',
     });
   } catch { /* never throw */ }
 }
@@ -122,15 +129,19 @@ export function useABTest<T extends string>(
   variants: readonly T[],
   page: string
 ): ABTestResult<T> {
+  const [consented, setConsented] = useState(() => getAnalyticsConsent());
   const variantList = variants as T[];
-  const variant = useMemo(() => getVariant(experimentId, variantList), [experimentId, variantList.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
+  const variant = useMemo(() => getVariant(experimentId, variantList), [consented, experimentId, variantList.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
   const impressionFired = useRef(false);
 
+  useEffect(() => onConsentChange(setConsented), []);
+
   useEffect(() => {
+    if (!consented) return;
     if (impressionFired.current) return;
     impressionFired.current = true;
     void sendABEvent('ab_impression', experimentId, variant, page);
-  }, [experimentId, variant, page]);
+  }, [consented, experimentId, variant, page]);
 
   const convert = useMemo(
     () => (meta?: Record<string, string | number | boolean>) =>

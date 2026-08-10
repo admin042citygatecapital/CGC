@@ -43,7 +43,7 @@ test('Developer Center reports the running route registry and current auth bound
   expect(data.routes.catalogue).toContainEqual(expect.objectContaining({
     method: 'POST',
     path: '/api/analytics/event',
-    auth: 'admin',
+    auth: 'public',
   }));
   expect(data.routes.catalogue).toContainEqual(expect.objectContaining({
     method: 'POST',
