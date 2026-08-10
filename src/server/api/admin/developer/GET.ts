@@ -188,6 +188,7 @@ const ROUTE_CATALOGUE: Array<{
   { method:'GET',  path:'/api/admin/readiness',                   group:'Platform',         auth:'admin',   description:'Deployment readiness checks' },
   { method:'GET',  path:'/api/admin/env-report',                  group:'Platform',         auth:'admin',   description:'Environment variable status report' },
   { method:'GET',  path:'/api/admin/developer',                   group:'Platform',         auth:'admin',   description:'Developer Center data' },
+  { method:'GET',  path:'/api/admin/documentation/:format',       group:'Platform',         auth:'admin',   description:'Protected API reference snapshot download' },
   // Newsletter
   { method:'GET',  path:'/api/admin/newsletter/campaigns',        group:'Newsletter',       auth:'admin',   description:'Campaign list' },
   { method:'POST', path:'/api/admin/newsletter/campaigns',        group:'Newsletter',       auth:'admin',   description:'Create campaign' },

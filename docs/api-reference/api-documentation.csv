@@ -1,4 +1,5 @@
 Route,Method,Description,Authentication,Response,Rate Limit
+REFERENCE SNAPSHOT,INFO,"Generated 2026-06-04; verify against the current Developer Center. Financial mutations remain preview-locked.",Admin-only reference,N/A,N/A
 /,GET,Homepage,Public,HTML,—
 /about,GET,About City Gate Capital,Public,HTML,—
 /digital-banking,GET,Digital banking feature page,Public,HTML,—

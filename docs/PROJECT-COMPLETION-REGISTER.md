@@ -42,6 +42,8 @@ This register reconciles the original shared project conversation (230 user mess
 - Replaced unsafe chatbot seed answers about transfer settlement, withdrawal limits and card controls with preview-safe guidance; persisted legacy answers are migrated on read and the admin API rejects those claims if reintroduced.
 - Fixed chatbot FAQ category filtering so an empty category result cannot overwrite the persisted knowledge base.
 - Removed unmeasured newsletter open/click percentages from administration reporting; campaign delivery records now state that engagement tracking is not configured and the UI displays “Not tracked.”
+- Removed API reference files from the public asset tree and placed downloads behind administrator authentication and security-role authorization.
+- Reclassified the 2026-06-04 API documents as a historical reference snapshot, removed stale route-count claims from the administration page and identified the current Developer Center/source registry as authoritative.
 
 ## Work that is genuinely incomplete
 

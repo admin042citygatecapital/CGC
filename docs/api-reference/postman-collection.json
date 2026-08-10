@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "City Gate Capital API",
-    "description": "Complete API collection for City Gate Capital — customer-facing and admin endpoints.\n\nBase URL: https://citygate.capital\n\nAuthentication:\n- Customer: Cookie `cgc_customer_token` or `Authorization: Bearer <token>`\n- Admin: Cookie `cgc_admin_sid` or `Authorization: Bearer <token>`\n- CSRF: Obtain token from GET /api/csrf, send as `X-CSRF-Token` header\n\nGenerated: 2026-06-04",
+    "description": "REFERENCE SNAPSHOT — NOT THE CURRENT PRODUCTION CONTRACT. Generated 2026-06-04. Verify every request against the current Developer Center and source route registry. Financial mutation routes remain preview-locked and do not move money, issue cards, approve regulated KYC or execute trades.\n\nBase URL: https://citygate.capital\n\nAuthentication:\n- Customer: Cookie `cgc_customer_token` or `Authorization: Bearer <token>`\n- Admin: Cookie `cgc_admin_sid` or `Authorization: Bearer <token>`\n- CSRF: Obtain token from GET /api/csrf, send as `X-CSRF-Token` header",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "cgc-api-v1-2026-06-04",
     "version": { "major": 1, "minor": 0, "patch": 0 }

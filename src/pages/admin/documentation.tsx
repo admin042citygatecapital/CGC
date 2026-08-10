@@ -8,6 +8,7 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { authHeaders } from '@/lib/adminAuth';
 
 interface DocFile {
   id: string;
@@ -27,10 +28,10 @@ const docs: DocFile[] = [
   {
     id: 'markdown',
     title: 'Markdown Documentation',
-    description: 'Full human-readable reference covering all routes, authentication, rate limits, and request/response formats. Ideal for GitHub wikis and internal documentation sites.',
+    description: 'Human-readable reference snapshot covering the routes documented on 2026-06-04. Verify current behavior in the Developer Center and source route registry before implementation.',
     format: 'Markdown (.md)',
     filename: 'api-documentation.md',
-    path: '/docs/api-documentation.md',
+    path: '/api/admin/documentation/markdown',
     icon: BookOpen,
     badge: 'Recommended',
     badgeVariant: 'default',
@@ -40,10 +41,10 @@ const docs: DocFile[] = [
   {
     id: 'csv',
     title: 'CSV Spreadsheet',
-    description: 'Every route in a flat table: Route, Method, Description, Authentication, Response, Rate Limit. Import into Excel, Google Sheets, or any data tool.',
+    description: 'Reference-snapshot routes in a flat table. It is useful for review and reconciliation but is not the authoritative current route inventory.',
     format: 'CSV (.csv)',
     filename: 'api-documentation.csv',
-    path: '/docs/api-documentation.csv',
+    path: '/api/admin/documentation/csv',
     icon: Table,
     badge: 'Spreadsheet',
     badgeVariant: 'secondary',
@@ -53,10 +54,10 @@ const docs: DocFile[] = [
   {
     id: 'postman',
     title: 'Postman Collection',
-    description: 'Import directly into Postman to test every endpoint. Includes pre-configured auth variables, request bodies, and a test script that auto-saves the admin token on login.',
+    description: 'Reference Postman collection for controlled testing. Review each request against current authorization and preview-lock behavior before use.',
     format: 'JSON (.json)',
     filename: 'postman-collection.json',
-    path: '/docs/postman-collection.json',
+    path: '/api/admin/documentation/postman',
     icon: Braces,
     badge: 'Testing',
     badgeVariant: 'secondary',
@@ -66,10 +67,10 @@ const docs: DocFile[] = [
   {
     id: 'openapi',
     title: 'OpenAPI / Swagger YAML',
-    description: 'OpenAPI 3.1.0 specification covering all endpoints with schemas, security definitions, parameters, and response types. Import into Swagger UI, Redoc, or any OpenAPI-compatible tool.',
+    description: 'OpenAPI 3.1 reference snapshot. It may not include routes added after 2026-06-04 and must not be treated as the current production contract without verification.',
     format: 'YAML (.yaml)',
     filename: 'openapi.yaml',
-    path: '/docs/openapi.yaml',
+    path: '/api/admin/documentation/openapi',
     icon: Code2,
     badge: 'OpenAPI 3.1',
     badgeVariant: 'outline',
@@ -79,26 +80,56 @@ const docs: DocFile[] = [
 ];
 
 const stats = [
-  { label: 'Total Routes', value: '170+' },
-  { label: 'Public Endpoints', value: '14' },
-  { label: 'Customer Endpoints', value: '22' },
-  { label: 'Admin Endpoints', value: '130+' },
+  { label: 'Protected Formats', value: '4' },
+  { label: 'Snapshot Date', value: '2026-06-04' },
+  { label: 'Current Inventory', value: 'Developer Center' },
+  { label: 'Financial Writes', value: 'Preview Locked' },
 ];
 
 export default function AdminDocumentation() {
   const [downloaded, setDownloaded] = useState<Record<string, boolean>>({});
+  const [downloadError, setDownloadError] = useState('');
 
-  function handleDownload(doc: DocFile) {
-    const a = document.createElement('a');
-    a.href = doc.path;
-    a.download = doc.filename;
-    a.click();
-    setDownloaded(prev => ({ ...prev, [doc.id]: true }));
-    setTimeout(() => setDownloaded(prev => ({ ...prev, [doc.id]: false })), 3000);
+  async function fetchDocument(doc: DocFile): Promise<Blob> {
+    const response = await fetch(doc.path, { headers: authHeaders(), credentials: 'same-origin' });
+    if (!response.ok) throw new Error(`Download failed (${response.status})`);
+    return response.blob();
   }
 
-  function handleOpenInBrowser(doc: DocFile) {
-    window.open(doc.path, '_blank', 'noopener,noreferrer');
+  async function handleDownload(doc: DocFile) {
+    setDownloadError('');
+    try {
+      const blob = await fetchDocument(doc);
+      const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.filename;
+    a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1_000);
+    setDownloaded(prev => ({ ...prev, [doc.id]: true }));
+    setTimeout(() => setDownloaded(prev => ({ ...prev, [doc.id]: false })), 3000);
+    } catch (error) {
+      setDownloadError(error instanceof Error ? error.message : 'Download failed');
+    }
+  }
+
+  async function handleOpenInBrowser(doc: DocFile) {
+    setDownloadError('');
+    const preview = window.open('', '_blank');
+    if (!preview) {
+      setDownloadError('Document preview was blocked by the browser');
+      return;
+    }
+    preview.opener = null;
+    try {
+      const blob = await fetchDocument(doc);
+      const url = URL.createObjectURL(blob);
+      preview.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      preview.close();
+      setDownloadError(error instanceof Error ? error.message : 'Document preview failed');
+    }
   }
 
   return (
@@ -114,15 +145,21 @@ export default function AdminDocumentation() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-white text-2xl font-bold tracking-tight">API Documentation</h1>
+            <h1 className="text-white text-2xl font-bold tracking-tight">API Reference Snapshot</h1>
             <p className="text-white/40 text-sm mt-1">
-              Complete HTTP route reference for City Gate Capital — all formats, ready to download.
+              Administrator-only historical reference. The current runtime and source route registry remain authoritative.
             </p>
           </div>
           <Badge variant="outline" className="border-[#C9A84C]/30 text-[#C9A84C] text-xs px-3 py-1">
-            Generated 2026-06-04
+            Reference snapshot · 2026-06-04
           </Badge>
         </div>
+
+        {downloadError && (
+          <div role="alert" className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {downloadError}
+          </div>
+        )}
 
         {/* Stats strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
@@ -220,7 +257,7 @@ export default function AdminDocumentation() {
               <CardTitle className="text-white text-base">Quick Route Summary</CardTitle>
             </div>
             <CardDescription className="text-white/40 text-sm">
-              Key endpoints at a glance. Download the full documentation above for complete details.
+              Selected snapshot endpoints. Confirm current behavior in the Developer Center before relying on them.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -241,16 +278,16 @@ export default function AdminDocumentation() {
                     ['/api/cms/content', 'GET', 'Public CMS content', 'Public'],
                     ['/api/contact', 'POST', 'Submit contact form', 'Public'],
                     ['/api/users/login', 'POST', 'Customer login', 'Public'],
-                    ['/api/users/balance', 'GET', 'Get wallet balances', 'Customer'],
-                    ['/api/users/transactions', 'GET', 'Transaction history', 'Customer'],
-                    ['/api/users/cards', 'GET', 'List virtual cards', 'Customer'],
-                    ['/api/users/transfer', 'POST', 'Initiate transfer', 'Customer'],
+                    ['/api/users/balance', 'GET', 'Demonstration balance projection', 'Customer'],
+                    ['/api/users/transactions', 'GET', 'Demonstration transaction history', 'Customer'],
+                    ['/api/users/cards', 'GET', 'Demonstration card records', 'Customer'],
+                    ['/api/users/transfer', 'POST', 'Preview-locked transfer route', 'Customer'],
                     ['/api/admin/auth/login', 'POST', 'Admin login', 'Public'],
                     ['/api/admin/stats', 'GET', 'Dashboard KPIs', 'Admin'],
                     ['/api/admin/users', 'GET', 'List / search users', 'Admin'],
-                    ['/api/admin/transactions/real', 'GET', 'List transactions', 'Admin'],
-                    ['/api/admin/balance/adjust', 'POST', 'Adjust user balance', 'Admin'],
-                    ['/api/admin/kyc/queue', 'GET', 'KYC review queue', 'Admin'],
+                    ['/api/admin/transactions/real', 'GET', 'Persistent preview transaction records', 'Admin'],
+                    ['/api/admin/balance/adjust', 'POST', 'Preview-locked balance adjustment', 'Admin'],
+                    ['/api/admin/kyc/queue', 'GET', 'Demonstration KYC review queue', 'Admin'],
                     ['/api/admin/security/logs', 'GET', 'Security logs', 'Admin'],
                     ['/api/admin/cms', 'GET/POST', 'CMS content', 'Admin'],
                     ['/api/admin/smtp/status', 'GET', 'Email transport status', 'Admin'],

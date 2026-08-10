@@ -21,6 +21,7 @@ import admin_security_logs_get from "./api/admin/security/logs/GET";
 import admin_trading_logs_get from "./api/admin/trading/logs/GET";
 import admin_users_id_get from "./api/admin/users/[id]/GET";
 import { initializeFaqSafety } from "./lib/smartsuppStore";
+import admin_documentation_format_get from "./api/admin/documentation/[format]/GET";
 
 // <api-imports>
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
@@ -533,6 +534,7 @@ app.get("/api/admin/contacts", admin_contacts_get_39);
 app.get("/api/admin/operations", admin_operations_get);
 app.post("/api/admin/operations", admin_operations_post);
 app.get("/api/admin/developer", admin_developer_get_40);
+app.get("/api/admin/documentation/:format", admin_documentation_format_get);
 app.post("/api/admin/email/flush", admin_email_flush_post_41);
 app.get("/api/admin/email/log", admin_email_log_get_42);
 app.post("/api/admin/email/purge", admin_email_purge_post_43);

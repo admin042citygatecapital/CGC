@@ -16,6 +16,14 @@ test('protected sponsor workspace redirects unauthenticated administrators', asy
   await expect(page.getByRole('heading', { name: 'Secure Login' })).toBeVisible();
 });
 
+test('API reference downloads are not publicly accessible', async ({ request }) => {
+  const protectedReference = await request.get('/api/admin/documentation/markdown');
+  expect(protectedReference.status()).toBe(401);
+
+  const removedPublicReference = await request.get('/docs/api-documentation.md');
+  expect(removedPublicReference.status()).toBe(404);
+});
+
 test('admin login reaches preview controls and authenticated money mutations remain locked', async ({ page }) => {
   await loginAdmin(page);
   await page.goto('/admin/transactions');

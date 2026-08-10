@@ -9,8 +9,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --ssr src/server/entry.ts",
-    "build:vercel": "vite build && vite build --ssr src/server/entry.ts",
+    "build": "vite build && vite build --ssr src/server/entry.ts && node scripts/copy-admin-docs.mjs",
+    "build:vercel": "vite build && vite build --ssr src/server/entry.ts && node scripts/copy-admin-docs.mjs",
     "start": "node dist/server.bundle.mjs",
     "smoke": "node scripts/smoke-built-server.mjs",
     "production-guard": "node scripts/check-production-guard.mjs",

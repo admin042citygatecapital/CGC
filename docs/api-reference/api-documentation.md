@@ -1,6 +1,7 @@
 # City Gate Capital — API & Route Documentation
 
-> Generated: 2026-06-04  
+> **REFERENCE SNAPSHOT — NOT THE CURRENT PRODUCTION CONTRACT.** Generated on 2026-06-04. Verify routes, authorization and response shapes in the current Developer Center and source route registry. Financial mutation routes remain preview-locked and do not move money, issue cards, approve regulated KYC or execute trades.
+>
 > Base URL: `https://citygate.capital`
 
 ---
