@@ -152,6 +152,8 @@ import admin_smtp_test_template_post_128 from "./api/admin/smtp/test-template/PO
 import admin_smtp_verify_post_129 from "./api/admin/smtp/verify/POST";
 import admin_social_get_130 from "./api/admin/social/GET";
 import admin_social_post_131 from "./api/admin/social/POST";
+import admin_social_share_post from "./api/admin/social/share/POST";
+import admin_social_share_opened_post from "./api/admin/social/share/opened/POST";
 import admin_stats_get_132 from "./api/admin/stats/GET";
 import admin_support_get_133 from "./api/admin/support/GET";
 import admin_support_announcements_get_134 from "./api/admin/support/announcements/GET";
@@ -607,6 +609,8 @@ app.post("/api/admin/smtp/test-template", admin_smtp_test_template_post_128);
 app.post("/api/admin/smtp/verify", admin_smtp_verify_post_129);
 app.get("/api/admin/social", admin_social_get_130);
 app.post("/api/admin/social", admin_social_post_131);
+app.post("/api/admin/social/share", admin_social_share_post);
+app.post("/api/admin/social/share/opened", admin_social_share_opened_post);
 app.get("/api/admin/stats", admin_stats_get_132);
 app.get("/api/admin/support", admin_support_get_133);
 app.get("/api/admin/support/announcements", admin_support_announcements_get_134);

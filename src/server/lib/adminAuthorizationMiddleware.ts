@@ -29,6 +29,9 @@ const RULES: readonly Rule[] = [
   { prefix: '/stats', roles: ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] },
   { prefix: '/operations', roles: ['FINANCE_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] },
   { prefix: '/health', roles: ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] },
+  // Public brand publishing remains a super-administrator responsibility
+  // until a dedicated communications role is introduced.
+  { prefix: '/social', roles: [] },
 
   { prefix: '/security/roles', roles: [], methods: ['POST', 'PUT', 'PATCH', 'DELETE'] },
   { prefix: '/security', roles: ['SECURITY_ADMIN'] },

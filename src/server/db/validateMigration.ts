@@ -72,7 +72,7 @@ async function run() {
     ORDER BY tablename
   `;
   const tableNames = tables.map(t => t.tablename);
-  const requiredTables = ['users', 'transactions', 'cards', 'wallets', 'kyc_notes', 'trading_positions', 'trading_orders', 'notifications', 'support_conversations', 'login_events', 'audit_log', 'admin_sessions', 'customer_sessions', 'operations_items'];
+  const requiredTables = ['users', 'transactions', 'cards', 'wallets', 'kyc_notes', 'trading_positions', 'trading_orders', 'notifications', 'support_conversations', 'login_events', 'audit_log', 'admin_sessions', 'customer_sessions', 'operations_items', 'social_profiles', 'social_share_events'];
 
   for (const t of requiredTables) {
     if (tableNames.includes(t)) {

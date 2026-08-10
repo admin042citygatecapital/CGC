@@ -672,6 +672,35 @@ export const operationsItems = pgTable('operations_items', {
   index('operations_items_user_id_idx').on(t.userId),
 ]);
 
+// ── social_profiles / social_share_events ──────────────────────────────────
+// Profile URLs are public configuration. Share events contain message drafts
+// and intent-launch history only; provider OAuth tokens are never stored here.
+export const socialProfiles = pgTable('social_profiles', {
+  platformId:     text('platform_id').primaryKey(),
+  url:            text('url').notNull().default(''),
+  enabled:        boolean('enabled').notNull().default(false),
+  showInFooter:   boolean('show_in_footer').notNull().default(true),
+  showInContact:  boolean('show_in_contact').notNull().default(true),
+  showInDashboard:boolean('show_in_dashboard').notNull().default(false),
+  updatedBy:      text('updated_by'),
+  updatedAt:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const socialShareEvents = pgTable('social_share_events', {
+  id:              text('id').primaryKey(),
+  message:         text('message').notNull(),
+  targetUrl:       text('target_url').notNull(),
+  platforms:       jsonb('platforms').$type<string[]>().notNull().default([]),
+  openedPlatforms: jsonb('opened_platforms').$type<string[]>().notNull().default([]),
+  status:          text('status').notNull().default('ready'),
+  createdBy:       text('created_by').notNull(),
+  createdAt:       timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:       timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('social_share_events_created_idx').on(t.createdAt),
+  index('social_share_events_status_idx').on(t.status),
+]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -700,3 +729,5 @@ export type AuditEntry           = typeof auditLog.$inferSelect;
 export type EmailQueueItem       = typeof emailQueue.$inferSelect;
 export type Subscriber           = typeof subscribers.$inferSelect;
 export type OperationsItemRow    = typeof operationsItems.$inferSelect;
+export type SocialProfileRow     = typeof socialProfiles.$inferSelect;
+export type SocialShareEventRow  = typeof socialShareEvents.$inferSelect;

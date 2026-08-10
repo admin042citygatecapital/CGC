@@ -87,6 +87,14 @@ describe('admin authorization policy', () => {
     expect(status).toHaveBeenCalledWith(403);
   });
 
+  it('reserves public social publishing for the super administrator', () => {
+    for (const role of ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] as AdminRole[]) {
+      const blocked = responseMock();
+      requireAdminAuthorization(request(role, '/social/share', 'POST'), blocked.response, vi.fn() as NextFunction);
+      expect(blocked.status).toHaveBeenCalledWith(403);
+    }
+  });
+
   it('allows the super administrator to access an unknown new route', () => {
     const { response, status } = responseMock();
     const next = vi.fn() as NextFunction;
