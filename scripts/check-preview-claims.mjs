@@ -10,13 +10,19 @@ const publicCopyFiles = [
   'src/pages/transfers.tsx',
   'src/pages/register.tsx',
   'src/pages/kyc.tsx',
+  'src/pages/dashboard/deposits.tsx',
   'src/components/AccountOpeningModal.tsx',
+  'src/components/TawkWidget.tsx',
   'src/content/pages/home.json',
   'src/layouts/parts/Footer.tsx',
   'src/sections/BankingModule.tsx',
   'src/sections/InvestmentsModule.tsx',
   'src/server/lib/homepageContent.ts',
+  'src/server/lib/configStore.ts',
+  'src/server/lib/supportStore.ts',
   'src/server/lib/smartsuppStore.ts',
+  'src/lib/chatbot/chat-config.ts',
+  'src/lib/site-meta.ts',
 ];
 
 const prohibited = [
@@ -28,6 +34,12 @@ const prohibited = [
   /5\.2% APY/i,
   /SOC 2 Type II compliant/i,
   /CGCBGB2L/i,
+  /City Gate Capital Bank/i,
+  /GB29\s+CGCB/i,
+  /40-47-84/i,
+  /premium digital banking platform offering/i,
+  /premier digital banking and investment platform/i,
+  /Your funds are secure and being processed/i,
 ];
 
 const violations = [];

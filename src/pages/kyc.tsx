@@ -263,9 +263,9 @@ function ApprovedState({ name, onDashboard }: { name: string; onDashboard: () =>
         className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
         <BadgeCheck size={40} className="text-emerald-400" />
       </motion.div>
-      <h2 className="text-2xl font-bold text-foreground mb-2">Congratulations, {name.split(' ')[0]}!</h2>
+      <h2 className="text-2xl font-bold text-foreground mb-2">Preview review completed, {name.split(' ')[0]}</h2>
       <p className="text-sm text-foreground/50 max-w-sm mx-auto mb-6">
-        Your identity has been verified. You now have full access to all City Gate Capital banking services including transfers, withdrawals, and virtual cards.
+        An administrator reviewed this demonstration profile. This is not regulated identity verification and does not open or unlock a bank, payment, card, trading, or custody service.
       </p>
       <div className="grid grid-cols-3 gap-3 mb-8 text-left">
         {[
@@ -715,8 +715,8 @@ function KycPageInner() {
   return (
     <>
       <Helmet>
-        <title>Identity Verification (KYC) — City Gate Capital</title>
-        <meta name="description" content="Complete your KYC identity verification to unlock full access to City Gate Capital banking services." />
+        <title>KYC Journey Demonstration — City Gate Capital</title>
+        <meta name="description" content="Explore a demonstration KYC workflow. Real identity verification and financial-account approval are unavailable." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/kyc" />
       </Helmet>

@@ -228,9 +228,9 @@ function defaultConfig(): AppConfig {
       sidebarCollapsed:  false,
     },
     homepage: {
-      heroTitle:                 'The Future of Banking is Here',
-      heroSubtitle:              'Experience next-generation digital banking with City Gate Capital.',
-      heroCtaLabel:              'Open Account',
+      heroTitle:                 'Explore the Future of Financial Technology',
+      heroSubtitle:              'Discover City Gate Capital’s proposed digital-finance experience. No live financial services are currently available.',
+      heroCtaLabel:              'Explore Demo',
       heroCtaUrl:                '/register',
       heroSecondaryCtaLabel:     'Learn More',
       heroSecondaryCtaUrl:       '#features',

@@ -3,12 +3,36 @@ import type { Response } from 'express';
 export const platformMode = (process.env.PLATFORM_MODE ?? 'preview').toLowerCase();
 export const isPreviewMode = platformMode !== 'live';
 
-const LIVE_READINESS_ENV = [
+export const LIVE_READINESS_ENV = [
+  'TARGET_LAUNCH_JURISDICTION',
+  'LEGAL_ENTITY_REGISTRATION',
+  'REGULATORY_COUNSEL_APPROVAL_ID',
   'LIVE_COMPLIANCE_APPROVAL_ID',
+  'SPONSOR_FINANCIAL_INSTITUTION',
+  'PROGRAM_PROVIDER',
+  'PROVIDER_CONTRACTS_APPROVAL_ID',
   'KYC_PROVIDER',
   'AML_SCREENING_PROVIDER',
+  'SANCTIONS_SCREENING_PROVIDER',
+  'TRANSACTION_MONITORING_PROVIDER',
+  'LEDGER_PROVIDER',
+  'RECONCILIATION_CONTROL_ID',
   'PAYMENT_PROVIDER',
+  'CARD_ISSUER_PROCESSOR',
   'CUSTODY_PROVIDER',
+  'COMPLIANCE_OFFICER',
+  'CUSTOMER_DISCLOSURE_APPROVAL_ID',
+  'SECURITY_PENTEST_REPORT_ID',
+  'INCIDENT_RESPONSE_APPROVAL_ID',
+  'DATA_RETENTION_APPROVAL_ID',
+] as const;
+
+export const LIVE_READINESS_FLAGS = [
+  'ENABLE_TRANSACTION_MONITORING',
+  'ENABLE_SIGNED_PROVIDER_WEBHOOKS',
+  'ENABLE_DAILY_RECONCILIATION',
+  'ENABLE_MAKER_CHECKER',
+  'ENABLE_SANCTIONS_RESCREENING',
 ] as const;
 
 /**
@@ -21,16 +45,26 @@ const LIVE_READINESS_ENV = [
  */
 export const LIVE_PROVIDER_ADAPTERS_IMPLEMENTED = false;
 
+export function getLiveFinancialReadinessGaps(): string[] {
+  const gaps = LIVE_READINESS_ENV
+    .filter(name => !process.env[name]?.trim())
+    .map(name => `${name} is not attested`);
+  gaps.push(...LIVE_READINESS_FLAGS
+    .filter(name => process.env[name] !== '1')
+    .map(name => `${name} is not enabled`));
+  if (!LIVE_PROVIDER_ADAPTERS_IMPLEMENTED) {
+    gaps.push('Reviewed sponsor/provider adapters and a reconciled double-entry ledger are not implemented');
+  }
+  return gaps;
+}
+
 /**
  * A live launch requires named, externally approved integrations in addition to
  * the operational switch. These values are readiness attestations, not secrets.
  * Provider adapters must still validate their own credentials and webhooks.
  */
 export function hasLiveFinancialReadiness(): boolean {
-  return LIVE_PROVIDER_ADAPTERS_IMPLEMENTED
-    && LIVE_READINESS_ENV.every((name) => Boolean(process.env[name]?.trim()))
-    && process.env.ENABLE_TRANSACTION_MONITORING === '1'
-    && process.env.ENABLE_SIGNED_PROVIDER_WEBHOOKS === '1';
+  return getLiveFinancialReadinessGaps().length === 0;
 }
 
 /** Production preview deployments must never accept money-moving requests. */

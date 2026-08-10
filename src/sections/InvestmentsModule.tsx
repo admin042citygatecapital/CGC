@@ -102,10 +102,10 @@ export function InvestmentsSection() {
               </div>
               <div className="space-y-3">
                 {[
-                  { label: 'IBAN',           value: 'GB29 CGCB 6016 1331 9268 19', icon: Globe,     color: '#627EEA' },
-                  { label: 'SWIFT / BIC',    value: 'Not issued — preview only',   icon: RefreshCw, color: '#C9A84C' },
-                  { label: 'Account Number', value: '•••• •••• 9268',              icon: Lock,      color: '#10B981' },
-                  { label: 'Routing Number', value: '•••• 4471',                   icon: Shield,    color: '#9945FF' },
+                  { label: 'IBAN',           value: 'Not issued',                  icon: Globe,     color: '#627EEA' },
+                  { label: 'SWIFT / BIC',    value: 'Not issued',                  icon: RefreshCw, color: '#C9A84C' },
+                  { label: 'Account Number', value: 'Not issued',                  icon: Lock,      color: '#10B981' },
+                  { label: 'Routing Number', value: 'Not issued',                  icon: Shield,    color: '#9945FF' },
                 ].map((row, i) => (
                   <motion.div key={row.label}
                     initial={{ opacity: 0, x: 16 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.07 }}

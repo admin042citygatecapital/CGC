@@ -113,8 +113,8 @@ export default function RegisterPage() {
   return (
     <>
       <Helmet>
-        <title>Open an Account — City Gate Capital</title>
-        <meta name="description" content="Create your City Gate Capital account. Multi-currency banking, crypto wallet, and international transfers." />
+        <title>Create a Demonstration Profile — City Gate Capital</title>
+        <meta name="description" content="Create a City Gate Capital demonstration profile to explore proposed financial-technology interfaces. No bank or payment account is opened." />
         <link rel="canonical" href="https://citygate.capital/register" />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>

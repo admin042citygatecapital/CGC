@@ -16,5 +16,5 @@ export interface SiteMeta {
 
 export const siteMeta: SiteMeta = {
 	name: "City Gate Capital",
-	summary: "City Gate Capital is a premium digital banking platform offering multi-currency wallets, crypto exchange, international transfers, and smart cards for global citizens.",
+	summary: "City Gate Capital is a published financial-technology website demonstrating proposed multi-currency, wallet, transfer, card, and administration software; it does not currently provide live financial services.",
 };

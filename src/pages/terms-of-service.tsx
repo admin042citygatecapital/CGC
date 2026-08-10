@@ -212,7 +212,7 @@ export default function TermsOfServicePage() {
     '@type': 'WebPage',
     name: 'Terms of Service — City Gate Capital',
     url: CANONICAL,
-    description: 'The legal agreement governing your use of City Gate Capital digital banking services.',
+    description: 'The legal agreement governing access to the City Gate Capital financial-technology demonstration website.',
     dateModified: LAST_UPDATED,
     publisher: {
       '@type': 'Organization',
@@ -232,10 +232,10 @@ export default function TermsOfServicePage() {
     <>
       <Helmet>
         <title>Terms of Service — City Gate Capital</title>
-        <meta name="description" content="Read the Terms of Service governing your use of City Gate Capital's digital banking, payments, and cryptocurrency services." />
+        <meta name="description" content="Read the Terms of Service governing access to City Gate Capital's financial-technology demonstration website." />
         <link rel="canonical" href={CANONICAL} />
         <meta property="og:title" content="Terms of Service — City Gate Capital" />
-        <meta property="og:description" content="The legal agreement governing your use of City Gate Capital digital banking services." />
+        <meta property="og:description" content="The legal agreement governing access to the City Gate Capital financial-technology demonstration website." />
         <meta property="og:url" content={CANONICAL} />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -248,7 +248,7 @@ export default function TermsOfServicePage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:title" content="Terms of Service — City Gate Capital" />
-        <meta name="twitter:description" content="The legal agreement governing your use of City Gate Capital digital banking services." />
+        <meta name="twitter:description" content="The legal agreement governing access to the City Gate Capital financial-technology demonstration website." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </Helmet>

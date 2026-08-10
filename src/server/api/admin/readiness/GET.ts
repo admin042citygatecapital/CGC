@@ -30,6 +30,7 @@ import { isDatabaseConfigured, testConnection } from '../../../db/db.js';
 import { getOperationalBackupStatus } from '../../../lib/operationalBackup.js';
 import {
   LIVE_PROVIDER_ADAPTERS_IMPLEMENTED,
+  getLiveFinancialReadinessGaps,
   hasLiveFinancialReadiness,
   platformMode,
 } from '../../../lib/platformMode.js';
@@ -255,12 +256,13 @@ async function checkDatabase(): Promise<ReadinessCheck> {
 }
 
 function checkFinancialLaunchGate(): ReadinessCheck {
+  const gaps = getLiveFinancialReadinessGaps();
   if (platformMode !== 'live') {
     return {
       id: 'financial_launch', name: 'Financial Launch Gate', subsystem: 'Compliance & Providers',
       status: 'FAIL', critical: true,
       message: 'Product preview mode is active; live financial operations remain disabled.',
-      detail: 'This is the safe expected state until legal approvals, contracted providers, production adapters, signed webhooks, monitoring, and reconciliation are complete.',
+      detail: `This is the safe expected state. Outstanding evidence:\n- ${gaps.join('\n- ')}`,
     };
   }
   if (!LIVE_PROVIDER_ADAPTERS_IMPLEMENTED || !hasLiveFinancialReadiness()) {
@@ -268,7 +270,7 @@ function checkFinancialLaunchGate(): ReadinessCheck {
       id: 'financial_launch', name: 'Financial Launch Gate', subsystem: 'Compliance & Providers',
       status: 'FAIL', critical: true,
       message: 'Live mode was requested, but the verified financial launch gate is incomplete.',
-      detail: 'Environment labels cannot unlock money movement. Reviewed provider adapters and all readiness attestations are required.',
+      detail: `Environment labels cannot unlock money movement. Outstanding evidence:\n- ${gaps.join('\n- ')}`,
     };
   }
   return {

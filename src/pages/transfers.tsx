@@ -59,6 +59,7 @@ function calcFee(amount: number, cfg: FeeConfig, type: 'transfer' | 'withdrawal'
 export default function TransfersPage() {
   const { customer, token } = useCustomerAuth();
   const location = useLocation();
+  const financialOperationsUnavailable = import.meta.env.VITE_PLATFORM_MODE !== 'live';
 
   // Determine initial tab from URL hash or query
   const params = new URLSearchParams(location.search);
@@ -383,11 +384,11 @@ export default function TransfersPage() {
 
                       <button
                         type="submit"
-                        disabled={sendBusy || !isLoggedIn}
+                        disabled={financialOperationsUnavailable || sendBusy || !isLoggedIn}
                         className="w-full py-3.5 rounded-lg bg-[#C9A84C] text-black font-semibold hover:bg-[#E8C97A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {sendBusy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                        {sendBusy ? 'Processing…' : 'Send Money'}
+                        {financialOperationsUnavailable ? 'Live transfers unavailable' : sendBusy ? 'Processing…' : 'Send Money'}
                       </button>
                     </form>
                   )}
@@ -408,7 +409,7 @@ export default function TransfersPage() {
                       <Info size={16} className="text-[#C9A84C] mt-0.5 shrink-0" />
                       <p className="text-sm text-white/70">
                         <Link to="/login" className="text-[#C9A84C] hover:underline font-medium">Log in</Link> or{' '}
-                        <Link to="/register" className="text-[#C9A84C] hover:underline font-medium">create an account</Link> to deposit funds.
+                        <Link to="/register" className="text-[#C9A84C] hover:underline font-medium">create a demonstration profile</Link> to explore this interface.
                       </p>
                     </div>
                   )}
@@ -418,9 +419,9 @@ export default function TransfersPage() {
                       <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-4">
                         <CheckCircle size={32} className="text-emerald-400" />
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">Deposit Request Received</h3>
-                      <p className="text-white/60 text-sm mb-2">Your deposit request has been submitted and is pending review.</p>
-                      <p className="text-white/40 text-xs mb-6">Funds will be credited to your account once confirmed by our team.</p>
+                      <h3 className="text-lg font-semibold text-white mb-2">Demonstration Record Created</h3>
+                      <p className="text-white/60 text-sm mb-2">No deposit was submitted and no money was received.</p>
+                      <p className="text-white/40 text-xs mb-6">This record cannot be credited, withdrawn, or transferred.</p>
                       <button onClick={() => { setDepSuccess(false); setDepForm({ amount: '', method: 'bank_wire', note: '' }); }}
                         className="px-6 py-2.5 rounded-lg bg-[#C9A84C] text-black font-medium hover:bg-[#E8C97A] transition-colors text-sm">
                         New Request
@@ -476,12 +477,12 @@ export default function TransfersPage() {
 
                       {depForm.method === 'bank_wire' && (
                         <div className="bg-white/3 border border-white/8 rounded-lg p-4 text-sm space-y-1.5">
-                          <p className="text-white/60 font-medium mb-2 flex items-center gap-1.5"><Info size={13} /> Wire Transfer Details</p>
-                          <div className="flex justify-between"><span className="text-white/40">Bank</span><span className="text-white">City Gate Capital Bank</span></div>
-                          <div className="flex justify-between"><span className="text-white/40">Account</span><span className="text-white font-mono">CGC-0001-2847</span></div>
-                          <div className="flex justify-between"><span className="text-white/40">SWIFT</span><span className="text-white font-mono">Preview only</span></div>
-                          <div className="flex justify-between"><span className="text-white/40">IBAN</span><span className="text-white font-mono">GB29 CGCB 6016 1331 9268 19</span></div>
-                          <p className="text-white/30 text-xs pt-1">Include your account ID as the payment reference.</p>
+                          <p className="text-white/60 font-medium mb-2 flex items-center gap-1.5"><Info size={13} /> No Wire Instructions Issued</p>
+                          <div className="flex justify-between"><span className="text-white/40">Bank provider</span><span className="text-white">Not contracted</span></div>
+                          <div className="flex justify-between"><span className="text-white/40">Account</span><span className="text-white font-mono">Not issued</span></div>
+                          <div className="flex justify-between"><span className="text-white/40">SWIFT</span><span className="text-white font-mono">Not issued</span></div>
+                          <div className="flex justify-between"><span className="text-white/40">IBAN</span><span className="text-white font-mono">Not issued</span></div>
+                          <p className="text-amber-400/80 text-xs pt-1">Do not send funds. This page does not provide payment instructions.</p>
                         </div>
                       )}
 
@@ -493,11 +494,11 @@ export default function TransfersPage() {
 
                       <button
                         type="submit"
-                        disabled={depBusy || !isLoggedIn}
+                        disabled={financialOperationsUnavailable || depBusy || !isLoggedIn}
                         className="w-full py-3.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {depBusy ? <Loader2 size={16} className="animate-spin" /> : <ArrowDownLeft size={16} />}
-                        {depBusy ? 'Submitting…' : 'Submit Deposit Request'}
+                        {financialOperationsUnavailable ? 'Live deposits unavailable' : depBusy ? 'Submitting…' : 'Submit Deposit Request'}
                       </button>
                     </form>
                   )}
@@ -628,11 +629,11 @@ export default function TransfersPage() {
 
                       <button
                         type="submit"
-                        disabled={wdBusy || !isLoggedIn}
+                        disabled={financialOperationsUnavailable || wdBusy || !isLoggedIn}
                         className="w-full py-3.5 rounded-lg bg-white/10 border border-white/20 text-white font-semibold hover:bg-white/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {wdBusy ? <Loader2 size={16} className="animate-spin" /> : <ArrowUpRight size={16} />}
-                        {wdBusy ? 'Submitting…' : 'Submit Withdrawal Request'}
+                        {financialOperationsUnavailable ? 'Live withdrawals unavailable' : wdBusy ? 'Submitting…' : 'Submit Withdrawal Request'}
                       </button>
                     </form>
                   )}

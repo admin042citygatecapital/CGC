@@ -211,7 +211,7 @@ export default function TawkWidget() {
         type="button"
         onClick={openSupport}
         disabled={isLoading}
-        aria-label="Open City Gate Capital banking support"
+        aria-label="Open City Gate Capital product support"
         className="group relative flex items-center gap-3 rounded-2xl border border-[#D7B458]/35 bg-[#090909]/95 py-2.5 pl-2.5 pr-4 text-left shadow-[0_18px_50px_rgba(0,0,0,0.55),0_0_30px_rgba(201,168,76,0.16)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[#E6C76A]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D7B458] disabled:cursor-wait"
       >
         <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#E6C76A]/30 bg-gradient-to-br from-[#1B160B] to-black">

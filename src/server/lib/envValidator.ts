@@ -185,6 +185,70 @@ const REGISTRY: EnvVarSpec[] = [
     name: 'CUSTODY_PROVIDER', level: 'INFO', service: 'Financial Launch Gate',
     description: 'Contracted custody provider identifier when custody is in scope.',
   },
+  {
+    name: 'TARGET_LAUNCH_JURISDICTION', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Counsel-approved country or jurisdiction for the first regulated product launch.',
+  },
+  {
+    name: 'LEGAL_ENTITY_REGISTRATION', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Verified legal entity name and registration number that will contract with providers and customers.',
+  },
+  {
+    name: 'REGULATORY_COUNSEL_APPROVAL_ID', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Reference to written perimeter and licensing advice for the selected operating model.',
+  },
+  {
+    name: 'SPONSOR_FINANCIAL_INSTITUTION', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted sponsor bank, EMI, or other authorised institution that legally provides the in-scope service.',
+  },
+  {
+    name: 'PROGRAM_PROVIDER', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted BaaS or programme-management provider identifier.',
+  },
+  {
+    name: 'PROVIDER_CONTRACTS_APPROVAL_ID', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Internal/counsel approval reference covering executed provider agreements and responsibility allocation.',
+  },
+  {
+    name: 'SANCTIONS_SCREENING_PROVIDER', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted sanctions/PEP screening provider and ongoing rescreening service.',
+  },
+  {
+    name: 'TRANSACTION_MONITORING_PROVIDER', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted production fraud and AML transaction-monitoring provider.',
+  },
+  {
+    name: 'LEDGER_PROVIDER', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted double-entry core ledger or sponsor-owned ledger of record.',
+  },
+  {
+    name: 'RECONCILIATION_CONTROL_ID', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Approved daily sponsor/provider-to-ledger reconciliation control and exception runbook.',
+  },
+  {
+    name: 'CARD_ISSUER_PROCESSOR', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Contracted issuer-processor and sponsoring institution when cards are in scope.',
+  },
+  {
+    name: 'COMPLIANCE_OFFICER', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Named qualified compliance officer or MLRO responsible for the approved programme.',
+  },
+  {
+    name: 'CUSTOMER_DISCLOSURE_APPROVAL_ID', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Legal approval reference for customer terms, funds-protection wording, complaints, and product disclosures.',
+  },
+  {
+    name: 'SECURITY_PENTEST_REPORT_ID', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Independent production penetration-test report and remediation approval reference.',
+  },
+  {
+    name: 'INCIDENT_RESPONSE_APPROVAL_ID', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Approved incident, breach, provider outage, and customer-funds response plan reference.',
+  },
+  {
+    name: 'DATA_RETENTION_APPROVAL_ID', level: 'INFO', service: 'Financial Launch Gate',
+    description: 'Approved jurisdiction-specific privacy, recordkeeping, retention, and deletion schedule reference.',
+  },
 
   // ── Application URLs ───────────────────────────────────────────────────────
   {

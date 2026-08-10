@@ -6,7 +6,7 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
-  ArrowLeft, ArrowDownLeft, Copy, Check, Banknote,
+  ArrowLeft, ArrowDownLeft, Banknote,
   Bitcoin, Eye, EyeOff, Loader2, Activity,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
@@ -23,18 +23,6 @@ function fmt(amount: number, currency: string): string {
 
 function PV({ value, privacy, className = '' }: { value: string; privacy: boolean; className?: string }) {
   return privacy ? <span className={`font-mono tracking-widest select-none ${className}`}>••••••</span> : <span className={className}>{value}</span>;
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      onClick={() => { navigator.clipboard?.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-      className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-foreground/30 hover:text-foreground transition-colors shrink-0"
-    >
-      {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-    </button>
-  );
 }
 
 export default function DepositsPage() {
@@ -65,29 +53,27 @@ export default function DepositsPage() {
     return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>;
   }
 
-  const accountId = customer.id.slice(-8).toUpperCase();
-
   const wireDetails = [
-    { label: 'Bank Name',       value: 'City Gate Capital Bank' },
-    { label: 'Account Name',    value: customer.name },
-    { label: 'Account Number',  value: `CGC${accountId}` },
-    { label: 'IBAN',            value: `GB${accountId}CGCB00000000` },
-    { label: 'SWIFT / BIC',     value: 'Not issued — preview only' },
-    { label: 'Sort Code',       value: '40-47-84' },
-    { label: 'Reference',       value: `DEP-${accountId}` },
+    { label: 'Bank provider',   value: 'Not contracted' },
+    { label: 'Account name',    value: 'Not issued' },
+    { label: 'Account number',  value: 'Not issued' },
+    { label: 'IBAN',            value: 'Not issued' },
+    { label: 'SWIFT / BIC',     value: 'Not issued' },
+    { label: 'Sort code',       value: 'Not issued' },
+    { label: 'Reference',       value: 'Not issued' },
   ];
 
   const cryptoAddresses = [
-    { currency: 'BTC',  address: `1CGC${accountId}xK2mP9qR`, network: 'Bitcoin' },
-    { currency: 'ETH',  address: `0x${accountId}a4f2b8c3d1e5`, network: 'ERC-20' },
-    { currency: 'USDT', address: `0x${accountId}a4f2b8c3d1e5`, network: 'ERC-20 / TRC-20' },
+    { currency: 'BTC',  address: 'No deposit address issued', network: 'Bitcoin' },
+    { currency: 'ETH',  address: 'No deposit address issued', network: 'Ethereum' },
+    { currency: 'USDT', address: 'No deposit address issued', network: 'Provider not contracted' },
   ];
 
   return (
     <>
       <Helmet>
-        <title>Deposits — City Gate Capital</title>
-        <meta name="description" content="Deposit funds into your City Gate Capital account via wire transfer or cryptocurrency." />
+        <title>Deposit Interface Demonstration — City Gate Capital</title>
+        <meta name="description" content="Demonstration of proposed deposit interfaces. No bank details or crypto deposit addresses are issued, and no funds are accepted." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/dashboard/deposits" />
       </Helmet>
@@ -100,7 +86,7 @@ export default function DepositsPage() {
             </Link>
             <div className="flex items-center gap-2.5">
               <ArrowDownLeft size={16} className="text-emerald-400" />
-              <h1 className="text-sm font-semibold text-foreground">Deposit Funds</h1>
+              <h1 className="text-sm font-semibold text-foreground">Deposit Interface Demo</h1>
             </div>
             <div className="ml-auto">
               <button
@@ -142,12 +128,12 @@ export default function DepositsPage() {
               style={{ background: 'rgba(255,255,255,0.01)' }}>
               <div className="px-5 py-4 border-b border-white/5">
                 <p className="text-sm font-semibold text-foreground">
-                  {tab === 'wire' ? 'Wire Transfer Details' : 'Crypto Deposit Addresses'}
+                  {tab === 'wire' ? 'Wire Transfer Preview' : 'Crypto Deposit Preview'}
                 </p>
                 <p className="text-xs text-foreground/35 mt-0.5">
                   {tab === 'wire'
-                    ? 'Use these details to send a bank wire transfer to your account'
-                    : 'Send cryptocurrency to your personal deposit addresses below'}
+                    ? 'No bank account or payment instructions have been issued'
+                    : 'No custody provider or crypto address has been issued'}
                 </p>
               </div>
 
@@ -156,8 +142,7 @@ export default function DepositsPage() {
                   {wireDetails.map(({ label, value }) => (
                     <div key={label} className="flex items-center justify-between px-5 py-3.5">
                       <span className="text-xs text-foreground/35 w-32 shrink-0">{label}</span>
-                      <span className="text-xs font-mono text-foreground/70 flex-1 text-right mr-2">{value}</span>
-                      <CopyButton text={value} />
+                      <span className="text-xs font-mono text-foreground/70 flex-1 text-right">{value}</span>
                     </div>
                   ))}
                 </div>
@@ -171,7 +156,6 @@ export default function DepositsPage() {
                       </div>
                       <div className="flex items-center gap-2 bg-white/3 rounded-xl px-3 py-2.5">
                         <span className="text-xs font-mono text-foreground/50 flex-1 truncate">{address}</span>
-                        <CopyButton text={address} />
                       </div>
                     </div>
                   ))}
@@ -181,8 +165,8 @@ export default function DepositsPage() {
               <div className="px-5 py-4 border-t border-white/5 bg-amber-500/4">
                 <p className="text-xs text-amber-400/80">
                   {tab === 'wire'
-                    ? 'Wire transfers typically take 1–3 business days. Always include your reference number.'
-                    : 'Only send the matching cryptocurrency to each address. Sending wrong assets will result in permanent loss.'}
+                    ? 'Do not send money using anything displayed on this page. City Gate Capital does not accept deposits in this environment.'
+                    : 'Do not send cryptocurrency. The platform does not provide custody or deposit addresses in this environment.'}
                 </p>
               </div>
             </motion.div>
@@ -192,15 +176,15 @@ export default function DepositsPage() {
               className="rounded-2xl border border-white/6 overflow-hidden"
               style={{ background: 'rgba(255,255,255,0.01)' }}>
               <div className="px-5 py-4 border-b border-white/5">
-                <p className="text-sm font-semibold text-foreground">Deposit History</p>
-                <p className="text-xs text-foreground/35 mt-0.5">{deposits.length} deposits on record</p>
+                <p className="text-sm font-semibold text-foreground">Demonstration History</p>
+                <p className="text-xs text-foreground/35 mt-0.5">{deposits.length} demonstration records</p>
               </div>
               {txLoading ? (
                 <div className="flex items-center justify-center py-12"><Loader2 size={18} className="animate-spin text-foreground/25" /></div>
               ) : deposits.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-2 text-foreground/20">
                   <Activity size={22} />
-                  <p className="text-xs">No deposits yet</p>
+                  <p className="text-xs">No demonstration records yet</p>
                 </div>
               ) : deposits.slice(0, 15).map((tx, i) => (
                 <div key={tx.id}
