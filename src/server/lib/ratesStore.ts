@@ -8,9 +8,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { privateSubdirectory } from './storagePaths.js';
 
-const RATES_FILE   = '/private/cms/rates.json';
-const FEE_LOG_FILE = '/private/cms/fee-history.jsonl';
+const CMS_DIR      = privateSubdirectory('cms');
+const RATES_FILE   = path.join(CMS_DIR, 'rates.json');
+const FEE_LOG_FILE = path.join(CMS_DIR, 'fee-history.jsonl');
 
 // ── Existing types (preserved for backwards compat) ───────────────────────────
 
@@ -367,7 +369,7 @@ export function feeHistoryCsv(): string {
  */
 export function getWithdrawalUsage(userId: string): { todayUSD: number; monthUSD: number } {
   try {
-    const txFile = '/private/transactions/transactions.jsonl';
+    const txFile = path.join(privateSubdirectory('transactions'), 'transactions.jsonl');
     if (!fs.existsSync(txFile)) return { todayUSD: 0, monthUSD: 0 };
 
     // Use live admin-controlled rates from the store (no hardcoded fallbacks)

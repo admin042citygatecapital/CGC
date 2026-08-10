@@ -5,8 +5,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import type { Session } from './sessionStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const SESSIONS_FILE   = '/private/admin/sessions.json';
+const SESSIONS_FILE   = path.join(privateSubdirectory('admin'), 'sessions.json');
 const INACTIVITY_MS   = (parseInt(process.env.SESSION_TIMEOUT_MINUTES ?? '60', 10)) * 60_000;
 const ABSOLUTE_TTL_MS = (parseInt(process.env.SESSION_MAX_HOURS        ?? '8',  10)) * 3_600_000;
 const MAX_SESSIONS_PER_ADMIN = 5;

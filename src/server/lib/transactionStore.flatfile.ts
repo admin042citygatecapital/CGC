@@ -6,8 +6,9 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { stripDangerousKeys } from './inputValidator.js';
 import type { Transaction, TxQuery } from './transactionStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const TX_FILE = '/private/transactions/transactions.jsonl';
+const TX_FILE = path.join(privateSubdirectory('transactions'), 'transactions.jsonl');
 
 function ensureDir() {
   const dir = path.dirname(TX_FILE);

@@ -7,13 +7,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { privateSubdirectory } from './storagePaths.js';
 
 // ── File paths ────────────────────────────────────────────────────────────────
 
-const SUPPORT_FILE   = '/private/support/conversations.jsonl';
-const CANNED_FILE    = '/private/support/canned-responses.json';
-const ROUTING_FILE   = '/private/support/routing-rules.json';
-const NOTIF_FILE     = '/private/support/notification-settings.json';
+const SUPPORT_DIR    = privateSubdirectory('support');
+const SUPPORT_FILE   = path.join(SUPPORT_DIR, 'conversations.jsonl');
+const CANNED_FILE    = path.join(SUPPORT_DIR, 'canned-responses.json');
+const ROUTING_FILE   = path.join(SUPPORT_DIR, 'routing-rules.json');
+const NOTIF_FILE     = path.join(SUPPORT_DIR, 'notification-settings.json');
 
 // ── Core types ────────────────────────────────────────────────────────────────
 

@@ -124,12 +124,13 @@ export default function AdminLoginPage() {
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Email */}
                     <div>
-                      <label className="text-[11px] text-white/35 uppercase tracking-widest mb-2 block">
+                      <label htmlFor="admin-email" className="text-[11px] text-white/35 uppercase tracking-widest mb-2 block">
                         Email Address
                       </label>
                       <div className="relative">
                         <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                         <input
+                          id="admin-email"
                           type="email"
                           required
                           value={email}
@@ -142,12 +143,13 @@ export default function AdminLoginPage() {
 
                     {/* Password */}
                     <div>
-                      <label className="text-[11px] text-white/35 uppercase tracking-widest mb-2 block">
+                      <label htmlFor="admin-password" className="text-[11px] text-white/35 uppercase tracking-widest mb-2 block">
                         Password
                       </label>
                       <div className="relative">
                         <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                         <input
+                          id="admin-password"
                           type={showPw ? 'text' : 'password'}
                           required
                           value={password}
@@ -157,6 +159,7 @@ export default function AdminLoginPage() {
                         />
                         <button
                           type="button"
+                          aria-label={showPw ? 'Hide password' : 'Show password'}
                           onClick={() => setShowPw(!showPw)}
                           className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
                         >

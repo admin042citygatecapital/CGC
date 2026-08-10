@@ -45,6 +45,10 @@ export const LIVE_READINESS_FLAGS = [
  */
 export const LIVE_PROVIDER_ADAPTERS_IMPLEMENTED = false;
 
+function developmentLocksAreEnforced(): boolean {
+  return process.env.ENFORCE_PREVIEW_LOCKS === '1';
+}
+
 export function getLiveFinancialReadinessGaps(): string[] {
   const gaps = LIVE_READINESS_ENV
     .filter(name => !process.env[name]?.trim())
@@ -69,7 +73,7 @@ export function hasLiveFinancialReadiness(): boolean {
 
 /** Production preview deployments must never accept money-moving requests. */
 export function requireFinancialOperations(res: Response): boolean {
-  if (process.env.NODE_ENV !== 'production') return true;
+  if (process.env.NODE_ENV !== 'production' && !developmentLocksAreEnforced()) return true;
   if (
     platformMode === 'live'
     && process.env.ENABLE_FINANCIAL_OPERATIONS === '1'
@@ -85,7 +89,7 @@ export function requireFinancialOperations(res: Response): boolean {
 }
 
 export function requirePaperTrading(res: Response): boolean {
-  if (process.env.NODE_ENV !== 'production') return true;
+  if (process.env.NODE_ENV !== 'production' && !developmentLocksAreEnforced()) return true;
   if (process.env.ENABLE_PAPER_TRADING === '1') return true;
   res.status(503).json({
     error: 'Paper trading is disabled in this product-preview environment.',
@@ -95,7 +99,7 @@ export function requirePaperTrading(res: Response): boolean {
 }
 
 export function requirePublicRegistration(res: Response): boolean {
-  if (process.env.NODE_ENV !== 'production') return true;
+  if (process.env.NODE_ENV !== 'production' && !developmentLocksAreEnforced()) return true;
   if (process.env.ALLOW_PUBLIC_REGISTRATION === '1') return true;
   res.status(503).json({
     error: 'Public registration is disabled in this product-preview environment.',

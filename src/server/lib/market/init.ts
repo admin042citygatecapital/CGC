@@ -24,6 +24,11 @@ export function initMarketProviders() {
   if (initialised) return;
   initialised = true;
 
+  if (process.env.DISABLE_EXTERNAL_MARKET_DATA === '1') {
+    console.log('[market] External providers disabled for isolated runtime');
+    return;
+  }
+
   // No-key providers — always register
   marketRegistry.register(new BinanceProvider());
   marketRegistry.register(new CoinbaseProvider());

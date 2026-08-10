@@ -5,8 +5,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import type { LoginActor, LoginResult, LoginEvent } from './loginLog.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const LOGIN_LOG_FILE = '/private/logs/login.jsonl';
+const LOGIN_LOG_FILE = path.join(privateSubdirectory('logs'), 'login.jsonl');
 
 function ensureDir() { const dir = path.dirname(LOGIN_LOG_FILE); if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); }
 

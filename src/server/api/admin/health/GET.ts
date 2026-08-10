@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import os from 'node:os';
+import path from 'node:path';
+import { mediaAssetRoot, privateSubdirectory } from '../../../lib/storagePaths.js';
 
 interface StoreStats {
   exists: boolean;
@@ -38,28 +40,30 @@ export default function handler(_req: Request, res: Response) {
   const memUsage = process.memoryUsage();
 
   // Deep store inspection
+  const adminDir = privateSubdirectory('admin');
+  const usersDir = privateSubdirectory('users');
   const stores = {
-    users:        inspectJsonl('/private/users/users.jsonl'),
-    loginLog:     inspectJsonl('/private/admin/login-log.jsonl'),
-    accessLog:    inspectJsonl('/private/admin/access-log.jsonl'),
-    sessions:     inspectJsonl('/private/admin/sessions.json'),   // JSON object, not JSONL
-    contacts:     inspectJsonl('/private/contacts/submissions.jsonl'),
-    accounts:     inspectJsonl('/private/accounts/applications.jsonl'),
-    newsletter:   inspectJsonl('/private/newsletter/subscribers.jsonl'),
-    cmsContent:   inspectJsonl('/private/admin/cms.json'),
-    adminSettings:inspectJsonl('/private/admin/settings.json'),
+    users:        inspectJsonl(path.join(usersDir, 'users.jsonl')),
+    loginLog:     inspectJsonl(path.join(adminDir, 'login-log.jsonl')),
+    accessLog:    inspectJsonl(path.join(adminDir, 'access-log.jsonl')),
+    sessions:     inspectJsonl(path.join(adminDir, 'sessions.json')),   // JSON object, not JSONL
+    contacts:     inspectJsonl(path.join(privateSubdirectory('contacts'), 'submissions.jsonl')),
+    accounts:     inspectJsonl(path.join(privateSubdirectory('accounts'), 'applications.jsonl')),
+    newsletter:   inspectJsonl(path.join(privateSubdirectory('newsletter'), 'subscribers.jsonl')),
+    cmsContent:   inspectJsonl(path.join(adminDir, 'cms.json')),
+    adminSettings:inspectJsonl(path.join(adminDir, 'settings.json')),
   };
 
   const assetDirs = {
-    publicAssets: countDir('/shared-storage/public/assets'),
-    privateAdmin: countDir('/private/admin'),
-    privateUsers: countDir('/private/users'),
+    publicAssets: countDir(mediaAssetRoot),
+    privateAdmin: countDir(adminDir),
+    privateUsers: countDir(usersDir),
   };
 
   // Session count from store file — sessions.json (not .jsonl)
   let activeSessions = 0;
   try {
-    const raw = fs.readFileSync('/private/admin/sessions.json', 'utf-8');
+    const raw = fs.readFileSync(path.join(adminDir, 'sessions.json'), 'utf-8');
     const sessionsObj = JSON.parse(raw) as Record<string, { lastSeenAt?: string; createdAt: string }>;
     const now = Date.now();
     const INACTIVITY_MS = 60 * 60_000; // 60 min
@@ -72,7 +76,7 @@ export default function handler(_req: Request, res: Response) {
   // User counts
   let userStats = { total: 0, verified: 0, pending: 0, suspended: 0 };
   try {
-    const raw = fs.readFileSync('/private/users/users.jsonl', 'utf-8');
+    const raw = fs.readFileSync(path.join(usersDir, 'users.jsonl'), 'utf-8');
     const users = raw.split('\n').filter(l => l.trim()).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
     userStats = {
       total:     users.length,

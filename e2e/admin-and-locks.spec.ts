@@ -1,0 +1,49 @@
+import { expect, test } from '@playwright/test';
+import { E2E_ADMIN } from './test-credentials.js';
+
+async function loginAdmin(page: import('@playwright/test').Page) {
+  await page.goto('/admin/login');
+  await page.locator('input[type="email"]').fill(E2E_ADMIN.email);
+  await page.locator('input[type="password"]').fill(E2E_ADMIN.password);
+  await page.getByRole('button', { name: /access admin panel/i }).click();
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
+  await expect(page.getByText('Product-preview administration')).toBeVisible();
+}
+
+test('protected sponsor workspace redirects unauthenticated administrators', async ({ page }) => {
+  await page.goto('/admin/sponsor-readiness');
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByRole('heading', { name: 'Secure Login' })).toBeVisible();
+});
+
+test('admin login reaches preview controls and authenticated money mutations remain locked', async ({ page }) => {
+  await loginAdmin(page);
+  await page.goto('/admin/transactions');
+  await expect(page.getByText('Persistent demonstration register', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /create transaction/i })).toHaveCount(0);
+
+  const csrfResponse = await page.request.get('/api/csrf');
+  const { csrfToken } = await csrfResponse.json() as { csrfToken: string };
+  const mutation = await page.request.post('/api/admin/balance/adjust', {
+    headers: { 'X-CSRF-Token': csrfToken },
+    data: { userId: 'e2e-preview-user', amount: 1, currency: 'GBP', type: 'credit', note: 'must remain locked' },
+  });
+  expect(mutation.status()).toBe(503);
+  await expect(mutation.json()).resolves.toMatchObject({ code: 'PREVIEW_MODE' });
+});
+
+test('sponsor-readiness remains an authenticated workspace and reports its database dependency', async ({ page }) => {
+  await loginAdmin(page);
+  await page.goto('/admin/sponsor-readiness');
+  await expect(page.getByText('UK sponsor-readiness workspace')).toBeVisible();
+  await expect(page.getByText('Financial operations remain locked')).toBeVisible();
+  await expect(page.getByText('Sponsor readiness requires PostgreSQL.')).toBeVisible();
+});
+
+test('admin password recovery gives the same generic confirmation for unknown accounts', async ({ page }) => {
+  await page.goto('/admin/forgot-password');
+  await page.locator('input[type="email"]').fill('unknown-admin@example.test');
+  await page.getByRole('button', { name: /send reset link/i }).click();
+  await expect(page.getByRole('heading', { name: 'Check Your Inbox' })).toBeVisible();
+  await expect(page.getByText(/If that email is registered/i)).toBeVisible();
+});

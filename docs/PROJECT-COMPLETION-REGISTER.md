@@ -31,6 +31,8 @@ This register reconciles the original shared project conversation (230 user mess
 - Corrected the daily chart to count fee records rather than incorrectly treating deposits as revenue.
 - Forced legacy market/provider planning records to appear disabled in preview, removed invented provider-health presentation, and guarded every activation path.
 - Removed simulated media-optimization savings; the API now reports that no optimizer is configured without altering stored metadata.
+- Added a real-browser release suite covering public branding, customer and administrator access control, session persistence, both recovery flows, sponsor-readiness protection and server-side financial-operation locks.
+- Isolated browser-test customer, session, audit, support, rate, trading and transaction data under a temporary private-data root; the suite cannot read or alter production or developer records.
 
 ## Work that is genuinely incomplete
 
@@ -49,8 +51,8 @@ These items cannot be completed by application code or by an administrator chang
 ### Next engineering work, in order
 
 1. Continue removing or converting legacy mock-oriented admin views so every operational number comes from PostgreSQL or is explicitly labelled synthetic/deferred.
-2. Add browser-level end-to-end coverage for the critical admin, customer login, email recovery and production-lock flows.
-3. Add automated accessibility checks and keyboard-flow tests for the public site and authenticated dashboards.
+2. Add automated accessibility checks and keyboard-flow tests for the public site and authenticated dashboards.
+3. Expand the browser suite to responsive navigation, administrator role boundaries and database-backed sponsor evidence lifecycle journeys.
 4. Once a sponsor is selected, implement one provider sandbox adapter behind the existing provider-neutral contracts, signed-webhook validation and reconciliation harness.
 5. Only after sponsor certification, replace the application balance model with the sponsor/core double-entry ledger projection.
 

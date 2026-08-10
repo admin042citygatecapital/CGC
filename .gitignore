@@ -38,6 +38,8 @@ out/
 
 # Testing
 coverage/
+playwright-report/
+test-results/
 
 # Cache directories
 .cache/

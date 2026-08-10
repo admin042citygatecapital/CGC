@@ -14,8 +14,9 @@
 import fs   from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { privateSubdirectory } from './storagePaths.js';
 
-const ADMIN_DIR = path.resolve(process.cwd(), '/private/trading/admin');
+const ADMIN_DIR = privateSubdirectory(path.join('trading', 'admin'));
 function ensureDir() {
   if (!fs.existsSync(ADMIN_DIR)) fs.mkdirSync(ADMIN_DIR, { recursive: true });
 }

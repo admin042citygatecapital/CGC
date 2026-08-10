@@ -8,10 +8,11 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { stripDangerousKeys } from './inputValidator.js';
 import type { CreateUserInput, UserRecord } from './userStore.js';
+import { privateSubdirectory } from './storagePaths.js';
 
 const INACTIVITY_MS   = (parseInt(process.env.SESSION_CUSTOMER_TIMEOUT_MINUTES ?? '60', 10)) * 60_000;
 const ABSOLUTE_TTL_MS = (parseInt(process.env.SESSION_CUSTOMER_MAX_HOURS       ?? '8',  10)) * 3_600_000;
-const USERS_FILE = '/private/users/users.jsonl';
+const USERS_FILE = path.join(privateSubdirectory('users'), 'users.jsonl');
 
 function ensureDir() {
   const dir = path.dirname(USERS_FILE);

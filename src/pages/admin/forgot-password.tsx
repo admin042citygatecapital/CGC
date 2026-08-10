@@ -125,12 +125,13 @@ export default function AdminForgotPasswordPage() {
 
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <label className="text-[11px] text-white/35 uppercase tracking-widest mb-2 block">
+                      <label htmlFor="admin-reset-email" className="text-[11px] text-white/35 uppercase tracking-widest mb-2 block">
                         Admin Email Address
                       </label>
                       <div className="relative">
                         <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                         <input
+                          id="admin-reset-email"
                           type="email"
                           required
                           value={email}

@@ -5,8 +5,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import type { AuditEntry } from './auditLog.js';
+import { privateSubdirectory } from './storagePaths.js';
 
-const AUDIT_FILE = '/private/admin/audit.jsonl';
+const AUDIT_FILE = path.join(privateSubdirectory('admin'), 'audit.jsonl');
 
 function ensureDir() { const dir = path.dirname(AUDIT_FILE); if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); }
 
