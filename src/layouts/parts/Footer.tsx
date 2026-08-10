@@ -6,15 +6,15 @@ import type { BusinessLocation } from '@/lib/businessLocation';
 
 const footerLinks = {
   Product: [
-    { label: 'Digital Banking', href: '/digital-banking' },
-    { label: 'Crypto Wallet',   href: '/accounts'        },
-    { label: 'Accounts',        href: '/accounts'        },
-    { label: 'Transfers',       href: '/accounts'        },
+    { label: 'Platform Demo',     href: '/demo'                 },
+    { label: 'Banking Demo',      href: '/demo/digital-banking' },
+    { label: 'Account Demo',      href: '/demo/accounts'        },
+    { label: 'Sponsor Readiness', href: '/compliance'           },
   ],
   Company: [
     { label: 'About Us',  href: '/about'   },
     { label: 'Contact',   href: '/contact' },
-    { label: 'Support',   href: '/support' },
+    { label: 'Demo Support', href: '/demo/support' },
     { label: 'Careers',   href: '/contact' },
   ],
   Legal: [
@@ -26,11 +26,11 @@ const footerLinks = {
 };
 
 const trustItems = [
-  'Published financial technology website',
-  'No live deposits or customer funds',
-  'Financial operations disabled by default',
+  'Secure financial technology',
+  'Provider-ready architecture',
+  'Fail-closed operational controls',
   'Role-based administration',
-  'Financial services subject to legal and provider approval',
+  'Evidence-led sponsor readiness',
 ];
 
 interface SocialLink {
@@ -159,7 +159,7 @@ export default function Footer() {
               <CgcLogo size={52} variant="horizontal" glow />
             </Link>
             <p className="text-sm text-foreground/55 leading-relaxed max-w-xs mb-6">
-              Financial technology designed for secure, modern and globally connected digital experiences.
+              Secure financial technology and operational infrastructure for modern, globally connected experiences.
             </p>
             {businessLocation && <a
               href={businessLocation.directionsUrl}
@@ -241,10 +241,10 @@ export default function Footer() {
             </button>
             <div className="flex items-center gap-1.5">
               <Globe size={11} />
-              <span>Financial technology website</span>
+              <span>Financial technology company</span>
             </div>
             <span className="hidden md:inline">·</span>
-            <span className="hidden md:inline">No live deposits or transactions</span>
+            <span className="hidden md:inline">Regulated services subject to authorisation and provider approval</span>
           </div>
         </div>
       </div>

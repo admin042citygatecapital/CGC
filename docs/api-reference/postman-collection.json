@@ -133,10 +133,10 @@
       "name": "Customer — Cards",
       "auth": { "type": "noauth" },
       "item": [
-        { "name": "List Cards", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/cards", "description": "List customer's virtual cards" } },
-        { "name": "Generate Card", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/generate", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"label\": \"Shopping Card\",\n  \"currency\": \"USD\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Generate a new virtual card" } },
-        { "name": "Freeze / Unfreeze Card", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/freeze", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"cardId\": \"card_id_here\",\n  \"frozen\": true\n}", "options": { "raw": { "language": "json" } } }, "description": "Freeze or unfreeze a virtual card" } },
-        { "name": "Delete Card", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/delete", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"cardId\": \"card_id_here\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Delete a virtual card" } }
+        { "name": "List Cards", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/cards", "description": "List masked synthetic card metadata without PAN/CVV" } },
+        { "name": "Generate Card (Unavailable)", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/generate", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } }, "description": "Returns 503 until a contracted issuer adapter is implemented" } },
+        { "name": "Freeze Card (Unavailable)", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/freeze", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"cardId\": \"card_id_here\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Returns 503 until a contracted issuer adapter is implemented" } },
+        { "name": "Delete Card (Unavailable)", "request": { "method": "POST", "url": "{{baseUrl}}/api/users/cards/delete", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"cardId\": \"card_id_here\"\n}", "options": { "raw": { "language": "json" } } }, "description": "Returns 503 until a contracted issuer adapter is implemented" } }
       ]
     },
     {

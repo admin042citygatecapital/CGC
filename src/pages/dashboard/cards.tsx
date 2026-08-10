@@ -4,12 +4,12 @@
  * reveal PAN/CVV, and request a new card.
  */
 import { Helmet } from '@dr.pogodin/react-helmet';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  CreditCard, ChevronLeft, Eye, EyeOff, Snowflake, Zap,
-  Plus, Copy, CheckCheck, Loader2, ShieldCheck, XCircle,
+  CreditCard, ChevronLeft, Snowflake,
+  Loader2, ShieldCheck, XCircle,
   Clock, Wifi,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
@@ -18,9 +18,7 @@ interface VirtualCard {
   id:             string;
   cardholderName: string;
   numberMasked:   string;
-  numberFull:     string;
   expiry:         string;
-  cvv:            string;
   network:        string;
   status:         string;
   createdAt:      string;
@@ -52,17 +50,11 @@ export default function DashboardCardsPage() {
   const [cards,        setCards]        = useState<VirtualCard[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [activeIdx,    setActiveIdx]    = useState(0);
-  const [revealedNum,  setRevealedNum]  = useState<string | null>(null);
-  const [revealedCvv,  setRevealedCvv]  = useState<string | null>(null);
-  const [freezingId,   setFreezingId]   = useState<string | null>(null);
-  const [copied,       setCopied]       = useState<string | null>(null);
-  const [requesting,   setRequesting]   = useState(false);
-  const [requestMsg,   setRequestMsg]   = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
     setLoading(true);
-    fetch('/api/users/cards', { headers: { Authorization: `Bearer ${token}` } })
+    fetch('/api/users/cards', { credentials: 'same-origin' })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.cards) setCards(data.cards.filter((c: VirtualCard) => c.status !== 'deleted'));
@@ -71,64 +63,13 @@ export default function DashboardCardsPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  const handleFreezeToggle = useCallback(async (card: VirtualCard) => {
-    if (!token || freezingId) return;
-    setFreezingId(card.id);
-    try {
-      const res = await fetch('/api/users/cards/freeze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ cardId: card.id }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCards(prev => prev.map(c =>
-          c.id === card.id ? { ...c, status: data.status ?? (card.status === 'frozen' ? 'active' : 'frozen') } : c
-        ));
-        setRevealedNum(null);
-        setRevealedCvv(null);
-      }
-    } catch { /* silent */ }
-    finally { setFreezingId(null); }
-  }, [token, freezingId]);
-
-  const handleCopy = useCallback((text: string, key: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(key);
-      setTimeout(() => setCopied(null), 2000);
-    }).catch(() => {});
-  }, []);
-
-  const handleRequestCard = useCallback(async () => {
-    if (!token || requesting) return;
-    setRequesting(true);
-    setRequestMsg(null);
-    try {
-      const res = await fetch('/api/users/cards/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setRequestMsg('Card request submitted. Our team will issue your card within 1–2 business days.');
-      } else {
-        setRequestMsg(data.error ?? 'Unable to request card at this time. Please contact support.');
-      }
-    } catch {
-      setRequestMsg('Network error. Please try again.');
-    } finally {
-      setRequesting(false);
-    }
-  }, [token, requesting]);
-
   const activeCard = cards[activeIdx] ?? null;
 
   return (
     <>
       <Helmet>
         <title>Cards — City Gate Capital</title>
-        <meta name="description" content="Manage your City Gate Capital virtual cards: view, freeze, unfreeze, and request new cards." />
+        <meta name="description" content="Review synthetic City Gate Capital card records. Card issuing and lifecycle controls are unavailable." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/dashboard/cards" />
       </Helmet>
@@ -152,6 +93,16 @@ export default function DashboardCardsPage() {
 
         <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
 
+          <div className="flex items-start gap-3 px-4 py-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06]">
+            <ShieldCheck size={15} className="text-amber-300 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-amber-200">Read-only synthetic card records</p>
+              <p className="text-[10px] text-amber-100/60 leading-relaxed mt-1">
+                These are demonstration records, not issued cards or processor records. Full card numbers and CVVs are not loaded. Requests and lifecycle controls require a contracted issuer integration.
+              </p>
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 size={24} className="animate-spin text-foreground/20" />
@@ -163,21 +114,9 @@ export default function DashboardCardsPage() {
                 <CreditCard size={24} className="text-foreground/20" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground/70">No cards yet</p>
-                <p className="text-xs text-foreground/30 mt-1">Request a virtual card to get started</p>
+                <p className="text-sm font-semibold text-foreground/70">No synthetic card records</p>
+                <p className="text-xs text-foreground/30 mt-1">Card issuing is not available in this environment.</p>
               </div>
-              <button
-                onClick={handleRequestCard}
-                disabled={requesting}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                style={{ background: '#C9A84C', color: '#000' }}
-              >
-                {requesting ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-                Request Virtual Card
-              </button>
-              {requestMsg && (
-                <p className="text-xs text-foreground/50 max-w-xs">{requestMsg}</p>
-              )}
             </div>
           ) : (
             <>
@@ -222,27 +161,9 @@ export default function DashboardCardsPage() {
                         </div>
 
                         {/* Card number */}
-                        <div className="flex items-center gap-2">
-                          <p className="font-mono text-base tracking-[0.2em] text-white/90">
-                            {revealedNum === activeCard.id
-                              ? activeCard.numberFull?.replace(/(.{4})/g, '$1 ').trim()
-                              : activeCard.numberMasked}
-                          </p>
-                          <button
-                            onClick={() => setRevealedNum(r => r === activeCard.id ? null : activeCard.id)}
-                            className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-white/40 hover:text-white/80 transition-colors"
-                          >
-                            {revealedNum === activeCard.id ? <EyeOff size={11} /> : <Eye size={11} />}
-                          </button>
-                          {revealedNum === activeCard.id && (
-                            <button
-                              onClick={() => handleCopy(activeCard.numberFull, 'num')}
-                              className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-white/40 hover:text-white/80 transition-colors"
-                            >
-                              {copied === 'num' ? <CheckCheck size={11} className="text-emerald-400" /> : <Copy size={11} />}
-                            </button>
-                          )}
-                        </div>
+                        <p className="font-mono text-base tracking-[0.2em] text-white/90">
+                          {activeCard.numberMasked}
+                        </p>
 
                         {/* Bottom row */}
                         <div className="flex items-end justify-between">
@@ -256,17 +177,7 @@ export default function DashboardCardsPage() {
                           </div>
                           <div className="text-right">
                             <p className="text-[9px] text-white/30 uppercase tracking-widest">CVV</p>
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <p className="text-xs font-semibold text-white/80 font-mono">
-                                {revealedCvv === activeCard.id ? activeCard.cvv : '•••'}
-                              </p>
-                              <button
-                                onClick={() => setRevealedCvv(r => r === activeCard.id ? null : activeCard.id)}
-                                className="w-4 h-4 flex items-center justify-center text-white/30 hover:text-white/70 transition-colors"
-                              >
-                                {revealedCvv === activeCard.id ? <EyeOff size={9} /> : <Eye size={9} />}
-                              </button>
-                            </div>
+                            <p className="text-xs font-semibold text-white/40 font-mono mt-0.5">Not loaded</p>
                           </div>
                         </div>
                       </div>
@@ -294,7 +205,7 @@ export default function DashboardCardsPage() {
                     {cards.map((c, i) => (
                       <button
                         key={c.id}
-                        onClick={() => { setActiveIdx(i); setRevealedNum(null); setRevealedCvv(null); }}
+                        onClick={() => setActiveIdx(i)}
                         className="rounded-full transition-all"
                         style={{
                           width: i === activeIdx ? 20 : 6,
@@ -307,45 +218,6 @@ export default function DashboardCardsPage() {
                 )}
               </div>
 
-              {/* Card actions */}
-              {activeCard && (
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => handleFreezeToggle(activeCard)}
-                    disabled={!!freezingId || activeCard.status === 'expired'}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border text-xs font-semibold transition-all disabled:opacity-40"
-                    style={{
-                      background: activeCard.status === 'frozen' ? 'rgba(98,126,234,0.12)' : 'rgba(255,255,255,0.04)',
-                      borderColor: activeCard.status === 'frozen' ? 'rgba(98,126,234,0.3)' : 'rgba(255,255,255,0.08)',
-                      color: activeCard.status === 'frozen' ? '#627EEA' : 'rgba(255,255,255,0.6)',
-                    }}
-                  >
-                    {freezingId === activeCard.id
-                      ? <Loader2 size={13} className="animate-spin" />
-                      : activeCard.status === 'frozen'
-                        ? <><Zap size={13} /><span>Unfreeze</span></>
-                        : <><Snowflake size={13} /><span>Freeze Card</span></>
-                    }
-                  </button>
-
-                  <button
-                    onClick={handleRequestCard}
-                    disabled={requesting}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-xs font-semibold transition-all"
-                    style={{ background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.25)', color: '#C9A84C' }}
-                  >
-                    {requesting ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-                    New Card
-                  </button>
-                </div>
-              )}
-
-              {requestMsg && (
-                <div className="px-4 py-3 rounded-2xl text-xs text-foreground/60 border border-white/6 bg-white/[0.02]">
-                  {requestMsg}
-                </div>
-              )}
-
               {/* All cards list */}
               {cards.length > 1 && (
                 <div className="flex flex-col gap-2">
@@ -355,7 +227,7 @@ export default function DashboardCardsPage() {
                     return (
                       <button
                         key={card.id}
-                        onClick={() => { setActiveIdx(i); setRevealedNum(null); setRevealedCvv(null); }}
+                        onClick={() => setActiveIdx(i)}
                         className="flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all text-left"
                         style={{
                           background: i === activeIdx ? 'rgba(201,168,76,0.06)' : 'rgba(255,255,255,0.02)',
@@ -387,7 +259,7 @@ export default function DashboardCardsPage() {
           <div className="flex items-start gap-3 px-4 py-3 rounded-2xl border border-white/5 bg-white/[0.015]">
             <ShieldCheck size={14} className="text-foreground/25 mt-0.5 shrink-0" />
             <p className="text-[10px] text-foreground/30 leading-relaxed">
-              Your card details are encrypted and never stored in plain text. CVV and full PAN are only shown when you explicitly reveal them and are never logged.
+              This screen loads masked metadata only. Full card numbers and CVVs are not returned by the card-list API.
             </p>
           </div>
 

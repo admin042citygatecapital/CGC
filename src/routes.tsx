@@ -2,7 +2,7 @@ import { useAdminAuth } from '@/lib/adminAuth';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { lazy,useEffect,type ReactNode } from 'react';
 import type { RouteObject } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 export type Path = string;
 export type Params = Record<string, string | undefined>;
@@ -30,6 +30,7 @@ function CustomerOnly({ children }: { children: ReactNode }) {
 }
 
 const HomePage = lazy(() => import('./pages/index'));
+const CorporateHomePage = lazy(() => import('./pages/corporate-home'));
 const AboutPage = lazy(() => import('./pages/about'));
 const DigitalBankingPage = lazy(() => import('./pages/digital-banking'));
 const WalletPage = lazy(() => import('./pages/wallet'));
@@ -113,14 +114,18 @@ const AdminTrading         = lazy(() => import('./pages/admin/trading'));
 const KycPage              = lazy(() => import('./pages/kyc'));
 
 export const routes: RouteObject[] = [
-  { path: '/', element: <HomePage /> },
+  { path: '/', element: <CorporateHomePage /> },
+  { path: '/demo', element: <HomePage /> },
   { path: '/about', element: <AboutPage /> },
-  { path: '/digital-banking', element: <DigitalBankingPage /> },
+  { path: '/digital-banking', element: <Navigate to="/demo/digital-banking" replace /> },
+  { path: '/demo/digital-banking', element: <DigitalBankingPage /> },
   // /wallet and /transfers contain account data — require customer auth
   { path: '/wallet',    element: <CustomerOnly><WalletPage /></CustomerOnly> },
-  { path: '/accounts',  element: <AccountsPage /> },
+  { path: '/accounts',  element: <Navigate to="/demo/accounts" replace /> },
+  { path: '/demo/accounts',  element: <AccountsPage /> },
   { path: '/transfers', element: <CustomerOnly><TransfersPage /></CustomerOnly> },
-  { path: '/support', element: <SupportPage /> },
+  { path: '/support', element: <Navigate to="/demo/support" replace /> },
+  { path: '/demo/support', element: <SupportPage /> },
   { path: '/contact', element: <ContactPage /> },
   { path: '/privacy-policy', element: <PrivacyPolicyPage /> },
   { path: '/terms-of-service', element: <TermsOfServicePage /> },

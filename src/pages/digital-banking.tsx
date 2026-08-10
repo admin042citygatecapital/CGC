@@ -260,10 +260,11 @@ export default function DigitalBankingPage() {
       <Helmet>
         <title>Digital Finance Product Preview | City Gate Capital</title>
         <meta name="description" content="Preview proposed card controls, analytics, payment journeys, and savings tools using demonstration data. No card or financial account is issued." />
-        <link rel="canonical" href="https://citygate.capital/digital-banking" />
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href="https://citygate.capital/demo/digital-banking" />
         <meta property="og:title" content="Digital Finance Product Preview | City Gate Capital" />
         <meta property="og:description" content="Explore proposed card, analytics, and payment experiences using demonstration data. No live financial services are available." />
-        <meta property="og:url" content="https://citygate.capital/digital-banking" />
+        <meta property="og:url" content="https://citygate.capital/demo/digital-banking" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <meta property="og:image:width" content="1200" />
@@ -280,9 +281,9 @@ export default function DigitalBankingPage() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'WebPage',
-          '@id': 'https://citygate.capital/digital-banking#webpage',
+          '@id': 'https://citygate.capital/demo/digital-banking#webpage',
           name: 'Digital Banking — City Gate Capital',
-          url: 'https://citygate.capital/digital-banking',
+          url: 'https://citygate.capital/demo/digital-banking',
           description: 'A non-transactional preview of proposed card, analytics, and payment experiences.',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
@@ -299,7 +300,7 @@ export default function DigitalBankingPage() {
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://citygate.capital/' },
-            { '@type': 'ListItem', position: 2, name: 'Digital Banking', item: 'https://citygate.capital/digital-banking' },
+            { '@type': 'ListItem', position: 2, name: 'Digital Banking Demo', item: 'https://citygate.capital/demo/digital-banking' },
           ],
         }) }} />
       </Helmet>

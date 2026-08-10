@@ -1,6 +1,6 @@
 # City Gate Capital
 
-City Gate Capital is a full-stack digital banking application with a public website, customer onboarding and dashboard, KYC workflows, transfers, multi-currency exchange, cards, trading views, support tools, and a role-aware administration console.
+City Gate Capital is a full-stack financial-technology platform with a corporate website, a separately labelled `/demo` workspace, customer authentication and dashboard interfaces, KYC workflows, transfers, multi-currency exchange, card and trading demonstrations, support tools, and a role-aware administration console.
 
 ## Technology
 
@@ -59,7 +59,7 @@ The Operations Inbox uses PostgreSQL in production and imports its legacy JSONL 
 
 This application requires a persistent Node.js service because it hosts Express APIs, server-side rendering, background email processing, and WebSockets. Deploy it to a container or long-running Node platform rather than a static-only host.
 
-The checked-in deployment publishes the informational website while keeping the authenticated financial application in preview mode. Preview mode disables money-moving endpoints and paper trading and retains clear disclosures wherever demonstration balances or transactions appear. `PUBLIC_SITE_PUBLISHED` controls publication and indexing only; it cannot enable financial operations. Do not switch `PLATFORM_MODE` to `live` or enable financial operations until banking/custody partners, regulatory approvals, legal copy, and production integrations have been independently verified.
+The checked-in deployment publishes a partnership-led corporate website at `/` and isolates the non-transactional product experience under `/demo`. Demo routes are `noindex`; legacy public product URLs redirect into that boundary. Money-moving, card-lifecycle and live-trading endpoints remain fail-closed, and authenticated screens retain disclosures wherever demonstration balances or transactions appear. `PUBLIC_SITE_PUBLISHED` controls publication and indexing only; it cannot enable financial operations. Do not switch `PLATFORM_MODE` to `live` or enable financial operations until banking/custody partners, regulatory approvals, legal copy, and production integrations have been independently verified.
 
 The provider-specific release sequence and required secrets are documented in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 

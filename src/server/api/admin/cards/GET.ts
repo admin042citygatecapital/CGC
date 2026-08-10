@@ -1,9 +1,9 @@
 /**
  * GET /api/admin/cards
- * List all virtual cards across all users. Supports filters: userId, status, search, page, limit.
+ * List metadata for synthetic/deferred card records. PAN/CVV are never selected.
  */
 import type { Request, Response } from 'express';
-import { getAllCards } from '../../../lib/cardStore.js';
+import { getAllCardSummaries } from '../../../lib/cardStore.js';
 import { findUserById } from '../../../lib/userStore.js';
 
 export default async function handler(req: Request, res: Response) {
@@ -15,10 +15,10 @@ export default async function handler(req: Request, res: Response) {
   const pageNum = page ? Math.max(1, parseInt(page, 10)) : 1;
   const limitNum = limit ? Math.min(100, Math.max(1, parseInt(limit, 10))) : 25;
   const query = search?.toLowerCase();
-  const allCards = (await getAllCards()).filter(card =>
+  const allCards = (await getAllCardSummaries()).filter(card =>
     (!userId || card.userId === userId) &&
     (!status || card.status === status) &&
-    (!query || card.cardholderName.toLowerCase().includes(query) || card.number.slice(-4).includes(query))
+    (!query || card.cardholderName.toLowerCase().includes(query) || card.last4.includes(query))
   );
   const pageCards = allCards.slice((pageNum - 1) * limitNum, pageNum * limitNum);
 
@@ -30,14 +30,14 @@ export default async function handler(req: Request, res: Response) {
       userName:       user?.name  ?? 'Unknown',
       userEmail:      user?.email ?? '',
       cardholderName: c.cardholderName,
-      numberMasked:   c.number.slice(0, 4) + ' **** **** ' + c.number.slice(-4),
+      numberMasked:   `**** **** **** ${c.last4}`,
       expiry:         c.expiry,
       network:        c.network,
       status:         c.status,
       spendingLimit:  c.spendingLimit ?? null,
-      hasPin:         !!c.pinHash,
-      issuedByAdmin:  c.issuedByAdmin ?? false,
-      replacedById:   c.replacedById  ?? null,
+      hasPin:         c.hasPin,
+      issuedByAdmin:  false,
+      replacedById:   null,
       createdAt:      c.createdAt,
       updatedAt:      c.updatedAt,
     };
@@ -48,5 +48,7 @@ export default async function handler(req: Request, res: Response) {
     total: allCards.length,
     page:  pageNum,
     pages: Math.max(1, Math.ceil(allCards.length / limitNum)),
+    dataClassification: 'synthetic_preview_card_records',
+    operationsAvailable: false,
   });
 }

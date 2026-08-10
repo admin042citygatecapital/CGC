@@ -70,10 +70,10 @@ REFERENCE SNAPSHOT,INFO,"Generated 2026-06-04; verify against the current Develo
 /api/users/deposit,POST,Initiate a deposit,Customer Auth,JSON,Global 200/min
 /api/users/withdraw,POST,Initiate a withdrawal,Customer Auth,JSON,Global 200/min
 /api/users/swap,POST,Currency swap / exchange,Customer Auth,JSON,Global 200/min
-/api/users/cards,GET,List customer's virtual cards,Customer Auth,JSON,Global 200/min
-/api/users/cards/generate,POST,Generate a new virtual card,Customer Auth,JSON,Global 200/min
-/api/users/cards/freeze,POST,Freeze / unfreeze a card,Customer Auth,JSON,Global 200/min
-/api/users/cards/delete,POST,Delete a virtual card,Customer Auth,JSON,Global 200/min
+/api/users/cards,GET,List masked synthetic card metadata without PAN/CVV,Customer Auth,JSON,Global 200/min
+/api/users/cards/generate,POST,Disabled until a contracted issuer adapter is implemented,Customer Auth,JSON,Global 200/min
+/api/users/cards/freeze,POST,Disabled until a contracted issuer adapter is implemented,Customer Auth,JSON,Global 200/min
+/api/users/cards/delete,POST,Disabled until a contracted issuer adapter is implemented,Customer Auth,JSON,Global 200/min
 /api/users/notifications,GET,Get customer notifications,Customer Auth,JSON,Global 200/min
 /api/users/notifications/read,POST,Mark notifications as read,Customer Auth,JSON,Global 200/min
 /api/users/support,GET,Get customer's support tickets,Customer Auth,JSON,Global 200/min

@@ -100,6 +100,38 @@ export interface CardActivity {
   ts:        string;
 }
 
+export interface CardSummary {
+  id: string;
+  userId: string;
+  cardholderName: string;
+  last4: string;
+  expiry: string;
+  network: CardNetwork;
+  status: CardStatus;
+  spendingLimit?: number | null;
+  hasPin: boolean;
+  color?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function summarizeCard(card: VirtualCard): CardSummary {
+  return {
+    id: card.id,
+    userId: card.userId,
+    cardholderName: card.cardholderName,
+    last4: card.number.slice(-4),
+    expiry: card.expiry,
+    network: card.network,
+    status: card.status,
+    spendingLimit: card.spendingLimit,
+    hasPin: !!card.pinHash,
+    color: card.color,
+    createdAt: card.createdAt,
+    updatedAt: card.updatedAt,
+  };
+}
+
 // ── DB row → VirtualCard (decrypts PAN/CVV) ───────────────────────────────────
 
 function toCard(r: DbCard): VirtualCard {
@@ -144,6 +176,47 @@ export async function getAllCards(): Promise<VirtualCard[]> {
   const db   = getDb();
   const rows = await db.select().from(cards).orderBy(desc(cards.createdAt));
   return rows.map(toCard);
+}
+
+/** Read-only metadata query that never selects or decrypts PAN/CVV in database mode. */
+export async function getAllCardSummaries(): Promise<CardSummary[]> {
+  if (!isDatabaseConfigured()) return (await ff()).getAllCards().map(summarizeCard);
+  const rows = await getDb().select({
+    id: cards.id,
+    userId: cards.userId,
+    cardholderName: cards.cardholderName,
+    last4: cards.last4,
+    expiry: cards.expiry,
+    network: cards.network,
+    status: cards.status,
+    spendingLimit: cards.spendingLimit,
+    pin: cards.pin,
+    color: cards.color,
+    createdAt: cards.createdAt,
+    updatedAt: cards.updatedAt,
+  }).from(cards).orderBy(desc(cards.createdAt));
+  return rows.map(row => ({
+    id: row.id,
+    userId: row.userId,
+    cardholderName: row.cardholderName,
+    last4: row.last4,
+    expiry: row.expiry,
+    network: row.network.toLowerCase() as CardNetwork,
+    status: row.status as CardStatus,
+    spendingLimit: row.spendingLimit,
+    hasPin: !!row.pin,
+    color: row.color ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  }));
+}
+
+export async function getCardSummariesForUser(userId: string): Promise<CardSummary[]> {
+  return (await getAllCardSummaries()).filter(card => card.userId === userId);
+}
+
+export async function findCardSummaryById(id: string): Promise<CardSummary | undefined> {
+  return (await getAllCardSummaries()).find(card => card.id === id);
 }
 
 export async function findCardById(id: string): Promise<VirtualCard | undefined> {

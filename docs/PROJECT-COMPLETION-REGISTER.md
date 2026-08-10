@@ -10,7 +10,7 @@ This register reconciles the original shared project conversation (230 user mess
 
 | Product area | Original objective | Current evidence | Status |
 | --- | --- | --- | --- |
-| Brand and public website | Premium City Gate Capital identity, owned logo assets, custom domain and professional public pages. | Brand assets are local, public routes are deployed on `citygate.capital`, website content is admin-managed, and unsupported-claim scanning runs before release. | Implemented; content remains subject to legal approval. |
+| Brand and public website | Premium City Gate Capital identity, owned logo assets, custom domain and professional public pages. | Brand assets are local; `/` is a partnership-led corporate website; all simulated product marketing is separated under noindex `/demo` routes; unsupported-claim scanning runs before release. | Implemented; content remains subject to legal approval. |
 | Customer access | Secure login, password recovery, dashboard, balance privacy, wallets, transfers, cards, exchange, support and account settings. | Authenticated route suite, customer session middleware, balance visibility controls, support and dashboard pages exist. Production financial mutations are locked. | Demonstration interface complete; live services deferred. |
 | Administration | One administration surface for customers, KYC/AML, transactions, content, email, security, integrations, reports and configuration. | 36 administration pages, central authentication/authorization, CSRF protection, audit logging, KYC/AML queues, operations inbox and sponsor-readiness workspace. | Operational control plane implemented; periodic RBAC review remains external work. |
 | Email | Domain mailboxes, Zoho-hosted inboxes, branded transactional email and admin diagnostics. | Resend production transport, Zoho mailbox configuration support, branded templates, queue/log controls and admin email centre. | Application integration implemented; mailbox/DNS/provider health remains operationally monitored. |
@@ -22,6 +22,10 @@ This register reconciles the original shared project conversation (230 user mess
 
 ## Corrections made during this audit
 
+- Replaced the product-preview homepage with a factual corporate and partnership website; moved product demonstrations, account marketing and preview support under a distinct `/demo` URL boundary.
+- Redirected legacy `/accounts`, `/digital-banking` and `/support` routes into `/demo`, removed retail-account/login calls to action from the corporate navigation, and excluded every demo page from indexing and the sitemap.
+- Added a hard-coded card-issuer adapter gate that cannot be enabled through environment values, removed local card-number/CVV generation and disabled all administrator and customer lifecycle mutations.
+- Changed administrator and customer card-list APIs to return masked metadata without selecting or decrypting PAN/CVV in database mode; both card workspaces are read-only and accurately classified.
 - Removed fabricated platform crypto balances and invented deposit addresses from the administration interface.
 - Replaced crypto controls with a read-only deferred-capability view and clearly marked synthetic database activity.
 - Added production financial-operation guards to administrator balance adjustment, transaction creation/approval, wallet-address mutation and customer financial-field mutation paths.

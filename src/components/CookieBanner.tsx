@@ -118,7 +118,7 @@ export default function CookieBanner() {
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-gray-900 mb-1">Cookie Consent</h3>
             <p id="cookie-banner-description" className="text-sm text-gray-600">
-              Essential storage keeps the site secure and functional. With your permission, optional first-party analytics records data-minimised page and feature usage so we can improve the preview. We do not use this consent for advertising.
+              Essential storage keeps the site secure and functional. With your permission, optional first-party analytics records data-minimised page and feature usage so we can improve the website and platform experience. We do not use this consent for advertising.
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">

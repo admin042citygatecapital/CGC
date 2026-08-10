@@ -141,10 +141,10 @@ All protected customer endpoints require the Secure, HttpOnly customer session c
 
 | Route | Method | Description | Auth | Rate Limit |
 |---|---|---|---|---|
-| `/api/users/cards` | GET | List customer's virtual cards | Customer Auth | Global 200/min |
-| `/api/users/cards/generate` | POST | Generate a new virtual card | Customer Auth | Global 200/min |
-| `/api/users/cards/freeze` | POST | Freeze / unfreeze a card | Customer Auth | Global 200/min |
-| `/api/users/cards/delete` | POST | Delete a virtual card | Customer Auth | Global 200/min |
+| `/api/users/cards` | GET | List masked synthetic card metadata; PAN/CVV are excluded | Customer Auth | Global 200/min |
+| `/api/users/cards/generate` | POST | Disabled until a contracted issuer adapter is implemented | Customer Auth | Global 200/min |
+| `/api/users/cards/freeze` | POST | Disabled until a contracted issuer adapter is implemented | Customer Auth | Global 200/min |
+| `/api/users/cards/delete` | POST | Disabled until a contracted issuer adapter is implemented | Customer Auth | Global 200/min |
 
 ### Notifications
 

@@ -6,7 +6,7 @@ import {
   shouldOfferBankingSupport,
 } from '../lib/tawkSupport';
 
-describe('banking support widget routing', () => {
+describe('product support widget routing', () => {
   it('keeps the customer support widget out of administration pages', () => {
     expect(shouldOfferBankingSupport('/')).toBe(true);
     expect(shouldOfferBankingSupport('/dashboard')).toBe(true);
@@ -14,11 +14,13 @@ describe('banking support widget routing', () => {
     expect(shouldOfferBankingSupport('/admin/users')).toBe(false);
   });
 
-  it('classifies high-value banking journeys', () => {
+  it('classifies customer and demo journeys', () => {
     expect(getSupportSection('/login')).toBe('authentication');
     expect(getSupportSection('/dashboard/transfers')).toBe('customer_dashboard');
     expect(getSupportSection('/dashboard/trading/orders')).toBe('trading');
-    expect(getSupportSection('/accounts')).toBe('accounts');
+    expect(getSupportSection('/accounts')).toBe('accounts_demo');
+    expect(getSupportSection('/demo/accounts')).toBe('accounts_demo');
+    expect(getSupportSection('/demo/support')).toBe('demo_support');
   });
 
   it('uses non-PII routing attributes', () => {

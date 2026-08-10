@@ -44,6 +44,8 @@ export const LIVE_READINESS_FLAGS = [
  * alone from turning demonstration routes into purported live transactions.
  */
 export const LIVE_PROVIDER_ADAPTERS_IMPLEMENTED = false;
+/** Card issuing is outside the current sponsor-readiness package. */
+export const LIVE_CARD_ISSUER_ADAPTER_IMPLEMENTED = false;
 
 function developmentLocksAreEnforced(): boolean {
   return process.env.ENFORCE_PREVIEW_LOCKS === '1';
@@ -86,6 +88,22 @@ export function requireFinancialOperations(res: Response): boolean {
     code: platformMode === 'live' ? 'LIVE_READINESS_INCOMPLETE' : 'PREVIEW_MODE',
   });
   return false;
+}
+
+/**
+ * Card lifecycle mutations require a contracted issuer adapter in addition to
+ * the general financial launch gate. Environment values alone cannot enable
+ * local card-number generation or mutation of demonstration records.
+ */
+export function requireCardOperations(res: Response): boolean {
+  if (!LIVE_CARD_ISSUER_ADAPTER_IMPLEMENTED) {
+    res.status(503).json({
+      error: 'Card issuing and lifecycle controls are unavailable until a contracted issuer adapter is implemented and approved.',
+      code: 'CARD_ISSUER_ADAPTER_UNAVAILABLE',
+    });
+    return false;
+  }
+  return requireFinancialOperations(res);
 }
 
 export function requirePaperTrading(res: Response): boolean {

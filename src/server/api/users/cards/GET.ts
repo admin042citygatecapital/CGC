@@ -1,31 +1,24 @@
-/**
- * GET /api/users/cards
- * Returns the authenticated customer's virtual cards (number masked).
- */
+/** GET /api/users/cards — safe metadata for synthetic/deferred card records. */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken } from '../../../lib/userStore.js';
-import { getCardsForUser } from '../../../lib/cardStore.js';
+import { getCardSummariesForUser } from '../../../lib/cardStore.js';
 
 export default async function handler(req: Request, res: Response) {
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token) return res.status(401).json({ error: 'No token provided' });
+  const user = req.customerUser;
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
 
-  const user = await findUserBySessionToken(token);
-  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
-
-  const cards = (await getCardsForUser(user.id)).map(c => ({
-    id:             c.id,
-    cardholderName: c.cardholderName,
-    // Masked number only — full PAN never returned (PCI-DSS requirement)
-    numberMasked:   c.number.slice(0, 4) + ' **** **** ' + c.number.slice(-4),
-    // numberFull intentionally omitted — full PAN must never be sent to the client
-    // cvv intentionally omitted — CVV must never be returned after authorisation
-    expiry:         c.expiry,
-    network:        c.network,
-    status:         c.status,
-    createdAt:      c.createdAt,
+  const cards = (await getCardSummariesForUser(user.id)).map(card => ({
+    id: card.id,
+    cardholderName: card.cardholderName,
+    numberMasked: `**** **** **** ${card.last4}`,
+    expiry: card.expiry,
+    network: card.network,
+    status: card.status,
+    createdAt: card.createdAt,
   }));
 
-  return res.json({ cards });
+  return res.json({
+    cards,
+    dataClassification: 'synthetic_preview_card_records',
+    operationsAvailable: false,
+  });
 }

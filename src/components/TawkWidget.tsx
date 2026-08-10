@@ -165,7 +165,7 @@ export default function TawkWidget() {
       pendingOpen.current = false;
       script.remove();
       setStatus('error');
-      console.warn('[Tawk] Banking support could not be loaded.');
+      console.warn('[Tawk] Product support could not be loaded.');
     };
     document.head.appendChild(script);
   }, [applyContext, configureCallbacks, openLoadedWidget]);
@@ -197,6 +197,11 @@ export default function TawkWidget() {
 
   const isLoading = status === 'loading';
   const isOnline = availability === 'online';
+  const supportTitle = location.pathname === '/' || location.pathname === '/about' || location.pathname === '/contact' || location.pathname === '/compliance'
+    ? 'Company enquiries'
+    : location.pathname === '/demo' || location.pathname.startsWith('/demo/')
+      ? 'Demo support'
+      : 'Workspace support';
   const statusLabel = status === 'error'
     ? 'Retry secure support'
     : isLoading
@@ -231,7 +236,7 @@ export default function TawkWidget() {
 
         <span className="min-w-0">
           <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
-            Banking support
+            {supportTitle}
             <ShieldCheck className="h-3.5 w-3.5 text-[#D7B458]" aria-hidden="true" />
           </span>
           <span className="mt-0.5 block text-[11px] text-white/55">{statusLabel}</span>

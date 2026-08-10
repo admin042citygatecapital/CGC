@@ -1,14 +1,8 @@
 /**
  * /admin/cards — City Gate Capital Card Management
  *
- * All 7 capabilities:
- *  1. Issue Cards          — issue to any customer (Visa / Mastercard)
- *  2. Freeze Cards         — admin freeze toggle
- *  3. Unfreeze Cards       — same toggle
- *  4. Replace Cards        — retire old card, issue replacement
- *  5. Set Spending Limits  — daily USD cap per card
- *  6. Manage PIN           — set / reset 4-digit PIN
- *  7. View Card Activity   — per-card event log slide-out
+ * Read-only synthetic card inventory. Issuing and lifecycle controls are
+ * unavailable until a contracted issuer adapter is implemented and approved.
  */
 import AdminLayout from '@/layouts/AdminLayout';
 import { authHeaders,useAdminAuth } from '@/lib/adminAuth';
@@ -32,6 +26,8 @@ X
 import { AnimatePresence,motion } from 'motion/react';
 import { useCallback,useEffect,useState } from 'react';
 import { Link,useNavigate,useSearchParams } from 'react-router-dom';
+
+const CARD_OPERATIONS_AVAILABLE = false;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -525,7 +521,7 @@ export default function AdminCardsPage() {
     <>
       <Helmet>
         <title>Card Management — CGC Admin</title>
-        <meta name="description" content="Issue, freeze, replace and manage all customer virtual cards." />
+        <meta name="description" content="Review synthetic card records while issuer-backed card operations remain unavailable." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/admin/cards" />
       </Helmet>
@@ -539,7 +535,7 @@ export default function AdminCardsPage() {
           <div>
             <h1 className="text-white text-xl font-bold">Card Management</h1>
             <p className="text-white/30 text-sm">
-              {total.toLocaleString()} card{total !== 1 ? 's' : ''}
+              {total.toLocaleString()} synthetic card record{total !== 1 ? 's' : ''}
               {userIdFilter && <span className="ml-2 text-primary/60 text-xs">filtered by user</span>}
             </p>
           </div>
@@ -553,21 +549,26 @@ export default function AdminCardsPage() {
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/8 text-white/50 text-sm hover:text-white transition-colors">
               <RefreshCw size={13} />
             </button>
-            <button onClick={() => setIssueOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
+            <button disabled title="Requires an approved card issuer adapter"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-not-allowed opacity-50"
               style={{ background: 'linear-gradient(135deg,#C9A84C,#F0D080)', color: '#000' }}>
-              <Plus size={14} /> Issue Card
+              <Plus size={14} /> Issuer unavailable
             </button>
           </div>
+        </div>
+
+        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/[0.07] px-4 py-3">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-300" />
+          <div><p className="text-sm font-semibold text-amber-100">Read-only synthetic records</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">These entries are demonstration application data, not issued payment cards or processor records. PAN and CVV are not loaded by this page. Issuing, freezing, replacing, PIN and spending-limit controls require a contracted card issuer adapter and cannot be enabled from environment settings.</p></div>
         </div>
 
         {/* ── Stats strip ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           {[
-            { label: 'Total Cards',     value: total,        color: '#C9A84C', icon: CreditCard },
-            { label: 'Active',          value: activeCount,  color: '#10B981', icon: CheckCircle },
-            { label: 'Frozen',          value: frozenCount,  color: '#627EEA', icon: Snowflake },
-            { label: 'With Limit',      value: limitedCount, color: '#F59E0B', icon: DollarSign },
+            { label: 'Stored Records', value: total,        color: '#C9A84C', icon: CreditCard },
+            { label: 'Marked Active',  value: activeCount,  color: '#10B981', icon: CheckCircle },
+            { label: 'Marked Frozen',  value: frozenCount,  color: '#627EEA', icon: Snowflake },
+            { label: 'Limit Metadata', value: limitedCount, color: '#F59E0B', icon: DollarSign },
           ].map(s => (
             <div key={s.label} className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/5"
               style={{ background: 'rgba(255,255,255,0.02)' }}>
@@ -678,6 +679,7 @@ export default function AdminCardsPage() {
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
+                        {CARD_OPERATIONS_AVAILABLE && <>
                         {/* Freeze / Unfreeze */}
                         {(card.status === 'active' || card.status === 'frozen') && (
                           <button onClick={() => doFreeze(card)} disabled={!!actionLoading} title={card.status === 'frozen' ? 'Unfreeze' : 'Freeze'}
@@ -706,6 +708,7 @@ export default function AdminCardsPage() {
                           className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400/50 hover:text-amber-400 hover:bg-amber-500/20 transition-colors">
                           <KeyRound size={11} />
                         </button>
+                        </>}
                         {/* Activity */}
                         <button onClick={() => setActivityCard(card)} title="View Activity"
                           className="w-7 h-7 rounded-lg bg-white/[0.04] flex items-center justify-center text-white/30 hover:text-white hover:bg-white/[0.08] transition-colors">
@@ -740,7 +743,7 @@ export default function AdminCardsPage() {
 
         {/* ── Modals ── */}
         <AnimatePresence>
-          {issueOpen && (
+          {CARD_OPERATIONS_AVAILABLE && issueOpen && (
             <IssueCardModal
               onClose={() => setIssueOpen(false)}
               onSuccess={msg => { showToast(msg); fetchCards(); }}
@@ -749,7 +752,7 @@ export default function AdminCardsPage() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {limitCard && (
+          {CARD_OPERATIONS_AVAILABLE && limitCard && (
             <SpendingLimitModal
               card={limitCard}
               onClose={() => setLimitCard(null)}
@@ -759,7 +762,7 @@ export default function AdminCardsPage() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {pinCard && (
+          {CARD_OPERATIONS_AVAILABLE && pinCard && (
             <PinModal
               card={pinCard}
               onClose={() => setPinCard(null)}
@@ -769,7 +772,7 @@ export default function AdminCardsPage() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {replaceCard && (
+          {CARD_OPERATIONS_AVAILABLE && replaceCard && (
             <ReplaceModal
               card={replaceCard}
               onClose={() => setReplaceCard(null)}

@@ -690,13 +690,14 @@ paths:
   # ── Customer Cards ───────────────────────────────────────────────────────────
   /api/users/cards:
     get:
-      summary: List virtual cards
+      summary: List masked synthetic card metadata
+      description: Returns masked card metadata only. PAN and CVV are not included.
       tags: [Customer Cards]
       security:
         - customerAuth: []
       responses:
         '200':
-          description: List of virtual cards
+          description: Masked synthetic card metadata
           content:
             application/json:
               schema:
@@ -706,7 +707,8 @@ paths:
 
   /api/users/cards/generate:
     post:
-      summary: Generate a new virtual card
+      summary: Card generation unavailable
+      description: Disabled until a contracted issuer adapter is implemented and approved.
       tags: [Customer Cards]
       security:
         - customerAuth: []
@@ -722,16 +724,13 @@ paths:
                 currency:
                   type: string
       responses:
-        '201':
-          description: Card generated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VirtualCard'
+        '503':
+          description: Contracted card issuer adapter unavailable
 
   /api/users/cards/freeze:
     post:
-      summary: Freeze or unfreeze a virtual card
+      summary: Card lifecycle control unavailable
+      description: Disabled until a contracted issuer adapter is implemented and approved.
       tags: [Customer Cards]
       security:
         - customerAuth: []
@@ -748,12 +747,13 @@ paths:
                 frozen:
                   type: boolean
       responses:
-        '200':
-          description: Card freeze status updated
+        '503':
+          description: Contracted card issuer adapter unavailable
 
   /api/users/cards/delete:
     post:
-      summary: Delete a virtual card
+      summary: Card lifecycle control unavailable
+      description: Disabled until a contracted issuer adapter is implemented and approved.
       tags: [Customer Cards]
       security:
         - customerAuth: []
@@ -768,8 +768,8 @@ paths:
                 cardId:
                   type: string
       responses:
-        '200':
-          description: Card deleted
+        '503':
+          description: Contracted card issuer adapter unavailable
 
   # ── Customer Support ─────────────────────────────────────────────────────────
   /api/users/support:

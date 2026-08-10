@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { WebsiteAnnouncement as AnnouncementSettings } from '@/lib/websiteAnnouncement';
 
 const HIDDEN: AnnouncementSettings = { enabled: false, text: '', link: '' };
 
 export default function WebsiteAnnouncement() {
   const [announcement, setAnnouncement] = useState(HIDDEN);
+  const location = useLocation();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -17,7 +19,13 @@ export default function WebsiteAnnouncement() {
     return () => controller.abort();
   }, []);
 
-  if (!announcement.enabled) return null;
+  const isDemoWorkspace = location.pathname === '/demo'
+    || location.pathname.startsWith('/demo/')
+    || location.pathname === '/login'
+    || location.pathname === '/register'
+    || location.pathname.startsWith('/dashboard');
+  const isDemoAnnouncement = /\b(?:demo|demonstration|product preview|preview environment)\b/i.test(announcement.text);
+  if (!announcement.enabled || (isDemoAnnouncement && !isDemoWorkspace)) return null;
 
   const content = (
     <span className="block px-4 py-2 text-center text-xs font-semibold text-black">

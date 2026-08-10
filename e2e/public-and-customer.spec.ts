@@ -20,10 +20,18 @@ test('public site renders the owned brand without unsupported banking claims', a
   await expect(page).toHaveTitle(/City Gate Capital/i);
   await expect(page.locator('body')).not.toContainText('FDIC insured');
   await expect(page.locator('body')).not.toContainText('FSCS protected');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Financial infrastructure');
+  await expect(page.getByRole('link', { name: 'Partner With Us' })).toBeVisible();
+  await expect(page.getByText('Open Account', { exact: true })).toHaveCount(0);
   const logo = page.locator('img[alt*="City Gate" i]').first();
   await expect(logo).toBeVisible();
   const logoLoaded = await logo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0);
   expect(logoLoaded).toBe(true);
+
+  await page.getByRole('link', { name: 'View platform demo' }).click();
+  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page).toHaveTitle(/Platform Demo/i);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
 });
 
 test('protected customer routes redirect to the session-expired login state', async ({ page }) => {
@@ -67,6 +75,13 @@ test('customer login establishes a persistent browser session and financial writ
   });
   expect(response.status()).toBe(503);
   await expect(response.json()).resolves.toMatchObject({ code: 'PREVIEW_MODE' });
+
+  const cardResponse = await page.request.post('/api/users/cards/freeze', {
+    headers: { Origin: new URL(page.url()).origin },
+    data: { cardId: 'synthetic-card-record' },
+  });
+  expect(cardResponse.status()).toBe(503);
+  await expect(cardResponse.json()).resolves.toMatchObject({ code: 'CARD_ISSUER_ADAPTER_UNAVAILABLE' });
 });
 
 test('customer password recovery uses a generic anti-enumeration result', async ({ page }) => {

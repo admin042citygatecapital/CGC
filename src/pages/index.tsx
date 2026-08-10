@@ -57,12 +57,13 @@ export default function HomePage() {
   return (
     <>
       <Helmet>
-        <title>City Gate Capital — Digital Finance Product Preview</title>
-        <meta name="description" content="Explore the City Gate Capital product preview for multi-currency accounts, wallets, transfers, cards, analytics, and secure administration." />
-        <link rel="canonical" href="https://citygate.capital/" />
-        <meta property="og:title" content="City Gate Capital — Digital Finance Product Preview" />
-        <meta property="og:description" content="A product preview for multi-currency accounts, wallets, transfers, cards, analytics, and secure administration." />
-        <meta property="og:url" content="https://citygate.capital/" />
+        <title>Platform Demo — City Gate Capital</title>
+        <meta name="description" content="Explore the clearly separated City Gate Capital platform demo. No live financial services or transactions are available." />
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href="https://citygate.capital/demo" />
+        <meta property="og:title" content="Platform Demo — City Gate Capital" />
+        <meta property="og:description" content="A non-transactional platform demo for proposed financial-technology experiences." />
+        <meta property="og:url" content="https://citygate.capital/demo" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <meta property="og:image:width" content="1200" />
@@ -73,7 +74,7 @@ export default function HomePage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
-        <meta name="twitter:title" content="City Gate Capital — Digital Finance Product Preview" />
+        <meta name="twitter:title" content="Platform Demo — City Gate Capital" />
         <meta name="twitter:description" content="Preview proposed multi-currency, wallet, transfer, card, analytics, and administration experiences without live financial transactions." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json">{JSON.stringify({
@@ -122,8 +123,8 @@ export default function HomePage() {
             {
               '@type': 'WebPage',
               '@id': 'https://citygate.capital/#webpage',
-              url: 'https://citygate.capital/',
-              name: 'City Gate Capital — Digital Finance Product Preview',
+              url: 'https://citygate.capital/demo',
+              name: 'Platform Demo — City Gate Capital',
               isPartOf: { '@id': 'https://citygate.capital/#website' },
               about: { '@id': 'https://citygate.capital/#organization' },
               dateModified: '2026-07-11',
@@ -132,7 +133,7 @@ export default function HomePage() {
               '@type': 'WebApplication',
               '@id': 'https://citygate.capital/#product-preview',
               name: 'City Gate Capital',
-              url: 'https://citygate.capital',
+              url: 'https://citygate.capital/demo',
               applicationCategory: 'BusinessApplication',
               operatingSystem: 'Web',
               description: 'A non-transactional product preview. It does not accept deposits, provide custody, issue cards, or execute live financial transactions.',
@@ -142,7 +143,7 @@ export default function HomePage() {
       </Helmet>
 
       {/* sr-only h1 — visible h1 is rendered inside HeroSection */}
-      <h1 className="sr-only">City Gate Capital — Digital Finance Product Preview</h1>
+      <h1 className="sr-only">City Gate Capital Platform Demo</h1>
 
       {/* ── Live Ticker Strip ────────────────────────────────── */}
       <div className="relative z-10 bg-[#060606] border-b border-primary/10 overflow-hidden mt-[72px]">
