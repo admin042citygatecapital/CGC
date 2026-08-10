@@ -34,7 +34,7 @@ export default async function handler(req: Request, res: Response) {
       safeSource,
     );
 
-    createOperationsItem({
+    await createOperationsItem({
       source: 'newsletter_signup', referenceId: subscriber.id, title: 'Newsletter signup',
       summary: `New newsletter subscriber from ${safeSource}.`, requesterName: subscriber.name,
       requesterEmail: subscriber.email, priority: 'low', metadata: { source: safeSource },

@@ -53,6 +53,8 @@ npm run db:validate
 
 Legacy flat-file data can be checked and imported with `db:import:dry` and `db:import`. Back up both the database and `/private` data before migration.
 
+The Operations Inbox uses PostgreSQL in production and imports its legacy JSONL data idempotently. Daily checksummed operational snapshots are enabled by the Render blueprint; see [`docs/BACKUP-RECOVERY.md`](docs/BACKUP-RECOVERY.md). These local snapshots do not replace provider-managed off-site database backups.
+
 ## Production
 
 This application requires a persistent Node.js service because it hosts Express APIs, server-side rendering, background email processing, and WebSockets. Deploy it to a container or long-running Node platform rather than a static-only host.

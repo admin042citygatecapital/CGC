@@ -47,7 +47,7 @@ function sanitize(value: unknown, maxLen = 500): string {
     .slice(0, maxLen);
 }
 
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   try {
     if (!requireIntakeEnabled(res, 'contactFormsEnabled')) return;
     // ── Sanitize inputs ───────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ export default function handler(req: Request, res: Response) {
     try {
       mkdirSync(STORE_DIR, { recursive: true });
       appendFileSync(STORE_FILE, JSON.stringify(submission) + '\n', 'utf-8');
-      createOperationsItem({
+      await createOperationsItem({
         source: 'contact_form', referenceId: submission.id, title: subject, summary: message,
         requesterName: `${firstName} ${lastName}`, requesterEmail: email,
         metadata: { company: company || 'not provided' },

@@ -27,6 +27,7 @@ import { seoRoutes } from '../../../../lib/seo-routes.js';
 import { getStorageBackend } from '../../../lib/supabaseStorage.js';
 import { verifyManualSmtp } from '../../../lib/smtpTransport.js';
 import { isDatabaseConfigured, testConnection } from '../../../db/db.js';
+import { getOperationalBackupStatus } from '../../../lib/operationalBackup.js';
 import {
   LIVE_PROVIDER_ADAPTERS_IMPLEMENTED,
   hasLiveFinancialReadiness,
@@ -432,6 +433,37 @@ function checkStorageBackend(): ReadinessCheck {
   };
 }
 
+function checkBackupReadiness(): ReadinessCheck {
+  const local = getOperationalBackupStatus();
+  const managedConfirmed = process.env.MANAGED_DATABASE_BACKUPS_CONFIRMED === '1';
+  const restoreTest = process.env.BACKUP_LAST_RESTORE_TEST_AT?.trim();
+  if (local.error) {
+    return { id: 'backups', name: 'Backup & Recovery', subsystem: 'Database', status: 'FAIL', critical: false,
+      message: 'The operational backup directory is invalid or unreadable.', detail: local.error };
+  }
+  if (!local.enabled) {
+    return { id: 'backups', name: 'Backup & Recovery', subsystem: 'Database', status: 'WARN', critical: false,
+      message: 'Automated operational snapshots are disabled.', detail: 'Set ENABLE_LOCAL_OPERATIONAL_BACKUPS=1. Provider-managed PostgreSQL backups are still required.' };
+  }
+  if (local.checksumValid === false) {
+    return { id: 'backups', name: 'Backup & Recovery', subsystem: 'Database', status: 'FAIL', critical: true,
+      message: 'The latest operational snapshot failed checksum verification.', detail: `Directory: ${local.directory}` };
+  }
+  if (!local.latestAt) {
+    return { id: 'backups', name: 'Backup & Recovery', subsystem: 'Database', status: 'WARN', critical: false,
+      message: 'Backup worker is enabled but has not completed its first snapshot.', detail: `Directory: ${local.directory}` };
+  }
+  const complete = managedConfirmed && Boolean(restoreTest);
+  return {
+    id: 'backups', name: 'Backup & Recovery', subsystem: 'Database',
+    status: complete ? 'PASS' : 'WARN', critical: false,
+    message: complete
+      ? `Local operational backup verified; managed backups and restore test are confirmed.`
+      : `Latest local operational backup is ${local.ageHours ?? 0} hours old; managed backup/restore attestation remains outstanding.`,
+    detail: `Latest: ${local.latestAt}\nChecksum: verified\nDirectory: ${local.directory}\nManaged backups confirmed: ${managedConfirmed}\nLast restore test: ${restoreTest || 'not recorded'}\nLocal snapshots are a recovery aid, not a substitute for provider-managed off-site backups.`,
+  };
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export default async function handler(_req: Request, res: Response): Promise<void> {
@@ -456,6 +488,7 @@ export default async function handler(_req: Request, res: Response): Promise<voi
     checkEnvironmentDetection(),
     checkCspHeaders(),
     checkStorageBackend(),
+    checkBackupReadiness(),
     checkFinancialLaunchGate(),
   ];
 

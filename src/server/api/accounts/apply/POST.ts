@@ -34,7 +34,7 @@ interface Application {
 
 const VALID_ACCOUNT_TYPES = new Set(['personal', 'savings', 'business']);
 
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   try {
     if (!requireIntakeEnabled(res, 'accountApplicationsEnabled')) return;
     const raw = req.body as Record<string, unknown>;
@@ -84,7 +84,7 @@ export default function handler(req: Request, res: Response) {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     fs.appendFileSync(DATA_FILE, JSON.stringify(application) + '\n', 'utf8');
 
-    createOperationsItem({
+    await createOperationsItem({
       source: 'account_application',
       referenceId: application.id,
       title: `Account application: ${firstName} ${lastName}`,

@@ -37,6 +37,14 @@ services:
         value: "5"
       - key: PRIVATE_DATA_ROOT
         value: /private
+      - key: ENABLE_LOCAL_OPERATIONAL_BACKUPS
+        value: "1"
+      - key: BACKUP_DIRECTORY
+        value: /private/backups
+      - key: BACKUP_RETENTION_DAYS
+        value: "14"
+      - key: BACKUP_INTERVAL_HOURS
+        value: "24"
       - key: MEDIA_ASSET_ROOT
         value: /private/public-assets
       - key: APP_URL

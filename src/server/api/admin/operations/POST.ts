@@ -2,12 +2,12 @@ import type { Request, Response } from 'express';
 import { appendAudit } from '../../../lib/auditLog.js';
 import { updateOperationsItem } from '../../../lib/operationsInboxStore.js';
 
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   const id = typeof req.body?.id === 'string' ? req.body.id : '';
   if (!id) return res.status(400).json({ error: 'Item id is required' });
   const session = req.adminSession!;
   const actor = session.email || session.adminId;
-  const item = updateOperationsItem(id, {
+  const item = await updateOperationsItem(id, {
     status: req.body?.status,
     priority: req.body?.priority,
     assignedTo: req.body?.assignedTo,

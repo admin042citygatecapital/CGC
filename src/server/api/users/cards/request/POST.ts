@@ -30,7 +30,7 @@ export default async function handler(req: Request, res: Response) {
     '/dashboard/cards',
   );
 
-  createOperationsItem({
+  await createOperationsItem({
     source: 'card_request', referenceId: `${user.id}:${Date.now()}`, title: 'Card issuance request',
     summary: `${user.name} requested a new payment card.`, requesterName: user.name,
     requesterEmail: user.email, userId: user.id, priority: 'high',

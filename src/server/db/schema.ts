@@ -643,6 +643,35 @@ export const subscribers = pgTable('subscribers', {
   uniqueIndex('subscribers_email_idx').on(t.email),
 ]);
 
+// ── operations_items ────────────────────────────────────────────────────────
+// Central administration queue. Source-specific sensitive records remain in
+// their purpose-built stores; this table contains only the operational subset
+// needed for assignment, decisions, notes, and audit history.
+export const operationsItems = pgTable('operations_items', {
+  id:             text('id').primaryKey(),
+  source:         text('source').notNull(),
+  referenceId:    text('reference_id').notNull(),
+  title:          text('title').notNull(),
+  summary:        text('summary').notNull(),
+  requesterName:  text('requester_name'),
+  requesterEmail: text('requester_email'),
+  userId:         text('user_id'),
+  status:         text('status').notNull().default('new'),
+  priority:       text('priority').notNull().default('normal'),
+  assignedTo:     text('assigned_to'),
+  adminNotes:     jsonb('admin_notes').$type<Array<{ id: string; text: string; author: string; at: string }>>().notNull().default([]),
+  metadata:       jsonb('metadata').$type<Record<string, string | number | boolean>>().notNull().default({}),
+  history:        jsonb('history').$type<Array<{ at: string; actor: string; action: string; detail?: string }>>().notNull().default([]),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('operations_items_source_reference_idx').on(t.source, t.referenceId),
+  index('operations_items_status_updated_idx').on(t.status, t.updatedAt),
+  index('operations_items_priority_idx').on(t.priority),
+  index('operations_items_requester_email_idx').on(t.requesterEmail),
+  index('operations_items_user_id_idx').on(t.userId),
+]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -670,3 +699,4 @@ export type LoginEvent           = typeof loginEvents.$inferSelect;
 export type AuditEntry           = typeof auditLog.$inferSelect;
 export type EmailQueueItem       = typeof emailQueue.$inferSelect;
 export type Subscriber           = typeof subscribers.$inferSelect;
+export type OperationsItemRow    = typeof operationsItems.$inferSelect;

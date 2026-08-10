@@ -326,6 +326,7 @@ import { APP_ENV } from "./lib/envConfig";
 // admin_developer_get_40 are imported above in the <api-imports> block and
 // registered at their respective app.get() lines. No duplicate imports needed.
 import { initMarketProviders } from "./lib/market/init";
+import { startOperationalBackupWorker } from "./lib/operationalBackup";
 import { marketRegistry } from "./lib/market/registry";
 import { migrateCardsToEncrypted } from "./lib/cardStore";
 
@@ -1282,6 +1283,7 @@ if (import.meta.env.PROD) {
 
 		// ── Initialise market data providers ───────────────────────────────
 		initMarketProviders();
+		startOperationalBackupWorker();
 
 		// ── Start WebSocket broadcast loop ──────────────────────────────────
 		startWsBroadcast();

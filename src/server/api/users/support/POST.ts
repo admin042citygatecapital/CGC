@@ -46,7 +46,7 @@ export default async function handler(req: Request, res: Response) {
     message:   String(message).trim(),
   });
 
-  createOperationsItem({
+  await createOperationsItem({
     source: 'support_ticket', referenceId: conv.id, title: conv.subject,
     summary: String(message).trim(), requesterName: user.name, requesterEmail: user.email,
     userId: user.id, priority: conv.priority === 'medium' ? 'normal' : conv.priority,
