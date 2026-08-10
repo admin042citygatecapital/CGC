@@ -16,6 +16,7 @@ import { appendAudit } from '../../../../lib/auditLog.js';
 import { sendBalanceAdjustmentEmail } from '../../../../lib/emailService.js';
 import { safeParseId, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
 import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
+import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 
 const VALID_TYPES      = ['credit','debit'] as const;
 const SUPPORTED_CURRENCIES = ['USD','EUR','GBP','CHF','CAD','AUD','JPY','SGD','AED','NGN','BTC','ETH','SOL','USDT','BNB'] as const;
@@ -28,6 +29,7 @@ const TO_USD: Record<string, number> = {
 };
 
 export default async function handler(req: Request, res: Response) {
+  if (!requireFinancialOperations(res)) return;
   const { userId: rawUserId, type: rawType, amount: rawAmount, currency: rawCurrency = 'USD', note = '' } = req.body ?? {};
   const session   = req.adminSession;
   const adminId   = session?.adminId   ?? 'admin';

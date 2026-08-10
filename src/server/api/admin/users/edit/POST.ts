@@ -20,6 +20,7 @@ import {
   isOneOf,
   stripDangerousKeys,
 } from '../../../../lib/inputValidator.js';
+import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 
 // Fields the admin is allowed to patch
 const ALLOWED_FIELDS = new Set([
@@ -52,6 +53,12 @@ export default async function handler(req: Request, res: Response) {
   if (!rawBody.patch || typeof rawBody.patch !== 'object' || Array.isArray(rawBody.patch)) {
     return res.status(400).json({ ok: false, error: 'patch must be a plain object' });
   }
+
+  const financialFields = new Set([
+    'balance', 'bankName', 'bankAccountNumber', 'bankRoutingNumber', 'bankSwift', 'bankIban',
+    'walletBtc', 'walletEth', 'walletUsdt', 'walletSol',
+  ]);
+  if (Object.keys(rawBody.patch as Record<string, unknown>).some(key => financialFields.has(key)) && !requireFinancialOperations(res)) return;
 
   const user = await findUserById(userId);
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });

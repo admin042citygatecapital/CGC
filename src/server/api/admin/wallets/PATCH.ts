@@ -6,8 +6,10 @@
 import type { Request, Response } from 'express';
 import { updateWallet } from '../../../lib/walletStore.js';
 import { appendAudit } from '../../../lib/auditLog.js';
+import { requireFinancialOperations } from '../../../lib/platformMode.js';
 
 export default async function handler(req: Request, res: Response) {
+  if (!requireFinancialOperations(res)) return;
   const session = req.adminSession!;
   const { id, address, enabled, minDeposit } = req.body ?? {};
 

@@ -11,6 +11,7 @@ const publicCopyFiles = [
   'src/pages/register.tsx',
   'src/pages/kyc.tsx',
   'src/pages/dashboard/deposits.tsx',
+  'src/pages/admin/crypto.tsx',
   'src/components/AccountOpeningModal.tsx',
   'src/components/TawkWidget.tsx',
   'src/content/pages/home.json',
@@ -40,6 +41,10 @@ const prohibited = [
   /premium digital banking platform offering/i,
   /premier digital banking and investment platform/i,
   /Your funds are secure and being processed/i,
+  /platform custody wallets/i,
+  /bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh/i,
+  /0x742d35Cc6634C0532925a3b8D4C9C2B4E1A2F3D/i,
+  /TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE/i,
 ];
 
 const violations = [];

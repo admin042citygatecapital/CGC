@@ -6,6 +6,7 @@ import type { Request, Response } from 'express';
 import { hashPassword } from '../../../../lib/passwordHash.js';
 import { createUser, findUserByEmail } from '../../../../lib/userStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
+import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -21,6 +22,7 @@ export default async function handler(req: Request, res: Response) {
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email and password are required' });
   }
+  if (Number(balance) !== 0 && !requireFinancialOperations(res)) return;
 
   const existing = await findUserByEmail(String(email));
   if (existing) return res.status(409).json({ error: 'Email already registered' });

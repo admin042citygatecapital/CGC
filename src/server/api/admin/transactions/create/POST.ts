@@ -12,12 +12,14 @@ import {
 import { appendAudit } from '../../../../lib/auditLog.js';
 import { safeParseId, sanitizeString, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
 import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
+import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 
 const VALID_TYPES: TxType[]      = ['deposit','withdrawal','transfer','crypto_buy','crypto_sell','wire_transfer','fee','refund','manual_credit','manual_debit'];
 const VALID_STATUSES: TxStatus[] = ['pending','completed','failed','rejected','flagged'];
 const VALID_CURRENCIES: TxCurrency[] = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'];
 
 export default async function handler(req: Request, res: Response) {
+  if (!requireFinancialOperations(res)) return;
   const session = req.adminSession!;
   const {
     userId: rawUserId, type, status = 'completed', amount, currency = 'USD',
