@@ -11,6 +11,7 @@ import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { config as configTable } from '../db/schema.js';
 
 const CONFIG_KEY = 'email_branding';
+const UNVERIFIED_POSTAL_ADDRESS = 'Business address pending verification';
 
 export interface EmailBrandingConfig {
   brandName: string;
@@ -32,6 +33,11 @@ function env(name: string, fallback: string): string {
   return process.env[name]?.trim() || fallback;
 }
 
+function safePostalAddress(value: string): string {
+  const normalized = normalizeBusinessAddress(value);
+  return normalized === DEFAULT_BUSINESS_ADDRESS ? UNVERIFIED_POSTAL_ADDRESS : normalized;
+}
+
 function environmentDefaults(): EmailBrandingConfig {
   return {
     brandName: env('EMAIL_BRAND_NAME', 'City Gate Capital'),
@@ -40,7 +46,7 @@ function environmentDefaults(): EmailBrandingConfig {
     websiteButtonLabel: env('EMAIL_WEBSITE_BUTTON_LABEL', 'Open City Gate Capital'),
     supportEmail: env('EMAIL_SUPPORT_ADDRESS', 'support@citygate.capital'),
     supportPhone: env('EMAIL_SUPPORT_PHONE', '+44 7888 382458'),
-    postalAddress: normalizeBusinessAddress(env('EMAIL_POSTAL_ADDRESS', DEFAULT_BUSINESS_ADDRESS)),
+    postalAddress: safePostalAddress(env('EMAIL_POSTAL_ADDRESS', UNVERIFIED_POSTAL_ADDRESS)),
     primaryColor: env('EMAIL_PRIMARY_COLOR', '#C9A84C'),
     footerMessage: env('EMAIL_FOOTER_MESSAGE', 'Secure access to your City Gate Capital account and services.'),
     updatedAt: new Date().toISOString(),
@@ -52,7 +58,7 @@ let cache: Partial<EmailBrandingConfig> | null = null;
 
 export function loadEmailBranding(): EmailBrandingConfig {
   const branding = { ...environmentDefaults(), ...(cache ?? {}) };
-  return { ...branding, postalAddress: normalizeBusinessAddress(branding.postalAddress) };
+  return { ...branding, postalAddress: safePostalAddress(branding.postalAddress) };
 }
 
 function normalizeUrl(value: string, field: string): string {

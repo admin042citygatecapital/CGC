@@ -45,6 +45,8 @@ interface WebsiteSettings {
   footerEmail: string;
   footerPhone: string;
   footerAddress: string;
+  businessAddressPublished: boolean;
+  businessAddressPublicationEvidence: string;
   footerCopyright: string;
   showNewsletterInFooter: boolean;
   showTrustBadgesInFooter: boolean;
@@ -94,6 +96,8 @@ const DEFAULT: WebsiteSettings = {
   footerEmail: 'info@citygate.capital',
   footerPhone: '+44 7888 382458',
   footerAddress: DEFAULT_BUSINESS_ADDRESS,
+  businessAddressPublished: false,
+  businessAddressPublicationEvidence: '',
   footerCopyright: '© {year} City Gate Capital Ltd. All rights reserved.',
   showNewsletterInFooter: true,
   showTrustBadgesInFooter: true,
@@ -421,6 +425,27 @@ export default function AdminWebsite() {
                   <Field k="footerPhone" label="Phone Number" placeholder="+44 7888 382458" />
                 </div>
                 <TextArea k="footerAddress" label="Business Address" rows={3} />
+                <div className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle size={17} className="mt-0.5 shrink-0 text-amber-300" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-amber-200">Location evidence required</p>
+                      <p className="text-xs leading-relaxed text-amber-100/60">
+                        The matching Companies House record uses a different registered office, while Google identifies the street-level pin as Barclays. Before publication, retain evidence that City Gate Capital is authorised to occupy this address, is staffed there during stated hours, receives customers there, and displays permanent signage.
+                      </p>
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        <a href="https://find-and-update.company-information.service.gov.uk/company/11575573" target="_blank" rel="noopener noreferrer" className="text-amber-200 hover:underline">Companies House record</a>
+                        <a href="https://support.google.com/business/answer/3038177" target="_blank" rel="noopener noreferrer" className="text-amber-200 hover:underline">Google location rules</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <TextArea k="businessAddressPublicationEvidence" label="Publication Evidence / Reference" rows={3} />
+                <Toggle
+                  k="businessAddressPublished"
+                  label="Publish Address and Google Map"
+                  desc="Enable only after documentary occupancy and Google eligibility checks are complete"
+                />
                 <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
                     <div className="flex items-start gap-2">
@@ -450,7 +475,7 @@ export default function AdminWebsite() {
                   />
                 </div>
                 <p className="text-[11px] leading-relaxed text-white/35">
-                  The preview changes while you type. Select Save Changes to publish the address and map to the contact page and footer.
+                  The preview changes while you type. Saving keeps it as an admin draft unless the verified publication control above is enabled.
                 </p>
                 <Field k="footerCopyright" label="Copyright Text (use {year} for dynamic year)" placeholder="© {year} City Gate Capital Ltd." />
                 <Toggle k="showNewsletterInFooter" label="Newsletter Signup" desc="Show newsletter form in footer" />

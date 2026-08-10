@@ -546,7 +546,7 @@ function TemplatesTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
               ['websiteButtonLabel', 'Website Button Text', 'Open City Gate Capital'],
               ['supportEmail', 'Support Email', 'support@citygate.capital'],
               ['supportPhone', 'Support Phone', '+44 7888 382458'],
-              ['postalAddress', 'Postal Address', 'Citygate, 51 Mosley Street, Manchester, M2 3HQ, United Kingdom'],
+              ['postalAddress', 'Postal Address', 'Business address pending verification'],
               ['primaryColor', 'Primary Color', '#C9A84C'],
             ] as Array<[keyof EmailBrandingConfig, string, string]>).map(([key, label, placeholder]) => (
               <label key={key} className={key === 'logoUrl' || key === 'postalAddress' ? 'md:col-span-2' : ''}>

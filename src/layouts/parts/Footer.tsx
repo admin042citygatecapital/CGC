@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Globe, ArrowRight, CheckCircle, Loader2, ExternalLink, MapPin } from 'lucide-react';
 import CgcLogo from '@/components/CgcLogo';
-import { resolveBusinessLocation, type BusinessLocation } from '@/lib/businessLocation';
+import type { BusinessLocation } from '@/lib/businessLocation';
 
 const footerLinks = {
   Product: [
@@ -52,7 +52,7 @@ export default function Footer() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
   const [socials, setSocials]   = useState<SocialLink[]>([]);
-  const [businessLocation, setBusinessLocation] = useState<BusinessLocation>(() => resolveBusinessLocation({}));
+  const [businessLocation, setBusinessLocation] = useState<BusinessLocation | null>(null);
 
   // Load admin-controlled social links from public endpoint
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function Footer() {
     fetch('/api/settings/website', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        if (d?.data?.location?.address) setBusinessLocation(d.data.location as BusinessLocation);
+        setBusinessLocation(d?.data?.location?.address ? d.data.location as BusinessLocation : null);
       })
       .catch(() => {});
   }, []);
@@ -160,7 +160,7 @@ export default function Footer() {
             <p className="text-sm text-foreground/55 leading-relaxed max-w-xs mb-6">
               Premium digital banking for the modern world. Secure, fast, and built for global citizens who demand more.
             </p>
-            <a
+            {businessLocation && <a
               href={businessLocation.directionsUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -168,7 +168,7 @@ export default function Footer() {
             >
               <MapPin size={14} className="mt-0.5 shrink-0 text-primary" />
               <span>{businessLocation.address}</span>
-            </a>
+            </a>}
 
             {/* Trust items */}
             <ul className="space-y-2 mb-6">

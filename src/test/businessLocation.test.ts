@@ -3,6 +3,7 @@ import {
   DEFAULT_BUSINESS_ADDRESS,
   normalizeBusinessAddress,
   resolveBusinessLocation,
+  resolvePublicBusinessLocation,
 } from '../lib/businessLocation';
 
 describe('business location settings', () => {
@@ -32,5 +33,13 @@ describe('business location settings', () => {
     expect(location.mapEmbedUrl.startsWith('https://www.google.com/maps?')).toBe(true);
     expect(location.mapEmbedUrl).toContain('javascript%3Aalert(1)');
   });
-});
 
+  it('keeps an unverified address out of the public projection', () => {
+    expect(resolvePublicBusinessLocation({ footerAddress: DEFAULT_BUSINESS_ADDRESS })).toBeNull();
+    expect(resolvePublicBusinessLocation({
+      footerAddress: DEFAULT_BUSINESS_ADDRESS,
+      businessAddressPublished: true,
+      businessAddressPublicationEvidence: 'Lease and permanent signage confirmed by an authorised administrator.',
+    })?.address).toBe(DEFAULT_BUSINESS_ADDRESS);
+  });
+});

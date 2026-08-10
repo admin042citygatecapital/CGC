@@ -14,6 +14,22 @@ export default function handler(req: Request, res: Response) {
     settings.footerAddress = normalizeBusinessAddress(settings.footerAddress);
   }
 
+  if (settings.businessAddressPublished !== undefined && typeof settings.businessAddressPublished !== 'boolean') {
+    return res.status(400).json({ error: 'Invalid business-address publication option.' });
+  }
+  if (
+    settings.businessAddressPublicationEvidence !== undefined
+    && (typeof settings.businessAddressPublicationEvidence !== 'string' || settings.businessAddressPublicationEvidence.trim().length > 500)
+  ) {
+    return res.status(400).json({ error: 'Address evidence must be 500 characters or fewer.' });
+  }
+  if (
+    settings.businessAddressPublished === true
+    && (typeof settings.businessAddressPublicationEvidence !== 'string' || settings.businessAddressPublicationEvidence.trim().length < 10)
+  ) {
+    return res.status(400).json({ error: 'Record documentary address evidence before publishing this location.' });
+  }
+
   if (settings.announcementEnabled !== undefined && typeof settings.announcementEnabled !== 'boolean') {
     return res.status(400).json({ error: 'Invalid announcement display option.' });
   }

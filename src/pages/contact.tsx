@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, Send, CheckCircle, MessageCircle, ArrowRight, ExternalLink, MapPin, Navigation } from 'lucide-react';
-import { resolveBusinessLocation, type BusinessLocation } from '@/lib/businessLocation';
+import type { BusinessLocation } from '@/lib/businessLocation';
 
 interface SocialLink {
   platformId: string; url: string; enabled: boolean;
@@ -37,7 +37,7 @@ export default function ContactPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', company: '', subject: 'General Inquiry', message: '' });
   const [socials, setSocials] = useState<SocialLink[]>([]);
-  const [businessLocation, setBusinessLocation] = useState<BusinessLocation>(() => resolveBusinessLocation({}));
+  const [businessLocation, setBusinessLocation] = useState<BusinessLocation | null>(null);
 
   useEffect(() => {
     fetch('/api/settings/social')
@@ -52,7 +52,7 @@ export default function ContactPage() {
       fetch('/api/settings/website', { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
-          if (active && d?.data?.location?.address) setBusinessLocation(d.data.location as BusinessLocation);
+          if (active) setBusinessLocation(d?.data?.location?.address ? d.data.location as BusinessLocation : null);
         })
         .catch(() => {});
     };
@@ -129,7 +129,7 @@ export default function ContactPage() {
               { '@type': 'ContactPoint', contactType: 'product preview support', telephone: '+447888382458', email: 'support@citygate.capital', availableLanguage: 'English' },
               { '@type': 'ContactPoint', contactType: 'general inquiry', email: 'info@citygate.capital', availableLanguage: 'English' },
             ],
-            address: businessLocation.address,
+            ...(businessLocation ? { address: businessLocation.address } : {}),
           },
         }) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -229,7 +229,7 @@ export default function ContactPage() {
                   { icon: Phone,  title: 'Phone',          detail: '+44 7888 382458',                       href: 'tel:+447888382458' },
                   { icon: Mail,   title: 'General',        detail: 'info@citygate.capital',                 href: 'mailto:info@citygate.capital' },
                   { icon: Mail,   title: 'Support',        detail: 'support@citygate.capital',              href: 'mailto:support@citygate.capital' },
-                  { icon: MapPin, title: 'Office',         detail: businessLocation.address,               href: businessLocation.directionsUrl },
+                  ...(businessLocation ? [{ icon: MapPin, title: 'Office', detail: businessLocation.address, href: businessLocation.directionsUrl }] : []),
                 ].map((item) => (
                   <div key={item.title} className="flex items-start gap-4 p-4 glass rounded-2xl border border-primary/10 hover:border-primary/20 transition-colors group">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
@@ -247,7 +247,7 @@ export default function ContactPage() {
                 ))}
               </div>
 
-              <div className="overflow-hidden rounded-2xl border border-primary/15 bg-black/20 shadow-2xl shadow-black/20">
+              {businessLocation && <div className="overflow-hidden rounded-2xl border border-primary/15 bg-black/20 shadow-2xl shadow-black/20">
                 <iframe
                   title="City Gate Capital office on Google Maps"
                   src={businessLocation.mapEmbedUrl}
@@ -270,7 +270,7 @@ export default function ContactPage() {
                     <Navigation size={13} /> Get directions
                   </a>
                 </div>
-              </div>
+              </div>}
 
             </motion.div>
 

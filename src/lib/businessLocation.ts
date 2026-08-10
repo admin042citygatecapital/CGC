@@ -14,6 +14,8 @@ export interface BusinessLocation {
 
 type BusinessLocationSource = {
   footerAddress?: unknown;
+  businessAddressPublished?: unknown;
+  businessAddressPublicationEvidence?: unknown;
 };
 
 export function normalizeBusinessAddress(value: unknown): string {
@@ -45,3 +47,12 @@ export function resolveBusinessLocation(
   };
 }
 
+export function resolvePublicBusinessLocation(
+  source: BusinessLocationSource | null | undefined,
+): BusinessLocation | null {
+  const evidence = typeof source?.businessAddressPublicationEvidence === 'string'
+    ? source.businessAddressPublicationEvidence.trim()
+    : '';
+  if (source?.businessAddressPublished !== true || evidence.length < 10) return null;
+  return resolveBusinessLocation(source);
+}
