@@ -61,8 +61,9 @@ interface Campaign {
     totalRecipients: number;
     sent: number;
     failed: number;
-    openRate: number;
-    clickRate: number;
+    openRate: number | null;
+    clickRate: number | null;
+    engagementTracking: 'not_configured';
     unsubscribes: number;
   };
 }
@@ -797,8 +798,8 @@ export default function AdminNewsletter() {
                         { label: 'Recipients', value: c.stats.totalRecipients.toLocaleString(), color: 'text-white' },
                         { label: 'Sent',       value: c.stats.sent.toLocaleString(),            color: 'text-emerald-400' },
                         { label: 'Failed',     value: c.stats.failed.toLocaleString(),          color: c.stats.failed > 0 ? 'text-red-400' : 'text-white/30' },
-                        { label: 'Open Rate',  value: `${c.stats.openRate}%`,                   color: 'text-blue-400' },
-                        { label: 'Click Rate', value: `${c.stats.clickRate}%`,                  color: 'text-purple-400' },
+                        { label: 'Open Rate',  value: c.stats.openRate === null ? 'Not tracked' : `${c.stats.openRate}%`, color: c.stats.openRate === null ? 'text-white/35' : 'text-blue-400' },
+                        { label: 'Click Rate', value: c.stats.clickRate === null ? 'Not tracked' : `${c.stats.clickRate}%`, color: c.stats.clickRate === null ? 'text-white/35' : 'text-purple-400' },
                         { label: 'Unsubs',     value: c.stats.unsubscribes.toLocaleString(),    color: c.stats.unsubscribes > 0 ? 'text-amber-400' : 'text-white/30' },
                       ].map(s => (
                         <div key={s.label} className="px-4 py-3 text-center">

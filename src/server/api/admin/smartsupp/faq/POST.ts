@@ -3,7 +3,7 @@
  * Actions: upsert, delete
  */
 import type { Request, Response } from 'express';
-import { upsertFaq, deleteFaq } from '../../../../lib/smartsuppStore.js';
+import { upsertFaq, deleteFaq, UnsupportedFaqClaimError } from '../../../../lib/smartsuppStore.js';
 
 export default function handler(req: Request, res: Response) {
   const { action, id, ...data } = req.body ?? {};
@@ -16,6 +16,9 @@ export default function handler(req: Request, res: Response) {
     const entry = upsertFaq({ id, ...data });
     res.json({ ok: true, entry });
   } catch (err) {
+    if (err instanceof UnsupportedFaqClaimError) {
+      return res.status(400).json({ error: err.message, code: 'UNSUPPORTED_FINANCIAL_CLAIM' });
+    }
     res.status(500).json({ error: String(err) });
   }
 }

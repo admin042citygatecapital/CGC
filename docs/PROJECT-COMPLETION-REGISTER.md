@@ -39,6 +39,9 @@ This register reconciles the original shared project conversation (230 user mess
 - Repaired the administration security-log and trading-log data contracts so the existing pages no longer call missing endpoints.
 - Added a least-privilege customer lookup for support: it exposes only the profile fields the support page needs and never returns credentials, sessions, banking details or identity-document references.
 - Classified trading administration logs as deferred planning/audit data and corrected the developer catalogue so persisted application transactions are not described as real-money transactions.
+- Replaced unsafe chatbot seed answers about transfer settlement, withdrawal limits and card controls with preview-safe guidance; persisted legacy answers are migrated on read and the admin API rejects those claims if reintroduced.
+- Fixed chatbot FAQ category filtering so an empty category result cannot overwrite the persisted knowledge base.
+- Removed unmeasured newsletter open/click percentages from administration reporting; campaign delivery records now state that engagement tracking is not configured and the UI displays “Not tracked.”
 
 ## Work that is genuinely incomplete
 

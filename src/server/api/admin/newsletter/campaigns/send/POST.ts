@@ -69,8 +69,9 @@ export default async function handler(req: Request, res: Response) {
       totalRecipients: subscribers.length,
       sent,
       failed,
-      openRate:    0,
-      clickRate:   0,
+      openRate:    null,
+      clickRate:   null,
+      engagementTracking: 'not_configured' as const,
       unsubscribes: 0,
     };
 

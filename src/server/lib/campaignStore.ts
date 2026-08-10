@@ -7,8 +7,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { privateSubdirectory } from './storagePaths.js';
 
-const DATA_DIR  = '/private/newsletter';
+const DATA_DIR  = privateSubdirectory('newsletter');
 const DATA_FILE = path.join(DATA_DIR, 'campaigns.json');
 
 export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
@@ -45,8 +46,9 @@ export interface Campaign {
     totalRecipients: number;
     sent: number;
     failed: number;
-    openRate: number;       // percentage 0–100 (simulated for now)
-    clickRate: number;      // percentage 0–100 (simulated for now)
+    openRate: number | null;
+    clickRate: number | null;
+    engagementTracking: 'not_configured';
     unsubscribes: number;
   };
 }
@@ -61,7 +63,16 @@ function readAll(): Campaign[] {
   ensureDir();
   if (!fs.existsSync(DATA_FILE)) return [];
   try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8')) as Campaign[];
+    const campaigns = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8')) as Campaign[];
+    return campaigns.map(campaign => ({
+      ...campaign,
+      stats: {
+        ...campaign.stats,
+        openRate: null,
+        clickRate: null,
+        engagementTracking: 'not_configured',
+      },
+    }));
   } catch {
     return [];
   }
@@ -102,7 +113,7 @@ export function createCampaign(data: {
     createdAt:   new Date().toISOString(),
     updatedAt:   new Date().toISOString(),
     createdBy:   data.createdBy ?? 'admin',
-    stats:       { totalRecipients: 0, sent: 0, failed: 0, openRate: 0, clickRate: 0, unsubscribes: 0 },
+    stats:       { totalRecipients: 0, sent: 0, failed: 0, openRate: null, clickRate: null, engagementTracking: 'not_configured', unsubscribes: 0 },
   };
   const all = readAll();
   all.push(campaign);

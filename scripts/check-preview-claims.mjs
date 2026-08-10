@@ -48,6 +48,9 @@ const prohibited = [
   /bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh/i,
   /0x742d35Cc6634C0532925a3b8D4C9C2B4E1A2F3D/i,
   /TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE/i,
+  /transfers? typically settle in\s+1.{0,3}3 business days/i,
+  /standard accounts?:[\s\S]{0,80}10,000\s*\/\s*day/i,
+  /go to dashboard[\s\S]{0,100}cards[\s\S]{0,100}(?:tap|select)[\s\S]{0,40}freeze/i,
 ];
 
 const violations = [];

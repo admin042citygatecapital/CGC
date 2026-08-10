@@ -7,8 +7,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { privateSubdirectory } from './storagePaths.js';
 
-const DIR = '/private/chatbot';
+const DIR = privateSubdirectory('chatbot');
 const FILES = {
   config:        path.join(DIR, 'config.json'),
   conversations: path.join(DIR, 'conversations.jsonl'),
@@ -108,6 +109,89 @@ export interface FaqEntry {
   helpfulCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export class UnsupportedFaqClaimError extends Error {
+  constructor(public readonly reason: string) {
+    super(`Unsupported FAQ financial claim: ${reason}`);
+    this.name = 'UnsupportedFaqClaimError';
+  }
+}
+
+const SAFE_FAQ_DEFAULTS: Array<Pick<FaqEntry, 'question' | 'answer' | 'category' | 'triggerKeywords'>> = [
+  {
+    question: 'How do I create a preview profile?',
+    answer: 'Select "Create Preview Profile" and complete the registration form. This creates access to the product demonstration only; KYC and live financial accounts are not available.',
+    category: 'Account',
+    triggerKeywords: ['open account', 'register', 'sign up', 'preview profile'],
+  },
+  {
+    question: 'How do I transfer money internationally?',
+    answer: 'International transfers are not available in this product preview. You may explore the proposed workflow, but no payment is submitted or settled and no real recipient banking details should be entered.',
+    category: 'Transfers',
+    triggerKeywords: ['transfer', 'wire', 'international', 'send money'],
+  },
+  {
+    question: 'What are the withdrawal limits?',
+    answer: 'Withdrawals are not available in this product preview because City Gate Capital does not accept or hold customer funds. Any displayed limits or balances are demonstration data only.',
+    category: 'Limits',
+    triggerKeywords: ['withdrawal limit', 'how much', 'daily limit'],
+  },
+  {
+    question: 'How do I freeze my card?',
+    answer: 'No payment card is issued in this product preview. Card controls are illustrative only and cannot freeze, unfreeze, authorise, or block a real card.',
+    category: 'Cards',
+    triggerKeywords: ['freeze card', 'lock card', 'lost card'],
+  },
+  {
+    question: 'Is my money protected?',
+    answer: 'This product preview does not accept customer money. Demonstration balances are not deposits and are not insured. Do not send funds or digital assets to any details shown in the preview.',
+    category: 'Security',
+    triggerKeywords: ['safe', 'protected', 'insured', 'regulated'],
+  },
+];
+
+const UNSUPPORTED_FAQ_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
+  { pattern: new RegExp(['transfers? typically ', 'settle in\\s+1.{0,3}3 business days'].join(''), 'i'), reason: 'promises an unsupported transfer settlement time' },
+  { pattern: new RegExp(['standard accounts?:', '[\\s\\S]{0,80}10,000\\s*\\/\\s*day'].join(''), 'i'), reason: 'states invented withdrawal limits' },
+  { pattern: new RegExp(['go to dash\u0062oard', '[\\s\\S]{0,100}cards[\\s\\S]{0,100}(?:tap|select)[\\s\\S]{0,40}freeze'].join(''), 'i'), reason: 'presents preview card controls as operational' },
+];
+
+export function findUnsupportedFaqClaim(value: string): string | undefined {
+  return UNSUPPORTED_FAQ_PATTERNS.find(({ pattern }) => pattern.test(value))?.reason;
+}
+
+function createDefaultFaq(): FaqEntry[] {
+  const now = new Date().toISOString();
+  return SAFE_FAQ_DEFAULTS.map(defaultEntry => ({
+    ...defaultEntry,
+    id: randomUUID(),
+    enabled: true,
+    viewCount: 0,
+    helpfulCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  }));
+}
+
+function migrateLegacyFaq(all: FaqEntry[]): FaqEntry[] {
+  let changed = false;
+  const safeByQuestion = new Map(SAFE_FAQ_DEFAULTS.map(entry => [entry.question, entry]));
+  const migrated = all.map(entry => {
+    if (!findUnsupportedFaqClaim(entry.answer)) return entry;
+    changed = true;
+    const replacement = safeByQuestion.get(entry.question);
+    if (!replacement) return { ...entry, enabled: false, updatedAt: new Date().toISOString() };
+    return {
+      ...entry,
+      answer: replacement.answer,
+      category: replacement.category,
+      triggerKeywords: replacement.triggerKeywords,
+      updatedAt: new Date().toISOString(),
+    };
+  });
+  if (changed) writeJsonl(FILES.faq, migrated);
+  return migrated;
 }
 
 export interface AnalyticsSnapshot {
@@ -356,24 +440,21 @@ export function updateTicket(id: string, patch: Partial<SupportTicket>): Support
 
 export function getFaq(opts: { category?: string; enabled?: boolean } = {}): FaqEntry[] {
   let all = readJsonl<FaqEntry>(FILES.faq);
+  if (all.length === 0) {
+    const defaults = createDefaultFaq();
+    writeJsonl(FILES.faq, defaults);
+    all = defaults;
+  } else {
+    all = migrateLegacyFaq(all);
+  }
   if (opts.category && opts.category !== 'all') all = all.filter(f => f.category === opts.category);
   if (opts.enabled !== undefined) all = all.filter(f => f.enabled === opts.enabled);
-  if (all.length === 0) {
-    // Seed default FAQ
-    const defaults: FaqEntry[] = [
-      { id: randomUUID(), question: 'How do I create a preview profile?', answer: 'Select "Create Preview Profile" and complete the registration form. This creates access to the product demonstration only; KYC and live financial accounts are not available.', category: 'Account', enabled: true, triggerKeywords: ['open account', 'register', 'sign up', 'preview profile'], viewCount: 0, helpfulCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: randomUUID(), question: 'How do I transfer money internationally?', answer: 'Go to Dashboard → Transfers → International Wire. You will need the recipient\'s IBAN and SWIFT/BIC code. Transfers typically settle in 1–3 business days.', category: 'Transfers', enabled: true, triggerKeywords: ['transfer', 'wire', 'international', 'send money'], viewCount: 0, helpfulCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: randomUUID(), question: 'What are the withdrawal limits?', answer: 'Standard accounts: £10,000/day. Verified accounts: £50,000/day. Premium accounts: £250,000/day. Limits reset at midnight GMT.', category: 'Limits', enabled: true, triggerKeywords: ['withdrawal limit', 'how much', 'daily limit'], viewCount: 0, helpfulCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: randomUUID(), question: 'How do I freeze my card?', answer: 'Go to Dashboard → Cards → select your card → tap "Freeze". You can unfreeze it at any time from the same screen.', category: 'Cards', enabled: true, triggerKeywords: ['freeze card', 'lock card', 'lost card'], viewCount: 0, helpfulCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: randomUUID(), question: 'Is my money protected?', answer: 'This product preview does not accept customer money. Demonstration balances are not deposits and are not insured. Do not send funds or digital assets to any details shown in the preview.', category: 'Security', enabled: true, triggerKeywords: ['safe', 'protected', 'insured', 'regulated'], viewCount: 0, helpfulCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ];
-    writeJsonl(FILES.faq, defaults);
-    return defaults;
-  }
   return all;
 }
 
 export function upsertFaq(data: Partial<FaqEntry> & { id?: string }): FaqEntry {
+  const unsupportedClaim = findUnsupportedFaqClaim(`${data.question ?? ''}\n${data.answer ?? ''}`);
+  if (unsupportedClaim) throw new UnsupportedFaqClaimError(unsupportedClaim);
   const all = readJsonl<FaqEntry>(FILES.faq);
   const idx = data.id ? all.findIndex(f => f.id === data.id) : -1;
   if (idx >= 0) {
