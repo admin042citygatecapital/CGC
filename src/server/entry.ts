@@ -17,6 +17,9 @@ import { createMediaAssetsMiddleware } from "../../export-plugins/media-assets-p
 import admin_kyc_document_get from "./api/admin/kyc/document/GET";
 import admin_operations_get from "./api/admin/operations/GET";
 import admin_operations_post from "./api/admin/operations/POST";
+import admin_security_logs_get from "./api/admin/security/logs/GET";
+import admin_trading_logs_get from "./api/admin/trading/logs/GET";
+import admin_users_id_get from "./api/admin/users/[id]/GET";
 
 // <api-imports>
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
@@ -590,6 +593,7 @@ app.post("/api/admin/security/alerts", admin_security_alerts_post_91);
 app.delete("/api/admin/security/devices", admin_security_devices_delete_92);
 app.get("/api/admin/security/devices", admin_security_devices_get_93);
 app.get("/api/admin/security/export", admin_security_export_get_94);
+app.get("/api/admin/security/logs", admin_security_logs_get);
 app.get("/api/admin/security/ip-lists", admin_security_ip_lists_get_95);
 app.post("/api/admin/security/ip-lists", admin_security_ip_lists_post_96);
 app.get("/api/admin/security/rate-limits", admin_security_rate_limits_get_97);
@@ -666,6 +670,7 @@ app.post("/api/admin/trading/fees", admin_trading_fees_post_165);
 app.get("/api/admin/trading/freeze", admin_trading_freeze_get_166);
 app.post("/api/admin/trading/freeze", admin_trading_freeze_post_167);
 app.get("/api/admin/trading/markets", admin_trading_markets_get_168);
+app.get("/api/admin/trading/logs", admin_trading_logs_get);
 app.put("/api/admin/trading/markets", admin_trading_markets_put_169);
 app.post("/api/admin/trading/markets/suspend", admin_trading_markets_suspend_post_170);
 app.get("/api/admin/trading/providers", admin_trading_providers_get_171);
@@ -687,6 +692,7 @@ app.post("/api/admin/users/override", admin_users_override_post_186);
 app.post("/api/admin/users/reject", admin_users_reject_post_187);
 app.post("/api/admin/users/reset-2fa", admin_users_reset_2fa_post_188);
 app.post("/api/admin/users/reset-password", admin_users_reset_password_post_189);
+app.get("/api/admin/users/:id", admin_users_id_get);
 app.get("/api/admin/users/:id/audit", admin_users_id_audit_get_190);
 app.get("/api/admin/users/:id/devices", admin_users_id_devices_get_191);
 app.get("/api/admin/users/:id/login-history", admin_users_id_login_history_get_192);

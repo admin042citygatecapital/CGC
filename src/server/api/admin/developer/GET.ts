@@ -32,6 +32,7 @@ const ROUTE_CATALOGUE: Array<{
   { method:'DELETE',path:'/api/admin/auth/trusted-devices',       group:'Admin Auth',       auth:'admin',   description:'Revoke a trusted device' },
   // Users
   { method:'GET',  path:'/api/admin/users',                       group:'Users',            auth:'admin',   description:'List customers with filters & pagination' },
+  { method:'GET',  path:'/api/admin/users/:id',                   group:'Users',            auth:'admin',   description:'Minimal customer support profile' },
   { method:'POST', path:'/api/admin/users/create',                group:'Users',            auth:'admin',   description:'Create a new customer account' },
   { method:'POST', path:'/api/admin/users/action',                group:'Users',            auth:'admin',   description:'Bulk action on customers' },
   { method:'POST', path:'/api/admin/users/approve',               group:'Users',            auth:'admin',   description:'Approve a pending customer' },
@@ -59,7 +60,7 @@ const ROUTE_CATALOGUE: Array<{
   { method:'POST', path:'/api/admin/kyc/request-info',            group:'KYC',              auth:'admin',   description:'Request additional info from customer' },
   // Transactions
   { method:'GET',  path:'/api/admin/transactions',                group:'Transactions',     auth:'admin',   description:'List all transactions with filters' },
-  { method:'GET',  path:'/api/admin/transactions/real',           group:'Transactions',     auth:'admin',   description:'Real-money transactions only' },
+  { method:'GET',  path:'/api/admin/transactions/real',           group:'Transactions',     auth:'admin',   description:'Persisted application transaction records' },
   { method:'POST', path:'/api/admin/transactions/approve',        group:'Transactions',     auth:'admin',   description:'Approve a pending transaction' },
   { method:'POST', path:'/api/admin/transactions/reject',         group:'Transactions',     auth:'admin',   description:'Reject a pending transaction' },
   { method:'POST', path:'/api/admin/transactions/freeze',         group:'Transactions',     auth:'admin',   description:'Freeze a transaction' },
@@ -80,8 +81,11 @@ const ROUTE_CATALOGUE: Array<{
   { method:'PATCH',path:'/api/admin/wallets',                     group:'Wallets',          auth:'admin',   description:'Update wallet' },
   // Reports
   { method:'GET',  path:'/api/admin/reports',                     group:'Reports',          auth:'admin',   description:'11-type report engine (customers/txns/revenue/kyc/aml/…)' },
+  // Trading administration (deferred; no live provider adapter)
+  { method:'GET',  path:'/api/admin/trading/logs',                group:'Trading',          auth:'admin',   description:'Deferred trading administration action log' },
   // Security
   { method:'GET',  path:'/api/admin/security/sessions',           group:'Security',         auth:'admin',   description:'Active admin sessions' },
+  { method:'GET',  path:'/api/admin/security/logs',               group:'Security',         auth:'admin',   description:'Persisted login event history' },
   { method:'PATCH',path:'/api/admin/security/sessions',           group:'Security',         auth:'admin',   description:'Revoke a session' },
   { method:'DELETE',path:'/api/admin/security/sessions',          group:'Security',         auth:'admin',   description:'Revoke all sessions' },
   { method:'GET',  path:'/api/admin/security/threats',            group:'Security',         auth:'admin',   description:'Threat intelligence feed' },

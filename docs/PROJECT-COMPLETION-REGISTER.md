@@ -36,6 +36,9 @@ This register reconciles the original shared project conversation (230 user mess
 - Isolated browser-test customer, session, audit, support, rate, trading and transaction data under a temporary private-data root; the suite cannot read or alter production or developer records.
 - Added automated serious WCAG 2.0/2.1 A/AA scanning and keyboard-only journeys for the public homepage, customer/admin authentication, password recovery and both authenticated dashboards.
 - Corrected low-contrast public navigation, pricing, customer-dashboard and administration-dashboard text; fixed the pricing switch semantics and accessible names for icon-only administration controls.
+- Repaired the administration security-log and trading-log data contracts so the existing pages no longer call missing endpoints.
+- Added a least-privilege customer lookup for support: it exposes only the profile fields the support page needs and never returns credentials, sessions, banking details or identity-document references.
+- Classified trading administration logs as deferred planning/audit data and corrected the developer catalogue so persisted application transactions are not described as real-money transactions.
 
 ## Work that is genuinely incomplete
 
