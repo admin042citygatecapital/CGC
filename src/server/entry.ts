@@ -260,7 +260,6 @@ import og_get_221 from "./api/og/GET";
 import settings_rates_get_222 from "./api/settings/rates/GET";
 import settings_social_get_223 from "./api/settings/social/GET";
 import settings_website_get from "./api/settings/website/GET";
-import test_email_post_224 from "./api/test-email/POST";
 import users_2fa_setup_post_225 from "./api/users/2fa/setup/POST";
 import users_2fa_verify_post_226 from "./api/users/2fa/verify/POST";
 import users_avatar_post_227 from "./api/users/avatar/POST";
@@ -431,7 +430,7 @@ app.use('/api', (_req: Request, _res: Response, next: NextFunction) => { next();
 
 // ── Admin route authentication ──────────────────────────────────────────────
 // All /api/admin/* routes require a valid admin session EXCEPT the public
-// auth endpoints (login, logout, password-reset, OTP verify, unlock) which
+// bootstrap/recovery endpoints (login, password-reset, OTP verify, unlock) which
 // must be reachable before a session exists.
 // The diag endpoint is excluded here — it has its own ADMIN_UNLOCK_KEY guard.
 // NOTE: inside app.use('/api/admin', fn), req.path is the suffix AFTER
@@ -488,6 +487,15 @@ app.use('/api/newsletter/subscribers', requireAdminAuth);
 app.use('/api/newsletter/send-sequence', requireAdminAuth);
 app.use('/api/newsletter/subscribers', csrfProtect);
 app.use('/api/newsletter/send-sequence', csrfProtect);
+
+// Zoho diagnostics and OAuth initiation expose sensitive integration state.
+// Keep the callback public so Zoho can complete the redirect, but require a
+// security or super administrator to begin or inspect the flow.
+app.use(['/api/zoho/connect', '/api/zoho/status'], requireAdminAuth);
+app.use(['/api/zoho/connect', '/api/zoho/status'], (req: Request, res: Response, next: NextFunction) => {
+  if (req.adminSession?.role === 'SUPER_ADMIN' || req.adminSession?.role === 'SECURITY_ADMIN') return next();
+  return res.status(403).json({ error: 'Security administrator permission required' });
+});
 
 // <api-registrations>
 app.get("/api/admin/kyc/document", admin_kyc_document_get);
@@ -733,7 +741,6 @@ app.get("/api/og", og_get_221);
 app.get("/api/settings/rates", settings_rates_get_222);
 app.get("/api/settings/social", settings_social_get_223);
 app.get("/api/settings/website", settings_website_get);
-app.post("/api/test-email", test_email_post_224);
 app.post("/api/users/2fa/setup", users_2fa_setup_post_225);
 app.post("/api/users/2fa/verify", users_2fa_verify_post_226);
 app.post("/api/users/avatar", users_avatar_post_227);

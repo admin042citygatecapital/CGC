@@ -19,6 +19,8 @@
  */
 
 import { getSecret } from '#airo/secrets';
+import { pathToFileURL } from 'node:url';
+import { privateDataRoot } from './storagePaths.js';
 
 // ── Environment detection ─────────────────────────────────────────────────────
 
@@ -85,8 +87,8 @@ export const env = {
   database: {
     // Accepts DATABASE_URL (Neon), NEON_CONNECTION_STRING (legacy), or SUPABASE_DB_URL.
     // All are standard PostgreSQL connection strings — Drizzle ORM works with any.
-    url:      s('DATABASE_URL', 'NEON_CONNECTION_STRING', 'SUPABASE_DB_URL') || 'file:///private',
-    basePath: '/private',
+    url:      s('DATABASE_URL', 'NEON_CONNECTION_STRING', 'SUPABASE_DB_URL') || pathToFileURL(privateDataRoot).href,
+    basePath: privateDataRoot,
   },
 
   // ── Zoho Mail OAuth ───────────────────────────────────────────────────────

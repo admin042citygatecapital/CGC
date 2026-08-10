@@ -1,8 +1,8 @@
 /**
  * GET /api/zoho/callback
  * PUBLIC — Zoho redirects here after the user authorises the app.
- * Must NOT be behind requireAdminAuth — Zoho's redirect carries no
- * admin session cookie.
+ * The callback remains public so an expired administrator session cannot
+ * break Zoho's redirect, but every exchange requires a one-time state token.
  *
  * Exchanges the one-time authorization code for access + refresh tokens
  * and renders a styled page showing the refresh token so the admin can
@@ -93,18 +93,10 @@ export default async function handler(req: Request, res: Response) {
       console.log(JSON.stringify({ event: 'zoho.oauth.callback', region: tokenUrl, status: tokenRes.status, keys: Object.keys(data) }));
 
       if (data.refresh_token || data.access_token) {
-        // Success — redirect to the admin setup page so the token is shown in the UI
+        // Never place credentials in a redirect URL, browser history or referrer.
         const refreshToken = data.refresh_token as string | undefined;
         const accessToken  = data.access_token  as string | undefined;
         const expiresIn    = data.expires_in    as number | undefined;
-        const region       = encodeURIComponent(tokenUrl);
-        if (refreshToken) {
-          const rt = encodeURIComponent(refreshToken);
-          const at = accessToken ? encodeURIComponent(accessToken) : '';
-          return res.redirect(
-            `/admin/zoho-setup?refresh_token=${rt}&access_token=${at}&expires_in=${expiresIn ?? ''}&region=${region}&status=success`
-          );
-        }
         return res.send(successPage(refreshToken, accessToken, expiresIn, tokenUrl));
       }
 
@@ -128,13 +120,23 @@ export default async function handler(req: Request, res: Response) {
 
 // ── HTML helpers ─────────────────────────────────────────────────────────────
 
+export function escapeHtml(value: unknown): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function shell(title: string, body: string): string {
+  const safeTitle = escapeHtml(title);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>${title} — City Gate Capital</title>
+  <title>${safeTitle} — City Gate Capital</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:#0A0A0A;color:#fff;font-family:Inter,Arial,sans-serif;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:48px 16px}
@@ -159,25 +161,29 @@ function shell(title: string, body: string): string {
   </style>
 </head>
 <body><div class="card">
-  <div class="hdr"><h1>${title}</h1><p>citygate.capital · Zoho Mail OAuth</p></div>
+  <div class="hdr"><h1>${safeTitle}</h1><p>citygate.capital · Zoho Mail OAuth</p></div>
   <div class="body">${body}</div>
 </div></body>
 </html>`;
 }
 
 function successPage(refreshToken?: string, accessToken?: string, expiresIn?: number, region?: string): string {
+  const safeRefreshToken = refreshToken ? escapeHtml(refreshToken) : '';
+  const safeAccessToken = accessToken ? escapeHtml(accessToken) : '';
+  const safeExpiresIn = Number.isFinite(expiresIn) ? String(expiresIn) : '?';
+  const safeRegion = region ? escapeHtml(region) : '';
   const rtBlock = refreshToken
     ? `<div class="field">
         <label>Refresh Token — save as ZOHO_REFRESH_TOKEN</label>
-        <div class="token" id="rt" onclick="copy('rt','${refreshToken}')" title="Click to copy">${refreshToken}</div>
+        <div class="token" id="rt" onclick="copy('rt')" title="Click to copy">${safeRefreshToken}</div>
         <p class="hint">↑ Click to copy · Permanent token used to mint fresh access tokens</p>
        </div>`
     : `<div class="badge err">⚠ No refresh_token in response — ensure access_type=offline was set</div>`;
 
   const atBlock = accessToken
     ? `<div class="field">
-        <label>Access Token — expires in ${expiresIn ?? '?'}s (server auto-refreshes, no need to save)</label>
-        <div class="token" id="at" onclick="copy('at','${accessToken}')" title="Click to copy" style="color:rgba(255,255,255,.3);font-size:11px">${accessToken}</div>
+        <label>Access Token — expires in ${safeExpiresIn}s (server auto-refreshes, no need to save)</label>
+        <div class="token" id="at" onclick="copy('at')" title="Click to copy" style="color:rgba(255,255,255,.3);font-size:11px">${safeAccessToken}</div>
        </div>`
     : '';
 
@@ -187,24 +193,25 @@ function successPage(refreshToken?: string, accessToken?: string, expiresIn?: nu
       <li>Copy the <strong>Refresh Token</strong> above (click it)</li>
       <li>Go to <strong>Settings → Secrets</strong> in the builder</li>
       <li>Update <strong>ZOHO_REFRESH_TOKEN</strong> with the copied value</li>
-      <li>Re-publish — email delivery will be live immediately</li>
+      <li>Run the protected email test and verify delivery before relying on the integration</li>
     </ol>
-    ${region ? `<p style="color:rgba(255,255,255,.25);font-size:11px;margin-top:10px;">Region: ${region}</p>` : ''}
+    ${region ? `<p style="color:rgba(255,255,255,.25);font-size:11px;margin-top:10px;">Region: ${safeRegion}</p>` : ''}
   </div>`;
 
   const warn = `<p class="warn">⚠ Close this tab after saving. Do not share the refresh token.</p>`;
 
   const script = refreshToken
     ? `<script>
-        function copy(id,val){
+        function copy(id){
+          const el=document.getElementById(id);
+          const val=el?.textContent || '';
           navigator.clipboard.writeText(val).then(()=>{
-            const el=document.getElementById(id);
             el.style.borderColor='#10B981';
             el.title='Copied!';
           }).catch(()=>{});
         }
         // Auto-copy on load
-        navigator.clipboard.writeText('${refreshToken}').catch(()=>{});
+        copy('rt');
       </script>`
     : `<script>function copy(){}</script>`;
 
@@ -214,10 +221,13 @@ function successPage(refreshToken?: string, accessToken?: string, expiresIn?: nu
 }
 
 function errorPage(title: string, detail: string, hint: string): string {
+  const safeTitle = escapeHtml(title);
+  const safeDetail = escapeHtml(detail);
+  const safeHint = escapeHtml(hint);
   return shell(`❌ ${title}`,
-    `<div class="badge err">✗ ${title}</div>
-     <pre>${detail}</pre>
-     ${hint ? `<p style="color:rgba(255,255,255,.4);font-size:13px">${hint}</p>` : ''}
+    `<div class="badge err">✗ ${safeTitle}</div>
+     <pre>${safeDetail}</pre>
+     ${hint ? `<p style="color:rgba(255,255,255,.4);font-size:13px">${safeHint}</p>` : ''}
      <p style="color:rgba(255,255,255,.3);font-size:12px;margin-top:4px">
        Return to <a href="/admin/security" style="color:#C9A84C">Admin → Security → Health</a> and restart the flow.
      </p>`

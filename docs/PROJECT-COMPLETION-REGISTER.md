@@ -46,6 +46,9 @@ This register reconciles the original shared project conversation (230 user mess
 - Reclassified the 2026-06-04 API documents as a historical reference snapshot, removed stale route-count claims from the administration page and identified the current Developer Center/source registry as authoritative.
 - Routed active flat-file fallback stores and administrator diagnostics through `PRIVATE_DATA_ROOT` instead of a fixed `/private` path, preserving deployment portability and test isolation.
 - Added a regression test that performs representative balance/security writes under a temporary root and rejects fixed private-data literals in active API/store source.
+- Replaced the Developer Center's manually counted route display with the running Express route registry, current authentication classification and preview-locked financial descriptions.
+- Removed the unauthenticated `/api/test-email` email-sending endpoint; administrator email testing remains available through the protected administration API.
+- Restricted Zoho OAuth initiation and secret diagnostics to security/super administrators, escaped callback output and removed OAuth credentials from redirect URLs and browser history.
 
 ## Work that is genuinely incomplete
 

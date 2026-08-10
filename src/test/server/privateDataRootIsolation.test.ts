@@ -65,10 +65,11 @@ describe('private data root isolation', () => {
     ];
 
     const offenders = files.filter(file => {
+      if (file.endsWith(`${path.sep}storagePaths.ts`)) return false;
       const source = fs.readFileSync(file, 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/\/\/.*$/gm, '');
-      return /['"]\/private\//.test(source);
+      return /(['"])\/private(?:\/|\1)/.test(source);
     });
 
     expect(offenders).toEqual([]);

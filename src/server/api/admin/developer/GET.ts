@@ -14,13 +14,12 @@ import fs   from 'node:fs';
 import path from 'node:path';
 import os   from 'node:os';
 import { buildEnvReport } from '../../../lib/envValidator.js';
-import { privateSubdirectory } from '../../../lib/storagePaths.js';
+import { mediaAssetRoot, privateDataRoot, privateSubdirectory } from '../../../lib/storagePaths.js';
+import { getRegisteredRouteCatalogue, type DeveloperRouteEntry } from '../../../lib/developerRouteInventory.js';
 
 // ─── Route catalogue (static — derived from entry.ts registration) ────────────
 
-const ROUTE_CATALOGUE: Array<{
-  method: string; path: string; group: string; auth: string; description: string;
-}> = [
+const ROUTE_CATALOGUE: DeveloperRouteEntry[] = [
   // Auth
   { method:'POST', path:'/api/admin/auth/login',                  group:'Admin Auth',       auth:'public',  description:'Admin login — bcrypt + session cookie' },
   { method:'POST', path:'/api/admin/auth/logout',                 group:'Admin Auth',       auth:'public',  description:'Destroy admin session' },
@@ -434,7 +433,7 @@ function getErrorMonitor() {
 
 // ─── Build information ────────────────────────────────────────────────────────
 
-function getBuildInfo() {
+function getBuildInfo(totalRoutes: number) {
   const PKG_PATH = path.resolve(process.cwd(), 'package.json');
   let name = 'city-gate-capital';
   let version = '1.0.0';
@@ -486,7 +485,7 @@ function getBuildInfo() {
     srcFileCount,
     srcPageCount,
     srcApiCount,
-    totalRoutes:   ROUTE_CATALOGUE.length,
+    totalRoutes,
     scripts: Object.entries(scripts).map(([k, v]) => ({ name: k, command: v })),
     buildCommand:  scripts.build ?? 'npm run build',
     startCommand:  scripts.start ?? 'npm start',
@@ -511,22 +510,23 @@ function getDeploymentInfo() {
     previewUrl:    'https://yxhof1orqw.preview.c24.airoapp.ai',
     productionUrl: 'https://citygate.capital',
     // Storage paths
-    privatePath:   '/private',
-    publicPath:    '/shared-storage/public/assets',
-    privateExists: fs.existsSync('/private'),
-    publicExists:  fs.existsSync('/shared-storage/public/assets'),
+    privatePath:   privateDataRoot,
+    publicPath:    mediaAssetRoot,
+    privateExists: fs.existsSync(privateDataRoot),
+    publicExists:  fs.existsSync(mediaAssetRoot),
   };
 }
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
-export default async function handler(_req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   try {
+    const routeCatalogue = getRegisteredRouteCatalogue(req.app, ROUTE_CATALOGUE);
     const [perf, deps, errors, build, deploy, dbFiles, envReport] = await Promise.all([
       Promise.resolve(getPerformanceMetrics()),
       Promise.resolve(getDependencyHealth()),
       Promise.resolve(getErrorMonitor()),
-      Promise.resolve(getBuildInfo()),
+      Promise.resolve(getBuildInfo(routeCatalogue.length)),
       Promise.resolve(getDeploymentInfo()),
       Promise.resolve(scanDbFiles()),
       Promise.resolve(buildEnvReport()),
@@ -535,7 +535,7 @@ export default async function handler(_req: Request, res: Response) {
     // Route stats
     const routeGroups: Record<string, number> = {};
     const routeMethods: Record<string, number> = {};
-    for (const r of ROUTE_CATALOGUE) {
+    for (const r of routeCatalogue) {
       routeGroups[r.group]   = (routeGroups[r.group]   ?? 0) + 1;
       routeMethods[r.method] = (routeMethods[r.method] ?? 0) + 1;
     }
@@ -543,10 +543,10 @@ export default async function handler(_req: Request, res: Response) {
     res.json({
       generatedAt: new Date().toISOString(),
       routes: {
-        total:      ROUTE_CATALOGUE.length,
+        total:      routeCatalogue.length,
         byGroup:    routeGroups,
         byMethod:   routeMethods,
-        catalogue:  ROUTE_CATALOGUE,
+        catalogue:  routeCatalogue,
       },
       db: {
         files:      dbFiles,

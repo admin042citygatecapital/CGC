@@ -1,6 +1,6 @@
 /**
  * GET /api/zoho/connect
- * Public — redirects the browser to Zoho's OAuth authorization page.
+ * Security-admin protected — redirects the browser to Zoho's OAuth authorization page.
  * A random `state` token is embedded so the callback can verify the
  * request originated here (CSRF protection).
  */
