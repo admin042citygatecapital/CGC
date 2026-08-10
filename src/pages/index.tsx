@@ -166,7 +166,7 @@ export default function HomePage() {
           >
             {[...tickers, ...tickers].map((t, i) => (
               <span key={i} className="inline-flex items-center gap-2 text-xs shrink-0">
-                <span className="text-foreground/45 font-medium tracking-wide">{t.symbol}</span>
+                <span className="text-foreground/65 font-medium tracking-wide">{t.symbol}</span>
                 <span className="text-foreground font-semibold tabular-nums">{t.price}</span>
                 <span className={`font-semibold flex items-center gap-0.5 ${t.up ? 'text-emerald-400' : 'text-red-400'}`}>
                   {t.up ? <TrendingUp size={9} /> : <TrendingDown size={9} />}

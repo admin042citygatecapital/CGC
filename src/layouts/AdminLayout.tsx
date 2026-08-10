@@ -168,6 +168,7 @@ function Sidebar({ mobile = false, collapsed = false, admin, navLive, location, 
         </Link>
         {!mobile && (
           <button onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? 'Expand administration navigation' : 'Collapse administration navigation'}
             className="ml-auto text-white/20 hover:text-white/60 transition-colors shrink-0">
             {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
           </button>
@@ -418,7 +419,7 @@ export default function AdminLayout({ children, title }: Props) {
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
 
-      <div className="min-h-screen flex bg-[#040404]">
+      <div className="admin-accessible min-h-screen flex bg-[#040404]">
         {/* Desktop sidebar */}
         <div className={`hidden lg:flex flex-col shrink-0 fixed inset-y-0 left-0 z-30 transition-all duration-200 ${collapsed ? 'w-[60px]' : 'w-64'}`}>
           <Sidebar admin={admin} navLive={NAV_LIVE} location={location}
@@ -483,6 +484,7 @@ export default function AdminLayout({ children, title }: Props) {
             {/* Notifications */}
             <div className="relative">
               <button onClick={() => setNotifOpen(!notifOpen)}
+                aria-label={notifOpen ? 'Close activity notifications' : 'Open activity notifications'}
                 className="relative w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-white/35 hover:text-white transition-colors">
                 <Bell size={13} />
                 {notifications.length > 0 && (
@@ -498,7 +500,7 @@ export default function AdminLayout({ children, title }: Props) {
                       <p className="text-white text-sm font-semibold">Live Activity</p>
                       <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <button onClick={() => setNotifOpen(false)} className="text-white/30 hover:text-white"><X size={13} /></button>
+                        <button onClick={() => setNotifOpen(false)} aria-label="Close activity notifications" className="text-white/30 hover:text-white"><X size={13} /></button>
                       </div>
                     </div>
                     <div className="max-h-72 overflow-y-auto">

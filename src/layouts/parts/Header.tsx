@@ -74,13 +74,13 @@ export default function Header() {
             <div className="hidden md:flex items-center gap-2">
               <Link
                 to="/contact"
-                className="text-sm text-foreground/40 hover:text-foreground/70 transition-colors px-3 py-2"
+                className="text-sm text-foreground/65 hover:text-foreground transition-colors px-3 py-2"
               >
                 Contact
               </Link>
               <Link
                 to="/support"
-                className="text-sm text-foreground/40 hover:text-foreground/70 transition-colors px-3 py-2"
+                className="text-sm text-foreground/65 hover:text-foreground transition-colors px-3 py-2"
               >
                 Support
               </Link>

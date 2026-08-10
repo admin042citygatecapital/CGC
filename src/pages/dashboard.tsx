@@ -883,7 +883,7 @@ export default function DashboardPage() {
         />
       )}
 
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="dashboard-accessible min-h-screen bg-background text-foreground">
 
         {/* ── Top nav ─────────────────────────────────────────────────────────── */}
         <header className="sticky top-0 z-40 border-b border-white/5 bg-[rgba(10,10,10,0.92)] backdrop-blur-xl">

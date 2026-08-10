@@ -16,6 +16,7 @@ This register reconciles the original shared project conversation (230 user mess
 | Email | Domain mailboxes, Zoho-hosted inboxes, branded transactional email and admin diagnostics. | Resend production transport, Zoho mailbox configuration support, branded templates, queue/log controls and admin email centre. | Application integration implemented; mailbox/DNS/provider health remains operationally monitored. |
 | Chat and social | Website chat plus administrator-controlled social links and sharing. | Tawk widget configuration, chatbot administration, social profile and share-intent workspace. | Implemented; provider-side staffing and policies remain operational. |
 | Security | No hard-coded credentials, protected admin access, 2FA, rate limits, CSRF, audit logs and vulnerability remediation. | Secure cookies, separated sessions, central RBAC, mutation audit middleware, CSP/HSTS, production validation, zero known production npm advisories at this review. | Engineering baseline implemented; independent penetration test remains outstanding. |
+| Accessibility | Keyboard access and readable public, customer and administration interfaces. | Automated serious WCAG 2.0/2.1 A/AA scanning covers the homepage, customer/admin login and recovery, both authenticated dashboards and keyboard-only authentication/skip navigation. | Release baseline implemented; expand coverage with each new journey. |
 | Data and deployment | Persistent database, backups, GitHub, production hosting, custom domain and health checks. | PostgreSQL migrations, Render pre-deploy migration, managed custom domain, 8-part health endpoint and release guard. | Deployed; managed-backup confirmation and restore exercise still require provider evidence. |
 | Regulated financial launch | Move beyond demonstration without bypassing legal, sponsor, safeguarding, KYC/AML, ledger or provider requirements. | Database-backed UK sponsor-readiness control plane, phased product scope and deterministic provider pack. Provider adapter constant remains false. | Preparation implemented; external authorisation and provider work outstanding. |
 
@@ -33,6 +34,8 @@ This register reconciles the original shared project conversation (230 user mess
 - Removed simulated media-optimization savings; the API now reports that no optimizer is configured without altering stored metadata.
 - Added a real-browser release suite covering public branding, customer and administrator access control, session persistence, both recovery flows, sponsor-readiness protection and server-side financial-operation locks.
 - Isolated browser-test customer, session, audit, support, rate, trading and transaction data under a temporary private-data root; the suite cannot read or alter production or developer records.
+- Added automated serious WCAG 2.0/2.1 A/AA scanning and keyboard-only journeys for the public homepage, customer/admin authentication, password recovery and both authenticated dashboards.
+- Corrected low-contrast public navigation, pricing, customer-dashboard and administration-dashboard text; fixed the pricing switch semantics and accessible names for icon-only administration controls.
 
 ## Work that is genuinely incomplete
 
@@ -51,10 +54,9 @@ These items cannot be completed by application code or by an administrator chang
 ### Next engineering work, in order
 
 1. Continue removing or converting legacy mock-oriented admin views so every operational number comes from PostgreSQL or is explicitly labelled synthetic/deferred.
-2. Add automated accessibility checks and keyboard-flow tests for the public site and authenticated dashboards.
-3. Expand the browser suite to responsive navigation, administrator role boundaries and database-backed sponsor evidence lifecycle journeys.
-4. Once a sponsor is selected, implement one provider sandbox adapter behind the existing provider-neutral contracts, signed-webhook validation and reconciliation harness.
-5. Only after sponsor certification, replace the application balance model with the sponsor/core double-entry ledger projection.
+2. Expand accessibility and browser coverage to responsive navigation, administrator role boundaries and database-backed sponsor evidence lifecycle journeys.
+3. Once a sponsor is selected, implement one provider sandbox adapter behind the existing provider-neutral contracts, signed-webhook validation and reconciliation harness.
+4. Only after sponsor certification, replace the application balance model with the sponsor/core double-entry ledger projection.
 
 ## Launch invariant
 

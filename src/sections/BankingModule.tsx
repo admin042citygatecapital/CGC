@@ -831,11 +831,18 @@ export function PricingSection() {
   return (
     <>
       <div className="flex items-center justify-center gap-3 mb-12">
-        <span className={`text-sm transition-colors ${!yearly ? 'text-foreground font-semibold' : 'text-foreground/40'}`}>Monthly</span>
-        <button onClick={() => setYearly(v => !v)} className={`relative w-12 h-6 rounded-full transition-colors ${yearly ? 'bg-primary' : 'bg-white/10'}`}>
+        <span className={`text-sm transition-colors ${!yearly ? 'text-foreground font-semibold' : 'text-foreground/65'}`}>Monthly</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={yearly}
+          aria-label="Use yearly pricing"
+          onClick={() => setYearly(v => !v)}
+          className={`relative w-12 h-6 rounded-full transition-colors ${yearly ? 'bg-primary' : 'bg-white/10'}`}
+        >
           <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${yearly ? 'translate-x-7' : 'translate-x-1'}`} />
         </button>
-        <span className={`text-sm transition-colors ${yearly ? 'text-foreground font-semibold' : 'text-foreground/40'}`}>
+        <span className={`text-sm transition-colors ${yearly ? 'text-foreground font-semibold' : 'text-foreground/65'}`}>
           Yearly <span className="ml-1.5 text-xs font-bold text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Save 20%</span>
         </span>
       </div>

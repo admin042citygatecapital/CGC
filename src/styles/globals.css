@@ -62,7 +62,7 @@ button, [role="button"] {
     --popover: 0 0% 4%;
     --popover-foreground: 0 0% 96%;
     --primary: 44 54% 54%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 0 0% 5%;
     --secondary: 74 54% 54%;
     --secondary-foreground: 0 0% 29%;
     --muted: 46 13% 19%;
@@ -86,7 +86,7 @@ button, [role="button"] {
     --sidebar: 46 13% 19%;
     --sidebar-foreground: 0 0% 96%;
     --sidebar-primary: 44 54% 54%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 5%;
     --sidebar-accent: 224 54% 54%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 44 20% 14%;
@@ -130,6 +130,13 @@ button, [role="button"] {
 
 /* Custom utility classes */
 @layer utilities {
+  /* Dashboard captions must remain legible against the near-black product surface. */
+  .dashboard-accessible [class*="text-foreground/"],
+  .admin-accessible [class*="text-foreground/"],
+  .admin-accessible [class*="text-white/"] {
+    color: rgb(255 255 255 / 0.72) !important;
+  }
+
   .animate-in {
     animation-duration: 0.2s;
     animation-fill-mode: both;
