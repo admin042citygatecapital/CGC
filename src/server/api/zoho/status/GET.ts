@@ -21,8 +21,7 @@ function resolve(canonical: string, alias: string, fallback = ''): string {
 }
 
 function diagnose(value: string | undefined | null): string {
-  if (!value) return '(not set)';
-  return `${value.slice(0, 6)}…(${value.length} chars)`;
+  return value ? 'configured' : '(not set)';
 }
 
 function classifyRefreshToken(token: string | undefined | null): string {
@@ -45,7 +44,6 @@ export default async function handler(_req: Request, res: Response) {
     ZOHO_ACCOUNT_ID:    diagnose(accountId),
     ZOHO_REFRESH_TOKEN: diagnose(refreshToken),
     refresh_token_format: classifyRefreshToken(refreshToken),
-    refresh_token_length: refreshToken.length,
     secret_aliases_used: {
       client_id:     getSecret('ZOHO_CLIENT_ID')     ? 'ZOHO_CLIENT_ID'     : (getSecret('CLIENTID')     ? 'CLIENTID (alias)'     : 'default hardcoded'),
       client_secret: getSecret('ZOHO_CLIENT_SECRET') ? 'ZOHO_CLIENT_SECRET' : (getSecret('CLIENTSECRET') ? 'CLIENTSECRET (alias)' : 'not set'),

@@ -100,9 +100,6 @@ export function logStartupCredentialState(): void {
                  : 'not set',
   };
 
-  const rawZohoClientSecret = String(getSecret('ZOHO_CLIENT_SECRET') || '');
-  const rawClientSecret     = String(getSecret('CLIENTSECRET') || '');
-
   console.log(JSON.stringify({
     event:          'zoho.credentials.startup',
     secretSources,
@@ -110,13 +107,7 @@ export function logStartupCredentialState(): void {
     hasClientSecret: !!clientSecret,
     hasRefreshToken: !!refreshToken,
     hasAccountId:    !!accountId,
-    clientIdPrefix:              clientId           ? clientId.slice(0, 10)           + '…' : null,
-    clientSecretPrefix:          clientSecret       ? clientSecret.slice(0, 8)        + '…' : null,
-    ZOHO_CLIENT_SECRET_prefix:   rawZohoClientSecret ? rawZohoClientSecret.slice(0, 8) + '…' : '(not set)',
-    CLIENTSECRET_prefix:         rawClientSecret     ? rawClientSecret.slice(0, 8)     + '…' : '(not set)',
     secretMatchesClientId:       clientSecret === clientId,
-    refreshTokenPrefix: refreshToken ? refreshToken.slice(0, 8)  + '…' : null,
-    accountIdPrefix:    accountId    ? accountId.slice(0, 6)     + '…' : null,
     readyForTokenExchange: !!(clientSecret && refreshToken),
   }));
 }
@@ -228,9 +219,6 @@ export async function getValidAccessToken(): Promise<string | null> {
       lastError,
       hint,
       regionsTriedCount: urlsToTry.length,
-      clientIdPrefix:     clientId.slice(0, 10) + '…',
-      clientSecretPrefix: clientSecret.slice(0, 8) + '…',
-      refreshTokenPrefix: refreshToken.slice(0, 8) + '…',
     }));
     cache = null;
     return null;
