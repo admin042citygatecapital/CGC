@@ -345,9 +345,10 @@ normalizeCommerceApiBaseUrlEnv();
 
 const app = express();
 
-// Keep product-preview deployments out of search indexes until legal and
-// regulatory claims and live integrations have been independently approved.
-if ((process.env.PLATFORM_MODE ?? 'preview').toLowerCase() !== 'live') {
+// Website publication is separate from live financial operations. A public
+// informational site may be indexed while PLATFORM_MODE remains preview and
+// all money-moving routes stay fail-closed.
+if (process.env.PUBLIC_SITE_PUBLISHED !== '1') {
   app.use((_req, res, next) => {
     res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
     next();

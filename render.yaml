@@ -23,6 +23,10 @@ services:
         value: preview
       - key: VITE_PLATFORM_MODE
         value: preview
+      - key: PUBLIC_SITE_PUBLISHED
+        value: "1"
+      - key: VITE_PUBLIC_SITE_PUBLISHED
+        value: "1"
       - key: ENABLE_FINANCIAL_OPERATIONS
         value: "0"
       - key: ENABLE_PAPER_TRADING

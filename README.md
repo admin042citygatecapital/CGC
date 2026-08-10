@@ -59,7 +59,7 @@ The Operations Inbox uses PostgreSQL in production and imports its legacy JSONL 
 
 This application requires a persistent Node.js service because it hosts Express APIs, server-side rendering, background email processing, and WebSockets. Deploy it to a container or long-running Node platform rather than a static-only host.
 
-The checked-in deployment is deliberately configured as a non-indexed product preview. Preview mode disables money-moving endpoints and paper trading and shows a permanent disclosure. Do not switch `PLATFORM_MODE` to `live` or enable financial operations until banking/custody partners, regulatory approvals, legal copy, and production integrations have been independently verified.
+The checked-in deployment publishes the informational website while keeping the authenticated financial application in preview mode. Preview mode disables money-moving endpoints and paper trading and retains clear disclosures wherever demonstration balances or transactions appear. `PUBLIC_SITE_PUBLISHED` controls publication and indexing only; it cannot enable financial operations. Do not switch `PLATFORM_MODE` to `live` or enable financial operations until banking/custody partners, regulatory approvals, legal copy, and production integrations have been independently verified.
 
 The provider-specific release sequence and required secrets are documented in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 

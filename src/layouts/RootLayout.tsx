@@ -24,8 +24,10 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   usePageViewTracking();
-  const isPreview = import.meta.env.VITE_PLATFORM_MODE !== 'live'
-    || import.meta.env.VITE_LAUNCH_APPROVED !== '1';
+  // Publishing the informational website is deliberately independent from
+  // enabling regulated financial operations. PLATFORM_MODE remains the
+  // fail-closed control for deposits, transfers, custody and trading.
+  const isPublicSitePublished = import.meta.env.VITE_PUBLIC_SITE_PUBLISHED === '1';
   return (
     <Website>
       {/* Skip-to-content link for keyboard/screen-reader users */}
@@ -38,8 +40,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
       </a>
       <LogoIntro />
       <Helmet>
-        <title>City Gate Capital — Digital Finance Product Preview</title>
-        <meta name="description" content="Explore a product preview of proposed multi-currency, wallet, transfer, card, analytics, and administration experiences. No live financial services are available." />
+        <title>City Gate Capital — Financial Technology Platform</title>
+        <meta name="description" content="Discover City Gate Capital's financial technology, multi-currency experience, security approach, and digital account software. Live financial services are not currently available." />
         {/* google-site-verification is injected server-side from the GOOGLE_SITE_VERIFICATION secret */}
         <meta property="og:site_name" content="City Gate Capital" />
         <meta property="og:type" content="website" />
@@ -51,7 +53,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <meta name="theme-color" content="#C9A84C" />
-        <meta name="robots" content={isPreview ? 'noindex, nofollow' : 'index, follow'} />
+        <meta name="robots" content={isPublicSitePublished ? 'index, follow' : 'noindex, nofollow'} />
         <meta name="author" content="City Gate Capital" />
         <meta name="keywords" content="digital banking, crypto wallet, international transfers, multi-currency account, fintech" />
         {/* Preconnect to own origin for API calls — cuts TTFB on first fetch */}
@@ -74,7 +76,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             width: 200,
             height: 200,
           },
-          description: 'Product preview of proposed multi-currency, wallet, transfer, card, analytics, and administration experiences.',
+          description: 'Financial technology software for proposed multi-currency, wallet, transfer, card, analytics, and administration experiences.',
           contactPoint: [
             {
               '@type': 'ContactPoint',

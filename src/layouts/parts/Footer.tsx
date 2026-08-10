@@ -26,10 +26,11 @@ const footerLinks = {
 };
 
 const trustItems = [
-  'Product preview — no live deposits',
+  'Published financial technology website',
+  'No live deposits or customer funds',
   'Financial operations disabled by default',
   'Role-based administration',
-  'Launch subject to legal and provider approval',
+  'Financial services subject to legal and provider approval',
 ];
 
 interface SocialLink {
@@ -158,7 +159,7 @@ export default function Footer() {
               <CgcLogo size={52} variant="horizontal" glow />
             </Link>
             <p className="text-sm text-foreground/55 leading-relaxed max-w-xs mb-6">
-              Premium digital banking for the modern world. Secure, fast, and built for global citizens who demand more.
+              Financial technology designed for secure, modern and globally connected digital experiences.
             </p>
             {businessLocation && <a
               href={businessLocation.directionsUrl}
@@ -233,7 +234,7 @@ export default function Footer() {
           <div className="flex items-center gap-5 text-xs text-foreground/50">
             <div className="flex items-center gap-1.5">
               <Globe size={11} />
-              <span>Global product preview</span>
+              <span>Financial technology website</span>
             </div>
             <span className="hidden md:inline">·</span>
             <span className="hidden md:inline">No live deposits or transactions</span>

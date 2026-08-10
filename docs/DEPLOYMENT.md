@@ -1,6 +1,6 @@
-# City Gate Capital preview deployment
+# City Gate Capital public website and application preview deployment
 
-The checked-in Render blueprint deploys a persistent, non-indexed product preview. It intentionally uses a paid always-on web service and a small persistent disk because the application includes WebSockets, background work, and several administration/CMS stores that are still filesystem-backed. Confirm current provider pricing before creating resources.
+The checked-in Render blueprint deploys an indexable informational website alongside a persistent application preview. It intentionally uses a paid always-on web service and a small persistent disk because the application includes WebSockets, background work, and several administration/CMS stores that are still filesystem-backed. Financial operations remain disabled. Confirm current provider pricing before creating resources.
 
 For a temporary, no-monthly-compute-cost review environment, use `render.preview.yaml` instead. It provisions one Free web service and one Free Render Postgres database, runs migrations, and seeds the review user during the build. The free web service sleeps after inactivity, its filesystem is ephemeral, and the free database expires after 30 days. This preview-only blueprint must not be used for production or real customer data.
 
@@ -9,7 +9,7 @@ For a temporary, no-monthly-compute-cost review environment, use `render.preview
 1. A Git repository containing this project.
 2. A standard managed PostgreSQL database with SSL enabled.
 3. A Render account connected to the repository.
-4. An HTTPS preview URL or custom domain.
+4. An HTTPS custom domain for the public website.
 
 Email and managed object storage are optional for a private dashboard preview. They are required before public registration, password recovery, KYC uploads, or media administration are enabled for real users.
 
@@ -26,10 +26,12 @@ When applying `render.yaml`, provide these secret values in the Render dashboard
 - `PREVIEW_USER_EMAIL`: the customer email used to review the hosted dashboard.
 - `PREVIEW_USER_PASSWORD`: a strong temporary password for that preview customer.
 
-Keep these blueprint defaults unchanged for the preview:
+Keep these financial-safety defaults unchanged for the application preview:
 
 - `PLATFORM_MODE=preview`
 - `VITE_PLATFORM_MODE=preview`
+- `PUBLIC_SITE_PUBLISHED=1`
+- `VITE_PUBLIC_SITE_PUBLISHED=1`
 - `ENABLE_FINANCIAL_OPERATIONS=0`
 - `ENABLE_PAPER_TRADING=0`
 
@@ -42,7 +44,7 @@ The service will refuse to start if critical secrets are missing or malformed. D
 3. Apply the Render blueprint and enter the required secret values.
 4. Confirm the pre-deploy migration completed successfully.
 5. Confirm `/api/health` returns HTTP 200 with `database.status` set to `ok`.
-6. Confirm the public preview disclosure and `X-Robots-Tag: noindex` header.
+6. Confirm public pages are indexable, while dashboard, authentication, KYC and administration pages remain `noindex` and financial disclosures remain visible on demonstration experiences.
 7. Sign in with a dedicated preview user and verify dashboard navigation, logout, and session expiry.
 
 Do not enable live financial operations from this deployment guide. A live-money release requires separately verified licensing, banking/custody/card providers, legal copy, reconciliation, monitoring, incident response, penetration testing, and production data-retention controls.
