@@ -257,7 +257,7 @@ export async function sendVerificationEmail(to: string, name: string, token: str
     subject: 'Verify Your Email — City Gate Capital',
     html: emailWrapper('Verify Your Email Address',
       `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Thank you for registering for the City Gate Capital product preview. Please verify your email address to continue your preview-profile setup.</p>
+       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Thank you for creating a City Gate Capital platform profile. Please verify your email address to continue. Registration does not open a bank or payment account.</p>
        <p style="margin:28px 0;">${goldButton('Verify Email Address', url)}</p>
        <p style="color:rgba(255,255,255,0.4);font-size:13px;">This link expires in 24 hours. If you did not register, please ignore this email.</p>`
     ),
@@ -271,9 +271,9 @@ export async function sendWelcomeEmail(to: string, name: string) {
     date: new Date().toLocaleDateString('en-GB'),
     account_number: 'Available in your secure dashboard',
   }, {
-    subject: 'Welcome to the City Gate Capital Product Preview',
+    subject: 'Welcome to the City Gate Capital Platform',
     title: 'Welcome to City Gate Capital',
-    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your email has been verified for the product preview. No banking or live financial service is available.</p>`,
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your platform-profile email has been verified. Registration does not open a bank or payment account, and live financial services remain unavailable.</p>`,
   });
   await send({ to, ...content });
 }
@@ -307,9 +307,9 @@ export async function sendRejectionEmail(to: string, name: string, reason: strin
 export async function sendAdminNewUserAlert(adminEmail: string, user: { name: string; email: string; country?: string; ip?: string }) {
   await send({
     to: adminEmail,
-    subject: `New Preview Registration: ${user.name} — City Gate Capital`,
-    html: emailWrapper('New Preview Registration',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;">A new user has registered for the product preview. Production KYC collection is disabled:</p>
+    subject: `New Platform Registration: ${user.name} — City Gate Capital`,
+    html: emailWrapper('New Platform Registration',
+      `<p style="color:rgba(255,255,255,0.7);font-size:15px;">A new user has created a platform profile. This is not a bank-account opening, and production KYC collection is disabled:</p>
        <table style="width:100%;border-collapse:collapse;margin:16px 0;">
          ${[
            ['Name',    user.name],

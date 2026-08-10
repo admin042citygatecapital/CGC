@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const [error,      setError]      = useState('');
   const [success,    setSuccess]    = useState(false);
   const [busy,       setBusy]       = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
 
   // Already logged in → go to dashboard
   useEffect(() => {
@@ -47,6 +48,9 @@ export default function RegisterPage() {
     if (form.password.length < 8) {
       setError('Password must be at least 8 characters.'); return;
     }
+    if (!legalAccepted) {
+      setError('Please accept the Terms of Service and Privacy Policy.'); return;
+    }
 
     setBusy(true);
     try {
@@ -59,6 +63,7 @@ export default function RegisterPage() {
           password: form.password,
           phone:    form.phone,
           country:  form.country,
+          termsAccepted: legalAccepted,
         }),
       });
       const data = await res.json();
@@ -113,8 +118,8 @@ export default function RegisterPage() {
   return (
     <>
       <Helmet>
-        <title>Create a Demonstration Profile — City Gate Capital</title>
-        <meta name="description" content="Create a City Gate Capital demonstration profile to explore proposed financial-technology interfaces. No bank or payment account is opened." />
+        <title>Create a Platform Profile — City Gate Capital</title>
+        <meta name="description" content="Create a secure City Gate Capital platform profile. Registration does not open a bank or payment account." />
         <link rel="canonical" href="https://citygate.capital/register" />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
@@ -140,7 +145,7 @@ export default function RegisterPage() {
             </div>
 
             <h1 className="text-2xl font-bold text-foreground mb-1">Create your account</h1>
-            <p className="text-sm text-foreground/50 mb-8">Create a profile to explore the product preview</p>
+            <p className="text-sm text-foreground/50 mb-8">Create a secure platform profile. This does not open a bank or payment account.</p>
 
             {error && (
               <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 mb-6">
@@ -258,12 +263,21 @@ export default function RegisterPage() {
                 )}
               </button>
 
-              <p className="text-xs text-foreground/30 text-center">
-                By creating an account you agree to our{' '}
-                <Link to="/terms-of-service" className="text-primary/60 hover:text-primary transition-colors">Terms of Service</Link>
-                {' '}and{' '}
-                <Link to="/privacy-policy" className="text-primary/60 hover:text-primary transition-colors">Privacy Policy</Link>.
-              </p>
+              <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-3 text-xs text-foreground/45">
+                <input
+                  type="checkbox"
+                  checked={legalAccepted}
+                  onChange={event => setLegalAccepted(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-[#C9A84C]"
+                  required
+                />
+                <span>
+                  I have read and accept the{' '}
+                  <Link to="/terms-of-service" target="_blank" className="text-primary/70 hover:text-primary transition-colors">Terms of Service</Link>
+                  {' '}and{' '}
+                  <Link to="/privacy-policy" target="_blank" className="text-primary/70 hover:text-primary transition-colors">Privacy Policy</Link>.
+                </span>
+              </label>
             </form>
 
             <p className="mt-6 text-center text-sm text-foreground/40">

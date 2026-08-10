@@ -9,6 +9,9 @@ import { sanitizeString, isValidEmail, validatePassword } from '../../../lib/inp
 import { requirePublicRegistration } from '../../../lib/platformMode.js';
 import { issueKycUploadToken } from '../../../lib/purposeToken.js';
 
+const TERMS_VERSION = '2026-08-10';
+const PRIVACY_VERSION = '2026-08-10';
+
 function baseUrl(req: Request) {
   const env = process.env.PUBLIC_URL || process.env.SITE_URL;
   if (env) return env.replace(/\/+$/, '');
@@ -24,11 +27,15 @@ export default async function handler(req: Request, res: Response) {
   const phone    = sanitizeString(raw.phone);
   const country  = sanitizeString(raw.country);
   const ip       = req.ip ?? 'unknown';
+  const termsAccepted = raw.termsAccepted === true;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email and password are required' });
   }
   if (!isValidEmail(email)) {
     return res.status(400).json({ error: 'Invalid email address' });
+  }
+  if (!termsAccepted) {
+    return res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy.' });
   }
   const pwCheck = validatePassword(password);
   if (!pwCheck.ok) {
@@ -62,7 +69,20 @@ export default async function handler(req: Request, res: Response) {
     ip,
   });
 
-  appendAudit({ event: 'user_registered', userId: user.id, email, ip });
+  appendAudit({
+    event: 'user_registered',
+    userId: user.id,
+    email,
+    ip,
+    meta: {
+      legalAcceptance: {
+        termsVersion: TERMS_VERSION,
+        privacyVersion: PRIVACY_VERSION,
+        acceptedAt: new Date().toISOString(),
+        method: 'explicit_checkbox',
+      },
+    },
+  });
 
   const base = baseUrl(req);
   await sendVerificationEmail(email, name, token, base);

@@ -32,9 +32,9 @@ services:
       - key: ENABLE_PAPER_TRADING
         value: "0"
       - key: ALLOW_PUBLIC_REGISTRATION
-        value: "0"
+        value: "1"
       - key: VITE_ALLOW_PUBLIC_REGISTRATION
-        value: "0"
+        value: "1"
       - key: ENABLE_PREVIEW_USER_SEED
         value: "1"
       - key: DATABASE_POOL_SIZE

@@ -470,6 +470,11 @@ app.use('/api/admin', auditAdminMutation);
 // Every customer mutation, including public login and registration, must come
 // from the exact website origin. This prevents login CSRF as well as attacks
 // against cookie-authenticated routes.
+app.use('/api/users/register', rateLimitMiddleware(
+  (req) => `customer-registration:${req.ip ?? 'unknown'}`,
+  { windowMs: 60 * 60_000, max: 5 },
+  'Too many registration attempts. Please try again later.',
+));
 app.use('/api/users', requireCustomerSameOrigin);
 app.use('/api/users', (req: Request, res: Response, next: NextFunction) => {
   const PUBLIC_SUFFIXES = new Set([
