@@ -1,5 +1,6 @@
-import { strToU8, zipSync } from 'fflate';
+import { strToU8, Zip, ZipDeflate } from 'fflate';
 import type { buildSponsorReadinessSnapshot } from './sponsorReadinessStore.js';
+import { OPERATIONAL_PROCEDURES } from './operationalProcedures.js';
 
 type Snapshot = ReturnType<typeof buildSponsorReadinessSnapshot>;
 const FIXED_MTIME = new Date('2026-01-01T00:00:00.000Z');
@@ -53,6 +54,7 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
     '07-sponsor-rfp.md': heading(snapshot, 'Sponsor RFP Questionnaire') +
       `1. Which permissions, agency model and customer disclosures apply?\n2. Which safeguarding structure and reconciliation timetable are required?\n3. Which UK, SEPA and international corridors are supported and individually approvable?\n4. Which KYC/KYB, sanctions, monitoring and case-management providers are mandated?\n5. What are the authoritative ledger, webhook, idempotency and reversal requirements?\n6. What reporting, audit, capital, complaints and wind-down obligations apply?\n7. What security testing, incident notification, resilience and recovery evidence is required?\n`,
     '08-gaps-and-dependencies.md': heading(snapshot, 'Current Gaps and Dependencies') + gaps + '\n',
+    ...OPERATIONAL_PROCEDURES,
     'evidence-manifest.json': JSON.stringify({
       packageId: snapshot.package.id,
       packageVersion: snapshot.package.version,
@@ -68,9 +70,23 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
 
 export function buildSponsorPackZip(snapshot: Snapshot): Uint8Array {
   const files = buildSponsorPackFiles(snapshot);
-  const entries = Object.keys(files).sort().reduce<Record<string, [Uint8Array, { mtime: Date }]>>((result, name) => {
-    result[name] = [strToU8(files[name]), { mtime: FIXED_MTIME }];
-    return result;
-  }, {});
-  return zipSync(entries, { level: 6, mtime: FIXED_MTIME });
+  const chunks: Uint8Array[] = [];
+  let archiveError: Error | null = null;
+  const archive = new Zip((error, data) => {
+    if (error) archiveError = error;
+    else if (data.length) chunks.push(data);
+  });
+  for (const name of Object.keys(files).sort()) {
+    const entry = new ZipDeflate(name, { level: 6 });
+    entry.mtime = FIXED_MTIME;
+    archive.add(entry);
+    entry.push(strToU8(files[name]), true);
+  }
+  archive.end();
+  if (archiveError) throw archiveError;
+  const length = chunks.reduce((total, chunk) => total + chunk.length, 0);
+  const result = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.length; }
+  return result;
 }

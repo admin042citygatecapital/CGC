@@ -15,7 +15,7 @@ The supplied regulatory checklist is primarily US-focused, while the project cur
 | Public website | Published on the verified custom domain; public pages are indexable. | Maintain accurate, approved claims and jurisdiction-specific legal disclosures. |
 | Financial-operation lock | `platformMode.ts` denies production money movement unless the hard-coded provider-adapter gate and every launch attestation are satisfied. | Keep fail-closed until provider adapters, ledger and approvals are independently verified. |
 | Ledger | PostgreSQL transactions provide atomic balance mutation, idempotency and concurrency controls. The application stores a customer balance and transaction records; it is not a double-entry general ledger or sponsor ledger of record. | Contract and integrate a double-entry core/sponsor ledger, immutable postings, holds/settlement states, reconciliation and exception handling. |
-| Reconciliation | No sponsor-bank/provider reconciliation feed or daily control exists. | Daily automated reconciliation, beneficial-owner/sub-account records, breaks queue, escalation, correction controls and signed operational evidence. |
+| Reconciliation | A provider-neutral synthetic harness and draft sponsor-pack procedure exist; no contracted sponsor feed or evidenced daily production control exists. | Contract the provider, approve thresholds and ownership, implement authenticated feeds and breaks workflow, then evidence daily controlled-pilot runs. |
 | Payment rails | UI and placeholder transaction routes exist; no reviewed live provider adapters exist. | Executed sponsor/payment contracts, signed webhooks, provider-specific idempotency, settlement/reversal handling and certification. |
 | Cards | Demonstration card UI and controls exist. | Sponsor/BIN arrangement, issuer-processor, PCI scope, tokenisation, authorisation/clearing, disputes, chargebacks and fulfilment. |
 | Crypto | Demonstration wallet/trading UI exists. No custody or deposit address is issued. | Defer by default. If approved: licensed/authorised custody and execution partners, wallet screening, Travel Rule, key governance and jurisdiction controls. |
@@ -23,9 +23,9 @@ The supplied regulatory checklist is primarily US-focused, while the project cur
 | AML/sanctions | Separate admin AML decisions, risk levels, review dates and account freezing exist. These are human case records, not screening. | Named compliance officer/MLRO, approved programme, sanctions/PEP/adverse-media screening, ongoing rescreening, transaction monitoring, case escalation and regulatory reporting. |
 | Admin controls | Authenticated admin routes, roles, audit logging and compliance queues exist. | Independent RBAC review, least privilege, maker-checker for sensitive actions, privileged-access monitoring and periodic access certification. |
 | Security | TLS/HSTS/CSP, secure sessions, 2FA features, rate limiting, encrypted card storage and production secret validation exist. | Independent penetration test, remediation closure, secure SDLC evidence, vulnerability management, incident exercises and any applicable SOC 2/PCI programme. |
-| Backups/recovery | Local operational snapshots and managed-backup/restore attestations exist in readiness checks. | Provider-managed off-site backups, completed restore exercise, documented RPO/RTO and tested continuity/provider-failure procedures. |
+| Backups/recovery | Local operational snapshots, readiness attestations and a draft recovery-exercise procedure exist. | Provider-managed off-site backups, sponsor-approved RPO/RTO, completed isolated restore exercise and accepted continuity/provider-failure evidence. |
 | Legal authority | No verified legal entity, target jurisdiction, licence/registration, sponsor institution or approved operating model is recorded. | Written counsel advice, verified entity, required authorisations/registrations, executed sponsor contracts and regulator/provider approval. |
-| Customer protection | Preview terms and disclosures prohibit real funds. | Approved terms, complaints/error-resolution process, funds-protection wording, product disclosures, privacy notices and applicable consumer-protection procedures. |
+| Customer protection | Preview terms prohibit real funds; database-backed complaint controls and draft privacy/incident procedures exist. | Obtain sponsor/counsel approval for terms, complaint deadlines, funds-protection wording, privacy schedule and consumer-protection procedures. |
 
 ## Mandatory launch evidence
 
@@ -62,4 +62,3 @@ Environment values are attestations only. They cannot unlock money movement whil
 - Do not issue invented account, IBAN, routing, sort-code, SWIFT, card or crypto deposit details.
 - Do not describe City Gate Capital as a bank or claim deposit insurance/funds protection without approved wording naming the responsible authorised institution and the precise protection that applies.
 - Do not accept a real identity document, payment credential, bank credential, money or digital asset in the demonstration environment.
-

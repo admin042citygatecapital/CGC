@@ -80,11 +80,17 @@ describe('sponsor provider pack', () => {
       '01-executive-proposition.md', '02-phased-product-scope.md', '03-flow-of-funds.md',
       '04-responsibility-matrix.csv', '05-control-evidence-register.csv',
       '06-provider-integration-spec.md', '07-sponsor-rfp.md', '08-gaps-and-dependencies.md',
+      '09-safeguarding-reconciliation-procedure.md', '10-privacy-and-data-rights-procedure.md',
+      '11-incident-breach-response-procedure.md', '12-disaster-recovery-exercise-procedure.md',
       'README.md', 'evidence-manifest.json',
     ]);
     const allText = Object.values(archive).map(value => strFromU8(value)).join('\n');
     expect(allText).toContain('DRAFT — NOT APPROVED FOR LAUNCH');
     expect(allText).toContain('financialOperationsLocked');
+    expect(allText).toContain('SPONSOR AND COUNSEL APPROVAL REQUIRED');
+    expect(allText).toContain('A different authorised checker');
+    expect(allText).toContain('Incident Commander');
+    expect(allText).toContain('real-funds lock');
     expect(allText).not.toMatch(/RESEND_API_KEY|DATABASE_URL|BEGIN PRIVATE KEY/);
   });
 
