@@ -46,8 +46,10 @@ const RULES: readonly Rule[] = [
   { prefix: '/kyc', roles: ['COMPLIANCE_ADMIN'] },
   { prefix: '/onboarding', roles: ['COMPLIANCE_ADMIN'] },
   { prefix: '/legal-entity', roles: ['COMPLIANCE_ADMIN'] },
-  { prefix: '/users/approve', roles: ['COMPLIANCE_ADMIN'] },
-  { prefix: '/users/reject', roles: ['COMPLIANCE_ADMIN'] },
+  // Final registration approval and terminal application denial are reserved
+  // for SUPER_ADMIN. Compliance administrators own the KYC/AML decisions.
+  { prefix: '/users/approve', roles: [] },
+  { prefix: '/users/reject', roles: [] },
   { prefix: '/users/action', roles: ['SECURITY_ADMIN', 'COMPLIANCE_ADMIN'] },
   { prefix: '/users/reset-2fa', roles: ['SECURITY_ADMIN'] },
   { prefix: '/users/:id/security-events', roles: ['SECURITY_ADMIN'] },

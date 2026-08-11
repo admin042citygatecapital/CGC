@@ -7,7 +7,8 @@ import { useCallback, useEffect, useState } from 'react';
 type Status = 'draft' | 'submitted' | 'under_review' | 'needs_info' | 'approved' | 'rejected' | 'expired';
 type CaseRow = { id: string; userId: string; caseType: 'individual' | 'business'; status: Status; version: number; submittedBy?: string; lastEditedBy: string; updatedAt: string };
 type ProviderEvent = { id: string; providerCode: string; providerRef: string; kind: 'identity'|'kyb'|'screening'; status: string; screening?: { sanctions: string; pep: string; adverseMedia: string }; receivedAt: string };
-type Bundle = { case: CaseRow; evidence: Array<{ id: string; kind: string; referenceType: string; reference: string; sha256?: string }>; events: Array<{ id: string; action: string; actorId: string; createdAt: string; fromStatus?: string; toStatus?: string }>; providerVerifications: { events: ProviderEvent[]; checks: { identityAccepted: boolean; kybAccepted: boolean; screeningClear: boolean } } };
+type CustomerDecision = { id: string; name: string; email: string; status: string; emailVerified: boolean; kycStatus: string; amlStatus: string; amlRiskLevel: string; kycApprovedAt?: string; amlReviewedAt?: string; amlNextReviewAt?: string; approvedBy?: string; amlReviewedBy?: string };
+type Bundle = { case: CaseRow; evidence: Array<{ id: string; kind: string; referenceType: string; reference: string; sha256?: string }>; events: Array<{ id: string; action: string; actorId: string; createdAt: string; fromStatus?: string; toStatus?: string }>; providerVerifications: { events: ProviderEvent[]; checks: { identityAccepted: boolean; kybAccepted: boolean; screeningClear: boolean } }; customer: CustomerDecision | null };
 type ComplianceCase = { id: string; kind: 'aml' | 'sanctions'; status: string; riskLevel: string; summary: string; openedBy: string; lastEditedBy: string };
 type ScreeningQueueItem = { caseId: string; userId: string; caseType: string; screeningStatus: string; lastScreenedAt?: string; nextScreeningAt?: string; due: boolean };
 
@@ -62,6 +63,19 @@ export default function AdminOnboardingPage() {
     else { await load(); await openCase(selected.case.id); }
     setBusy(false);
   }
+  async function finalDecision(action: 'approve' | 'reject') {
+    if (!selected?.customer || admin?.role !== 'SUPER_ADMIN') return;
+    const label = action === 'approve' ? 'final registration approval' : 'terminal application denial';
+    const rationale = window.prompt(`Enter the required rationale for ${label}:`)?.trim() ?? '';
+    if (rationale.length < 10) { setError('A rationale of at least 10 characters is required.'); return; }
+    if (action === 'reject' && !window.confirm('Deny this application? This terminal decision will be audited.')) return;
+    setBusy(true); setError('');
+    const response = await fetch(`/api/admin/users/${action}`, { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: selected.customer.id, reason: rationale }) });
+    const body = await response.json();
+    if (!response.ok) setError(body.error ?? 'Final decision failed.');
+    else { await load(); await openCase(selected.case.id); }
+    setBusy(false);
+  }
 
   return <AdminLayout>
     <Helmet><title>Customer Onboarding | City Gate Capital Admin</title></Helmet>
@@ -81,6 +95,17 @@ export default function AdminOnboardingPage() {
         <div className="rounded-2xl border border-white/10 p-5">
           {!selected ? <div className="h-full min-h-64 flex items-center justify-center text-foreground/40"><FileCheck2 className="mr-2"/> Select a case</div> : <div className="space-y-5">
             <div><h2 className="font-bold text-lg">Case {selected.case.id}</h2><p className="text-xs text-foreground/45">Submitter: {selected.case.submittedBy ?? 'not submitted'} · Last editor: {selected.case.lastEditedBy}</p></div>
+            {selected.customer && <section className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">Final registration control</h3><p className="text-xs text-foreground/45">{selected.customer.name} · {selected.customer.email}</p></div><span className="rounded-full bg-white/5 px-2 py-1 text-xs uppercase">{selected.customer.status.replace('_',' ')}</span></div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">{[
+                ['Email', selected.customer.emailVerified, selected.customer.emailVerified ? 'verified' : 'pending'],
+                ['KYC', selected.customer.kycStatus === 'approved', selected.customer.kycStatus],
+                ['AML', selected.customer.amlStatus === 'cleared', selected.customer.amlStatus],
+                ['Final approval', selected.customer.status === 'active', selected.customer.status === 'active' ? 'approved' : 'required'],
+              ].map(([label, passed, value]) => <div key={String(label)} className={`rounded-lg p-2 ${passed ? 'bg-emerald-400/10 text-emerald-300' : 'bg-amber-400/10 text-amber-300'}`}><div className="font-semibold">{String(label)}</div><div className="uppercase mt-1">{String(value)}</div></div>)}</div>
+              <p className="text-xs text-foreground/45">KYC and AML reviewers establish eligibility but never activate the account. A different super-administrator must record the final decision.</p>
+              {admin?.role === 'SUPER_ADMIN' && selected.customer.status !== 'active' && selected.customer.status !== 'rejected' && <div className="flex flex-wrap gap-2"><button disabled={busy || !selected.customer.emailVerified || selected.customer.kycStatus !== 'approved' || selected.customer.amlStatus !== 'cleared'} onClick={()=>void finalDecision('approve')} className="px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-300 disabled:opacity-35 flex gap-1"><CheckCircle2 size={15}/>Approve registration</button><button disabled={busy} onClick={()=>void finalDecision('reject')} className="px-3 py-2 rounded-lg bg-red-500/15 text-red-300 flex gap-1"><XCircle size={15}/>Deny application</button></div>}
+            </section>}
             <section><h3 className="text-xs font-bold uppercase text-foreground/50 mb-2">Evidence metadata</h3>{selected.evidence.map(e => <div key={e.id} className="rounded-xl bg-white/5 p-3 mb-2 text-sm"><div className="font-semibold">{e.kind} · {e.referenceType}</div><div className="text-xs text-foreground/45 break-all">{e.reference}</div>{e.sha256 && <div className="text-[10px] font-mono text-foreground/35 break-all">SHA-256 {e.sha256}</div>}</div>)}</section>
             <section><h3 className="text-xs font-bold uppercase text-foreground/50 mb-2">Signed provider verification</h3><div className="grid grid-cols-3 gap-2 mb-3">{[
               ['Identity', selected.case.caseType === 'business' ? selected.providerVerifications.checks.kybAccepted : selected.providerVerifications.checks.identityAccepted],

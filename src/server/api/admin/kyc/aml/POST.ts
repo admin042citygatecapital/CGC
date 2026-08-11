@@ -47,9 +47,7 @@ export default async function handler(req: Request, res: Response) {
   const now = new Date().toISOString();
   const nextAccountStatus = amlStatus === 'blocked' && ['active', 'pending_approval'].includes(user.status)
     ? 'frozen'
-    : amlStatus === 'cleared' && user.status === 'pending_approval' && user.kycStatus === 'approved' && user.emailVerified
-      ? 'active'
-      : user.status;
+    : user.status;
   const updated = await updateUser(userId, {
     status: nextAccountStatus,
     amlStatus,
@@ -78,7 +76,9 @@ export default async function handler(req: Request, res: Response) {
 
   await createNotification(userId, `AML review ${amlStatus}`, amlStatus === 'blocked'
     ? 'Your platform profile is restricted while a compliance review is completed.'
-    : 'Your AML review status has changed. This does not activate financial services.', '/kyc');
+    : amlStatus === 'cleared'
+      ? 'Your AML review is complete. Final account registration approval remains pending.'
+      : 'Your AML review status has changed. This does not activate financial services.', '/kyc');
 
   return res.json({ ok: true, user: updated });
 }

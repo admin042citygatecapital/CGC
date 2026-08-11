@@ -59,6 +59,22 @@ describe('admin authorization policy', () => {
     expect(status).toHaveBeenCalledWith(403);
   });
 
+  it('reserves final registration approval and application denial for super administrators', () => {
+    for (const role of ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] as AdminRole[]) {
+      for (const path of ['/users/approve', '/users/reject']) {
+        const blocked = responseMock();
+        requireAdminAuthorization(request(role, path, 'POST'), blocked.response, vi.fn() as NextFunction);
+        expect(blocked.status).toHaveBeenCalledWith(403);
+      }
+    }
+    for (const path of ['/users/approve', '/users/reject']) {
+      const allowed = responseMock();
+      const next = vi.fn() as NextFunction;
+      requireAdminAuthorization(request('SUPER_ADMIN', path, 'POST'), allowed.response, next);
+      expect(next).toHaveBeenCalledOnce();
+    }
+  });
+
   it('blocks a support administrator from balance adjustments', () => {
     const { response, status } = responseMock();
     const next = vi.fn() as NextFunction;
