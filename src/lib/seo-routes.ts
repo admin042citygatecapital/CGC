@@ -32,8 +32,10 @@ export interface SeoRoute {
 export const seoRoutes: SeoRoute[] = [
   { path: "/", changefreq: "weekly", priority: 1.0, lastmod: "2026-07-12" },
   { path: "/about", changefreq: "monthly", priority: 0.8, lastmod: "2026-07-12" },
-  // /demo and its children are explicitly noindex and excluded from the sitemap.
-  // Legacy /digital-banking, /accounts and /support paths redirect into /demo.
+  { path: "/digital-banking", changefreq: "monthly", priority: 0.8, lastmod: "2026-08-11" },
+  { path: "/accounts", changefreq: "monthly", priority: 0.8, lastmod: "2026-08-11" },
+  { path: "/support", changefreq: "monthly", priority: 0.6, lastmod: "2026-08-11" },
+  // Legacy /demo paths redirect to their canonical public equivalents.
   // /wallet and /transfers are auth-gated (CustomerOnly) — excluded from sitemap
   { path: "/contact", changefreq: "yearly", priority: 0.6, lastmod: "2026-07-12" },
   { path: "/privacy-policy", changefreq: "yearly", priority: 0.4, lastmod: "2026-07-12" },

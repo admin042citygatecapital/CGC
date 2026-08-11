@@ -1,15 +1,15 @@
 {
   "hero": {
-    "trustBadge": "City Gate Capital product preview",
+    "trustBadge": "Secure financial technology",
     "headline1": "The Future of",
     "headlineAccent": "Banking",
     "headline2": "is Here",
-    "subheadline": "Preview multi-currency accounts, wallets, transfers, smart cards, analytics, and administration in one premium demonstration platform.",
+    "subheadline": "Multi-currency account software, wallets, transfer workflows, smart cards, analytics, and administration in one premium platform.",
     "ctaSecondary": "Explore Features",
     "trustBadges": [
       {
         "id": "tb1",
-        "label": "Security Controls Preview"
+        "label": "Security Controls"
       },
       {
         "id": "tb2",
@@ -17,13 +17,13 @@
       },
       {
         "id": "tb3",
-        "label": "Secure-by-Default Preview"
+        "label": "Secure by Default"
       }
     ],
     "heroCTALabels": {
-      "control": "Explore the Preview",
+      "control": "Explore the Platform",
       "urgency": "See the Platform",
-      "benefit": "Create a Preview Profile"
+      "benefit": "Create Your Profile"
     }
   },
   "stats": [
@@ -31,7 +31,7 @@
       "id": "s1",
       "value": 1,
       "suffix": "",
-      "label": "Unified Preview"
+      "label": "Unified Platform"
     },
     {
       "id": "s2",

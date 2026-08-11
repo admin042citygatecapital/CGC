@@ -1,35 +1,29 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-describe('public website and demo boundary', () => {
-  it('serves a corporate homepage and moves product demonstrations under /demo', () => {
+describe('published public website boundary', () => {
+  it('serves the complete platform homepage at canonical public routes', () => {
     const routes = readFileSync('src/routes.tsx', 'utf8');
-    expect(routes).toContain("{ path: '/', element: <CorporateHomePage /> }");
-    expect(routes).toContain("{ path: '/demo', element: <HomePage /> }");
-    expect(routes).toContain('to="/demo/digital-banking"');
-    expect(routes).toContain('to="/demo/accounts"');
-    expect(routes).toContain('to="/demo/support"');
+    expect(routes).toContain("{ path: '/', element: <HomePage /> }");
+    expect(routes).toContain("{ path: '/demo', element: <Navigate to=\"/\" replace /> }");
+    expect(routes).toContain("{ path: '/digital-banking', element: <DigitalBankingPage /> }");
+    expect(routes).toContain("{ path: '/accounts',  element: <AccountsPage /> }");
+    expect(routes).toContain("{ path: '/support', element: <SupportPage /> }");
   });
 
-  it('does not market unavailable retail banking from the corporate header', () => {
+  it('provides the complete AIRO-style public navigation', () => {
     const header = readFileSync('src/layouts/parts/Header.tsx', 'utf8');
-    expect(header).toContain('Partner With Us');
-    expect(header).not.toContain("href: '/demo'");
-    expect(header).not.toContain('Open Account');
-    expect(header).not.toContain('to="/login"');
+    expect(header).toContain('Digital Banking');
+    expect(header).toContain('Open Account');
+    expect(header).toContain('to="/login"');
   });
 
-  it('keeps demo pages out of search indexing and the public sitemap', () => {
-    for (const file of [
-      'src/pages/index.tsx',
-      'src/pages/accounts.tsx',
-      'src/pages/digital-banking.tsx',
-      'src/pages/support.tsx',
-    ]) {
-      expect(readFileSync(file, 'utf8'), file).toContain('noindex, nofollow');
-    }
+  it('publishes the canonical homepage and public product routes', () => {
+    expect(readFileSync('src/pages/index.tsx', 'utf8')).toContain('index, follow');
     const seoRoutes = readFileSync('src/lib/seo-routes.ts', 'utf8');
-    expect(seoRoutes).not.toMatch(/path: "\/(?:demo|digital-banking|accounts|support)/);
+    expect(seoRoutes).toMatch(/path: "\/digital-banking"/);
+    expect(seoRoutes).toMatch(/path: "\/accounts"/);
+    expect(seoRoutes).toMatch(/path: "\/support"/);
   });
 
   it('keeps the corporate homepage factual and partnership-led', () => {
