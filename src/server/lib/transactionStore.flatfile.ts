@@ -44,7 +44,15 @@ export function updateTransaction(id: string, patch: Partial<Transaction>): Tran
   const idx = txs.findIndex(t => t.id === id);
   if (idx === -1) return null;
   const safePatch = stripDangerousKeys(patch as Record<string, unknown>) as Partial<Transaction>;
-  txs[idx] = { ...txs[idx], ...safePatch, updatedAt: new Date().toISOString() };
+  const allowedPatch: Partial<Transaction> = {};
+  for (const key of [
+    'description', 'status', 'note', 'txHash', 'approvedBy', 'approvedAt',
+    'rejectedBy', 'rejectedAt', 'rejectionReason', 'frozenBy', 'frozenAt',
+    'adminNote', 'flagged',
+  ] as const) {
+    if (safePatch[key] !== undefined) Object.assign(allowedPatch, { [key]: safePatch[key] });
+  }
+  txs[idx] = { ...txs[idx], ...allowedPatch, updatedAt: new Date().toISOString() };
   saveAll(txs);
   return txs[idx];
 }

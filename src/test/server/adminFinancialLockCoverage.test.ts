@@ -43,9 +43,16 @@ describe('production admin financial lock coverage', () => {
 
     const page = readFileSync('src/pages/admin/transactions.tsx', 'utf8');
     expect(page).toContain('Persistent demonstration register');
-    expect(page).toContain('This screen is read-only');
+    expect(page).toContain('/api/admin/transactions/edit');
+    expect(page).toContain('Financial fields are deliberately immutable');
     expect(page).not.toContain('/api/admin/transactions/create');
     expect(page).not.toContain('Create Transaction');
+
+    const editRoute = readFileSync('src/server/api/admin/transactions/edit/POST.ts', 'utf8');
+    expect(editRoute).toContain('IMMUTABLE_TRANSACTION_FIELDS');
+    expect(editRoute).toContain('transaction_metadata_corrected');
+    expect(editRoute).toContain('before:');
+    expect(editRoute).toContain('after:');
   });
 
   it('does not present preview crypto holdings or deposits as revenue on the executive dashboard', () => {

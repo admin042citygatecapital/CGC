@@ -237,6 +237,7 @@ export async function updateTransaction(id: string, patch: Partial<Transaction>)
   const safe = stripDangerousKeys(patch as Record<string, unknown>) as Partial<Transaction>;
 
   const dbPatch: Partial<DbTransaction> = { updatedAt: new Date() };
+  if (safe.description !== undefined)     dbPatch.description     = safe.description;
   if (safe.status !== undefined)          dbPatch.status          = safe.status as DbTransaction['status'];
   if (safe.note !== undefined)            dbPatch.note            = safe.note ?? null;
   if (safe.txHash !== undefined)          dbPatch.txHash          = safe.txHash ?? null;
