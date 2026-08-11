@@ -67,6 +67,17 @@ describe('admin authorization policy', () => {
     expect(status).toHaveBeenCalledWith(403);
   });
 
+  it('allows compliance to manage formal complaints without opening the wider support area', () => {
+    const allowed = responseMock();
+    const next = vi.fn() as NextFunction;
+    requireAdminAuthorization(request('COMPLIANCE_ADMIN', '/support/complaints', 'POST'), allowed.response, next);
+    expect(next).toHaveBeenCalledOnce();
+
+    const blocked = responseMock();
+    requireAdminAuthorization(request('COMPLIANCE_ADMIN', '/support/messages', 'GET'), blocked.response, vi.fn() as NextFunction);
+    expect(blocked.status).toHaveBeenCalledWith(403);
+  });
+
   it('allows operational teams to manage the shared inbox but blocks security-only admins', () => {
     for (const role of ['FINANCE_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] as AdminRole[]) {
       const allowed = responseMock();

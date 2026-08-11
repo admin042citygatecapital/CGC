@@ -67,6 +67,7 @@ const RULES: readonly Rule[] = [
   { prefix: '/trading', roles: ['FINANCE_ADMIN'] },
   { prefix: '/reports', roles: ['FINANCE_ADMIN', 'COMPLIANCE_ADMIN'] },
 
+  { prefix: '/support/complaints', roles: ['SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] },
   { prefix: '/support', roles: ['SUPPORT_ADMIN'] },
   { prefix: '/tickets', roles: ['SUPPORT_ADMIN'] },
   { prefix: '/contacts', roles: ['SUPPORT_ADMIN'] },

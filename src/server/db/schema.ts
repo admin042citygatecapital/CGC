@@ -898,6 +898,28 @@ export const onboardingProviderEvents = pgTable('onboarding_provider_events', {
   index('onboarding_provider_events_provider_ref_idx').on(t.providerCode, t.providerRef),
 ]);
 
+export const complaints = pgTable('complaints', {
+  id:             text('id').primaryKey(), userId: text('user_id'), userName: text('user_name').notNull(),
+  userEmail:      text('user_email').notNull(), userPhone: text('user_phone').notNull().default(''),
+  category:       text('category').$type<'transaction'|'account'|'card'|'kyc'|'staff'|'technical'|'other'>().notNull(),
+  severity:       text('severity').$type<'low'|'medium'|'high'|'critical'>().notNull(),
+  subject:        text('subject').notNull(), description: text('description').notNull(),
+  evidence:       jsonb('evidence').$type<string[]>().notNull().default([]),
+  status:         text('status').$type<'open'|'investigating'|'escalated'|'resolved'|'closed'>().notNull().default('open'),
+  assignedTo:     text('assigned_to'), resolution: text('resolution'), internalNotes: text('internal_notes').notNull().default(''),
+  regulatoryFlag: boolean('regulatory_flag').notNull().default(false),
+  responseDueAt:  timestamp('response_due_at', { withTimezone: true }).notNull(),
+  resolvedAt:     timestamp('resolved_at', { withTimezone: true }), escalatedAt: timestamp('escalated_at', { withTimezone: true }),
+  createdBy:      text('created_by').notNull(), lastEditedBy: text('last_edited_by').notNull(),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(), updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('complaints_status_due_idx').on(t.status, t.responseDueAt), index('complaints_severity_created_idx').on(t.severity, t.createdAt)]);
+
+export const complaintEvents = pgTable('complaint_events', {
+  id: text('id').primaryKey(), complaintId: text('complaint_id').notNull(), action: text('action').notNull(), actorId: text('actor_id').notNull(),
+  fromStatus: text('from_status'), toStatus: text('to_status'), details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('complaint_events_complaint_idx').on(t.complaintId, t.createdAt)]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -939,3 +961,5 @@ export type ComplianceCaseEventRow = typeof complianceCaseEvents.$inferSelect;
 export type ProviderSandboxRunRow = typeof providerSandboxRuns.$inferSelect;
 export type ProviderSandboxEventRow = typeof providerSandboxEvents.$inferSelect;
 export type OnboardingProviderEventRow = typeof onboardingProviderEvents.$inferSelect;
+export type ComplaintRow = typeof complaints.$inferSelect;
+export type ComplaintEventRow = typeof complaintEvents.$inferSelect;

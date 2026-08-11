@@ -1873,13 +1873,22 @@ function ComplaintsTab({ showToast }: { showToast: (m: string, ok?: boolean) => 
 
   async function updateItem(id: string, patch: Record<string, unknown>) {
     const r = await fetch('/api/admin/support/complaints', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action: 'update', id, ...patch }) });
-    if (r.ok) { showToast('Updated'); load(); } else showToast('Failed', false);
+    if (r.ok) {
+      const body = await r.json();
+      if (selected?.id === id) setSelected(body.complaint);
+      showToast('Updated');
+      load();
+    } else {
+      const body = await r.json().catch(() => ({}));
+      showToast(body.error ?? 'Update failed', false);
+    }
   }
   async function create() {
     setSaving(true);
     const r = await fetch('/api/admin/support/complaints', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(form) });
     setSaving(false);
-    if (r.ok) { showToast('Complaint logged'); setCreating(false); setForm({}); load(); } else showToast('Failed', false);
+    if (r.ok) { showToast('Complaint logged'); setCreating(false); setForm({}); load(); }
+    else { const body = await r.json().catch(() => ({})); showToast(body.error ?? 'Complaint could not be logged', false); }
   }
 
   const SEV: Record<string, string> = { low: 'bg-white/8 text-white/40', medium: 'bg-blue-500/15 text-blue-400', high: 'bg-amber-500/15 text-amber-400', critical: 'bg-red-500/15 text-red-400' };
@@ -1924,7 +1933,8 @@ function ComplaintsTab({ showToast }: { showToast: (m: string, ok?: boolean) => 
                   <td className="px-4 py-3">
                     <select value={item.status} onChange={e => updateItem(item.id, { status: e.target.value })}
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-0 focus:outline-none cursor-pointer capitalize ${STAT_C[item.status]}`} style={{ background: 'transparent' }}>
-                      {['open','investigating','escalated','resolved','closed'].map(s => <option key={s} value={s} className="bg-[#0A0A0A] text-white capitalize">{s}</option>)}
+                      {['open','investigating','escalated'].map(s => <option key={s} value={s} className="bg-[#0A0A0A] text-white capitalize">{s}</option>)}
+                      {(item.status === 'resolved' || item.status === 'closed') && <option value={item.status} className="bg-[#0A0A0A] text-white capitalize">{item.status}</option>}
                     </select>
                   </td>
                   <td className="px-4 py-3 text-white/40 text-xs capitalize">{item.category}</td>
@@ -1949,13 +1959,17 @@ function ComplaintsTab({ showToast }: { showToast: (m: string, ok?: boolean) => 
               <button onClick={() => setSelected(null)} className="text-white/30 hover:text-white"><X size={14} /></button>
             </div>
             <p className="text-white/50 text-sm leading-relaxed">{selected.description}</p>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div><span className="text-white/25 block">Internal response target</span><span className="text-white/60">{fmtDateShort(selected.responseDueAt)}</span></div>
+              <div><span className="text-white/25 block">Regulatory escalation</span><span className={selected.regulatoryFlag ? 'text-amber-400' : 'text-white/60'}>{selected.regulatoryFlag ? 'Flagged' : 'Not flagged'}</span></div>
+            </div>
             <div>
               <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Resolution Notes</label>
-              <textarea rows={3} defaultValue={selected.resolution ?? ''} onBlur={e => updateItem(selected.id, { resolution: e.target.value })}
+              <textarea rows={3} value={selected.resolution ?? ''} onChange={e => setSelected({ ...selected, resolution: e.target.value })}
                 className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40 resize-none" />
             </div>
             <div className="flex gap-2">
-              <button onClick={() => updateItem(selected.id, { status: 'resolved' })} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20"><CheckCircle size={10} /> Resolve</button>
+              <button onClick={() => updateItem(selected.id, { status: 'resolved', resolution: selected.resolution })} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20"><CheckCircle size={10} /> Save &amp; Resolve</button>
               <button onClick={() => updateItem(selected.id, { status: 'escalated' })} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/20"><AlertTriangle size={10} /> Escalate</button>
             </div>
           </motion.div>
