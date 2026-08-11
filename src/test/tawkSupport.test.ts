@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -29,5 +31,16 @@ describe('product support widget routing', () => {
       journey: 'customer_dashboard',
       session_type: 'authenticated',
     });
+  });
+
+  it('presents the support launcher as a branded circular bank seal', () => {
+    const source = readFileSync('src/components/TawkWidget.tsx', 'utf8');
+
+    expect(source).toContain('h-20 w-20');
+    expect(source).toContain('rounded-full');
+    expect(source).toContain('/assets/brand/city-gate-capital-seal.png');
+    expect(source).toContain('Chat with City Gate Capital support');
+    expect(source).toContain('Never share passwords, authentication codes, card details, or recovery keys.');
+    expect(source).not.toContain('MessageCircle');
   });
 });

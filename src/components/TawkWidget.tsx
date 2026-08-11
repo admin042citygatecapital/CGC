@@ -7,7 +7,7 @@
  * coarse journey context — never names, email addresses, balances, KYC data,
  * account numbers, or other financial information.
  */
-import { Loader2, MessageCircle, ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
@@ -197,11 +197,7 @@ export default function TawkWidget() {
 
   const isLoading = status === 'loading';
   const isOnline = availability === 'online';
-  const supportTitle = location.pathname === '/' || location.pathname === '/about' || location.pathname === '/contact' || location.pathname === '/compliance'
-    ? 'Company enquiries'
-    : location.pathname === '/demo' || location.pathname.startsWith('/demo/')
-      ? 'Demo support'
-      : 'Workspace support';
+  const supportTitle = customer ? 'Customer account support' : 'City Gate Capital support';
   const statusLabel = status === 'error'
     ? 'Retry secure support'
     : isLoading
@@ -211,39 +207,37 @@ export default function TawkWidget() {
         : 'Leave us a message';
 
   return (
-    <aside className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-[9998] max-w-[calc(100vw-2rem)]">
+    <aside className="fixed bottom-5 right-4 sm:bottom-7 sm:right-7 z-[9998]">
       <button
         type="button"
         onClick={openSupport}
         disabled={isLoading}
-        aria-label="Open City Gate Capital product support"
-        className="group relative flex items-center gap-3 rounded-2xl border border-[#D7B458]/35 bg-[#090909]/95 py-2.5 pl-2.5 pr-4 text-left shadow-[0_18px_50px_rgba(0,0,0,0.55),0_0_30px_rgba(201,168,76,0.16)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[#E6C76A]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D7B458] disabled:cursor-wait"
+        aria-label="Chat with City Gate Capital support"
+        className="group relative flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#E6C76A]/55 bg-[#050505] shadow-[0_18px_55px_rgba(0,0,0,0.65),0_0_34px_rgba(201,168,76,0.30)] transition duration-300 hover:-translate-y-1 hover:scale-105 hover:border-[#F0D080] hover:shadow-[0_22px_65px_rgba(0,0,0,0.72),0_0_42px_rgba(201,168,76,0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0D080] focus-visible:ring-offset-4 focus-visible:ring-offset-black disabled:cursor-wait"
       >
-        <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#E6C76A]/30 bg-gradient-to-br from-[#1B160B] to-black">
+        <span className="absolute inset-1 rounded-full border border-[#D7B458]/20" aria-hidden="true" />
+        <span className="relative flex h-[68px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#1B160B] to-black">
           {isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin text-[#E6C76A]" aria-hidden="true" />
+            <Loader2 className="h-7 w-7 animate-spin text-[#E6C76A]" aria-hidden="true" />
           ) : (
             <img
               src="/assets/brand/city-gate-capital-seal.png"
               alt=""
-              className="h-11 w-11 object-contain"
+              className="h-[66px] w-[66px] rounded-full object-contain"
             />
           )}
           {!isLoading && (
-            <span className={`absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-black ${isOnline ? 'bg-emerald-400' : 'bg-[#D7B458]'}`} />
+            <span className={`absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-[3px] border-black ${isOnline ? 'bg-emerald-400' : 'bg-[#D7B458]'}`} />
           )}
         </span>
 
-        <span className="min-w-0">
+        <span className="pointer-events-none absolute bottom-1/2 right-[calc(100%+0.8rem)] hidden w-60 translate-y-1/2 rounded-2xl border border-[#D7B458]/30 bg-[#090909]/95 px-4 py-3 text-left opacity-0 shadow-2xl backdrop-blur-xl transition duration-200 group-hover:translate-x-[-4px] group-hover:opacity-100 group-focus-visible:translate-x-[-4px] group-focus-visible:opacity-100 sm:block">
           <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
-            {supportTitle}
-            <ShieldCheck className="h-3.5 w-3.5 text-[#D7B458]" aria-hidden="true" />
+            {supportTitle} <ShieldCheck className="h-3.5 w-3.5 text-[#D7B458]" aria-hidden="true" />
           </span>
-          <span className="mt-0.5 block text-[11px] text-white/55">{statusLabel}</span>
-          <span className="mt-1 hidden text-[10px] text-[#D7B458]/70 sm:block">Never share passwords or verification codes</span>
+          <span className="mt-1 block text-[11px] text-white/60">{statusLabel}</span>
+          <span className="mt-1.5 block text-[10px] leading-relaxed text-[#D7B458]/75">Never share passwords, authentication codes, card details, or recovery keys.</span>
         </span>
-
-        <MessageCircle className="ml-1 h-5 w-5 shrink-0 text-[#D7B458] transition-transform group-hover:scale-110" aria-hidden="true" />
       </button>
     </aside>
   );
