@@ -49,6 +49,7 @@ describe('Developer Center route inventory', () => {
     expect(classifyRouteAuth('/api/zoho/connect')).toBe('admin');
     expect(classifyRouteAuth('/api/zoho/status')).toBe('admin');
     expect(classifyRouteAuth('/api/zoho/callback')).toBe('public');
+    expect(classifyRouteAuth('/api/providers/onboarding/webhook/:provider')).toBe('public');
   });
 
   it('keeps the obsolete unauthenticated email sender out of the server registry', () => {

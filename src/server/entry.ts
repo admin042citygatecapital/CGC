@@ -29,6 +29,7 @@ import admin_onboarding_compliance_cases_post from "./api/admin/onboarding/compl
 import users_onboarding_get from "./api/users/onboarding/GET";
 import users_onboarding_evidence_post from "./api/users/onboarding/evidence/POST";
 import users_onboarding_submit_post from "./api/users/onboarding/submit/POST";
+import providers_onboarding_webhook_post from "./api/providers/onboarding/webhook/POST";
 
 // <api-imports>
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
@@ -416,7 +417,14 @@ app.use(cookieParser());
 
 // ── Body parsing ────────────────────────────────────────────────────────────
 app.use(requestSizeGuard(512));
-app.use(express.json({ limit: '512kb' }));
+app.use(express.json({
+  limit: '512kb',
+  verify: (req, _res, buffer) => {
+    if ((req as Request).originalUrl.startsWith('/api/providers/onboarding/webhook/')) {
+      (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer);
+    }
+  },
+}));
 app.use(express.urlencoded({ extended: true, limit: '512kb' }));
 
 // ── HTTP access logger (after body parsing, before routes) ──────────────────
@@ -430,6 +438,12 @@ app.use('/api', rateLimitMiddleware(
 ));
 // ── API cache headers (no-store for all /api routes) ────────────────────────
 app.use('/api', apiCacheHeaders);
+
+app.use('/api/providers/onboarding/webhook', rateLimitMiddleware(
+  req => `provider-webhook:${req.ip}`,
+  { windowMs: 60_000, max: 60 },
+  'Provider webhook rate limit exceeded.',
+));
 
 // ── Force JSON-only responses on all /api routes ─────────────────────────────
 // Prevents Express default HTML error pages from reaching clients.
@@ -526,6 +540,7 @@ app.use(['/api/zoho/connect', '/api/zoho/status'], (req: Request, res: Response,
 });
 
 // <api-registrations>
+app.post("/api/providers/onboarding/webhook/:provider", providers_onboarding_webhook_post);
 app.get("/api/admin/kyc/document", admin_kyc_document_get);
 app.get("/api/admin/onboarding", admin_onboarding_get);
 app.post("/api/admin/onboarding/review", admin_onboarding_review_post);

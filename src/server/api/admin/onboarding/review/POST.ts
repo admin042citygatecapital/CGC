@@ -3,6 +3,7 @@ import { appendAuditEntry } from '../../../../lib/auditLog.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
 import { getOnboardingCaseBundle, reviewOnboardingCase, type OnboardingStatus } from '../../../../lib/onboardingStore.js';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
+import { assertProviderVerificationComplete } from '../../../../lib/onboardingProviderStore.js';
 
 const DECISIONS = new Set(['under_review', 'needs_info', 'approved', 'rejected']);
 export default async function handler(req: Request, res: Response) {
@@ -16,6 +17,7 @@ export default async function handler(req: Request, res: Response) {
     if (!before) return res.status(404).json({ error: 'Onboarding case not found.' });
     const user = await findUserById(before.case.userId);
     if (!user) return res.status(404).json({ error: 'Customer not found.' });
+    if (decision === 'approved') await assertProviderVerificationComplete(caseId, before.case.caseType);
     const reviewed = await reviewOnboardingCase({ caseId, reviewerId: session.adminId, decision, reason });
     const patch = decision === 'approved'
       ? { status: 'pending_approval' as const, kycStatus: 'approved' as const, kycApprovedAt: new Date().toISOString(), amlStatus: 'pending' as const }
@@ -30,7 +32,7 @@ export default async function handler(req: Request, res: Response) {
     return res.json({ ok: true, case: reviewed });
   } catch (error) {
     const typed = error as Error & { code?: string };
-    const status = typed.code === 'MAKER_CHECKER_REQUIRED' ? 409 : typed.code === 'NOT_FOUND' ? 404 : 400;
+    const status = typed.code === 'MAKER_CHECKER_REQUIRED' || typed.code?.startsWith('PROVIDER_') ? 409 : typed.code === 'NOT_FOUND' ? 404 : 400;
     return res.status(status).json({ error: typed.message, code: typed.code });
   }
 }

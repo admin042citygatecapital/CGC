@@ -881,6 +881,23 @@ export const providerSandboxEvents = pgTable('provider_sandbox_events', {
   index('provider_sandbox_events_run_idx').on(t.runId),
 ]);
 
+export const onboardingProviderEvents = pgTable('onboarding_provider_events', {
+  id:            text('id').primaryKey(),
+  eventId:       text('event_id').notNull(),
+  providerCode:  text('provider_code').notNull(),
+  caseId:        text('case_id').notNull(),
+  providerRef:   text('provider_ref').notNull(),
+  kind:          text('kind').$type<'identity' | 'kyb' | 'screening'>().notNull(),
+  status:        text('status').$type<'accepted' | 'review' | 'rejected'>().notNull(),
+  screening:     jsonb('screening').$type<{ sanctions: string; pep: string; adverseMedia: string } | null>(),
+  payloadSha256: text('payload_sha256').notNull(),
+  receivedAt:    timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('onboarding_provider_events_event_idx').on(t.eventId),
+  index('onboarding_provider_events_case_idx').on(t.caseId, t.receivedAt),
+  index('onboarding_provider_events_provider_ref_idx').on(t.providerCode, t.providerRef),
+]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -921,3 +938,4 @@ export type ComplianceCaseRow     = typeof complianceCases.$inferSelect;
 export type ComplianceCaseEventRow = typeof complianceCaseEvents.$inferSelect;
 export type ProviderSandboxRunRow = typeof providerSandboxRuns.$inferSelect;
 export type ProviderSandboxEventRow = typeof providerSandboxEvents.$inferSelect;
+export type OnboardingProviderEventRow = typeof onboardingProviderEvents.$inferSelect;

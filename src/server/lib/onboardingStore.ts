@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../db/db.js';
 import { onboardingCases, onboardingEvidence, onboardingEvents } from '../db/schema.js';
+import { getOnboardingProviderSummary } from './onboardingProviderStore.js';
 
 export type OnboardingStatus = 'draft' | 'submitted' | 'under_review' | 'needs_info' | 'approved' | 'rejected' | 'expired';
 export type OnboardingCaseType = 'individual' | 'business';
@@ -123,11 +124,12 @@ export async function getOnboardingCaseBundle(caseId: string) {
   const db = getDb();
   const cases = await db.select().from(onboardingCases).where(eq(onboardingCases.id, caseId)).limit(1);
   if (!cases[0]) return null;
-  const [evidence, events] = await Promise.all([
+  const [evidence, events, providerVerifications] = await Promise.all([
     db.select().from(onboardingEvidence).where(eq(onboardingEvidence.caseId, caseId)).orderBy(onboardingEvidence.createdAt),
     db.select().from(onboardingEvents).where(eq(onboardingEvents.caseId, caseId)).orderBy(onboardingEvents.createdAt),
+    getOnboardingProviderSummary(caseId),
   ]);
-  return { case: cases[0], evidence, events };
+  return { case: cases[0], evidence, events, providerVerifications };
 }
 
 export async function listOnboardingCases(status?: OnboardingStatus) {
