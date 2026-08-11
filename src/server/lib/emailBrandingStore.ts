@@ -5,7 +5,7 @@
  * stored in PostgreSQL and overlaid on those defaults so they survive deploys.
  */
 import { eq } from 'drizzle-orm';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { DEFAULT_BUSINESS_ADDRESS, normalizeBusinessAddress } from '../../lib/businessLocation.js';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { config as configTable } from '../db/schema.js';

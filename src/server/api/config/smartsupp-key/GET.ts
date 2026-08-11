@@ -9,7 +9,7 @@
  * loading the chat widget rather than silently using a baked-in value.
  */
 import type { Request, Response } from 'express';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 export default function handler(_req: Request, res: Response) {
   const key = getSecret('SMARTSUPP_KEY');

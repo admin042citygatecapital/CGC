@@ -349,7 +349,7 @@ import { loadSmtpConfigFromDb } from "./lib/smtpConfigStore";
 import { loadConfigFromDb } from "./lib/configStore";
 import { loadEmailBrandingFromDb } from "./lib/emailBrandingStore";
 import { loadEmailTemplatesFromDb } from "./lib/emailTemplateStore";
-import { getSecret } from "#airo/secrets";
+import { getSecret } from "#runtime/secrets";
 import { validateEnvAtStartup } from "./lib/envValidator";
 import { APP_ENV } from "./lib/envConfig";
 // Note: admin_env_report_get_53, admin_reports_get_89, admin_readiness_get_88,

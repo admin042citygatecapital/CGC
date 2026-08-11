@@ -7,7 +7,7 @@ import type { Request, Response } from 'express';
 import { diagnoseOAuthCredentials } from '../../../../lib/zohoTokenStore.js';
 import { getQueueStats, getEmailLogs, getPendingQueue } from '../../../../lib/emailQueue.js';
 import { loadSmtpConfig } from '../../../../lib/smtpConfigStore.js';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 export default async function handler(_req: Request, res: Response) {
   const oauth   = diagnoseOAuthCredentials();

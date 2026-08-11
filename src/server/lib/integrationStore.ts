@@ -10,7 +10,7 @@
 
 import fs   from 'node:fs';
 import path from 'node:path';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { privateSubdirectory } from './storagePaths.js';
 
 const DIR  = privateSubdirectory('config');

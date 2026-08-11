@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { getProviders } from '../../../../lib/tradingAdminStore.js';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { isPreviewMode } from '../../../../lib/platformMode.js';
 
 export default async (_req: Request, res: Response) => {

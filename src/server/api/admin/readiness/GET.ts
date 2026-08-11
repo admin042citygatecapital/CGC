@@ -20,7 +20,7 @@
  */
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { APP_ENV, isProd } from '../../../lib/envConfig.js';
 import { getValidAccessToken } from '../../../lib/zohoTokenStore.js';
 import { seoRoutes } from '../../../../lib/seo-routes.js';

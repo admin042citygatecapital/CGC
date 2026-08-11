@@ -30,8 +30,6 @@ const baseEnv: NodeJS.ProcessEnv = {
 };
 
 delete baseEnv.DATABASE_URL;
-delete baseEnv.NEON_CONNECTION_STRING;
-delete baseEnv.SUPABASE_DB_URL;
 Object.assign(process.env, baseEnv);
 
 const [{ hashPassword }, { createUser }] = await Promise.all([

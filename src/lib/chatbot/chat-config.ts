@@ -6,7 +6,7 @@
 
 import type { LanguageModel } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 export function getChatModel(): LanguageModel {
   const apiKey = String(getSecret('OPENAI_API_KEY') ?? '');

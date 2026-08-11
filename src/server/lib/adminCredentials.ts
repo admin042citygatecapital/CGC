@@ -1,14 +1,14 @@
 /**
  * Secure administrator credential store.
  *
- * The password hash is loaded from the ADMIN_PASSWORD_HASH Worker secret.
+ * The password hash is loaded from the ADMIN_PASSWORD_HASH environment secret.
  * Hashes are resolved at request time via env — never at module-load time.
  *
  * New hashes use Argon2id. Legacy bcrypt/PBKDF2 hashes remain verifiable so
  * existing installations can migrate without an emergency password reset.
  */
 
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import {
   hashPassword as hashSecurePassword,
   verifyPassword as verifySecurePassword,

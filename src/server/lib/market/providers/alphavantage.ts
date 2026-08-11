@@ -4,7 +4,7 @@
  * Requires: ALPHA_VANTAGE_API_KEY
  */
 
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { MissingApiKeyError, CapabilityNotSupportedError } from '../types.js';
 import type {
   MarketDataProvider, ProviderCapabilities, Ticker, Candle,

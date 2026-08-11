@@ -3,12 +3,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import postgres from 'postgres';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 const databaseUrl = String(
   getSecret('DATABASE_URL') ||
-  getSecret('NEON_CONNECTION_STRING') ||
-  getSecret('SUPABASE_DB_URL') ||
   process.env.DATABASE_URL ||
   ''
 ).trim();

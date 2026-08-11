@@ -11,7 +11,7 @@
  * Also exports buildEnvReport() for the /api/admin/env-report endpoint.
  */
 
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { APP_ENV, isProd, isStaging } from './envConfig.js';
 
 // ── Variable registry ─────────────────────────────────────────────────────────
@@ -157,7 +157,6 @@ const REGISTRY: EnvVarSpec[] = [
   // ── Database ───────────────────────────────────────────────────────────────
   {
     name:        'DATABASE_URL',
-    aliases:     ['NEON_CONNECTION_STRING', 'SUPABASE_DB_URL'],
     level:       isProd ? 'CRITICAL' : 'INFO',
     service:     'Database',
     validate:     validatePostgresUrl,

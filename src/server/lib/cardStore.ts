@@ -13,7 +13,7 @@ import { and, eq, desc } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { cards, cardActivity } from '../db/schema.js';
 import type { Card as DbCard } from '../db/schema.js';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 // ── Encryption (identical to original) ───────────────────────────────────────
 

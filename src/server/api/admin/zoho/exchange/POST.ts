@@ -8,7 +8,7 @@
  * Returns: { refresh_token, access_token, expires_in, region }
  */
 import type { Request, Response } from 'express';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 const REDIRECT_URI = 'https://citygate.capital/api/zoho/callback';
 

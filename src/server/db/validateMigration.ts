@@ -16,7 +16,7 @@
 
 import fs   from 'node:fs';
 import postgres from 'postgres';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 const url = String(getSecret('DATABASE_URL') || process.env.DATABASE_URL || '').trim();
 

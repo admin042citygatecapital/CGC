@@ -5,7 +5,7 @@
  * Protected by requireAdminAuth in entry.ts.
  */
 import type { Request, Response } from 'express';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 // Try all regions — EU first (citygate.capital is UK-based)
 const ZOHO_TOKEN_URLS = [

@@ -12,7 +12,7 @@
  */
 
 import postgres from 'postgres';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 const args    = process.argv.slice(2);
 const CONFIRM = args.includes('--confirm');

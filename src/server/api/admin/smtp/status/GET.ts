@@ -7,7 +7,7 @@ import type { Request, Response } from 'express';
 import { loadSmtpConfig } from '../../../../lib/smtpConfigStore.js';
 import { diagnoseOAuthCredentials, getResolvedAccountId } from '../../../../lib/zohoTokenStore.js';
 import { getQueueStats } from '../../../../lib/emailQueue.js';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 export default async function handler(_req: Request, res: Response) {
   const cfg    = loadSmtpConfig();

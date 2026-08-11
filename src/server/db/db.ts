@@ -2,14 +2,14 @@
  * PostgreSQL connection — City Gate Capital.
  *
  * Uses postgres.js over the PostgreSQL wire protocol so the production build
- * works with standard managed PostgreSQL providers (Render, Neon, Supabase,
- * and compatible services). Pool size is intentionally bounded because each
+ * works with standard managed PostgreSQL providers, including Supabase.
+ * Pool size is intentionally bounded because each
  * application instance owns its own pool.
  */
 
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import * as schema from './schema.js';
 
 let database: ReturnType<typeof drizzle<typeof schema>> | null = null;
@@ -23,8 +23,6 @@ function getPoolSize(): number {
 function getUrl(): string {
   return String(
     getSecret('DATABASE_URL') ||
-    getSecret('NEON_CONNECTION_STRING') ||
-    getSecret('SUPABASE_DB_URL') ||
     process.env.DATABASE_URL ||
     ''
   ).trim();

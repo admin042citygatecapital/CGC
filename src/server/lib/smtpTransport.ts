@@ -22,7 +22,7 @@
  */
 
 import { Resend } from 'resend';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import type { SmtpMode } from './smtpConfigStore.js';
 
 export interface SendResult {

@@ -8,7 +8,7 @@
  * Call initMarketProviders() once at server startup.
  */
 
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { marketRegistry } from './registry.js';
 import { BinanceProvider }      from './providers/binance.js';
 import { CoinbaseProvider }     from './providers/coinbase.js';

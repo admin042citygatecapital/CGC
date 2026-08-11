@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import type { VirtualCard, CardActivity } from './cardStore.js';
 import { privateSubdirectory } from './storagePaths.js';
 

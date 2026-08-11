@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 const developmentSecret = crypto.randomBytes(32).toString('hex');
 

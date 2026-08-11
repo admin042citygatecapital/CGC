@@ -18,7 +18,7 @@
  * expected pattern.
  */
 
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 // Zoho token endpoints by region — tried in order until one succeeds.
 // The correct region depends on where the Zoho account was registered.

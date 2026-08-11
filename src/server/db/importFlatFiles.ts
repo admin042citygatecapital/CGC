@@ -38,7 +38,7 @@ import fs     from 'node:fs';
 import path   from 'node:path';
 import crypto from 'node:crypto';
 import postgres from 'postgres';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 // ── CLI flags ─────────────────────────────────────────────────────────────────
 

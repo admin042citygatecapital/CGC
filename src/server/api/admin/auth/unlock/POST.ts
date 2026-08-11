@@ -11,13 +11,10 @@ import type { Request, Response } from 'express';
 import { recordLoginSuccess, clearAllLockouts } from '../../../../lib/bruteForce.js';
 import { purgeAllSessions } from '../../../../lib/sessionStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
+import { getSecret } from '#runtime/secrets';
 
 function getUnlockKey(): string | undefined {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getSecret } = require('#airo/secrets') as { getSecret: (k: string) => string | undefined };
-    return getSecret('ADMIN_UNLOCK_KEY');
-  } catch { return undefined; }
+  return getSecret('ADMIN_UNLOCK_KEY') ?? undefined;
 }
 
 export default async function handler(req: Request, res: Response) {

@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 
 const env = { ...process.env, NODE_ENV: 'production', PLATFORM_MODE: 'preview' };
 for (const key of [
-  'APP_URL', 'DATABASE_URL', 'NEON_CONNECTION_STRING', 'SUPABASE_DB_URL',
+  'APP_URL', 'DATABASE_URL',
   'SESSION_SECRET', 'JWT_SECRET', 'CARD_ENCRYPTION_KEY',
   'ADMIN_PASSWORD_HASH', 'ADMIN_PASSWORD_HASH_V2',
 ]) delete env[key];

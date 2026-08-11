@@ -17,11 +17,7 @@ if (process.env.ENABLE_LOCAL_DEMO_USER !== '1') {
   throw new Error('Set ENABLE_LOCAL_DEMO_USER=1 to create the local demo user.');
 }
 
-if (
-  process.env.DATABASE_URL ||
-  process.env.NEON_CONNECTION_STRING ||
-  process.env.SUPABASE_DB_URL
-) {
+if (process.env.DATABASE_URL) {
   throw new Error('Refusing to create a demo user while a database connection is configured.');
 }
 

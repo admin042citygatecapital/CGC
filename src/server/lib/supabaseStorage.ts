@@ -18,7 +18,7 @@
 import fs   from 'node:fs';
 import path from 'node:path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { mediaDirectory } from './storagePaths.js';
 
 // ── Config ────────────────────────────────────────────────────────────────────

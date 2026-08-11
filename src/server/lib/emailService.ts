@@ -25,7 +25,7 @@
  *   • Structured JSON logs: email.sent / email.retry / email.failed
  */
 
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { getValidAccessToken, invalidateTokenCache, getResolvedAccountId } from './zohoTokenStore.js';
 import { sendEmail as smtpSend } from './smtpTransport.js';
 import { enqueueEmail } from './emailQueue.js';

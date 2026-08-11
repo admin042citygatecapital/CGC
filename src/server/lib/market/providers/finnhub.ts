@@ -6,7 +6,7 @@
  */
 
 import WebSocket from 'ws';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { MissingApiKeyError } from '../types.js';
 import type {
   MarketDataProvider, ProviderCapabilities, Ticker, Candle,

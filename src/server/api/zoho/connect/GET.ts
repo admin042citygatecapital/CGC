@@ -5,7 +5,7 @@
  * request originated here (CSRF protection).
  */
 import type { Request, Response } from 'express';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { randomBytes } from 'node:crypto';
 
 // DEFAULT_CLIENT_ID intentionally removed — must be set via ZOHO_CLIENT_ID secret.

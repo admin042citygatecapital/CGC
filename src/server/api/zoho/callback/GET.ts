@@ -9,7 +9,7 @@
  * save it as ZOHO_REFRESH_TOKEN in Settings → Secrets.
  */
 import type { Request, Response } from 'express';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { pendingStates } from '../connect/GET.js';
 
 // Try EU first (citygate.capital is UK-based), fall back to US

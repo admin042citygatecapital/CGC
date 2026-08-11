@@ -11,7 +11,7 @@
 import type { Request, Response } from 'express';
 import { findAdminByEmail } from '../../../../lib/adminCredentials.js';
 import { listSessions } from '../../../../lib/sessionStore.js';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 function getUnlockKey(): string | undefined {
   const value = getSecret('ADMIN_UNLOCK_KEY');

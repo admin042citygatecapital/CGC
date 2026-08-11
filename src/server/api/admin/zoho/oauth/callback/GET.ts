@@ -9,7 +9,7 @@
  * Query params: ?code=XXXX&state=zoho_oauth
  */
 import type { Request, Response } from 'express';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 
 const ZOHO_TOKEN_URL = 'https://accounts.zoho.com/oauth/v2/token';
 // DEFAULT_CLIENT_ID removed — must be set via ZOHO_CLIENT_ID secret.

@@ -6,7 +6,7 @@
  * Body: { id: IntegrationId }
  */
 import type { Request, Response } from 'express';
-import { getSecret } from '#airo/secrets';
+import { getSecret } from '#runtime/secrets';
 import { recordTestResult, type IntegrationId } from '../../../../lib/integrationStore.js';
 
 function s(...names: string[]): string {
