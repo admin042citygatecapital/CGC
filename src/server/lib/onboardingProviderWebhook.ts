@@ -9,6 +9,8 @@ export interface ProviderWebhookPayload {
   providerRef: string;
   kind: ProviderVerificationKind;
   status: ProviderVerificationStatus;
+  purpose: 'onboarding' | 'rescreen';
+  screenedAt?: string;
   screening?: {
     sanctions: ScreeningDisposition;
     pep: ScreeningDisposition;
@@ -48,10 +50,19 @@ export function validateProviderWebhookPayload(input: unknown): ProviderWebhookP
   const providerRef = String(value.providerRef ?? '').trim();
   const kind = String(value.kind ?? '') as ProviderVerificationKind;
   const status = String(value.status ?? '') as ProviderVerificationStatus;
+  const purpose = String(value.purpose ?? 'onboarding') as ProviderWebhookPayload['purpose'];
   if (!/^oc_[a-f0-9]{20}$/.test(caseId)) throw new OnboardingProviderError('Invalid onboarding case reference.', 'INVALID_CASE_REFERENCE');
   if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{5,199}$/.test(providerRef) || providerRef.includes('://')) throw new OnboardingProviderError('Invalid opaque provider reference.', 'INVALID_PROVIDER_REFERENCE');
   if (!['identity', 'kyb', 'screening'].includes(kind)) throw new OnboardingProviderError('Invalid verification kind.', 'INVALID_KIND');
   if (!['accepted', 'review', 'rejected'].includes(status)) throw new OnboardingProviderError('Invalid verification status.', 'INVALID_STATUS');
+  if (!['onboarding', 'rescreen'].includes(purpose)) throw new OnboardingProviderError('Invalid verification purpose.', 'INVALID_PURPOSE');
+  if (purpose === 'rescreen' && kind !== 'screening') throw new OnboardingProviderError('Rescreen events must contain screening results.', 'INVALID_RESCREEN_KIND');
+  let screenedAt: string | undefined;
+  if (value.screenedAt != null) {
+    const parsed = new Date(String(value.screenedAt));
+    if (!Number.isFinite(parsed.getTime()) || parsed.getTime() > Date.now() + 60_000) throw new OnboardingProviderError('Invalid screening timestamp.', 'INVALID_SCREENING_TIMESTAMP');
+    screenedAt = parsed.toISOString();
+  }
   let screening: ProviderWebhookPayload['screening'];
   if (kind === 'screening') {
     if (!value.screening || typeof value.screening !== 'object') throw new OnboardingProviderError('Screening results must include sanctions, PEP and adverse-media dispositions.', 'SCREENING_RESULTS_REQUIRED');
@@ -60,7 +71,7 @@ export function validateProviderWebhookPayload(input: unknown): ProviderWebhookP
     if (Object.values(screening).some(item => !['clear', 'match', 'not_run'].includes(item))) throw new OnboardingProviderError('Invalid screening disposition.', 'INVALID_SCREENING_RESULT');
     if (status === 'accepted' && Object.values(screening).some(item => item !== 'clear')) throw new OnboardingProviderError('Accepted screening events require all dimensions to be clear.', 'SCREENING_NOT_CLEAR');
   }
-  return { caseId, providerRef, kind, status, ...(screening ? { screening } : {}) };
+  return { caseId, providerRef, kind, status, purpose, ...(screenedAt ? { screenedAt } : {}), ...(screening ? { screening } : {}) };
 }
 
 export function signProviderWebhook(rawBody: Buffer, eventId: string, timestamp: string, secret: string): string {

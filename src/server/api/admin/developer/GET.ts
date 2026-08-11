@@ -191,6 +191,7 @@ const ROUTE_CATALOGUE: DeveloperRouteEntry[] = [
   { method:'GET',  path:'/api/admin/assurance-exercises',         group:'Compliance',       auth:'admin',   description:'List independent assurance and recovery exercises' },
   { method:'POST', path:'/api/admin/assurance-exercises',         group:'Compliance',       auth:'admin',   description:'Create, submit and maker-checker review assurance exercises' },
   { method:'POST', path:'/api/providers/onboarding/webhook/:provider', group:'Onboarding', auth:'public', description:'Allow-listed signed identity, KYB and screening provider callback' },
+  { method:'GET',  path:'/api/admin/onboarding/screening', group:'Onboarding', auth:'admin', description:'Ongoing sanctions, PEP and adverse-media rescreening queue' },
   { method:'GET',  path:'/api/admin/env-report',                  group:'Platform',         auth:'admin',   description:'Environment variable status report' },
   { method:'GET',  path:'/api/admin/developer',                   group:'Platform',         auth:'admin',   description:'Developer Center data' },
   { method:'GET',  path:'/api/admin/documentation/:format',       group:'Platform',         auth:'admin',   description:'Protected API reference snapshot download' },

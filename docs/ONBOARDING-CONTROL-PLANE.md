@@ -40,6 +40,22 @@ Administration, compliance-authorised:
 Approved provider callback:
 
 - `POST /api/providers/onboarding/webhook/:provider`
+
+The same signed callback supports `purpose: "rescreen"` only for screening
+events attached to an already approved onboarding case. A clear result records
+the screening time and schedules the next annual review. A provider review or
+match result fails closed: the customer AML state moves to review and an
+immutable AML or sanctions case is opened for a different compliance
+administrator to resolve. Provider callbacks cannot mark the human compliance
+case clear or activate financial operations.
+
+Ongoing screening queue:
+
+- `GET /api/admin/onboarding/screening`
+
+The queue is restricted to Compliance administrators and Super Admin. It shows
+last/next screening dates and derives an overdue state at read time. Raw provider
+payloads, documents and credentials are never returned or stored by the queue.
 - Required headers: `x-cgc-event-id`, `x-cgc-timestamp`, and `x-cgc-signature`
 - Signature input: `eventId + "." + timestamp + "." + rawRequestBody`, HMAC-SHA-256
 - Provider allow-list: `APPROVED_ONBOARDING_PROVIDERS`

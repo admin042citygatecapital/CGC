@@ -41,6 +41,15 @@ describe('customer onboarding controls', () => {
     expect(sql).not.toMatch(/BYTEA|document_base64|password_hash/i);
   });
 
+  it('migrates an ongoing screening schedule without storing raw screening documents', () => {
+    const sql = fs.readFileSync(path.join(process.cwd(), 'src/server/db/migrations/0013_ongoing_screening.sql'), 'utf8');
+    expect(sql).toContain('screening_status');
+    expect(sql).toContain('next_screening_at');
+    expect(sql).toContain("purpose IN ('onboarding', 'rescreen')");
+    expect(sql).not.toMatch(/BYTEA|document_base64|credential_value|raw_payload/i);
+    expect(allowedRolesForAdminRequest('/onboarding/screening', 'GET')).toEqual(['COMPLIANCE_ADMIN']);
+  });
+
   it('does not expose raw identity, bank, wallet, or document fields in the general directory', () => {
     const source = fs.readFileSync(path.join(process.cwd(), 'src/server/api/admin/users/GET.ts'), 'utf8');
     expect(source).not.toMatch(/bankAccountNumber:\s*u\.|walletBtc:\s*u\.|idNumber:\s*u\.|idDocumentUrl:\s*u\.|selfieUrl:\s*u\./);

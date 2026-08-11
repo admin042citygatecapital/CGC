@@ -9,6 +9,7 @@ type CaseRow = { id: string; userId: string; caseType: 'individual' | 'business'
 type ProviderEvent = { id: string; providerCode: string; providerRef: string; kind: 'identity'|'kyb'|'screening'; status: string; screening?: { sanctions: string; pep: string; adverseMedia: string }; receivedAt: string };
 type Bundle = { case: CaseRow; evidence: Array<{ id: string; kind: string; referenceType: string; reference: string; sha256?: string }>; events: Array<{ id: string; action: string; actorId: string; createdAt: string; fromStatus?: string; toStatus?: string }>; providerVerifications: { events: ProviderEvent[]; checks: { identityAccepted: boolean; kybAccepted: boolean; screeningClear: boolean } } };
 type ComplianceCase = { id: string; kind: 'aml' | 'sanctions'; status: string; riskLevel: string; summary: string; openedBy: string; lastEditedBy: string };
+type ScreeningQueueItem = { caseId: string; userId: string; caseType: string; screeningStatus: string; lastScreenedAt?: string; nextScreeningAt?: string; due: boolean };
 
 export default function AdminOnboardingPage() {
   const { admin } = useAdminAuth();
@@ -21,12 +22,17 @@ export default function AdminOnboardingPage() {
   const [complianceCases, setComplianceCases] = useState<ComplianceCase[]>([]);
   const [caseSummary, setCaseSummary] = useState('');
   const [caseKind, setCaseKind] = useState<'aml' | 'sanctions'>('aml');
+  const [screeningQueue, setScreeningQueue] = useState<ScreeningQueueItem[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const response = await fetch('/api/admin/onboarding', { headers: authHeaders() });
+    const [response, screeningResponse] = await Promise.all([
+      fetch('/api/admin/onboarding', { headers: authHeaders() }),
+      fetch('/api/admin/onboarding/screening', { headers: authHeaders() }),
+    ]);
     const body = await response.json();
-    setCases(body.data ?? []); setLoading(false);
+    const screeningBody = await screeningResponse.json();
+    setCases(body.data ?? []); setScreeningQueue(screeningBody.data ?? []); setLoading(false);
   }, []);
   useEffect(() => { if (admin) void load(); }, [admin, load]);
 
@@ -61,6 +67,10 @@ export default function AdminOnboardingPage() {
     <Helmet><title>Customer Onboarding | City Gate Capital Admin</title></Helmet>
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">Customer Onboarding</h1><p className="text-sm text-foreground/50">KYC/KYB evidence, maker-checker review and immutable case history.</p></div><button onClick={() => void load()} className="p-2 rounded-lg border border-white/10"><RefreshCw size={16}/></button></div>
+      <section className="rounded-2xl border border-white/10 p-4">
+        <div className="flex items-center justify-between gap-4"><div><h2 className="font-semibold">Ongoing sanctions, PEP and adverse-media screening</h2><p className="text-xs text-foreground/45 mt-1">Signed approved-provider results only. Matches automatically open a compliance case; administrators cannot manufacture a clear result.</p></div><span className="rounded-full bg-amber-400/10 px-3 py-1 text-xs text-amber-300">{screeningQueue.filter(item => item.due).length} due</span></div>
+        {screeningQueue.length > 0 && <div className="mt-3 grid md:grid-cols-2 xl:grid-cols-3 gap-2">{screeningQueue.slice(0, 6).map(item => <button key={item.caseId} onClick={() => void openCase(item.caseId)} className="rounded-xl bg-white/5 p-3 text-left text-xs"><div className="flex justify-between"><span className="font-semibold">{item.userId}</span><span className={item.screeningStatus === 'clear' ? 'text-emerald-300' : 'text-amber-300'}>{item.screeningStatus}</span></div><p className="mt-1 text-foreground/40">Next: {item.nextScreeningAt ? new Date(item.nextScreeningAt).toLocaleDateString() : 'not scheduled'}</p></button>)}</div>}
+      </section>
       <div className="grid lg:grid-cols-[1fr_1.4fr] gap-5">
         <div className="rounded-2xl border border-white/10 overflow-hidden">
           {loading ? <div className="p-8 flex justify-center"><Loader2 className="animate-spin"/></div> : cases.length === 0 ? <div className="p-8 text-sm text-foreground/45">No onboarding cases yet.</div> : cases.map(item => <button key={item.id} onClick={() => void openCase(item.id)} className="w-full text-left p-4 border-b border-white/8 hover:bg-white/5">

@@ -783,6 +783,9 @@ export const onboardingCases = pgTable('onboarding_cases', {
   reviewedBy:   text('reviewed_by'),
   reviewedAt:   timestamp('reviewed_at', { withTimezone: true }),
   reviewReason: text('review_reason'),
+  screeningStatus: text('screening_status').$type<'not_run' | 'clear' | 'review' | 'match' | 'overdue'>().notNull().default('not_run'),
+  lastScreenedAt: timestamp('last_screened_at', { withTimezone: true }),
+  nextScreeningAt: timestamp('next_screening_at', { withTimezone: true }),
   createdAt:    timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt:    timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
@@ -889,6 +892,8 @@ export const onboardingProviderEvents = pgTable('onboarding_provider_events', {
   providerRef:   text('provider_ref').notNull(),
   kind:          text('kind').$type<'identity' | 'kyb' | 'screening'>().notNull(),
   status:        text('status').$type<'accepted' | 'review' | 'rejected'>().notNull(),
+  purpose:       text('purpose').$type<'onboarding' | 'rescreen'>().notNull().default('onboarding'),
+  screenedAt:    timestamp('screened_at', { withTimezone: true }),
   screening:     jsonb('screening').$type<{ sanctions: string; pep: string; adverseMedia: string } | null>(),
   payloadSha256: text('payload_sha256').notNull(),
   receivedAt:    timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assertApprovedProvider, signProviderWebhook, validateProviderWebhookPayload, verifyProviderWebhook } from '../../server/lib/onboardingProviderWebhook.js';
-import { assessProviderVerification } from '../../server/lib/onboardingProviderStore.js';
+import { assessProviderVerification, deriveScreeningState } from '../../server/lib/onboardingProviderStore.js';
 
 describe('approved onboarding provider webhooks', () => {
   const env = { APPROVED_ONBOARDING_PROVIDERS: 'verified-id', ONBOARDING_PROVIDER_WEBHOOK_SECRET_VERIFIED_ID: 'a-secure-provider-webhook-secret-32-bytes' } as NodeJS.ProcessEnv;
@@ -21,6 +21,15 @@ describe('approved onboarding provider webhooks', () => {
   it('requires explicit clear sanctions, PEP and adverse-media results', () => {
     expect(validateProviderWebhookPayload({ caseId: 'oc_0123456789abcdef0123', providerRef: 'provider:case-001', kind: 'screening', status: 'accepted', screening: { sanctions: 'clear', pep: 'clear', adverseMedia: 'clear' } }).screening).toEqual({ sanctions: 'clear', pep: 'clear', adverseMedia: 'clear' });
     expect(() => validateProviderWebhookPayload({ caseId: 'oc_0123456789abcdef0123', providerRef: 'provider:case-001', kind: 'screening', status: 'accepted', screening: { sanctions: 'clear', pep: 'match', adverseMedia: 'clear' } })).toThrow(expect.objectContaining({ code: 'SCREENING_NOT_CLEAR' }));
+  });
+
+  it('accepts screening-only rescreens and derives fail-closed operational states', () => {
+    const clear = validateProviderWebhookPayload({ caseId: 'oc_0123456789abcdef0123', providerRef: 'provider:rescreen-001', kind: 'screening', purpose: 'rescreen', screenedAt: '2026-08-10T12:00:00.000Z', status: 'accepted', screening: { sanctions: 'clear', pep: 'clear', adverseMedia: 'clear' } });
+    expect(clear.purpose).toBe('rescreen');
+    expect(deriveScreeningState(clear)).toBe('clear');
+    expect(deriveScreeningState({ status: 'review', screening: { sanctions: 'clear', pep: 'match', adverseMedia: 'clear' } })).toBe('match');
+    expect(deriveScreeningState({ status: 'review', screening: { sanctions: 'clear', pep: 'not_run', adverseMedia: 'clear' } })).toBe('review');
+    expect(() => validateProviderWebhookPayload({ caseId: 'oc_0123456789abcdef0123', providerRef: 'provider:rescreen-002', kind: 'identity', purpose: 'rescreen', status: 'accepted' })).toThrow(expect.objectContaining({ code: 'INVALID_RESCREEN_KIND' }));
   });
 
   it('does not allow approval without the correct case-type verification and clear screening', () => {
