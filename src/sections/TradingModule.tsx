@@ -14,7 +14,7 @@ import {
   ArrowRight, TrendingUp, TrendingDown, Zap, Lock, PieChart,
   RefreshCw, Shield, Bitcoin,
 } from 'lucide-react';
-import { home } from 'virtual:content';
+import { useHomepageContent } from '@/lib/homepageContentContext';
 import { AnimatedBar } from '@/lib/homeShared';
 import type { TickerItem } from '@/lib/useLiveTicker';
 
@@ -35,6 +35,7 @@ interface TradingSectionProps {
 }
 
 export function TradingSection({ livePrices = [] }: TradingSectionProps) {
+  const home = useHomepageContent();
   const featureBulletIcons  = [Zap, Lock, PieChart, RefreshCw, Shield];
   const featureBulletColors = ['#F7931A', '#627EEA', '#9945FF', '#26A17B', '#C9A84C'];
 

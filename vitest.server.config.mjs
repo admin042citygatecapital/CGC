@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
+import { contentPlugin } from './export-plugins/content-plugin/index.ts';
 
 export default defineConfig({
+  plugins: [contentPlugin()],
   test: {
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     environment: 'node',

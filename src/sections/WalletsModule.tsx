@@ -9,12 +9,13 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRight, TrendingUp, RefreshCw, CreditCard, Globe, Bitcoin, Bell, Eye, Wallet,
 } from 'lucide-react';
-import { home } from 'virtual:content';
+import { useHomepageContent } from '@/lib/homepageContentContext';
 import { GlassCard, AnimatedBar } from '@/lib/homeShared';
 
 // ── WalletsSection ────────────────────────────────────────────────────────────
 
 export function WalletsSection() {
+  const home = useHomepageContent();
   const featureBulletIcons = [Globe, Bitcoin, RefreshCw, CreditCard, Bell, Eye];
   const featureBulletColors = ['#10B981', '#F7931A', '#627EEA', '#C9A84C', '#9945FF', '#F0D080'];
 

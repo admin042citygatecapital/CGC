@@ -45,7 +45,7 @@ Zap,
 import { motion,useScroll,useTransform } from 'motion/react';
 import { useEffect,useRef,useState } from 'react';
 import { Link,useLocation } from 'react-router-dom';
-import { home } from 'virtual:content';
+import { useHomepageContent } from '@/lib/homepageContentContext';
 
 // ── Animated counter ──────────────────────────────────────────────────────────
 
@@ -101,6 +101,7 @@ const planIconMap: Record<string, React.ElementType> = {
 // ── HeroSection ───────────────────────────────────────────────────────────────
 
 export function HeroSection() {
+  const home = useHomepageContent();
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroY       = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
@@ -210,6 +211,7 @@ export function HeroSection() {
 // ── StatsBar ──────────────────────────────────────────────────────────────────
 
 export function StatsBar() {
+  const home = useHomepageContent();
   return (
     <section className="border-y border-primary/10 bg-[#060606]">
       <div className="container mx-auto px-4 md:px-6 py-16">
@@ -246,6 +248,7 @@ export function StatsBar() {
 // ── FeaturesGrid ──────────────────────────────────────────────────────────────
 
 export function FeaturesGrid() {
+  const home = useHomepageContent();
   return (
     <section className="py-16 md:py-28">
       <div className="container mx-auto px-4 md:px-6">
@@ -285,6 +288,7 @@ export function FeaturesGrid() {
 // ── DashboardPreview ──────────────────────────────────────────────────────────
 
 export function DashboardPreview() {
+  const home = useHomepageContent();
   return (
     <section className="py-28 bg-[#060606]">
       <div className="container mx-auto px-4 md:px-6">
@@ -438,6 +442,7 @@ export function DashboardPreview() {
 // ── TransfersSection ──────────────────────────────────────────────────────────
 
 export function TransfersSection() {
+  const home = useHomepageContent();
   return (
     <section className="py-28 relative overflow-hidden">
       <div className="absolute inset-0">
@@ -566,6 +571,7 @@ export function TransfersSection() {
 // ── SecuritySection ───────────────────────────────────────────────────────────
 
 export function SecuritySection() {
+  const home = useHomepageContent();
   return (
     <section className="py-28 bg-[#060606]">
       <div className="container mx-auto px-4 md:px-6">
@@ -693,6 +699,7 @@ export function SecuritySection() {
 // ── MobileAppSection ──────────────────────────────────────────────────────────
 
 export function MobileAppSection() {
+  const home = useHomepageContent();
   return (
     <section className="py-28 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
@@ -827,6 +834,7 @@ export function MobileAppSection() {
 // ── PricingSection ────────────────────────────────────────────────────────────
 
 export function PricingSection() {
+  const home = useHomepageContent();
   const [yearly, setYearly] = useState(false);
   return (
     <>
@@ -896,6 +904,7 @@ export function PricingSection() {
 // ── TestimonialsSection ───────────────────────────────────────────────────────
 
 export function TestimonialsSection() {
+  const home = useHomepageContent();
   return (
     <div className="grid md:grid-cols-3 gap-5">
       {home.testimonials.items.map((t, i) => (
@@ -923,6 +932,7 @@ export function TestimonialsSection() {
 // ── FaqSection ────────────────────────────────────────────────────────────────
 
 export function FaqSection() {
+  const home = useHomepageContent();
   const cats = ['All', 'Security', 'Accounts', 'Pricing', 'Transfers'] as const;
   const [active, setActive] = useState<string>('All');
   const [openId, setOpenId] = useState<string | null>(null);
@@ -963,6 +973,7 @@ export function FaqSection() {
 // ── CtaSection ────────────────────────────────────────────────────────────────
 
 export function CtaSection() {
+  const home = useHomepageContent();
   return (
     <section className="py-28 relative overflow-hidden">
       <div className="absolute inset-0">

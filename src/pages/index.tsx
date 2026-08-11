@@ -16,6 +16,7 @@ import { useLiveTicker } from '@/lib/useLiveTicker';
 import { useMarketWebSocket } from '@/lib/useMarketWebSocket';
 import { WsStatusBadge } from '@/components/WsStatusBadge';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { HomepageContentProvider, useHomepageContent } from '@/lib/homepageContentContext';
 
 // ── Banking module ────────────────────────────────────────────────────────────
 import {
@@ -47,7 +48,8 @@ import { WalletsSection } from '@/sections/WalletsModule';
 // ── Live ticker (shared between hero and ticker bar) ─────────────────────────
 // Moved to a shared hook so the ticker data is fetched once
 
-export default function HomePage() {
+function HomePageContent() {
+  const home = useHomepageContent();
   const tickers = useLiveTicker();
   const { status: wsStatus, isLive, source } = useMarketWebSocket(
     ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT'],
@@ -57,12 +59,12 @@ export default function HomePage() {
   return (
     <>
       <Helmet>
-        <title>City Gate Capital — Secure Financial Technology</title>
-        <meta name="description" content="City Gate Capital brings multi-currency account software, secure transfers, market insights, and customer account controls into one premium platform." />
+        <title>{`${home.hero.headline1} ${home.hero.headlineAccent} ${home.hero.headline2} | City Gate Capital`}</title>
+        <meta name="description" content={home.hero.subheadline} />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://citygate.capital/" />
         <meta property="og:title" content="City Gate Capital — Secure Financial Technology" />
-        <meta property="og:description" content="Premium financial technology, customer account controls, and provider-ready infrastructure." />
+        <meta property="og:description" content={home.hero.subheadline} />
         <meta property="og:url" content="https://citygate.capital/" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -75,7 +77,7 @@ export default function HomePage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="City Gate Capital — Secure Financial Technology" />
-        <meta name="twitter:description" content="Premium multi-currency experiences, account security, and provider-ready financial infrastructure." />
+        <meta name="twitter:description" content={home.hero.subheadline} />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',
@@ -207,10 +209,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-              Proposed Plan Concepts
+              {home.pricing.eyebrow}
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              Explore possible <span className="text-gold-gradient">product tiers</span>
+              {home.pricing.headline1} <span className="text-gold-gradient">{home.pricing.headlineAccent}</span> {home.pricing.headline2}
             </h2>
           </div>
           <PricingSection />
@@ -222,10 +224,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-              Illustrative Use Cases
+              {home.testimonials.eyebrow}
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              Proposed <span className="text-gold-gradient">user scenarios</span>
+              {home.testimonials.headline1} <span className="text-gold-gradient">{home.testimonials.headlineAccent}</span> {home.testimonials.headline2}
             </h2>
           </div>
           <TestimonialsSection />
@@ -237,10 +239,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-              FAQ
+              {home.faq.eyebrow}
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              Got <span className="text-gold-gradient">questions?</span>
+              {home.faq.headline1} <span className="text-gold-gradient">{home.faq.headlineAccent}</span>
             </h2>
           </div>
           <FaqSection />
@@ -251,4 +253,8 @@ export default function HomePage() {
       <CtaSection />
     </>
   );
+}
+
+export default function HomePage() {
+  return <HomepageContentProvider><HomePageContent /></HomepageContentProvider>;
 }

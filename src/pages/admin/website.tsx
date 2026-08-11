@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import {
   Save, CheckCircle, Palette, Navigation, Image, Type,
   Layout, Code, Eye, Smartphone, Monitor, Tablet, AlertCircle,
-  MapPin, ExternalLink,
+  MapPin, ExternalLink, FileText, Upload, Download, History,
 } from 'lucide-react';
 import AdminLayout from '@/layouts/AdminLayout';
 import { useAdminAuth, authHeaders } from '@/lib/adminAuth';
@@ -117,6 +117,7 @@ const TABS = [
   { id: 'nav',       label: 'Navigation',  icon: Navigation },
   { id: 'footer',    label: 'Footer',      icon: Layout },
   { id: 'announce',  label: 'Announcement', icon: Type },
+  { id: 'copy',      label: 'Page Write-up', icon: FileText },
   { id: 'theme',     label: 'Theme',       icon: Code },
 ];
 
@@ -131,6 +132,10 @@ export default function AdminWebsite() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [preview, setPreview] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [homepageDraft, setHomepageDraft] = useState('');
+  const [homepageReason, setHomepageReason] = useState('');
+  const [homepageVersion, setHomepageVersion] = useState(0);
+  const [homepageHistory, setHomepageHistory] = useState<Array<{ version: number; updatedAt: string; updatedBy: string; hash: string; reason: string }>>([]);
 
   useEffect(() => { if (!authLoading && !admin) navigate('/admin/login'); }, [admin, authLoading, navigate]);
 
@@ -145,6 +150,67 @@ export default function AdminWebsite() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    fetch('/api/admin/cms/homepage', { headers: authHeaders() })
+      .then(async response => response.ok ? response.json() : Promise.reject(new Error('Unable to load homepage copy.')))
+      .then(payload => {
+        setHomepageDraft(JSON.stringify(payload.document.content, null, 2));
+        setHomepageVersion(payload.document.version ?? 0);
+        setHomepageHistory(payload.history ?? []);
+      })
+      .catch(error => setSaveError(error instanceof Error ? error.message : 'Unable to load homepage copy.'));
+  }, []);
+
+  async function publishHomepage() {
+    setSaving(true);
+    setSaveError('');
+    try {
+      const content = JSON.parse(homepageDraft);
+      const response = await fetch('/api/admin/cms/homepage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ content, reason: homepageReason }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error([payload?.error, ...(payload?.details ?? [])].filter(Boolean).join(' '));
+      setHomepageVersion(payload.document.version);
+      setHomepageReason('');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      const refreshed = await fetch('/api/admin/cms/homepage', { headers: authHeaders() }).then(r => r.json());
+      setHomepageHistory(refreshed.history ?? []);
+    } catch (error) {
+      setSaveError(error instanceof SyntaxError ? 'The uploaded write-up is not valid JSON.' : error instanceof Error ? error.message : 'Unable to publish homepage copy.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function importHomepageFile(file: File) {
+    if (file.size > 500_000) {
+      setSaveError('Homepage write-up files must be 500 KB or smaller.');
+      return;
+    }
+    try {
+      const text = await file.text();
+      JSON.parse(text);
+      setHomepageDraft(text);
+      setSaveError('');
+    } catch {
+      setSaveError('Upload a valid JSON homepage write-up.');
+    }
+  }
+
+  function downloadHomepage() {
+    const blob = new Blob([homepageDraft], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `city-gate-capital-homepage-v${homepageVersion}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   function set<K extends keyof WebsiteSettings>(key: K, value: WebsiteSettings[K]) {
     setCfg(prev => ({ ...prev, [key]: value }));
@@ -496,6 +562,78 @@ export default function AdminWebsite() {
                     style={{ background: `linear-gradient(90deg, ${cfg.primaryColor}, #F0D080)` }}>
                     {cfg.announcementText || 'Announcement text here'}
                   </div>
+                </div>
+              </>
+            )}
+
+            {/* Complete homepage write-up */}
+            {tab === 'copy' && (
+              <>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><FileText size={14} className="text-primary" /> Complete Homepage Write-up</h3>
+                    <p className="mt-1 max-w-2xl text-xs leading-relaxed text-white/40">
+                      Controls every homepage headline, paragraph, feature card, plan, scenario, FAQ, trust label, and call to action. Changes publish at runtime without a code deployment.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Published version {homepageVersion}</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60 transition-colors hover:border-primary/30 hover:text-white">
+                    <Upload size={13} /> Upload write-up
+                    <input type="file" accept="application/json,.json,.txt" className="hidden" onChange={event => {
+                      const file = event.target.files?.[0];
+                      if (file) void importHomepageFile(file);
+                      event.target.value = '';
+                    }} />
+                  </label>
+                  <button type="button" onClick={downloadHomepage} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60 transition-colors hover:border-primary/30 hover:text-white">
+                    <Download size={13} /> Download current write-up
+                  </button>
+                  <a href="/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60 transition-colors hover:border-primary/30 hover:text-white">
+                    <Eye size={13} /> Open live homepage
+                  </a>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-[10px] uppercase tracking-wide text-white/30">Full structured content document</label>
+                  <textarea
+                    value={homepageDraft}
+                    onChange={event => setHomepageDraft(event.target.value)}
+                    spellCheck={false}
+                    rows={24}
+                    className="w-full resize-y rounded-xl border border-white/10 bg-black/40 px-4 py-3 font-mono text-xs leading-relaxed text-white/75 focus:border-primary/40 focus:outline-none"
+                  />
+                  <p className="mt-2 text-[11px] leading-relaxed text-white/35">Keep the JSON field names intact. The server rejects missing fields, wrong data types, empty text, oversized content, and malformed uploads before anything is published.</p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <div>
+                    <label className="mb-1.5 block text-[10px] uppercase tracking-wide text-white/30">Reason for publication</label>
+                    <input value={homepageReason} onChange={event => setHomepageReason(event.target.value)} placeholder="Example: Updated homepage positioning and FAQs"
+                      className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/20 focus:border-primary/40 focus:outline-none" />
+                  </div>
+                  <button type="button" onClick={publishHomepage} disabled={saving || !homepageDraft || homepageReason.trim().length < 5}
+                    className="self-end rounded-xl bg-gradient-to-r from-primary to-[#F0D080] px-5 py-3 text-sm font-bold text-black disabled:cursor-not-allowed disabled:opacity-40">
+                    {saving ? 'Validating…' : 'Validate & Publish'}
+                  </button>
+                </div>
+
+                <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4">
+                  <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold text-white"><History size={13} className="text-primary" /> Publication history</h4>
+                  {homepageHistory.length === 0 ? <p className="text-xs text-white/30">No runtime publications yet. The bundled homepage is active.</p> : (
+                    <div className="space-y-2">
+                      {homepageHistory.slice(0, 8).map(item => (
+                        <div key={`${item.version}-${item.hash}`} className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2 text-[11px]">
+                          <span className="font-semibold text-primary">v{item.version}</span>
+                          <span className="text-white/55">{item.reason}</span>
+                          <span className="text-white/30">{item.updatedBy} · {new Date(item.updatedAt).toLocaleString()}</span>
+                          <code className="text-white/25">{item.hash.slice(0, 12)}</code>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
