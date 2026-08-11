@@ -7,7 +7,7 @@ import {
   TrendingUp, TrendingDown, Shield, Bell, Settings, ChevronRight,
   Wallet, RefreshCw, Send, DollarSign, Loader2, CheckCheck, Camera,
   ShieldCheck, BadgeCheck, Clock, XCircle, Snowflake, Eye, EyeOff,
-  Zap, Plus, ChevronLeft, BarChart2, Activity, ArrowRight,
+  Zap, Plus, ChevronLeft, BarChart2, Activity,
   Lock, Fingerprint, Moon, Sun, Languages, Key, X,
   TrendingUp as TrendUp, Info, CreditCard as CardIcon,
   History, FileText, User, Users, Smartphone, MessageCircle,
@@ -1078,59 +1078,6 @@ export default function DashboardPage() {
         <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
 
           {/* ── Status banners ─────────────────────────────────────────────── */}
-          {customer.status !== 'active' && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/8 flex items-center gap-3">
-              <Shield size={15} className="text-amber-400 shrink-0" />
-              <p className="text-xs font-medium text-amber-300 flex-1">
-                {customer.status === 'pending_kyc' ? 'Identity verification required' : 'Account awaiting approval'}
-              </p>
-              <Link to="/kyc" className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1">
-                Verify now <ArrowRight size={11} />
-              </Link>
-            </motion.div>
-          )}
-
-          {customer.kycStatus !== 'approved' && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
-              <Link to="/kyc" className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all hover:brightness-110 ${
-                customer.kycStatus === 'submitted' ? 'border-amber-500/25 bg-amber-500/6' :
-                customer.kycStatus === 'rejected'  ? 'border-red-500/25 bg-red-500/6' :
-                'border-primary/20 bg-primary/4'
-              }`}>
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                  customer.kycStatus === 'submitted' ? 'bg-amber-500/15' :
-                  customer.kycStatus === 'rejected'  ? 'bg-red-500/15' : 'bg-primary/15'
-                }`}>
-                  {customer.kycStatus === 'submitted' ? <Clock size={15} className="text-amber-400" /> :
-                   customer.kycStatus === 'rejected'  ? <XCircle size={15} className="text-red-400" /> :
-                   <ShieldCheck size={15} className="text-primary" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-semibold ${
-                    customer.kycStatus === 'submitted' ? 'text-amber-400' :
-                    customer.kycStatus === 'rejected'  ? 'text-red-400' : 'text-primary'
-                  }`}>
-                    {customer.kycStatus === 'submitted' ? 'KYC Under Review — typically 1–2 business days' :
-                     customer.kycStatus === 'rejected'  ? 'KYC Rejected — click to resubmit' :
-                     'Complete Identity Verification to unlock full access'}
-                  </p>
-                </div>
-                <ChevronRight size={14} className="text-foreground/30 shrink-0" />
-              </Link>
-            </motion.div>
-          )}
-
-          {customer.kycStatus === 'approved' && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="mb-4 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border border-emerald-500/15 bg-emerald-500/4">
-              <BadgeCheck size={14} className="text-emerald-400 shrink-0" />
-              <p className="text-xs font-medium text-emerald-400">
-                {isPreview ? 'Preview identity status — simulated approval' : 'Identity Verified — Full banking access enabled'}
-              </p>
-            </motion.div>
-          )}
-
           {/* ── Welcome row ────────────────────────────────────────────────── */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
             className="flex items-center justify-between mb-6">
@@ -1150,6 +1097,50 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* ── MAIN GRID ──────────────────────────────────────────────────── */}
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.03 }}
+            aria-labelledby="account-standing-title"
+            className="mb-6 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-5 py-4"
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                  customer.kycStatus === 'approved' ? 'bg-emerald-500/10' :
+                  customer.kycStatus === 'rejected' ? 'bg-red-500/10' : 'bg-primary/10'
+                }`}>
+                  {customer.kycStatus === 'approved' ? <BadgeCheck size={18} className="text-emerald-400" /> :
+                   customer.kycStatus === 'submitted' ? <Clock size={18} className="text-primary" /> :
+                   customer.kycStatus === 'rejected' ? <XCircle size={18} className="text-red-400" /> :
+                   <ShieldCheck size={18} className="text-primary" />}
+                </div>
+                <div>
+                  <p id="account-standing-title" className="text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/35">Account status</p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">
+                    {customer.kycStatus === 'approved' ? 'Verification recorded' :
+                     customer.kycStatus === 'submitted' ? 'Verification assessment in progress' :
+                     customer.kycStatus === 'rejected' ? 'Additional verification information required' :
+                     'Onboarding information required'}
+                  </p>
+                  <p className="mt-0.5 text-xs text-foreground/40">
+                    {customer.kycStatus === 'approved'
+                      ? (isPreview ? 'Recorded for this product environment; regulated services remain provider-gated.' : 'Your account standing is current.')
+                      : customer.kycStatus === 'submitted'
+                      ? 'You can continue using available account features while the assessment is pending.'
+                      : 'Complete the requested information to progress your account application.'}
+                  </p>
+                </div>
+              </div>
+              {customer.kycStatus !== 'approved' && (
+                <Link to="/kyc" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15">
+                  {customer.kycStatus === 'submitted' ? 'View verification status' : 'Continue onboarding'}
+                  <ChevronRight size={13} />
+                </Link>
+              )}
+            </div>
+          </motion.section>
+
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
             {/* ── LEFT COLUMN (8 cols) ──────────────────────────────────────── */}
