@@ -139,9 +139,10 @@ export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages
   const gaps = controlRows.filter(control => control.required && control.status !== 'approved').map(control => ({ key: control.key, title: control.title, status: control.status, ownerRole: control.ownerRole }));
   const fullyReviewed = gaps.length === 0;
   const sponsorSubmissionReady = fullyReviewed && packageRow.status === 'approved';
+  const legalEntityState = deriveLegalEntityState(enrichedEvidence);
   return {
-    package: { ...packageRow, label: sponsorSubmissionReady ? 'SPONSOR SUBMISSION READY' : 'DRAFT — NOT APPROVED FOR LAUNCH' },
-    productProfile: PRODUCT_PROFILE,
+    package: { ...packageRow, legalEntityState, label: sponsorSubmissionReady ? 'SPONSOR SUBMISSION READY' : 'DRAFT — NOT APPROVED FOR LAUNCH' },
+    productProfile: { ...PRODUCT_PROFILE, legalEntityState },
     controls: controlRows,
     evidence: enrichedEvidence,
     events,
@@ -149,6 +150,12 @@ export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages
     gaps,
     financialOperationsLocked: true,
   };
+}
+
+export function deriveLegalEntityState(evidence: Array<Pick<SponsorEvidenceRow, 'controlKey'> & { effectiveStatus?: EvidenceStatus; status?: EvidenceStatus }>): 'unverified' | 'evidence_pending' | 'verified' {
+  const approved = (key: string) => evidence.some(item => item.controlKey === key && (item.effectiveStatus ?? item.status) === 'approved');
+  if (approved('legal_entity_verified') && approved('beneficial_owners_verified')) return 'verified';
+  return evidence.some(item => item.controlKey === 'legal_entity_verified' || item.controlKey === 'beneficial_owners_verified') ? 'evidence_pending' : 'unverified';
 }
 
 export async function saveSponsorEvidence(input: EvidenceInput, actor: SponsorActor): Promise<SponsorEvidenceRow> {

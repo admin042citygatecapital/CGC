@@ -38,6 +38,7 @@ const RULES: readonly Rule[] = [
   { prefix: '/audit', roles: ['SECURITY_ADMIN', 'COMPLIANCE_ADMIN'] },
   { prefix: '/readiness', roles: ['SECURITY_ADMIN'] },
   { prefix: '/sponsor-readiness', roles: ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'COMPLIANCE_ADMIN'] },
+  { prefix: '/provider-sandbox', roles: ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'COMPLIANCE_ADMIN'] },
   { prefix: '/developer', roles: ['SECURITY_ADMIN'] },
   { prefix: '/documentation', roles: ['SECURITY_ADMIN'] },
   { prefix: '/env-report', roles: ['SECURITY_ADMIN'] },

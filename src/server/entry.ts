@@ -129,6 +129,8 @@ import admin_sponsor_readiness_evidence_review_post from "./api/admin/sponsor-re
 import admin_sponsor_readiness_export_get from "./api/admin/sponsor-readiness/export/GET";
 import admin_sponsor_readiness_package_submit_post from "./api/admin/sponsor-readiness/package/submit/POST";
 import admin_sponsor_readiness_package_review_post from "./api/admin/sponsor-readiness/package/review/POST";
+import admin_provider_sandbox_get from "./api/admin/provider-sandbox/GET";
+import admin_provider_sandbox_post from "./api/admin/provider-sandbox/POST";
 import admin_reports_get_89 from "./api/admin/reports/GET";
 import admin_security_alerts_get_90 from "./api/admin/security/alerts/GET";
 import admin_security_alerts_post_91 from "./api/admin/security/alerts/POST";
@@ -630,6 +632,8 @@ app.post("/api/admin/sponsor-readiness/evidence/:id/review", admin_sponsor_readi
 app.get("/api/admin/sponsor-readiness/export", admin_sponsor_readiness_export_get);
 app.post("/api/admin/sponsor-readiness/package/submit", admin_sponsor_readiness_package_submit_post);
 app.post("/api/admin/sponsor-readiness/package/review", admin_sponsor_readiness_package_review_post);
+app.get("/api/admin/provider-sandbox", admin_provider_sandbox_get);
+app.post("/api/admin/provider-sandbox", admin_provider_sandbox_post);
 app.get("/api/admin/reports", admin_reports_get_89);
 app.get("/api/admin/security/alerts", admin_security_alerts_get_90);
 app.post("/api/admin/security/alerts", admin_security_alerts_post_91);

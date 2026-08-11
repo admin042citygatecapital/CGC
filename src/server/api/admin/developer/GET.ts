@@ -186,6 +186,8 @@ const ROUTE_CATALOGUE: DeveloperRouteEntry[] = [
   { method:'GET',  path:'/api/admin/stats',                       group:'Platform',         auth:'admin',   description:'Executive dashboard KPIs' },
   { method:'GET',  path:'/api/admin/health',                      group:'Platform',         auth:'admin',   description:'System health check' },
   { method:'GET',  path:'/api/admin/readiness',                   group:'Platform',         auth:'admin',   description:'Deployment readiness checks' },
+  { method:'GET',  path:'/api/admin/provider-sandbox',            group:'Platform',         auth:'admin',   description:'Synthetic provider rehearsal history' },
+  { method:'POST', path:'/api/admin/provider-sandbox',            group:'Platform',         auth:'admin',   description:'Run synthetic KYC, FX, payment and reconciliation rehearsal' },
   { method:'GET',  path:'/api/admin/env-report',                  group:'Platform',         auth:'admin',   description:'Environment variable status report' },
   { method:'GET',  path:'/api/admin/developer',                   group:'Platform',         auth:'admin',   description:'Developer Center data' },
   { method:'GET',  path:'/api/admin/documentation/:format',       group:'Platform',         auth:'admin',   description:'Protected API reference snapshot download' },

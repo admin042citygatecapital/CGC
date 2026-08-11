@@ -9,8 +9,20 @@ import { SPONSOR_CONTROLS, canManageCategory } from '../../server/lib/sponsorRea
 import { buildSponsorPackFiles, buildSponsorPackZip } from '../../server/lib/sponsorReadinessExport.js';
 import {
   SponsorReadinessError, assertMakerChecker, buildSponsorReadinessSnapshot,
-  effectiveEvidenceStatus, validateEvidenceInput,
+  deriveLegalEntityState, effectiveEvidenceStatus, validateEvidenceInput,
 } from '../../server/lib/sponsorReadinessStore.js';
+
+describe('legal entity state', () => {
+  it('requires both entity and beneficial-owner evidence to be approved', () => {
+    expect(deriveLegalEntityState([])).toBe('unverified');
+    expect(deriveLegalEntityState([{ controlKey: 'legal_entity_verified', status: 'submitted' }])).toBe('evidence_pending');
+    expect(deriveLegalEntityState([{ controlKey: 'legal_entity_verified', status: 'approved' }])).toBe('evidence_pending');
+    expect(deriveLegalEntityState([
+      { controlKey: 'legal_entity_verified', status: 'approved' },
+      { controlKey: 'beneficial_owners_verified', status: 'approved' },
+    ])).toBe('verified');
+  });
+});
 
 const packageRow: SponsorPackageRow = {
   id: 'uk-multicurrency-v1', version: '1.0', jurisdiction: 'United Kingdom',
@@ -48,6 +60,7 @@ describe('sponsor readiness lifecycle and validation', () => {
 
   it('keeps role ownership narrow while allowing all three control-plane roles to enter the workspace', () => {
     expect(allowedRolesForAdminRequest('/sponsor-readiness/evidence/x/review', 'POST')).toEqual(['FINANCE_ADMIN', 'SECURITY_ADMIN', 'COMPLIANCE_ADMIN']);
+    expect(allowedRolesForAdminRequest('/provider-sandbox', 'POST')).toEqual(['FINANCE_ADMIN', 'SECURITY_ADMIN', 'COMPLIANCE_ADMIN']);
     expect(canManageCategory('FINANCE_ADMIN', 'ledger_reconciliation')).toBe(true);
     expect(canManageCategory('FINANCE_ADMIN', 'aml_sanctions')).toBe(false);
     expect(canManageCategory('COMPLIANCE_ADMIN', 'aml_sanctions')).toBe(true);

@@ -849,6 +849,38 @@ export const complianceCaseEvents = pgTable('compliance_case_events', {
   createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('compliance_case_events_case_idx').on(t.caseId, t.createdAt)]);
 
+// Synthetic provider rehearsal records are isolated from customer accounts and
+// transaction tables. The database also enforces their syn_ reference boundary.
+export const providerSandboxRuns = pgTable('provider_sandbox_runs', {
+  id:             text('id').primaryKey(),
+  idempotencyKey: text('idempotency_key').notNull(),
+  subjectType:    text('subject_type').$type<'individual' | 'business'>().notNull(),
+  subjectRef:     text('subject_ref').notNull(),
+  status:         text('status').$type<'running' | 'passed' | 'failed'>().notNull().default('running'),
+  currencies:     jsonb('currencies').$type<string[]>().notNull().default([]),
+  results:        jsonb('results').$type<Record<string, unknown>>().notNull().default({}),
+  failureCode:    text('failure_code'),
+  initiatedBy:    text('initiated_by').notNull(),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  completedAt:    timestamp('completed_at', { withTimezone: true }),
+}, (t) => [
+  uniqueIndex('provider_sandbox_runs_idempotency_idx').on(t.idempotencyKey),
+  index('provider_sandbox_runs_created_idx').on(t.createdAt),
+]);
+
+export const providerSandboxEvents = pgTable('provider_sandbox_events', {
+  id:          text('id').primaryKey(),
+  runId:       text('run_id').notNull(),
+  sequence:    integer('sequence').notNull(),
+  eventType:   text('event_type').notNull(),
+  providerRef: text('provider_ref'),
+  details:     jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('provider_sandbox_events_run_sequence_idx').on(t.runId, t.sequence),
+  index('provider_sandbox_events_run_idx').on(t.runId),
+]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -887,3 +919,5 @@ export type OnboardingEvidenceRow = typeof onboardingEvidence.$inferSelect;
 export type OnboardingEventRow    = typeof onboardingEvents.$inferSelect;
 export type ComplianceCaseRow     = typeof complianceCases.$inferSelect;
 export type ComplianceCaseEventRow = typeof complianceCaseEvents.$inferSelect;
+export type ProviderSandboxRunRow = typeof providerSandboxRuns.$inferSelect;
+export type ProviderSandboxEventRow = typeof providerSandboxEvents.$inferSelect;
