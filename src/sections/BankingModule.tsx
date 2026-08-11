@@ -442,7 +442,12 @@ export function DashboardPreview() {
 // ── TransfersSection ──────────────────────────────────────────────────────────
 
 export function TransfersSection() {
-  const home = useHomepageContent();
+  const paymentFeatures = [
+    { id: 'secure-authorisation', title: 'Secure authorisation', desc: 'Step-up authentication, transaction limits, account-ownership checks, and controlled approvals protect every instruction.' },
+    { id: 'currency-configuration', title: 'Multi-currency configuration', desc: "Currency and corridor availability is governed by product configuration and the contracted provider's approved coverage." },
+    { id: 'status-visibility', title: 'Payment status visibility', desc: 'Clear lifecycle notifications communicate authorisation, screening, execution, rejection, reversal, and reconciliation states.' },
+    { id: 'business-governance', title: 'Business payment governance', desc: 'Maker-checker approvals, beneficiary controls, and auditable scheduling support controlled business-payment workflows.' },
+  ];
   return (
     <section className="py-28 relative overflow-hidden">
       <div className="absolute inset-0">
@@ -452,67 +457,67 @@ export function TransfersSection() {
       <div className="container mx-auto px-4 md:px-6 relative">
         <div className="text-center mb-16">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">{home.transfers.eyebrow}</span>
+            <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">Global Payments Infrastructure</span>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              {home.transfers.headline1}<br /><span className="text-gold-gradient">{home.transfers.headlineAccent}</span>
+              International Payments<br /><span className="text-gold-gradient">With Institutional Controls</span>
             </h2>
-            <p className="text-foreground/50 max-w-xl mx-auto leading-relaxed">{home.transfers.subheadline}</p>
+            <p className="text-foreground/50 max-w-2xl mx-auto leading-relaxed">A provider-ready payment experience designed around transparent pricing, beneficiary controls, payment screening, status tracking, and reconciliation. Activation remains subject to an authorised payment provider.</p>
           </motion.div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }} className="space-y-4">
             <GlassCard className="rounded-3xl p-6" glow>
-              <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-5">Transfer Simulation · No funds moved</p>
+              <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-5">Global payment instruction</p>
               <div className="mb-3">
-                <p className="text-xs text-foreground/55 uppercase tracking-wide mb-2">You Send</p>
+                <p className="text-xs text-foreground/55 uppercase tracking-wide mb-2">Source account</p>
                 <div className="flex gap-3">
-                  <div className="flex-1 bg-white/[0.04] border border-primary/15 rounded-xl px-4 py-3 text-2xl font-bold text-foreground" style={{ fontFamily: 'var(--font-heading)' }}>1,000</div>
-                  <div className="flex items-center gap-2 bg-white/[0.04] border border-primary/15 rounded-xl px-4 py-3"><span className="text-base">🇺🇸</span><span className="text-sm font-semibold text-foreground">USD</span></div>
+                  <div className="flex-1 bg-white/[0.04] border border-primary/15 rounded-xl px-4 py-3 text-base font-semibold text-foreground">Choose an eligible account</div>
+                  <div className="flex items-center gap-2 bg-white/[0.04] border border-primary/15 rounded-xl px-4 py-3"><Globe size={16} className="text-primary"/><span className="text-sm font-semibold text-foreground">Currency</span></div>
                 </div>
               </div>
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 h-px bg-primary/10" />
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
                   <RefreshCw size={11} className="text-primary" />
-                  <span className="text-xs text-primary font-medium">1 USD = 0.9210 EUR</span>
+                  <span className="text-xs text-primary font-medium">Rate and fees disclosed before authorisation</span>
                 </div>
                 <div className="flex-1 h-px bg-primary/10" />
               </div>
               <div className="mb-5">
-                <p className="text-xs text-foreground/55 uppercase tracking-wide mb-2">Recipient Gets</p>
+                <p className="text-xs text-foreground/55 uppercase tracking-wide mb-2">Beneficiary and destination</p>
                 <div className="flex gap-3">
-                  <div className="flex-1 bg-white/[0.04] border border-primary/20 rounded-xl px-4 py-3 text-2xl font-bold text-gold-gradient" style={{ fontFamily: 'var(--font-heading)' }}>920.10</div>
-                  <div className="flex items-center gap-2 bg-white/[0.04] border border-primary/15 rounded-xl px-4 py-3"><span className="text-base">🇪🇺</span><span className="text-sm font-semibold text-foreground">EUR</span></div>
+                  <div className="flex-1 bg-white/[0.04] border border-primary/20 rounded-xl px-4 py-3 text-base font-semibold text-gold-gradient">Verified recipient details</div>
+                  <div className="flex items-center gap-2 bg-white/[0.04] border border-primary/15 rounded-xl px-4 py-3"><Shield size={16} className="text-primary"/><span className="text-sm font-semibold text-foreground">Corridor</span></div>
                 </div>
               </div>
               <div className="space-y-2 p-4 rounded-xl bg-white/[0.02] border border-primary/8 mb-5">
-                {[{ label: 'Illustrative fee', value: '$0.99 example', highlight: false }, { label: 'Illustrative rate', value: '0.9210', highlight: false }, { label: 'Settlement', value: 'Not live', highlight: true }].map(row => (
+                {[{ label: 'Account ownership', value: 'Verified', highlight: true }, { label: 'Beneficiary validation', value: 'Required', highlight: false }, { label: 'Payment screening', value: 'Provider controlled', highlight: false }].map(row => (
                   <div key={row.label} className="flex justify-between text-xs">
                     <span className="text-foreground/55">{row.label}</span>
                     <span className={row.highlight ? 'text-emerald-400 font-semibold' : 'text-foreground/70'}>{row.value}</span>
                   </div>
                 ))}
               </div>
-              <Link to="/accounts" className="group relative flex items-center justify-center gap-2.5 py-4 rounded-xl font-bold text-black overflow-hidden">
+              <Link to="/digital-banking" className="group relative flex items-center justify-center gap-2.5 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <Send size={15} className="relative" /><span className="relative">Preview Transfer</span>
+                <Send size={15} className="relative" /><span className="relative">Explore Payment Capabilities</span>
                 <ArrowRight size={15} className="relative transition-transform group-hover:translate-x-1" />
               </Link>
             </GlassCard>
 
             <GlassCard className="rounded-2xl p-5">
-              <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-4">Sample Transfer</p>
+              <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-4">Payment control framework</p>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-9 h-9 rounded-full bg-emerald-400/10 flex items-center justify-center shrink-0"><CheckCircle size={16} className="text-emerald-400" /></div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">$2,400 → £1,890 GBP</p>
-                  <p className="text-xs text-foreground/55">To James W. · London, UK</p>
+                  <p className="text-sm font-semibold text-foreground">Authorised instruction lifecycle</p>
+                  <p className="text-xs text-foreground/55">Identity, limits, screening and reconciliation</p>
                 </div>
-                <span className="text-xs text-emerald-400 font-semibold bg-emerald-400/10 px-2 py-1 rounded-full">Demo state</span>
+                <span className="text-xs text-primary font-semibold bg-primary/10 px-2 py-1 rounded-full">Controlled</span>
               </div>
               <div className="flex items-center gap-1">
-                {['Initiated','Processing','Sent','Delivered'].map((step, i) => (
+                {['Authorised','Screened','Executed','Reconciled'].map((step, i) => (
                   <div key={step} className="flex items-center gap-1 flex-1">
                     <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 bg-emerald-400 text-black">{i + 1}</div>
                     {i < 3 && <div className="flex-1 h-0.5 rounded-full bg-emerald-400/40" />}
@@ -524,17 +529,17 @@ export function TransfersSection() {
 
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.15 }}>
             <div className="grid grid-cols-3 gap-3 mb-6">
-              {[{ value: '0', label: 'Live corridors' }, { value: 'Sample', label: 'Fees' }, { value: 'Disabled', label: 'Settlement' }].map((s, i) => (
+              {[{ value: '6', label: 'Designed currencies' }, { value: '2FA', label: 'Step-up control' }, { value: '24/7', label: 'Status visibility' }].map((s, i) => (
                 <StatBadge key={s.label} value={s.value} label={s.label} delay={0.1 + i * 0.08} />
               ))}
             </div>
-            <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-3">Illustrative Corridors</p>
+            <p className="text-xs font-semibold text-foreground/55 uppercase tracking-widest mb-3">Payment architecture</p>
             <div className="space-y-2 mb-6">
               {[
-                { from: '🇺🇸 USD', to: '🇬🇧 GBP', fee: 'Example', time: 'Not live' },
-                { from: '🇺🇸 USD', to: '🇪🇺 EUR', fee: 'Example', time: 'Not live' },
-                { from: '🇬🇧 GBP', to: '🇮🇳 INR', fee: 'Example', time: 'Not live' },
-                { from: '🇺🇸 USD', to: '🇦🇪 AED', fee: 'Example', time: 'Not live' },
+                { from: 'GBP', to: 'Domestic', fee: 'Account', time: 'Provider' },
+                { from: 'EUR', to: 'European', fee: 'FX', time: 'Provider' },
+                { from: 'USD', to: 'International', fee: 'SWIFT', time: 'Provider' },
+                { from: 'CAD · AUD · CHF', to: 'Expansion', fee: 'Phased', time: 'Approval' },
               ].map((c, i) => (
                 <motion.div key={i} initial={{ opacity: 0, x: 12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.07 }}
                   className="flex items-center gap-3 p-3.5 glass-card rounded-xl gradient-border hover:border-primary/25 transition-colors">
@@ -547,7 +552,7 @@ export function TransfersSection() {
               ))}
             </div>
             <div className="space-y-3">
-              {home.transfers.featureBullets.map((item, i) => {
+              {paymentFeatures.map((item, i) => {
                 const TIcon = [Shield, Globe, Bell, Layers][i] ?? Shield;
                 return (
                   <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 + i * 0.07 }}

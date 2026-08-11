@@ -142,30 +142,30 @@
     ]
   },
   "transfers": {
-    "eyebrow": "International Transfers",
-    "headline1": "Send Money Anywhere",
-    "headlineAccent": "In Seconds",
-    "subheadline": "Preview international transfer journeys with illustrative rates, fees, settlement states, and end-to-end tracking.",
+    "eyebrow": "Global Payments Infrastructure",
+    "headline1": "International Payments",
+    "headlineAccent": "With Institutional Controls",
+    "subheadline": "A provider-ready payment experience designed around transparent pricing, beneficiary controls, payment screening, status tracking, and reconciliation. Activation remains subject to an authorised payment provider.",
     "featureBullets": [
       {
         "id": "tr1",
-        "title": "Transfer security design",
-        "desc": "Preview the proposed encryption, monitoring, and approval controls for future provider-backed transfers."
+        "title": "Secure authorisation",
+        "desc": "Step-up authentication, transaction limits, account-ownership checks, and controlled approvals protect every instruction."
       },
       {
         "id": "tr2",
-        "title": "Multi-currency scenarios",
-        "desc": "Explore illustrative currency corridors; availability, rates, fees, and settlement are not live."
+        "title": "Multi-currency configuration",
+        "desc": "Currency and corridor availability is governed by product configuration and the contracted provider's approved coverage."
       },
       {
         "id": "tr3",
-        "title": "Notification preview",
-        "desc": "Preview proposed alerts for initiation, processing, and delivery states."
+        "title": "Payment status visibility",
+        "desc": "Clear lifecycle notifications communicate authorisation, screening, execution, rejection, reversal, and reconciliation states."
       },
       {
         "id": "tr4",
-        "title": "Batch & scheduled sends",
-        "desc": "Explore proposed batch and scheduled-payment controls without moving funds."
+        "title": "Business payment governance",
+        "desc": "Maker-checker approvals, beneficiary controls, and auditable scheduling support controlled business-payment workflows."
       }
     ]
   },
