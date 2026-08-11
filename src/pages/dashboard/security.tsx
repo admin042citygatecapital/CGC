@@ -124,6 +124,18 @@ export default function DashboardSecurityPage() {
     finally { setRevokingId(null); }
   }
 
+  async function handleRevokeAllSessions() {
+    if (!token || revokingId) return;
+    setRevokingId('all'); setRevokeMsg(null);
+    try {
+      const res = await fetch('/api/users/security/sessions/revoke-all', { method: 'POST', credentials: 'same-origin' });
+      if (!res.ok) { setRevokeMsg('Unable to revoke all sessions. Please try again.'); return; }
+      logout();
+      navigate('/login?reason=sessions_revoked', { replace: true });
+    } catch { setRevokeMsg('Network error.'); }
+    finally { setRevokingId(null); }
+  }
+
   async function handleSetup2FA() {
     if (!token || totpLoading) return;
     setTotpLoading(true); setTotpMsg(null);
@@ -330,9 +342,9 @@ export default function DashboardSecurityPage() {
               <motion.div key="sessions" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-semibold text-foreground/30 uppercase tracking-[0.12em]">Active Sessions ({sessions.length})</p>
-                  <button onClick={() => { logout(); navigate('/login', { replace: true }); }}
+                  <button onClick={handleRevokeAllSessions} disabled={revokingId === 'all'}
                     className="text-[10px] text-red-400/70 hover:text-red-400 transition-colors flex items-center gap-1">
-                    <LogOut size={10} /> Sign out all
+                    <LogOut size={10} /> {revokingId === 'all' ? 'Signing out…' : 'Sign out all'}
                   </button>
                 </div>
                 {revokeMsg && <p className="text-[10px] text-foreground/40 px-1">{revokeMsg}</p>}

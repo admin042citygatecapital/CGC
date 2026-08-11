@@ -5,12 +5,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const sessionStore = vi.hoisted(() => ({
   listCustomerSessions: vi.fn(),
   revokeCustomerSession: vi.fn(),
+  deleteAllCustomerSessions: vi.fn(),
 }));
 
+const audit = vi.hoisted(() => ({ appendAudit: vi.fn() }));
+
 vi.mock('../../server/lib/customerSessionStore.js', () => sessionStore);
+vi.mock('../../server/lib/auditLog.js', () => audit);
 
 import listSessions from '../../server/api/users/security/sessions/GET.js';
 import revokeSession from '../../server/api/users/security/sessions/revoke/POST.js';
+import revokeAllSessions from '../../server/api/users/security/sessions/revoke-all/POST.js';
 
 function responseDouble() {
   const result = { status: 200, body: undefined as unknown, cleared: false };
@@ -25,6 +30,8 @@ function responseDouble() {
 beforeEach(() => {
   sessionStore.listCustomerSessions.mockReset();
   sessionStore.revokeCustomerSession.mockReset();
+  sessionStore.deleteAllCustomerSessions.mockReset();
+  audit.appendAudit.mockReset();
 });
 
 describe('customer session controls', () => {
@@ -72,5 +79,16 @@ describe('customer session controls', () => {
 
     expect(response.result.status).toBe(404);
     expect(response.result.body).toEqual({ error: 'Session not found' });
+  });
+
+  it('revokes every owned session, clears the cookie, and records an audit event', async () => {
+    sessionStore.deleteAllCustomerSessions.mockResolvedValue(3);
+    const req = { customerUser: { id: 'user-1', email: 'customer@example.com' }, ip: '127.0.0.1' } as unknown as Request;
+    const response = responseDouble();
+    await revokeAllSessions(req, response.res);
+    expect(sessionStore.deleteAllCustomerSessions).toHaveBeenCalledWith('user-1');
+    expect(response.result.cleared).toBe(true);
+    expect(response.result.body).toEqual({ ok: true, revoked: 3 });
+    expect(audit.appendAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'customer_sessions_revoked_all' }));
   });
 });

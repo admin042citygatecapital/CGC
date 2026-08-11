@@ -293,6 +293,7 @@ export async function queryTransactions(q: TxQuery = {}): Promise<{ data: Transa
       ilike(transactions.userEmail, s),
       ilike(transactions.reference, s),
       ilike(transactions.id, s),
+      ilike(transactions.description, s),
     ));
   }
 

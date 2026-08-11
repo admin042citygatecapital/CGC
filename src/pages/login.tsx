@@ -2,7 +2,7 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { LogIn, Eye, EyeOff, AlertCircle, CheckCircle, Mail, Lock } from 'lucide-react';
+import { LogIn, Eye, EyeOff, AlertCircle, CheckCircle, Mail, Lock, ShieldCheck } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
 
@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [error,    setError]    = useState('');
   const [info,     setInfo]     = useState('');
   const [busy,     setBusy]     = useState(false);
+  const [otp,      setOtp]      = useState('');
+  const [needsOtp, setNeedsOtp] = useState(false);
 
   // Already logged in → go to dashboard
   useEffect(() => {
@@ -31,6 +33,7 @@ export default function LoginPage() {
     else if (v === 'error') setError('Email verification failed. Please request a new link.');
     const reason = params.get('reason');
     if (reason === 'session_expired') setInfo('Your session expired. Please log in again.');
+    if (reason === 'sessions_revoked') setInfo('All sessions were securely signed out.');
     const reset = params.get('reset');
     if (reset === 'success') setInfo('Password updated successfully. You can now log in with your new password.');
   }, [params]);
@@ -41,12 +44,15 @@ export default function LoginPage() {
     setInfo('');
     if (!email || !password) { setError('Please enter your email and password.'); return; }
     setBusy(true);
-    const result = await login(email, password);
+    const result = await login(email, password, needsOtp ? otp : undefined);
     setBusy(false);
     if (result.ok) {
       navigate('/dashboard', { replace: true });
     } else {
-      if (result.code === 'EMAIL_NOT_VERIFIED') {
+      if (result.code === 'TWO_FACTOR_REQUIRED' || result.code === 'INVALID_TWO_FACTOR') {
+        setNeedsOtp(true);
+        setError(result.error ?? 'Enter your authentication code.');
+      } else if (result.code === 'EMAIL_NOT_VERIFIED') {
         setError('Please verify your email address first. Check your inbox for the verification link.');
       } else if (result.code === 'PENDING_KYC') {
         setError('Your account is pending identity verification. Please complete KYC to continue.');
@@ -100,6 +106,7 @@ export default function LoginPage() {
                 <CheckCircle size={16} className="text-emerald-400 mt-0.5 shrink-0" />
                 <p className="text-sm text-emerald-300">{info}</p>
               </div>
+
             )}
 
             {/* Error banner */}
@@ -161,6 +168,21 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+
+              {needsOtp && (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="otp" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">
+                    Authenticator code
+                  </label>
+                  <div className="relative">
+                    <ShieldCheck size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
+                    <input id="otp" type="text" inputMode="numeric" autoComplete="one-time-code"
+                      value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="000000" maxLength={6}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm tracking-[0.35em] placeholder:text-foreground/25 focus:outline-none focus:border-primary/50" />
+                  </div>
+                </div>
+              )}
 
               {/* Submit */}
               <button

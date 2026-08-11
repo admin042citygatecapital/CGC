@@ -11,7 +11,6 @@
  * Uses live rates from ratesStore (admin-controlled) instead of hardcoded values.
  */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken } from '../../../lib/userStore.js';
 import { getTransactionsForUser } from '../../../lib/transactionStore.js';
 import { readRatesConfig } from '../../../lib/ratesStore.js';
 
@@ -47,12 +46,8 @@ const CREDIT_TYPES = new Set(['deposit', 'manual_credit', 'refund', 'crypto_sell
 const DEBIT_TYPES  = new Set(['withdrawal', 'manual_debit', 'fee', 'transfer', 'wire_transfer', 'crypto_buy']);
 
 export default async function handler(req: Request, res: Response) {
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-
-  const user = await findUserBySessionToken(token);
-  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
+  const user = req.customerUser;
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
 
   // Load live rates once per request
   const toUsdMap = buildToUsdMap();

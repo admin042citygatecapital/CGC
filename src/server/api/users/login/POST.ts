@@ -7,6 +7,7 @@ import { appendLoginEvent } from '../../../lib/loginLog.js';
 import { sanitizeString, isValidEmail } from '../../../lib/inputValidator.js';
 import { isRateLimited } from '../../../lib/rateLimiter.js';
 import { CUSTOMER_SESSION_COOKIE, customerSessionCookieOptions } from '../../../lib/customerSessionConfig.js';
+import { verifyTotp } from '../../../lib/totp.js';
 
 // Per-email brute-force lockout (separate from IP rate limit)
 const failMap = new Map<string, { count: number; lockedUntil: number }>();
@@ -19,6 +20,7 @@ export default async function handler(req: Request, res: Response) {
 
   const email    = sanitizeString(req.body?.email).toLowerCase();
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const otp = typeof req.body?.otp === 'string' ? req.body.otp.trim() : '';
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
@@ -90,6 +92,21 @@ export default async function handler(req: Request, res: Response) {
   if (user.status === 'rejected') {
     await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'status_denied', ip, ua, reason: 'rejected' });
     return res.status(403).json({ error: 'Your account application was not approved. Please contact support.', code: 'REJECTED' });
+  }
+
+  if (user.totpEnabled) {
+    if (isRateLimited(`user_login_otp:${user.id}`, { windowMs: 15 * 60_000, max: 6 })) {
+      appendAudit({ event: 'user_login_2fa_blocked', userId: user.id, email, ip });
+      return res.status(429).json({ error: 'Too many authentication code attempts. Please wait 15 minutes.', code: 'TWO_FACTOR_LOCKED' });
+    }
+    if (!user.totpSecret || !otp) {
+      return res.status(401).json({ error: 'Enter the code from your authenticator app.', code: 'TWO_FACTOR_REQUIRED' });
+    }
+    if (!verifyTotp(user.totpSecret, otp)) {
+      appendAudit({ event: 'user_login_2fa_failed', userId: user.id, email, ip });
+      await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'totp_failed', ip, ua, reason: 'invalid_totp' });
+      return res.status(401).json({ error: 'Invalid or expired authentication code.', code: 'INVALID_TWO_FACTOR' });
+    }
   }
 
   // Sessions are stored independently of the user record. This preserves

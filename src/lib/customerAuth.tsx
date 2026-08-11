@@ -35,7 +35,7 @@ interface CustomerAuthCtx {
   customer: CustomerUser | null;
   token:    string | null;
   loading:  boolean;
-  login:    (email: string, password: string) => Promise<{ ok?: boolean; error?: string; code?: string }>;
+  login:    (email: string, password: string, otp?: string) => Promise<{ ok?: boolean; error?: string; code?: string }>;
   logout:   () => void;
 }
 
@@ -90,12 +90,12 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  async function login(email: string, password: string) {
+  async function login(email: string, password: string, otp?: string) {
     const res  = await fetch('/api/users/login', {
       method:  'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password }),
+      body:    JSON.stringify({ email, password, otp }),
     });
     const data = await res.json();
 

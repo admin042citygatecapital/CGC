@@ -6,7 +6,6 @@
  * Fee calculation uses the admin-controlled txFees.domestic_transfer rule (not legacy fees).
  */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken } from '../../../lib/userStore.js';
 import { createTransaction } from '../../../lib/transactionStore.js';
 import { executeDebitOperation } from '../../../lib/financialOperationStore.js';
 import { createNotification } from '../../../lib/notificationStore.js';
@@ -42,12 +41,8 @@ function buildToUsdMap(cfg: ReturnType<typeof readRatesConfig>): Record<string, 
 
 export default async function handler(req: Request, res: Response) {
   if (!requireFinancialOperations(res)) return;
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-
-  const user = await findUserBySessionToken(token);
-  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
+  const user = req.customerUser;
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
 
   if (!await requireCustomerFinancialAccess(user, res)) return;
 

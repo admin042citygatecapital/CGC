@@ -1,25 +1,27 @@
 /**
  * POST /api/users/2fa/verify
- * Verifies a TOTP code. In this implementation we accept the code as valid
- * (full TOTP verification requires storing the secret server-side; this stub
- * returns success so the UI flow completes without error).
+ * Verifies the pending TOTP secret and enables two-factor authentication.
  */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken } from '../../../../lib/userStore.js';
+import { updateUser } from '../../../../lib/userStore.js';
+import { appendAudit } from '../../../../lib/auditLog.js';
+import { verifyTotp } from '../../../../lib/totp.js';
 
 export default async function handler(req: Request, res: Response) {
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-
-  const user = await findUserBySessionToken(token);
-  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
+  const user = req.customerUser;
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
 
   const { code } = req.body ?? {};
   if (!code || String(code).length !== 6) {
     return res.status(400).json({ error: 'A 6-digit code is required' });
   }
 
-  // Stub: accept any 6-digit code (full TOTP requires persisted secret)
+  if (!user.totpSecret) return res.status(409).json({ error: 'Start 2FA setup before verification' });
+  if (!verifyTotp(user.totpSecret, String(code))) {
+    appendAudit({ event: 'customer_2fa_verification_failed', userId: user.id, email: user.email, ip: req.ip });
+    return res.status(401).json({ error: 'Invalid or expired verification code' });
+  }
+  await updateUser(user.id, { totpEnabled: true });
+  appendAudit({ event: 'customer_2fa_enabled', userId: user.id, email: user.email, ip: req.ip });
   return res.json({ ok: true, message: '2FA enabled successfully' });
 }
