@@ -97,7 +97,10 @@ describe('sponsor provider pack', () => {
   it('only marks a fully evidenced and final-approved package submission ready', () => {
     const allEvidence = SPONSOR_CONTROLS.map(control => evidence(control.key));
     const approvedPackage = { ...packageRow, status: 'approved' as const, submittedBy: 'super-a', reviewedBy: 'super-b' };
-    const snapshot = buildSponsorReadinessSnapshot(approvedPackage, allEvidence, []);
+    expect(buildSponsorReadinessSnapshot(approvedPackage, allEvidence, []).summary.sponsorSubmissionReady).toBe(false);
+    const entity = { id: 'le_test', status: 'verified', expiresAt: new Date('2030-01-01') } as any;
+    const owner = { id: 'bor_test', entityId: 'le_test', active: true, status: 'verified', expiresAt: new Date('2030-01-01') } as any;
+    const snapshot = buildSponsorReadinessSnapshot(approvedPackage, allEvidence, [], entity, [owner]);
     expect(snapshot.summary.sponsorSubmissionReady).toBe(true);
     expect(buildSponsorPackFiles(snapshot).README).toBeUndefined();
     expect(buildSponsorPackFiles(snapshot)['README.md']).toContain('SPONSOR SUBMISSION READY');

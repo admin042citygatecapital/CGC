@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { and, asc, eq, lt } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
-import { sponsorEvidence, sponsorEvidenceEvents, sponsorPackages } from '../db/schema.js';
+import { beneficialOwnerRecords, legalEntityProfiles, sponsorEvidence, sponsorEvidenceEvents, sponsorPackages } from '../db/schema.js';
 import type { SponsorEvidenceRow } from '../db/schema.js';
 import { appendAuditEntry } from './auditLog.js';
 import {
@@ -119,15 +119,17 @@ export async function getSponsorReadiness(actor?: SponsorActor): Promise<ReturnT
       await audit(actor, 'sponsor_evidence_expired', item.id, { controlKey: item.controlKey, expiresAt: item.expiresAt?.toISOString() });
     }
   }
-  const [packages, evidence, events] = await Promise.all([
+  const [packages, evidence, events, entities] = await Promise.all([
     db.select().from(sponsorPackages).where(eq(sponsorPackages.id, SPONSOR_PACKAGE_ID)).limit(1),
     db.select().from(sponsorEvidence).where(eq(sponsorEvidence.packageId, SPONSOR_PACKAGE_ID)).orderBy(asc(sponsorEvidence.createdAt)),
     db.select().from(sponsorEvidenceEvents).where(eq(sponsorEvidenceEvents.packageId, SPONSOR_PACKAGE_ID)).orderBy(asc(sponsorEvidenceEvents.createdAt)),
+    db.select().from(legalEntityProfiles).where(eq(legalEntityProfiles.packageId, SPONSOR_PACKAGE_ID)).limit(1),
   ]);
-  return buildSponsorReadinessSnapshot(packages[0], evidence, events);
+  const owners = entities[0] ? await db.select().from(beneficialOwnerRecords).where(eq(beneficialOwnerRecords.entityId, entities[0].id)) : [];
+  return buildSponsorReadinessSnapshot(packages[0], evidence, events, entities[0] ?? null, owners);
 }
 
-export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages.$inferSelect, evidence: SponsorEvidenceRow[], events: Array<typeof sponsorEvidenceEvents.$inferSelect>) {
+export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages.$inferSelect, evidence: SponsorEvidenceRow[], events: Array<typeof sponsorEvidenceEvents.$inferSelect>, entity: typeof legalEntityProfiles.$inferSelect|null = null, owners: Array<typeof beneficialOwnerRecords.$inferSelect> = []) {
   const now = new Date();
   const enrichedEvidence = evidence.map(item => ({ ...item, effectiveStatus: effectiveEvidenceStatus(item, now) }));
   const controlRows = SPONSOR_CONTROLS.map(control => {
@@ -136,10 +138,11 @@ export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages
     return { ...control, status: approved ? 'approved' as const : records[records.length - 1]?.effectiveStatus ?? 'missing' as const, evidence: records };
   });
   const approvedCount = controlRows.filter(control => control.status === 'approved').length;
-  const gaps = controlRows.filter(control => control.required && control.status !== 'approved').map(control => ({ key: control.key, title: control.title, status: control.status, ownerRole: control.ownerRole }));
+  const legalEntityState = deriveStructuredLegalEntityState(entity, owners, now);
+  const gaps: Array<{ key: string; title: string; status: string; ownerRole: string }> = controlRows.filter(control => control.required && control.status !== 'approved').map(control => ({ key: control.key, title: control.title, status: control.status, ownerRole: control.ownerRole }));
+  if (legalEntityState !== 'verified') gaps.push({ key: 'structured_legal_entity_registry', title: 'Structured legal entity and ownership verification', status: legalEntityState, ownerRole: 'COMPLIANCE_ADMIN' });
   const fullyReviewed = gaps.length === 0;
   const sponsorSubmissionReady = fullyReviewed && packageRow.status === 'approved';
-  const legalEntityState = deriveLegalEntityState(enrichedEvidence);
   return {
     package: { ...packageRow, legalEntityState, label: sponsorSubmissionReady ? 'SPONSOR SUBMISSION READY' : 'DRAFT — NOT APPROVED FOR LAUNCH' },
     productProfile: { ...PRODUCT_PROFILE, legalEntityState },
@@ -148,8 +151,17 @@ export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages
     events,
     summary: { total: controlRows.length, approved: approvedCount, outstanding: gaps.length, percent: Math.round((approvedCount / controlRows.length) * 100), fullyReviewed, sponsorSubmissionReady },
     gaps,
+    structuredLegalEntity: { entity, owners, verified: legalEntityState === 'verified' },
     financialOperationsLocked: true,
   };
+}
+
+export function deriveStructuredLegalEntityState(entity: typeof legalEntityProfiles.$inferSelect|null, owners: Array<typeof beneficialOwnerRecords.$inferSelect>, now = new Date()): 'unverified'|'evidence_pending'|'verified' {
+  if (!entity) return 'unverified';
+  const entityCurrent = entity.status === 'verified' && (!entity.expiresAt || entity.expiresAt > now);
+  const active = owners.filter(owner => owner.active);
+  const ownersCurrent = active.length > 0 && active.every(owner => owner.status === 'verified' && (!owner.expiresAt || owner.expiresAt > now));
+  return entityCurrent && ownersCurrent ? 'verified' : 'evidence_pending';
 }
 
 export function deriveLegalEntityState(evidence: Array<Pick<SponsorEvidenceRow, 'controlKey'> & { effectiveStatus?: EvidenceStatus; status?: EvidenceStatus }>): 'unverified' | 'evidence_pending' | 'verified' {

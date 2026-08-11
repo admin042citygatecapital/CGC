@@ -45,6 +45,7 @@ const RULES: readonly Rule[] = [
 
   { prefix: '/kyc', roles: ['COMPLIANCE_ADMIN'] },
   { prefix: '/onboarding', roles: ['COMPLIANCE_ADMIN'] },
+  { prefix: '/legal-entity', roles: ['COMPLIANCE_ADMIN'] },
   { prefix: '/users/approve', roles: ['COMPLIANCE_ADMIN'] },
   { prefix: '/users/reject', roles: ['COMPLIANCE_ADMIN'] },
   { prefix: '/users/action', roles: ['SECURITY_ADMIN', 'COMPLIANCE_ADMIN'] },

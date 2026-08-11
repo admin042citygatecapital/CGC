@@ -82,6 +82,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Users',        href: '/admin/users',        icon: Users,           badge: null, desc: 'Customer accounts & management' },
       { label: 'KYC Review',   href: '/admin/kyc',          icon: ShieldCheck,     badge: null, desc: 'Identity verification queue' },
       { label: 'Onboarding Cases', href: '/admin/onboarding', icon: FileText,       badge: null, desc: 'KYC/KYB evidence and maker-checker decisions' },
+      { label: 'Legal Entity', href: '/admin/legal-entity', icon: Scale, badge: null, desc: 'Entity and beneficial ownership verification' },
       { label: 'Transactions', href: '/admin/transactions', icon: CreditCard,      badge: null, desc: 'All platform transactions' },
       { label: 'Banking',      href: '/admin/banking',      icon: TrendingUp,      badge: null, desc: 'Accounts, balances & wires' },
       { label: 'Crypto',       href: '/admin/crypto',       icon: Bitcoin,         badge: null, desc: 'Crypto holdings & wallets' },

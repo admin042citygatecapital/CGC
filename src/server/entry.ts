@@ -31,6 +31,9 @@ import users_onboarding_evidence_post from "./api/users/onboarding/evidence/POST
 import users_onboarding_submit_post from "./api/users/onboarding/submit/POST";
 import providers_onboarding_webhook_post from "./api/providers/onboarding/webhook/POST";
 import admin_onboarding_screening_get from "./api/admin/onboarding/screening/GET";
+import admin_legal_entity_get from "./api/admin/legal-entity/GET";
+import admin_legal_entity_post from "./api/admin/legal-entity/POST";
+import admin_legal_entity_owners_post from "./api/admin/legal-entity/owners/POST";
 
 // <api-imports>
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
@@ -545,6 +548,9 @@ app.use(['/api/zoho/connect', '/api/zoho/status'], (req: Request, res: Response,
 // <api-registrations>
 app.post("/api/providers/onboarding/webhook/:provider", providers_onboarding_webhook_post);
 app.get("/api/admin/onboarding/screening", admin_onboarding_screening_get);
+app.get("/api/admin/legal-entity", admin_legal_entity_get);
+app.post("/api/admin/legal-entity", admin_legal_entity_post);
+app.post("/api/admin/legal-entity/owners", admin_legal_entity_owners_post);
 app.get("/api/admin/kyc/document", admin_kyc_document_get);
 app.get("/api/admin/onboarding", admin_onboarding_get);
 app.post("/api/admin/onboarding/review", admin_onboarding_review_post);

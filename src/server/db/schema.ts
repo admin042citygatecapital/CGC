@@ -950,6 +950,35 @@ export const assuranceExerciseEvents = pgTable('assurance_exercise_events', {
   details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}), createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('assurance_exercise_events_exercise_idx').on(t.exerciseId, t.createdAt)]);
 
+// Public-registry and opaque beneficial-owner verification metadata only.
+// Identity documents, dates of birth, residential addresses and credentials
+// remain with approved providers and are never stored in this register.
+export const legalEntityProfiles = pgTable('legal_entity_profiles', {
+  id: text('id').primaryKey(), packageId: text('package_id').notNull(), version: integer('version').notNull().default(1),
+  legalName: text('legal_name').notNull(), jurisdiction: text('jurisdiction').notNull(), registrationNumber: text('registration_number').notNull(),
+  legalForm: text('legal_form').notNull(), registryUrl: text('registry_url').notNull(), registrySha256: text('registry_sha256'),
+  status: text('status').$type<'draft'|'submitted'|'verified'|'rejected'|'expired'>().notNull().default('draft'),
+  createdBy: text('created_by').notNull(), lastEditedBy: text('last_edited_by').notNull(), submittedBy: text('submitted_by'), submittedAt: timestamp('submitted_at', { withTimezone: true }),
+  reviewedBy: text('reviewed_by'), reviewedAt: timestamp('reviewed_at', { withTimezone: true }), reviewNote: text('review_note'), expiresAt: timestamp('expires_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(), updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('legal_entity_profiles_package_idx').on(t.packageId), index('legal_entity_profiles_status_idx').on(t.status)]);
+
+export const beneficialOwnerRecords = pgTable('beneficial_owner_records', {
+  id: text('id').primaryKey(), entityId: text('entity_id').notNull(), controllerRef: text('controller_ref').notNull(),
+  ownershipBand: text('ownership_band').$type<'none'|'0-25'|'25-50'|'50-75'|'75-100'>().notNull(), controlNature: text('control_nature').notNull(),
+  providerCode: text('provider_code').notNull(), providerRef: text('provider_ref').notNull(), evidenceSha256: text('evidence_sha256'),
+  status: text('status').$type<'draft'|'submitted'|'verified'|'rejected'|'expired'>().notNull().default('draft'), active: boolean('active').notNull().default(true),
+  createdBy: text('created_by').notNull(), lastEditedBy: text('last_edited_by').notNull(), submittedBy: text('submitted_by'), submittedAt: timestamp('submitted_at', { withTimezone: true }),
+  reviewedBy: text('reviewed_by'), reviewedAt: timestamp('reviewed_at', { withTimezone: true }), reviewNote: text('review_note'), expiresAt: timestamp('expires_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(), updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('beneficial_owner_entity_ref_idx').on(t.entityId, t.controllerRef), index('beneficial_owner_status_idx').on(t.status, t.active)]);
+
+export const legalEntityVerificationEvents = pgTable('legal_entity_verification_events', {
+  id: text('id').primaryKey(), entityId: text('entity_id').notNull(), ownerRecordId: text('owner_record_id'), action: text('action').notNull(),
+  actorId: text('actor_id').notNull(), actorRole: adminRoleEnum('actor_role').notNull(), fromStatus: text('from_status'), toStatus: text('to_status'),
+  details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}), createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('legal_entity_events_entity_idx').on(t.entityId, t.createdAt), index('legal_entity_events_owner_idx').on(t.ownerRecordId, t.createdAt)]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -995,3 +1024,6 @@ export type ComplaintRow = typeof complaints.$inferSelect;
 export type ComplaintEventRow = typeof complaintEvents.$inferSelect;
 export type AssuranceExerciseRow = typeof assuranceExercises.$inferSelect;
 export type AssuranceExerciseEventRow = typeof assuranceExerciseEvents.$inferSelect;
+export type LegalEntityProfileRow = typeof legalEntityProfiles.$inferSelect;
+export type BeneficialOwnerRecordRow = typeof beneficialOwnerRecords.$inferSelect;
+export type LegalEntityVerificationEventRow = typeof legalEntityVerificationEvents.$inferSelect;
