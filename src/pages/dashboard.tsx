@@ -10,7 +10,7 @@ import {
   Zap, Plus, ChevronLeft, BarChart2, Activity, ArrowRight,
   Lock, Fingerprint, Moon, Sun, Languages, Key, X,
   TrendingUp as TrendUp, Info, CreditCard as CardIcon,
-  History, FileText, User, Users, Smartphone,
+  History, FileText, User, Users, Smartphone, MessageCircle,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
@@ -1846,6 +1846,7 @@ export default function DashboardPage() {
                   { icon: Globe,      label: 'Currency Exchange',  href: '/dashboard/exchange',      sub: 'Flags, rates & converter' },
                   { icon: Smartphone, label: 'Devices',            href: '/dashboard/devices',       sub: 'Trusted devices' },
                   { icon: User,       label: 'My Profile',         href: '/dashboard/profile',       sub: 'Personal info' },
+                  { icon: MessageCircle, label: 'Customer Support', href: '/dashboard/support',       sub: 'Tickets & messages' },
                 ].map(({ icon: Icon, label, href, sub }, i, arr) => (
                   <Link key={label} to={href}
                     className={`flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors ${i < arr.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>

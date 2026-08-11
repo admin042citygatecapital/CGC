@@ -266,6 +266,31 @@ export function addMessage(
   return convs[idx];
 }
 
+/** Add a customer reply only when the conversation belongs to that customer. */
+export function addCustomerMessage(
+  convId: string,
+  userId: string,
+  text: string,
+): SupportConversation | null {
+  const convs = loadAll();
+  const idx = convs.findIndex(c => c.id === convId && c.userId === userId);
+  if (idx === -1) return null;
+
+  const now = new Date().toISOString();
+  convs[idx].messages.push({
+    id: 'msg_' + crypto.randomBytes(6).toString('hex'),
+    from: 'customer',
+    text,
+    ts: now,
+  });
+  convs[idx].updatedAt = now;
+  if (convs[idx].status === 'resolved' || convs[idx].status === 'closed') {
+    convs[idx].status = 'open';
+  }
+  saveAll(convs);
+  return convs[idx];
+}
+
 export function addInternalNote(
   convId: string,
   text: string,
