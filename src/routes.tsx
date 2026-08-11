@@ -50,6 +50,7 @@ const LoginPage         = lazy(() => import('./pages/login'));
 const RegisterPage      = lazy(() => import('./pages/register'));
 const ForgotPasswordPage = lazy(() => import('./pages/forgot-password'));
 const ResetPasswordPage  = lazy(() => import('./pages/reset-password'));
+const PlaidOAuthPage     = lazy(() => import('./pages/plaid-oauth'));
 const DashboardPage     = lazy(() => import('./pages/dashboard'));
 const DashboardCards    = lazy(() => import('./pages/dashboard/cards'));
 const DashboardAnalytics = lazy(() => import('./pages/dashboard/analytics'));
@@ -145,6 +146,7 @@ export const routes: RouteObject[] = [
   { path: '/register',        element: <RegisterPage /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password',  element: <ResetPasswordPage /> },
+  { path: '/plaid/oauth',     element: <CustomerOnly><PlaidOAuthPage /></CustomerOnly> },
   { path: '/dashboard',               element: <CustomerOnly><DashboardPage /></CustomerOnly> },
   { path: '/dashboard/cards',         element: <CustomerOnly><DashboardCards /></CustomerOnly> },
   { path: '/dashboard/analytics',     element: <CustomerOnly><DashboardAnalytics /></CustomerOnly> },

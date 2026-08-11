@@ -25,6 +25,7 @@ import { newIdempotencyKey } from '@/lib/idempotency';
 import { useMarketWebSocket } from '@/lib/useMarketWebSocket';
 import { VirtualList } from '@/lib/VirtualList';
 import { CurrencyMark } from '@/components/CurrencyMark';
+import { PlaidLinkCard } from '@/components/PlaidLinkCard';
 import {
 Activity,
 AlertCircle,
@@ -865,6 +866,8 @@ export default function WalletsPage() {
               privacy={privacy} loading={ovLoading} pulse={todayUp}
             />
           </div>
+
+          {token && <PlaidLinkCard token={token} />}
 
           {/* ── ③ Live ticker strip ── */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">

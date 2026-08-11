@@ -979,6 +979,21 @@ export const legalEntityVerificationEvents = pgTable('legal_entity_verification_
   details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}), createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('legal_entity_events_entity_idx').on(t.entityId, t.createdAt), index('legal_entity_events_owner_idx').on(t.ownerRecordId, t.createdAt)]);
 
+// Plaid sandbox connection metadata. Access tokens are AES-256-GCM encrypted;
+// balances returned by Plaid are informational and never feed the CGC ledger.
+export const plaidItems = pgTable('plaid_items', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  itemId: text('item_id').notNull(),
+  accessTokenEnc: text('access_token_enc').notNull(),
+  institutionId: text('institution_id'),
+  institutionName: text('institution_name'),
+  accounts: jsonb('accounts').$type<Array<{ id: string; name: string; mask: string | null; type: string; subtype: string | null }>>().notNull().default([]),
+  status: text('status').$type<'active'|'disconnected'|'error'>().notNull().default('active'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('plaid_items_item_idx').on(t.itemId), index('plaid_items_user_idx').on(t.userId, t.status)]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -1027,3 +1042,4 @@ export type AssuranceExerciseEventRow = typeof assuranceExerciseEvents.$inferSel
 export type LegalEntityProfileRow = typeof legalEntityProfiles.$inferSelect;
 export type BeneficialOwnerRecordRow = typeof beneficialOwnerRecords.$inferSelect;
 export type LegalEntityVerificationEventRow = typeof legalEntityVerificationEvents.$inferSelect;
+export type PlaidItemRow = typeof plaidItems.$inferSelect;
