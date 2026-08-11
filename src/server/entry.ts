@@ -959,7 +959,13 @@ app.get("/sitemap.xml", (req, res) => {
 	res.type("application/xml").set("Cache-Control", "public, max-age=3600").send(body);
 });
 
-if (import.meta.env.PROD) {
+// The bundled standalone server owns SSR, static files, WebSockets and
+// long-lived workers. Vercel imports the Express app as a request function;
+// those container lifecycle responsibilities must not start there.
+const isViteProductionBuild = typeof import.meta.env !== 'undefined' && import.meta.env.PROD;
+const isVercelRuntime = process.env.VERCEL === '1';
+
+if (isViteProductionBuild && !isVercelRuntime) {
 	const __dirname = dirname(fileURLToPath(import.meta.url));
 	const clientDir = join(__dirname, "client");
 
