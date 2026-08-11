@@ -26,8 +26,8 @@ describe('legal entity and beneficial ownership verification', () => {
   });
 
   it('limits the register to Compliance administrators and Super Admin', () => {
-    expect(allowedRolesForAdminRequest('/legal-entity', 'GET')).toEqual(['COMPLIANCE_ADMIN']);
-    expect(allowedRolesForAdminRequest('/legal-entity/owners', 'POST')).toEqual(['COMPLIANCE_ADMIN']);
+    expect(allowedRolesForAdminRequest('/legal-entity', 'GET')).toEqual([]);
+    expect(allowedRolesForAdminRequest('/legal-entity/owners', 'POST')).toEqual([]);
   });
 
   it('migrates metadata-only records with immutable history', () => {

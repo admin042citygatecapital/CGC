@@ -25,8 +25,8 @@ describe('customer onboarding controls', () => {
   });
 
   it('limits onboarding decisions to compliance administrators and super-admin', () => {
-    expect(allowedRolesForAdminRequest('/onboarding/review', 'POST')).toEqual(['COMPLIANCE_ADMIN']);
-    expect(allowedRolesForAdminRequest('/users/action', 'POST')).toEqual(['SECURITY_ADMIN', 'COMPLIANCE_ADMIN']);
+    expect(allowedRolesForAdminRequest('/onboarding/review', 'POST')).toEqual([]);
+    expect(allowedRolesForAdminRequest('/users/action', 'POST')).toEqual([]);
   });
 
   it('migrates append-only lifecycle history and metadata-only evidence', () => {
@@ -47,7 +47,7 @@ describe('customer onboarding controls', () => {
     expect(sql).toContain('next_screening_at');
     expect(sql).toContain("purpose IN ('onboarding', 'rescreen')");
     expect(sql).not.toMatch(/BYTEA|document_base64|credential_value|raw_payload/i);
-    expect(allowedRolesForAdminRequest('/onboarding/screening', 'GET')).toEqual(['COMPLIANCE_ADMIN']);
+    expect(allowedRolesForAdminRequest('/onboarding/screening', 'GET')).toEqual([]);
   });
 
   it('does not expose raw identity, bank, wallet, or document fields in the general directory', () => {

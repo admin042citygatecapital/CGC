@@ -66,6 +66,10 @@ export default async function handler(req: Request, res: Response) {
   if (!admin) {
     return res.status(500).json({ error: 'Admin account not found' });
   }
+  if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'superadmin') {
+    appendAudit({ event: 'login_blocked', adminId: admin.id, email, ip, reason: 'super_admin_only' });
+    return res.status(403).json({ error: 'This administration is restricted to the super-administrator.', code: 'SUPER_ADMIN_REQUIRED' });
+  }
 
   await recordLoginSuccess(email, ip);
 
@@ -74,7 +78,7 @@ export default async function handler(req: Request, res: Response) {
   await createSession(sessionToken, {
     adminId:   admin.id,
     email:     admin.email,
-    role:      (admin.role === 'superadmin' ? 'SUPER_ADMIN' : admin.role) as 'SUPER_ADMIN' | 'FINANCE_ADMIN' | 'SECURITY_ADMIN' | 'SUPPORT_ADMIN' | 'COMPLIANCE_ADMIN',
+    role:      'SUPER_ADMIN',
     createdAt: new Date().toISOString(),
     ip,
     ua,
@@ -111,6 +115,6 @@ export default async function handler(req: Request, res: Response) {
   return res.json({
     ok:    true,
     deviceRegistered,
-    admin: { id: admin.id, email: admin.email, name: admin.name, role: admin.role, avatar: admin.avatar },
+    admin: { id: admin.id, email: admin.email, name: admin.name, role: 'SUPER_ADMIN', avatar: admin.avatar },
   });
 }

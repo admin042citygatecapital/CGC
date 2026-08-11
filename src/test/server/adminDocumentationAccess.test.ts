@@ -26,7 +26,7 @@ describe('administrator API documentation access', () => {
   });
 
   it('restricts documentation routes to security administrators and super administrators', () => {
-    expect(allowedRolesForAdminRequest('/documentation/markdown', 'GET')).toEqual(['SECURITY_ADMIN']);
+    expect(allowedRolesForAdminRequest('/documentation/markdown', 'GET')).toEqual([]);
   });
 
   it.each([

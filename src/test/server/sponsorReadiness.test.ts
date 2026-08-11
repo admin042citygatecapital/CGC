@@ -59,8 +59,8 @@ describe('sponsor readiness lifecycle and validation', () => {
   });
 
   it('keeps role ownership narrow while allowing all three control-plane roles to enter the workspace', () => {
-    expect(allowedRolesForAdminRequest('/sponsor-readiness/evidence/x/review', 'POST')).toEqual(['FINANCE_ADMIN', 'SECURITY_ADMIN', 'COMPLIANCE_ADMIN']);
-    expect(allowedRolesForAdminRequest('/provider-sandbox', 'POST')).toEqual(['FINANCE_ADMIN', 'SECURITY_ADMIN', 'COMPLIANCE_ADMIN']);
+    expect(allowedRolesForAdminRequest('/sponsor-readiness/evidence/x/review', 'POST')).toEqual([]);
+    expect(allowedRolesForAdminRequest('/provider-sandbox', 'POST')).toEqual([]);
     expect(canManageCategory('FINANCE_ADMIN', 'ledger_reconciliation')).toBe(true);
     expect(canManageCategory('FINANCE_ADMIN', 'aml_sanctions')).toBe(false);
     expect(canManageCategory('COMPLIANCE_ADMIN', 'aml_sanctions')).toBe(true);

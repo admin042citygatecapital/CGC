@@ -58,6 +58,12 @@ export default async function handler(req: Request, res: Response) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
+  if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'superadmin') {
+    appendAudit({ event: 'login_blocked', adminId: admin.id, email, ip, reason: 'super_admin_only' });
+    await appendLoginEvent({ actor: 'admin', email, userId: admin.id, result: 'failed', ip, ua, reason: 'super_admin_only' });
+    return res.status(403).json({ error: 'This administration is restricted to the super-administrator.', code: 'SUPER_ADMIN_REQUIRED' });
+  }
+
   // ── Credentials valid — create session immediately ───────────────────────
   await recordLoginSuccess(email, ip);
 
@@ -65,7 +71,7 @@ export default async function handler(req: Request, res: Response) {
   await createSession(sessionToken, {
     adminId:   admin.id,
     email:     admin.email,
-    role:      (admin.role === 'superadmin' ? 'SUPER_ADMIN' : admin.role) as import('../../../../lib/sessionStore.js').AdminRole,
+    role:      'SUPER_ADMIN',
     createdAt: new Date().toISOString(),
     ip,
     ua,
@@ -86,6 +92,6 @@ export default async function handler(req: Request, res: Response) {
 
   return res.json({
     ok:    true,
-    admin: { id: admin.id, email: admin.email, name: admin.name, role: admin.role, avatar: admin.avatar },
+    admin: { id: admin.id, email: admin.email, name: admin.name, role: 'SUPER_ADMIN', avatar: admin.avatar },
   });
 }

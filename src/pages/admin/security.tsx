@@ -19,7 +19,6 @@ Download,
 Edit3,
 FileText,
 Globe,
-Key,
 Loader2,
 Lock,
 LogOut,
@@ -144,8 +143,6 @@ type Tab = 'roles' | 'permissions' | '2fa' | 'sessions' | 'devices'
          | 'login-history' | 'audit-logs' | 'alerts' | 'ip-restrictions' | 'rate-limits';
 
 const TABS: Array<{ id: Tab; label: string; icon: React.ElementType }> = [
-  { id: 'roles',           label: 'Roles',           icon: Users },
-  { id: 'permissions',     label: 'Permissions',     icon: Key },
   { id: '2fa',             label: '2FA Policy',      icon: ShieldCheck },
   { id: 'sessions',        label: 'Sessions',        icon: Activity },
   { id: 'devices',         label: 'Devices',         icon: Smartphone },
@@ -209,7 +206,7 @@ interface RateLimitRule {
 
 export default function SecurityCenter() {
   const { admin } = useAdminAuth();
-  const [tab, setTab] = useState<Tab>('roles');
+  const [tab, setTab] = useState<Tab>('2fa');
   const [loading, setLoading] = useState(false);
 
   const ah = useCallback(() => ({ 'Content-Type': 'application/json', ...authHeaders() }), []);

@@ -29,26 +29,17 @@ describe('admin authorization policy', () => {
     expect(allowedRolesForAdminRequest('/auth/login', 'POST')).toBeNull();
   });
 
-  it('allows a finance administrator to access transactions', () => {
-    const { response, status } = responseMock();
-    const next = vi.fn() as NextFunction;
-    requireAdminAuthorization(request('FINANCE_ADMIN', '/transactions', 'GET'), response, next);
-    expect(next).toHaveBeenCalledOnce();
-    expect(status).not.toHaveBeenCalled();
-  });
-
-  it('allows a compliance administrator to review AML and approve gated transactions', () => {
-    const next = vi.fn() as NextFunction;
-    const aml = responseMock();
-    requireAdminAuthorization(request('COMPLIANCE_ADMIN', '/kyc/aml', 'POST'), aml.response, next);
-    expect(next).toHaveBeenCalledOnce();
-    expect(aml.status).not.toHaveBeenCalled();
-
-    const approvalNext = vi.fn() as NextFunction;
-    const approval = responseMock();
-    requireAdminAuthorization(request('COMPLIANCE_ADMIN', '/transactions/approve', 'POST'), approval.response, approvalNext);
-    expect(approvalNext).toHaveBeenCalledOnce();
-    expect(approval.status).not.toHaveBeenCalled();
+  it('blocks every retired administrator role across all protected areas', () => {
+    const paths = ['/transactions', '/kyc/aml', '/operations', '/support/complaints', '/security', '/users'];
+    for (const role of ['FINANCE_ADMIN', 'SECURITY_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] as AdminRole[]) {
+      for (const path of paths) {
+        const blocked = responseMock();
+        const next = vi.fn() as NextFunction;
+        requireAdminAuthorization(request(role, path, 'POST'), blocked.response, next);
+        expect(next).not.toHaveBeenCalled();
+        expect(blocked.status).toHaveBeenCalledWith(403);
+      }
+    }
   });
 
   it('blocks finance administrators from changing AML decisions', () => {
@@ -81,29 +72,6 @@ describe('admin authorization policy', () => {
     requireAdminAuthorization(request('SUPPORT_ADMIN', '/balance/adjust', 'POST'), response, next);
     expect(next).not.toHaveBeenCalled();
     expect(status).toHaveBeenCalledWith(403);
-  });
-
-  it('allows compliance to manage formal complaints without opening the wider support area', () => {
-    const allowed = responseMock();
-    const next = vi.fn() as NextFunction;
-    requireAdminAuthorization(request('COMPLIANCE_ADMIN', '/support/complaints', 'POST'), allowed.response, next);
-    expect(next).toHaveBeenCalledOnce();
-
-    const blocked = responseMock();
-    requireAdminAuthorization(request('COMPLIANCE_ADMIN', '/support/messages', 'GET'), blocked.response, vi.fn() as NextFunction);
-    expect(blocked.status).toHaveBeenCalledWith(403);
-  });
-
-  it('allows operational teams to manage the shared inbox but blocks security-only admins', () => {
-    for (const role of ['FINANCE_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN'] as AdminRole[]) {
-      const allowed = responseMock();
-      const next = vi.fn() as NextFunction;
-      requireAdminAuthorization(request(role, '/operations', 'POST'), allowed.response, next);
-      expect(next).toHaveBeenCalledOnce();
-    }
-    const blocked = responseMock();
-    requireAdminAuthorization(request('SECURITY_ADMIN', '/operations', 'GET'), blocked.response, vi.fn() as NextFunction);
-    expect(blocked.status).toHaveBeenCalledWith(403);
   });
 
   it('reserves role changes for the super administrator', () => {
