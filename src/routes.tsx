@@ -89,7 +89,6 @@ const AdminBanking         = lazy(() => import('./pages/admin/banking'));
 const AdminSupport         = lazy(() => import('./pages/admin/support'));
 const AdminCMS             = lazy(() => import('./pages/admin/cms'));
 const AdminSecurity        = lazy(() => import('./pages/admin/security'));
-const AdminSettings        = lazy(() => import('./pages/admin/settings'));
 const AdminNewsletter      = lazy(() => import('./pages/admin/newsletter'));
 const AdminContacts        = lazy(() => import('./pages/admin/contacts'));
 const AdminOperations      = lazy(() => import('./pages/admin/operations'));
@@ -195,7 +194,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/support',      element: <AdminOnly><AdminSupport /></AdminOnly> },
   { path: '/admin/cms',          element: <AdminOnly><AdminCMS /></AdminOnly> },
   { path: '/admin/security',     element: <AdminOnly><AdminSecurity /></AdminOnly> },
-  { path: '/admin/settings',     element: <AdminOnly><AdminSettings /></AdminOnly> },
+  { path: '/admin/settings',     element: <AdminOnly><AdminConfig /></AdminOnly> },
   { path: '/admin/newsletter',   element: <AdminOnly><AdminNewsletter /></AdminOnly> },
   { path: '/admin/contacts',     element: <AdminOnly><AdminContacts /></AdminOnly> },
   { path: '/admin/operations',   element: <AdminOnly><AdminOperations /></AdminOnly> },

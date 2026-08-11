@@ -516,7 +516,6 @@ function getDeploymentInfo() {
     startedAt:     new Date(Date.now() - process.uptime() * 1000).toISOString(),
     uptime:        Math.floor(process.uptime()),
     uptimeHuman:   formatUptime(process.uptime()),
-    previewUrl:    'https://yxhof1orqw.preview.c24.airoapp.ai',
     productionUrl: 'https://citygate.capital',
     // Storage paths
     privatePath:   privateDataRoot,

@@ -9,6 +9,7 @@ import { sanitizeString, isValidEmail, validatePassword } from '../../../lib/inp
 import { requirePublicRegistration } from '../../../lib/platformMode.js';
 import { issueKycUploadToken } from '../../../lib/purposeToken.js';
 import { getProductBySlug } from '../../../../lib/productCatalogue.js';
+import { requireIntakeEnabled } from '../../../lib/operationalControls.js';
 
 const TERMS_VERSION = '2026-08-10';
 const PRIVACY_VERSION = '2026-08-10';
@@ -21,6 +22,7 @@ function baseUrl(req: Request) {
 
 export default async function handler(req: Request, res: Response) {
   if (!requirePublicRegistration(res)) return;
+  if (!requireIntakeEnabled(res, 'accountApplicationsEnabled')) return;
   const raw = req.body as Record<string, unknown>;
   const name     = sanitizeString(raw.name);
   const email    = sanitizeString(raw.email).toLowerCase();

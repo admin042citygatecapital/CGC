@@ -77,7 +77,7 @@ interface DeployInfo {
   environment: string; appEnv: string; port: string; host: string;
   platform: string; arch: string; nodeVersion: string; pid: number;
   startedAt: string; uptime: number; uptimeHuman: string;
-  previewUrl: string; productionUrl: string;
+  productionUrl: string;
   privatePath: string; publicPath: string;
   privateExists: boolean; publicExists: boolean;
 }
@@ -693,9 +693,8 @@ function DeploymentInformation({ data }: { data: DeployInfo }) {
   return (
     <div className="space-y-4">
       {/* URLs */}
-      <div className="grid md:grid-cols-2 gap-3">
+      <div className="grid gap-3">
         {[
-          { label: 'Legacy Builder URL', url: data.previewUrl, color: '#3B82F6' },
           { label: 'Production URL', url: data.productionUrl, color: '#10B981' },
         ].map(u => (
           <a key={u.label} href={u.url} target="_blank" rel="noopener noreferrer"

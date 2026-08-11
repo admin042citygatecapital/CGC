@@ -1,11 +1,13 @@
 import type { Request, Response } from 'express';
 import { updateSection, resetSection } from '../../../lib/configStore.js';
 import {
-  readHomepageContent,
-  writeHomepageContent,
-  defaultHomepageContent,
+  defaultHomepageAdminView,
+  homepageAdminView,
+  mergeHomepageAdminView,
+  publishHomepageContent,
+  readHomepageDocument,
   type HomepageAdminView,
-} from '../../../lib/homepageContent.js';
+} from '../../../lib/homepageCmsStore.js';
 
 type ConfigSection =
   | 'branding' | 'theme' | 'homepage' | 'dashboardWidgets'
@@ -29,17 +31,27 @@ export default async function handler(req: Request, res: Response) {
 
     // ── Homepage: read/write the actual content JSON (virtual:content source of truth) ──
     if (section === 'homepage') {
+      const actor = req.adminSession?.email ?? req.adminSession?.adminId ?? 'unknown-admin';
       if (action === 'reset') {
-        const defaults = defaultHomepageContent();
-        writeHomepageContent(defaults);
+        const current = readHomepageDocument();
+        const defaults = defaultHomepageAdminView();
+        publishHomepageContent(
+          mergeHomepageAdminView(current.content, defaults),
+          actor,
+          'Configuration Center homepage reset',
+        );
         return res.json({ ok: true, config: { homepage: defaults } });
       }
       if (!data || typeof data !== 'object') {
         return res.status(400).json({ error: 'data object required' });
       }
-      const current = readHomepageContent();
-      const updated  = mergeHomepage(current, data);
-      writeHomepageContent(updated);
+      const current = readHomepageDocument();
+      const updated = mergeHomepage(homepageAdminView(current.content), data);
+      publishHomepageContent(
+        mergeHomepageAdminView(current.content, updated),
+        actor,
+        'Configuration Center homepage update',
+      );
       return res.json({ ok: true, config: { homepage: updated } });
     }
 

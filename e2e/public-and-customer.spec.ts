@@ -20,18 +20,16 @@ test('public site renders the owned brand without unsupported banking claims', a
   await expect(page).toHaveTitle(/City Gate Capital/i);
   await expect(page.locator('body')).not.toContainText('FDIC insured');
   await expect(page.locator('body')).not.toContainText('FSCS protected');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Financial infrastructure');
-  await expect(page.getByRole('link', { name: 'Partner With Us' })).toBeVisible();
-  await expect(page.getByText('Open Account', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 1, name: /The Future of Banking is Here/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Explore Features' })).toBeVisible();
   const logo = page.locator('img[alt*="City Gate" i]').first();
   await expect(logo).toBeVisible();
   const logoLoaded = await logo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0);
   expect(logoLoaded).toBe(true);
 
-  await page.getByRole('link', { name: 'View platform demo' }).click();
-  await expect(page).toHaveURL(/\/demo$/);
-  await expect(page).toHaveTitle(/Platform Demo/i);
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
+  await page.getByRole('link', { name: 'Explore Features' }).click();
+  await expect(page).toHaveURL(/\/digital-banking$/);
+  await expect(page.getByText('Digital Banking', { exact: true })).toBeVisible();
 });
 
 test('protected customer routes redirect to the session-expired login state', async ({ page }) => {

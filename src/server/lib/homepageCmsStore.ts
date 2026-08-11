@@ -5,7 +5,40 @@ import path from 'node:path';
 import { home as defaultHomepage } from 'virtual:content';
 import { privateSubdirectory } from './storagePaths.js';
 
-export type HomepageContent = typeof defaultHomepage;
+export interface HomepageRuntimeControls {
+  _visibility?: {
+    showStats: boolean;
+    showTestimonials: boolean;
+    showPartners: boolean;
+    showNewsSection: boolean;
+  };
+  _announcement?: {
+    enabled: boolean;
+    text: string;
+    type: 'info' | 'warning' | 'success' | 'maintenance';
+  };
+}
+
+export type HomepageContent = typeof defaultHomepage & HomepageRuntimeControls;
+
+export interface HomepageAdminView {
+  trustBadge: string;
+  headline1: string;
+  headlineAccent: string;
+  headline2: string;
+  subheadline: string;
+  ctaSecondary: string;
+  heroCTAControl: string;
+  heroCTAUrgency: string;
+  heroCTABenefit: string;
+  showStats: boolean;
+  showTestimonials: boolean;
+  showPartners: boolean;
+  showNewsSection: boolean;
+  announcementBannerEnabled: boolean;
+  announcementBannerText: string;
+  announcementBannerType: 'info' | 'warning' | 'success' | 'maintenance';
+}
 
 export interface HomepageDocument {
   version: number;
@@ -25,6 +58,65 @@ function cloneDefault(): HomepageContent {
 
 function digest(content: HomepageContent): string {
   return crypto.createHash('sha256').update(JSON.stringify(content)).digest('hex');
+}
+
+export function homepageAdminView(content: HomepageContent): HomepageAdminView {
+  return {
+    trustBadge: content.hero.trustBadge,
+    headline1: content.hero.headline1,
+    headlineAccent: content.hero.headlineAccent,
+    headline2: content.hero.headline2,
+    subheadline: content.hero.subheadline,
+    ctaSecondary: content.hero.ctaSecondary,
+    heroCTAControl: content.hero.heroCTALabels.control,
+    heroCTAUrgency: content.hero.heroCTALabels.urgency,
+    heroCTABenefit: content.hero.heroCTALabels.benefit,
+    showStats: content._visibility?.showStats ?? true,
+    showTestimonials: content._visibility?.showTestimonials ?? true,
+    showPartners: content._visibility?.showPartners ?? true,
+    showNewsSection: content._visibility?.showNewsSection ?? true,
+    announcementBannerEnabled: content._announcement?.enabled ?? false,
+    announcementBannerText: content._announcement?.text ?? '',
+    announcementBannerType: content._announcement?.type ?? 'info',
+  };
+}
+
+export function mergeHomepageAdminView(
+  content: HomepageContent,
+  patch: Partial<HomepageAdminView>,
+): HomepageContent {
+  const next = JSON.parse(JSON.stringify(content)) as HomepageContent;
+  const merged = { ...homepageAdminView(next), ...patch };
+  next.hero = {
+    ...next.hero,
+    trustBadge: merged.trustBadge,
+    headline1: merged.headline1,
+    headlineAccent: merged.headlineAccent,
+    headline2: merged.headline2,
+    subheadline: merged.subheadline,
+    ctaSecondary: merged.ctaSecondary,
+    heroCTALabels: {
+      control: merged.heroCTAControl,
+      urgency: merged.heroCTAUrgency,
+      benefit: merged.heroCTABenefit,
+    },
+  };
+  next._visibility = {
+    showStats: merged.showStats,
+    showTestimonials: merged.showTestimonials,
+    showPartners: merged.showPartners,
+    showNewsSection: merged.showNewsSection,
+  };
+  next._announcement = {
+    enabled: merged.announcementBannerEnabled,
+    text: merged.announcementBannerText,
+    type: merged.announcementBannerType,
+  };
+  return next;
+}
+
+export function defaultHomepageAdminView(): HomepageAdminView {
+  return homepageAdminView(cloneDefault());
 }
 
 function validateAgainstTemplate(value: unknown, template: unknown, pathLabel = 'homepage'): string[] {
@@ -56,8 +148,28 @@ function validateAgainstTemplate(value: unknown, template: unknown, pathLabel = 
 }
 
 export function validateHomepageContent(value: unknown): { content?: HomepageContent; errors: string[] } {
-  const errors = validateAgainstTemplate(value, defaultHomepage).slice(0, 25);
-  return errors.length ? { errors } : { content: value as HomepageContent, errors: [] };
+  const errors = validateAgainstTemplate(value, defaultHomepage);
+  const controls = value as HomepageRuntimeControls | null;
+  if (controls?._visibility) {
+    errors.push(...validateAgainstTemplate(controls._visibility, {
+      showStats: true,
+      showTestimonials: true,
+      showPartners: true,
+      showNewsSection: true,
+    }, 'homepage._visibility'));
+  }
+  if (controls?._announcement) {
+    errors.push(...validateAgainstTemplate(controls._announcement, {
+      enabled: false,
+      text: '',
+      type: 'info',
+    }, 'homepage._announcement'));
+    if (!['info', 'warning', 'success', 'maintenance'].includes(controls._announcement.type)) {
+      errors.push('homepage._announcement.type is invalid.');
+    }
+  }
+  const limitedErrors = errors.slice(0, 25);
+  return limitedErrors.length ? { errors: limitedErrors } : { content: value as HomepageContent, errors: [] };
 }
 
 export function readHomepageDocument(): HomepageDocument {

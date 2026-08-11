@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { getConfig } from '../../../lib/configStore.js';
 import { buildEnvReport } from '../../../lib/envValidator.js';
-import { readHomepageContent } from '../../../lib/homepageContent.js';
+import { homepageAdminView, readHomepageDocument } from '../../../lib/homepageCmsStore.js';
 
 export default async function handler(req: Request, res: Response) {
   try {
@@ -22,7 +22,7 @@ export default async function handler(req: Request, res: Response) {
 
     // Homepage section reads from the actual content file (virtual:content source of truth)
     if (section === 'homepage') {
-      return res.json({ homepage: readHomepageContent() });
+      return res.json({ homepage: homepageAdminView(readHomepageDocument().content) });
     }
 
     if (section) {
@@ -35,7 +35,7 @@ export default async function handler(req: Request, res: Response) {
     const cfg = getConfig();
     const safe = {
       ...cfg,
-      homepage:     readHomepageContent(),
+      homepage:     homepageAdminView(readHomepageDocument().content),
       exchangeRates: { ...cfg.exchangeRates, apiKey: cfg.exchangeRates.apiKey ? '••••••••' : '' },
     };
     res.json(safe);

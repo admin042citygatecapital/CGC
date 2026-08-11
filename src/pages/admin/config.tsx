@@ -181,7 +181,7 @@ export default function AdminConfigPage() {
       body: JSON.stringify({ section: activeSection, action: 'reset' }),
     });
     setSaving(false);
-    if (r.ok) { const d = await r.json(); setConfig(d.config); showToast('Reset to defaults'); setDirty(false); }
+    if (r.ok) { const d = await r.json(); setConfig(current => ({ ...current, ...d.config })); showToast('Reset to defaults'); setDirty(false); }
     else showToast('Reset failed', false);
   }
 

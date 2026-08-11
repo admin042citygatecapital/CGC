@@ -2,7 +2,11 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { home as bundledHomepage } from 'virtual:content';
-import { validateHomepageContent } from '../../server/lib/homepageCmsStore';
+import {
+  homepageAdminView,
+  mergeHomepageAdminView,
+  validateHomepageContent,
+} from '../../server/lib/homepageCmsStore';
 
 describe('homepage CMS publication boundary', () => {
   it('accepts the complete bundled homepage document', () => {
@@ -18,6 +22,25 @@ describe('homepage CMS publication boundary', () => {
       ...bundledHomepage,
       hero: { ...bundledHomepage.hero, subheadline: 'x'.repeat(2_001) },
     }).errors).toContain('homepage.hero.subheadline is too long.');
+  });
+
+  it('maps Config Center edits into the versioned runtime document', () => {
+    const next = mergeHomepageAdminView(bundledHomepage, {
+      headlineAccent: 'Treasury',
+      showStats: false,
+      announcementBannerEnabled: true,
+      announcementBannerText: 'Scheduled service notice',
+      announcementBannerType: 'maintenance',
+    });
+
+    expect(validateHomepageContent(next).errors).toEqual([]);
+    expect(homepageAdminView(next)).toMatchObject({
+      headlineAccent: 'Treasury',
+      showStats: false,
+      announcementBannerEnabled: true,
+      announcementBannerText: 'Scheduled service notice',
+      announcementBannerType: 'maintenance',
+    });
   });
 
   it('wires all homepage modules to the runtime content provider', () => {

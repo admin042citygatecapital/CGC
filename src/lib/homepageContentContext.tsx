@@ -1,7 +1,19 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { home as bundledHomepage } from 'virtual:content';
 
-export type HomepageContent = typeof bundledHomepage;
+export type HomepageContent = typeof bundledHomepage & {
+  _visibility?: {
+    showStats: boolean;
+    showTestimonials: boolean;
+    showPartners: boolean;
+    showNewsSection: boolean;
+  };
+  _announcement?: {
+    enabled: boolean;
+    text: string;
+    type: 'info' | 'warning' | 'success' | 'maintenance';
+  };
+};
 
 const HomepageContentContext = createContext<HomepageContent>(bundledHomepage);
 

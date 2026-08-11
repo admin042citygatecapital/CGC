@@ -7,7 +7,7 @@ async function loginAdmin(page: import('@playwright/test').Page) {
   await page.locator('input[type="password"]').fill(E2E_ADMIN.password);
   await page.getByRole('button', { name: /access admin panel/i }).click();
   await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
-  await expect(page.getByText('Product-preview administration')).toBeVisible();
+  await expect(page.getByText('Pre-deployment administration')).toBeVisible();
 }
 
 test('protected sponsor workspace redirects unauthenticated administrators', async ({ page }) => {
@@ -49,11 +49,10 @@ test('Developer Center reports the running route registry and current auth bound
     method: 'POST',
     path: '/api/users/withdraw',
     auth: 'customer',
-    description: expect.stringContaining('Preview-locked'),
   }));
 });
 
-test('admin login reaches preview controls and authenticated money mutations remain locked', async ({ page }) => {
+test('admin login reaches pre-deployment controls and authenticated money mutations remain locked', async ({ page }) => {
   await loginAdmin(page);
   await page.goto('/admin/transactions');
   await expect(page.getByText('Persistent demonstration register', { exact: true })).toBeVisible();

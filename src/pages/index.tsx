@@ -50,6 +50,13 @@ import { WalletsSection } from '@/sections/WalletsModule';
 
 function HomePageContent() {
   const home = useHomepageContent();
+  const visibility = home._visibility ?? {
+    showStats: true,
+    showTestimonials: true,
+    showPartners: true,
+    showNewsSection: true,
+  };
+  const announcement = home._announcement;
   const tickers = useLiveTicker();
   const { status: wsStatus, isLive, source } = useMarketWebSocket(
     ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT'],
@@ -147,8 +154,18 @@ function HomePageContent() {
       {/* sr-only h1 — visible h1 is rendered inside HeroSection */}
       <h1 className="sr-only">City Gate Capital Secure Financial Technology</h1>
 
+      {announcement?.enabled && announcement.text.trim() && (
+        <div
+          className="relative z-10 mt-[72px] border-b border-primary/15 px-4 py-3 text-center text-sm font-medium text-foreground"
+          data-announcement-type={announcement.type}
+          style={{ background: 'linear-gradient(90deg, rgba(201,168,76,0.08), rgba(201,168,76,0.16), rgba(201,168,76,0.08))' }}
+        >
+          {announcement.text}
+        </div>
+      )}
+
       {/* ── Live Ticker Strip ────────────────────────────────── */}
-      <div className="relative z-10 bg-[#060606] border-b border-primary/10 overflow-hidden mt-[72px]">
+      {visibility.showNewsSection && <div className={`relative z-10 bg-[#060606] border-b border-primary/10 overflow-hidden ${announcement?.enabled && announcement.text.trim() ? '' : 'mt-[72px]'}`}>
         {/* Left fade */}
         <div className="absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none"
           style={{ background: 'linear-gradient(to right, #060606, transparent)' }} />
@@ -179,11 +196,11 @@ function HomePageContent() {
             ))}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ── BANKING MODULE ───────────────────────────────────── */}
       <HeroSection />
-      <StatsBar />
+      {visibility.showStats && <StatsBar />}
       <FeaturesGrid />
       <DashboardPreview />
       <TransfersSection />
@@ -192,7 +209,7 @@ function HomePageContent() {
       <TradingSection livePrices={tickers} />
 
       {/* ── LIVE MARKETS ─────────────────────────────────────── */}
-      <LiveMarketsSection />
+      {visibility.showPartners && <LiveMarketsSection />}
 
       {/* ── WALLETS MODULE ───────────────────────────────────── */}
       <WalletsSection />
@@ -220,7 +237,7 @@ function HomePageContent() {
       </section>
 
       {/* ── Testimonials ────────────────────────────────────── */}
-      <section className="py-28">
+      {visibility.showTestimonials && <section className="py-28">
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
@@ -232,7 +249,7 @@ function HomePageContent() {
           </div>
           <TestimonialsSection />
         </div>
-      </section>
+      </section>}
 
       {/* ── FAQ ─────────────────────────────────────────────── */}
       <section className="py-28 bg-[#060606]">
