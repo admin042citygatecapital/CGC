@@ -13,8 +13,8 @@ describe('public website and demo boundary', () => {
 
   it('does not market unavailable retail banking from the corporate header', () => {
     const header = readFileSync('src/layouts/parts/Header.tsx', 'utf8');
-    expect(header).toContain("{ label: 'Platform Demo',   href: '/demo'");
     expect(header).toContain('Partner With Us');
+    expect(header).not.toContain("href: '/demo'");
     expect(header).not.toContain('Open Account');
     expect(header).not.toContain('to="/login"');
   });

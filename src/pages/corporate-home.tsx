@@ -62,8 +62,8 @@ export default function CorporateHomePage() {
               <Link to="/contact" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#F0D080] px-7 py-4 text-sm font-bold text-black transition-opacity hover:opacity-90">
                 Discuss a partnership <ArrowRight size={17} />
               </Link>
-              <Link to="/demo" className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-7 py-4 text-sm font-semibold text-white/70 transition-colors hover:border-primary/30 hover:text-white">
-                View platform demo
+              <Link to="/compliance" className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-7 py-4 text-sm font-semibold text-white/70 transition-colors hover:border-primary/30 hover:text-white">
+                Explore our approach
               </Link>
             </div>
           </div>

@@ -14,6 +14,7 @@
     "start": "node dist/server.bundle.mjs",
     "smoke": "node scripts/smoke-built-server.mjs",
     "production-guard": "node scripts/check-production-guard.mjs",
+    "security:baseline": "tsx scripts/security-baseline.ts",
     "preview-claims": "node scripts/check-preview-claims.mjs",
     "release:check": "npm run preview-claims && npm run verify && npm run smoke && npm run e2e && npm run production-guard",
     "preview": "vite preview",

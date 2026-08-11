@@ -8,7 +8,6 @@ import CgcLogo from '@/components/CgcLogo';
 const navLinks = [
   { label: 'About',           href: '/about'            },
   { label: 'Compliance',      href: '/compliance'       },
-  { label: 'Platform Demo',   href: '/demo'             },
   { label: 'Contact',         href: '/contact'          },
 ];
 

@@ -25,7 +25,7 @@ const PLATFORM_META: Record<string, { label: string; color: string; detail: stri
 const subjects = ['General Inquiry', 'Account Support', 'Partnership', 'Press & Media', 'Careers', 'Compliance', 'API & Developer', 'Enterprise Sales'];
 
 const contactChannels = [
-  { icon: MessageCircle, title: 'Website Chat', detail: 'Availability may vary',    color: '#10B981', action: 'Start Chat',  href: '/support'                        },
+  { icon: MessageCircle, title: 'Website Chat', detail: 'Availability may vary',    color: '#10B981', action: 'Contact Us',  href: '/contact#contact-form'           },
   { icon: Mail,          title: 'General',    detail: 'info@citygate.capital',      color: '#C9A84C', action: 'Send Email',  href: 'mailto:info@citygate.capital'    },
   { icon: Mail,          title: 'Support',    detail: 'support@citygate.capital',   color: '#9945FF', action: 'Get Help',    href: 'mailto:support@citygate.capital' },
   { icon: Phone,         title: 'Phone',      detail: '+44 7888 382458',            color: '#627EEA', action: 'Call Now',    href: 'tel:+447888382458'               },
@@ -91,10 +91,10 @@ export default function ContactPage() {
     <>
       <Helmet>
         <title>Contact City Gate Capital</title>
-        <meta name="description" content="Contact the City Gate Capital product-preview team by website chat, email, contact form, or phone. Response times vary." />
+        <meta name="description" content="Contact City Gate Capital about partnerships, technology, compliance operations, support, press, or general enquiries." />
         <link rel="canonical" href="https://citygate.capital/contact" />
         <meta property="og:title" content="Contact City Gate Capital — Get in Touch" />
-        <meta property="og:description" content="Contact the City Gate Capital product-preview team by website chat, email, contact form, or phone." />
+        <meta property="og:description" content="Contact City Gate Capital about partnerships, technology, compliance operations, support, press, or general enquiries." />
         <meta property="og:url" content="https://citygate.capital/contact" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -108,7 +108,7 @@ export default function ContactPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Contact City Gate Capital" />
-        <meta name="twitter:description" content="Contact the City Gate Capital product-preview team. Response times vary." />
+        <meta name="twitter:description" content="Contact City Gate Capital about partnerships, technology, compliance operations, support, press, or general enquiries." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -126,7 +126,7 @@ export default function ContactPage() {
             email: 'info@citygate.capital',
             url: 'https://citygate.capital',
             contactPoint: [
-              { '@type': 'ContactPoint', contactType: 'product preview support', telephone: '+447888382458', email: 'support@citygate.capital', availableLanguage: 'English' },
+              { '@type': 'ContactPoint', contactType: 'customer support', telephone: '+447888382458', email: 'support@citygate.capital', availableLanguage: 'English' },
               { '@type': 'ContactPoint', contactType: 'general inquiry', email: 'info@citygate.capital', availableLanguage: 'English' },
             ],
             ...(businessLocation ? { address: businessLocation.address } : {}),
@@ -156,10 +156,10 @@ export default function ContactPage() {
               Let's <span className="text-gold-shimmer">Talk</span>
             </h1>
             <p className="text-xl text-foreground/50 mb-10 max-w-lg mx-auto">
-              Have a question, partnership inquiry, or need help with the product preview? Send a message and the team will respond when available.
+              Have a question, partnership enquiry, or need support? Send a message and the team will respond when available.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              {['Product preview support', 'Email contact', 'Website chat', 'Partnership enquiries'].map(tag => (
+              {['Customer support', 'Email contact', 'Website chat', 'Partnership enquiries'].map(tag => (
                 <span key={tag} className="px-3 py-1.5 rounded-full text-xs font-medium text-primary bg-primary/10 border border-primary/20">{tag}</span>
               ))}
             </div>
@@ -289,7 +289,7 @@ export default function ContactPage() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="glass-card rounded-3xl p-8 gradient-border space-y-5" style={{ boxShadow: 'var(--gold-glow)' }}>
+                <form id="contact-form" onSubmit={handleSubmit} className="glass-card rounded-3xl p-8 gradient-border space-y-5" style={{ boxShadow: 'var(--gold-glow)' }}>
                   <div>
                     <h2 className="text-xl font-bold text-foreground mb-1 tracking-tight">Send a Message</h2>
                     <p className="text-xs text-foreground/55">Response times vary. Do not send financial, identity-document, or payment information.</p>
@@ -400,16 +400,16 @@ export default function ContactPage() {
             <h2 className="text-3xl font-bold text-foreground mb-4 tracking-tight">
               Ready to <span className="text-gold-gradient">Get Started?</span>
             </h2>
-            <p className="text-foreground/50 mb-8 max-w-md mx-auto">Create a demonstration profile to explore the preview. No bank account or financial service is opened.</p>
+            <p className="text-foreground/50 mb-8 max-w-md mx-auto">Talk to us about technology, compliance operations, institutional partnerships, press, or support.</p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/accounts" className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
+              <Link to="/contact#contact-form" className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <span className="relative">Create Preview Profile</span>
+                <span className="relative">Send an Enquiry</span>
                 <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
               </Link>
-              <Link to="/support" className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-medium text-foreground/70 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors">
-                Visit Support Centre
-              </Link>
+              <a href="mailto:support@citygate.capital" className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-medium text-foreground/70 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors">
+                Email Support
+              </a>
             </div>
           </motion.div>
         </div>

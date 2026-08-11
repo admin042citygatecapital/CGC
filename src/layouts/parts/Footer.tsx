@@ -5,16 +5,16 @@ import CgcLogo from '@/components/CgcLogo';
 import type { BusinessLocation } from '@/lib/businessLocation';
 
 const footerLinks = {
-  Product: [
-    { label: 'Platform Demo',     href: '/demo'                 },
-    { label: 'Banking Demo',      href: '/demo/digital-banking' },
-    { label: 'Account Demo',      href: '/demo/accounts'        },
-    { label: 'Sponsor Readiness', href: '/compliance'           },
+  Platform: [
+    { label: 'Financial Technology', href: '/'                   },
+    { label: 'Compliance Operations', href: '/compliance'        },
+    { label: 'Sponsor Readiness',     href: '/compliance'        },
+    { label: 'Partnerships',          href: '/contact'           },
   ],
   Company: [
     { label: 'About Us',  href: '/about'   },
     { label: 'Contact',   href: '/contact' },
-    { label: 'Demo Support', href: '/demo/support' },
+    { label: 'Support',   href: '/contact' },
     { label: 'Careers',   href: '/contact' },
   ],
   Legal: [

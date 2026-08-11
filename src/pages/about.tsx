@@ -4,21 +4,21 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Shield, Globe, Users, TrendingUp, Award, Zap, Heart } from 'lucide-react';
 
 const stats = [
-  { value: 'Preview', label: 'Current Stage', sub: 'Product validation' },
-  { value: 'Web', label: 'Architecture', sub: 'Managed preview deployment' },
+  { value: 'Build', label: 'Current Stage', sub: 'Sponsor readiness' },
+  { value: 'Web', label: 'Architecture', sub: 'Managed deployment' },
   { value: '50+', label: 'Currencies', sub: 'Prototype coverage' },
   { value: '3', label: 'Account Views', sub: 'Personal, savings, business' },
-  { value: '2FA', label: 'Account Security', sub: 'Supported in preview' },
+  { value: '2FA', label: 'Account Security', sub: 'Implemented control' },
   { value: '1', label: 'Unified Platform', sub: 'Web and administration' },
 ];
 
 const values = [
   { icon: Shield,   title: 'Security by Design',     desc: 'Build and test protective controls before connecting regulated data or financial providers.',                          color: '#C9A84C' },
   { icon: Globe,    title: 'Global Product Vision',  desc: 'Explore how multi-currency experiences could work after geographic approvals and provider coverage are confirmed.',   color: '#627EEA' },
-  { icon: TrendingUp, title: 'Measured Improvement', desc: 'Use the preview to test product decisions while keeping live financial operations disabled.',                         color: '#10B981' },
+  { icon: TrendingUp, title: 'Measured Improvement', desc: 'Validate product decisions while keeping financial operations locked until every launch dependency is approved.',       color: '#10B981' },
   { icon: Users,    title: 'User-Centred Design',    desc: 'Design clear account, support, and administration workflows around user needs and accessibility.',                      color: '#9945FF' },
   { icon: Heart,    title: 'Truthful Communication', desc: 'Clearly distinguish demonstrations, proposed terms, and verified live capabilities.',                                 color: '#EC4899' },
-  { icon: Zap,      title: 'Simple Experiences',     desc: 'Turn complex proposed workflows into understandable preview interfaces.',                                              color: '#F7931A' },
+  { icon: Zap,      title: 'Simple Experiences',     desc: 'Turn complex operational workflows into understandable, accessible interfaces.',                                      color: '#F7931A' },
 ];
 
 const milestones = [
@@ -38,9 +38,9 @@ const leadership = [
 ];
 
 const awards = [
-  { title: 'Responsive Experience', org: 'Product preview' },
+  { title: 'Responsive Experience', org: 'Product engineering' },
   { title: 'Secure Administration', org: 'Role-based controls' },
-  { title: 'Release Guardrails', org: 'Preview-safe deployment' },
+  { title: 'Release Guardrails', org: 'Fail-closed deployment' },
 ];
 
 export default function AboutPage() {
@@ -48,7 +48,7 @@ export default function AboutPage() {
     <>
       <Helmet>
         <title>About City Gate Capital — Our Mission, Values & Team</title>
-        <meta name="description" content="Learn about the City Gate Capital product vision, preview platform, security approach, and path to a compliant financial-services launch." />
+        <meta name="description" content="Learn about the City Gate Capital mission, financial-technology platform, security approach, and partnership-led path to launch." />
         <link rel="canonical" href="https://citygate.capital/about" />
         <meta property="og:title" content="About City Gate Capital — Our Mission, Values & Team" />
         <meta property="og:description" content="Explore the City Gate Capital product vision and the work required before a live financial-services launch." />
@@ -64,7 +64,7 @@ export default function AboutPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="About City Gate Capital — Our Mission, Values & Team" />
-        <meta name="twitter:description" content="Explore the City Gate Capital product vision and preview platform." />
+        <meta name="twitter:description" content="Explore the City Gate Capital mission, technology platform, and partnership-led path to launch." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -82,7 +82,7 @@ export default function AboutPage() {
               width: 200,
               height: 200,
             },
-            description: 'A product-preview platform exploring multi-currency accounts, transfers, cards, analytics, and administration.',
+            description: 'A financial-technology company developing secure operational infrastructure and provider-ready customer experiences.',
           },
         }) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -110,12 +110,12 @@ export default function AboutPage() {
               <span className="text-gold-gradient">Global Citizens</span>
             </h1>
             <p className="text-xl text-foreground/50 mb-10 leading-relaxed max-w-2xl mx-auto">
-              City Gate Capital is being built around a simple belief: global financial tools should be clear, secure, and accessible. This site currently demonstrates that product direction.
+              City Gate Capital is being built around a simple belief: global financial tools should be clear, secure, and accessible. We develop the technology and operational controls required to deliver that vision responsibly.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/accounts" className="group relative inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-bold text-black overflow-hidden">
+              <Link to="/contact" className="group relative inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <span className="relative">Create Preview Profile</span>
+                <span className="relative">Discuss a Partnership</span>
                 <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
               </Link>
               <Link to="/contact" className="inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-medium text-foreground/70 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors">
@@ -320,11 +320,11 @@ export default function AboutPage() {
             <h2 className="text-4xl font-bold text-foreground mb-5 tracking-tight">
               Join Our <span className="text-gold-gradient">Mission</span>
             </h2>
-            <p className="text-foreground/50 mb-8 max-w-md mx-auto">Explore the proposed digital-finance experience with a demonstration profile. No bank account or financial service is opened.</p>
+            <p className="text-foreground/50 mb-8 max-w-md mx-auto">Work with us on secure technology, compliance operations, and the partnerships required for responsible delivery.</p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/accounts" className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
+              <Link to="/contact" className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <span className="relative">Create Preview Profile</span>
+                <span className="relative">Discuss a Partnership</span>
                 <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
               </Link>
               <Link to="/contact" className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-medium text-foreground/70 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors">
