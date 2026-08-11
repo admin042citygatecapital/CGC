@@ -176,13 +176,13 @@ export default function SupportPage() {
   return (
     <>
       <Helmet>
-        <title>Product Preview Support & FAQ | City Gate Capital</title>
-        <meta name="description" content="Get help with the City Gate Capital product preview through website chat when available, email, phone, the contact form, and preview-specific FAQs." />
-        <meta name="robots" content="noindex, nofollow" />
-        <link rel="canonical" href="https://citygate.capital/demo/support" />
-        <meta property="og:title" content="City Gate Capital Product Preview Support" />
-        <meta property="og:description" content="Support channels and FAQs for the City Gate Capital product preview. Response times vary." />
-        <meta property="og:url" content="https://citygate.capital/demo/support" />
+        <title>Support and Frequently Asked Questions | City Gate Capital</title>
+        <meta name="description" content="Contact City Gate Capital through website chat, email, telephone, or the contact form, and browse frequently asked questions about the platform." />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://citygate.capital/support" />
+        <meta property="og:title" content="City Gate Capital Support and FAQ" />
+        <meta property="og:description" content="Support channels and frequently asked questions for the City Gate Capital platform." />
+        <meta property="og:url" content="https://citygate.capital/support" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <meta property="og:image:width" content="1200" />
@@ -200,9 +200,9 @@ export default function SupportPage() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
-          '@id': 'https://citygate.capital/demo/support#webpage',
+          '@id': 'https://citygate.capital/support#webpage',
           name: 'City Gate Capital Support FAQ',
-          url: 'https://citygate.capital/demo/support',
+          url: 'https://citygate.capital/support',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
           mainEntity: faqs.map(faq => ({
@@ -216,7 +216,7 @@ export default function SupportPage() {
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://citygate.capital/' },
-            { '@type': 'ListItem', position: 2, name: 'Demo Support', item: 'https://citygate.capital/demo/support' },
+            { '@type': 'ListItem', position: 2, name: 'Support', item: 'https://citygate.capital/support' },
           ],
         }) }} />
       </Helmet>

@@ -157,11 +157,11 @@ export default function AccountsPage() {
       <Helmet>
         <title>Open an Account — Personal, Savings & Business | CGC</title>
         <meta name="description" content="Preview City Gate Capital personal, savings, and business account experiences using demonstration balances and workflows." />
-        <meta name="robots" content="noindex, nofollow" />
-        <link rel="canonical" href="https://citygate.capital/demo/accounts" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://citygate.capital/accounts" />
         <meta property="og:title" content="Open a Bank Account — Personal, Savings & Business" />
         <meta property="og:description" content="Explore personal, savings, and business account experiences in the City Gate Capital product preview." />
-        <meta property="og:url" content="https://citygate.capital/demo/accounts" />
+        <meta property="og:url" content="https://citygate.capital/accounts" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <meta property="og:image:width" content="1200" />
@@ -178,9 +178,9 @@ export default function AccountsPage() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'WebPage',
-          '@id': 'https://citygate.capital/demo/accounts#webpage',
+          '@id': 'https://citygate.capital/accounts#webpage',
           name: 'Open a Bank Account — City Gate Capital',
-          url: 'https://citygate.capital/demo/accounts',
+          url: 'https://citygate.capital/accounts',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
           mainEntity: {
@@ -198,7 +198,7 @@ export default function AccountsPage() {
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://citygate.capital/' },
-            { '@type': 'ListItem', position: 2, name: 'Account Demo', item: 'https://citygate.capital/demo/accounts' },
+            { '@type': 'ListItem', position: 2, name: 'Accounts', item: 'https://citygate.capital/accounts' },
           ],
         }) }} />
       </Helmet>

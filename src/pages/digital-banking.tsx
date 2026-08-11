@@ -258,18 +258,18 @@ export default function DigitalBankingPage() {
   return (
     <>
       <Helmet>
-        <title>Digital Finance Product Preview | City Gate Capital</title>
-        <meta name="description" content="Preview proposed card controls, analytics, payment journeys, and savings tools using demonstration data. No card or financial account is issued." />
-        <meta name="robots" content="noindex, nofollow" />
-        <link rel="canonical" href="https://citygate.capital/demo/digital-banking" />
-        <meta property="og:title" content="Digital Finance Product Preview | City Gate Capital" />
-        <meta property="og:description" content="Explore proposed card, analytics, and payment experiences using demonstration data. No live financial services are available." />
-        <meta property="og:url" content="https://citygate.capital/demo/digital-banking" />
+        <title>Digital Banking Platform | City Gate Capital</title>
+        <meta name="description" content="Explore City Gate Capital's digital account, payment, savings, analytics, and security platform. Product availability remains subject to onboarding and provider approval." />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://citygate.capital/digital-banking" />
+        <meta property="og:title" content="Digital Banking Platform | City Gate Capital" />
+        <meta property="og:description" content="Explore City Gate Capital's digital account, payment, savings, analytics, and security platform." />
+        <meta property="og:url" content="https://citygate.capital/digital-banking" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="City Gate Capital digital finance product preview" />
+        <meta property="og:image:alt" content="City Gate Capital digital banking platform" />
         <meta property="og:site_name" content="City Gate Capital" />
         <meta property="og:locale" content="en_GB" />
         <meta name="twitter:card" content="summary_large_image" />
@@ -281,9 +281,9 @@ export default function DigitalBankingPage() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'WebPage',
-          '@id': 'https://citygate.capital/demo/digital-banking#webpage',
+          '@id': 'https://citygate.capital/digital-banking#webpage',
           name: 'Digital Banking — City Gate Capital',
-          url: 'https://citygate.capital/demo/digital-banking',
+          url: 'https://citygate.capital/digital-banking',
           description: 'A non-transactional preview of proposed card, analytics, and payment experiences.',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
@@ -300,7 +300,7 @@ export default function DigitalBankingPage() {
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://citygate.capital/' },
-            { '@type': 'ListItem', position: 2, name: 'Digital Banking Demo', item: 'https://citygate.capital/demo/digital-banking' },
+            { '@type': 'ListItem', position: 2, name: 'Digital Banking', item: 'https://citygate.capital/digital-banking' },
           ],
         }) }} />
       </Helmet>

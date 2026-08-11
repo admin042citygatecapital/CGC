@@ -26,6 +26,17 @@ describe('published public website boundary', () => {
     expect(seoRoutes).toMatch(/path: "\/support"/);
   });
 
+  it.each([
+    ['digital-banking', 'src/pages/digital-banking.tsx'],
+    ['accounts', 'src/pages/accounts.tsx'],
+    ['support', 'src/pages/support.tsx'],
+  ])('keeps the public %s page indexable with its production canonical', (path, file) => {
+    const page = readFileSync(file, 'utf8');
+    expect(page).toContain('<meta name="robots" content="index, follow" />');
+    expect(page).toContain(`<link rel="canonical" href="https://citygate.capital/${path}" />`);
+    expect(page).not.toContain('https://citygate.capital/demo/');
+  });
+
   it('keeps the corporate homepage factual and partnership-led', () => {
     const page = readFileSync('src/pages/corporate-home.tsx', 'utf8');
     expect(page).toContain('Financial infrastructure,');
