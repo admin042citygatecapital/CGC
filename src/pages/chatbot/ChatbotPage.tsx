@@ -93,8 +93,8 @@ export default function ChatbotPage() {
   return (
     <>
       <Helmet>
-        <title>Product Preview Assistant – City Gate Capital</title>
-        <meta name="description" content="Chat with Aria about the City Gate Capital product preview. Responses are informational and do not provide banking, transaction, legal, or financial services." />
+        <title>Pre-deployment Platform Assistant – City Gate Capital</title>
+        <meta name="description" content="Chat with Aria about the City Gate Capital pre-deployment platform. Responses are informational and do not provide banking, transaction, legal, or financial services." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/chat" />
       </Helmet>

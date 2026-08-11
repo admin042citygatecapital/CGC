@@ -143,7 +143,7 @@ export default function BalanceModal({ user, onClose, onSuccess }: Props) {
             />
           </div>
 
-          {/* Preview */}
+          {/* Resulting balance */}
           {parsedAmount > 0 && (
             <div className="bg-white/5 rounded-xl px-4 py-3 flex items-center justify-between">
               <span className="text-white/50 text-sm">New Balance</span>

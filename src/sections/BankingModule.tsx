@@ -152,7 +152,7 @@ export function HeroSection() {
               </div>
               <div className="flex flex-wrap gap-5">
                 {home.hero.trustBadges.map((b) => {
-                  const BadgeIcon = b.label === 'Preview Safeguard' ? Shield : b.label === '256-bit Encryption' ? Lock : Award;
+                  const BadgeIcon = b.label === 'Pre-deployment Safeguard' ? Shield : b.label === '256-bit Encryption' ? Lock : Award;
                   return (
                     <div key={b.id} className="flex items-center gap-2 text-foreground/55">
                       <BadgeIcon size={14} className="text-primary" />
@@ -613,7 +613,7 @@ export function SecuritySection() {
               <p className="text-center text-sm font-semibold text-foreground mb-1">Excellent</p>
               <p className="text-center text-xs text-foreground/40 mb-6">Your account is fully secured</p>
               <div className="space-y-3">
-                {['Secure Sessions','Biometric UI','2FA Enabled','KYC Preview','No Live Custody'].map((item, i) => (
+                {['Secure Sessions','Biometric UI','2FA Enabled','KYC Pre-deployment','No Live Custody'].map((item, i) => (
                   <motion.div key={item} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.4 + i * 0.07 }} className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-full bg-emerald-400/15 flex items-center justify-center shrink-0"><CheckCircle size={11} className="text-emerald-400" /></div>
                     <span className="text-xs text-foreground/60">{item}</span>
@@ -621,7 +621,7 @@ export function SecuritySection() {
                 ))}
               </div>
               <div className="mt-6 pt-5 border-t border-primary/10">
-                <p className="text-xs text-foreground/30 uppercase tracking-widest mb-3">Preview Safeguards</p>
+                <p className="text-xs text-foreground/30 uppercase tracking-widest mb-3">Pre-deployment Safeguards</p>
                 <div className="flex flex-wrap gap-2">
                   {['Secure Cookies','CSRF Controls','Admin RBAC','Audit Events','Launch Guard'].map(badge => (
                     <span key={badge} className="text-[10px] font-bold px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/20">{badge}</span>
@@ -785,7 +785,7 @@ export function MobileAppSection() {
               </motion.div>
               <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const, delay: 1 }}
                 className="absolute -left-10 bottom-24 glass-card rounded-2xl px-3 py-2.5 gradient-border w-32" style={{ boxShadow: '0 8px 32px rgba(201,168,76,0.15)' }}>
-                <p className="text-[9px] font-bold text-primary mb-0.5">Mobile Preview</p>
+                <p className="text-[9px] font-bold text-primary mb-0.5">Mobile Pre-deployment</p>
                 <p className="text-[8px] text-foreground/40">Coming soon</p>
               </motion.div>
             </div>
@@ -813,7 +813,7 @@ export function MobileAppSection() {
               ))}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {[{ value: 'Preview', label: 'Current Stage' }, { value: '50+', label: 'Prototype Currencies' }, { value: '2FA', label: 'Account Protection' }, { value: '$0', label: 'Live Funds Moved' }].map((s, i) => (
+              {[{ value: 'Pre-deployment', label: 'Current Stage' }, { value: '50+', label: 'Prototype Currencies' }, { value: '2FA', label: 'Account Protection' }, { value: '$0', label: 'Live Funds Moved' }].map((s, i) => (
                 <StatBadge key={s.label} value={s.value} label={s.label} delay={0.3 + i * 0.07} />
               ))}
             </div>

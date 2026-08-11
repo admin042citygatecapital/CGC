@@ -56,7 +56,7 @@
   "trustBadges": [
     {
       "id": "tb1",
-      "label": "Security Controls Preview"
+      "label": "Security Controls Pre-deployment"
     },
     {
       "id": "tb2",
@@ -94,7 +94,7 @@
       {
         "id": "f3",
         "title": "Smart Cards",
-        "desc": "Preview virtual and physical card designs with demonstration spend controls."
+        "desc": "Pre-deployment virtual and physical card designs with demonstration spend controls."
       },
       {
         "id": "f4",
@@ -109,7 +109,7 @@
       {
         "id": "f6",
         "title": "Investment Tools",
-        "desc": "Preview stocks, ETFs, crypto indices, and portfolio-allocation workflows using sample data."
+        "desc": "Pre-deployment stocks, ETFs, crypto indices, and portfolio-allocation workflows using sample data."
       }
     ]
   },
@@ -173,7 +173,7 @@
     "eyebrow": "Crypto Exchange",
     "headline1": "Explore Digital Assets",
     "headlineAccent": "50+ Cryptocurrencies",
-    "subheadline": "Preview paper-trading, portfolio, and custody workflows using demonstration balances. No live trading or custody is available.",
+    "subheadline": "Pre-deployment paper-trading, portfolio, and custody workflows using demonstration balances. No live trading or custody is available.",
     "ctaLabel": "Explore Crypto Wallet",
     "featureBullets": [
       {
@@ -184,7 +184,7 @@
       {
         "id": "cr2",
         "title": "Cold Storage Security",
-        "desc": "Custody is not active in the preview and requires a contracted, independently reviewed provider before launch."
+        "desc": "Custody is not active in the pre-deployment platform and requires a contracted, independently reviewed provider before launch."
       },
       {
         "id": "cr3",
@@ -194,7 +194,7 @@
       {
         "id": "cr4",
         "title": "Auto-Rebalancing",
-        "desc": "Preview proposed target-allocation controls; automatic rebalancing is not active."
+        "desc": "Explore proposed target-allocation controls; automatic rebalancing is not active."
       },
       {
         "id": "cr5",
@@ -208,12 +208,12 @@
     "headline1": "One Wallet,",
     "headlineAccent": "Every Currency",
     "subheadline": "Explore how fiat and digital-asset balances, conversions, and spending controls could work in a unified interface.",
-    "ctaLabel": "Preview the Wallet",
+    "ctaLabel": "Explore the Wallet",
     "featureBullets": [
       {
         "id": "w1",
         "title": "50+ Fiat Currencies",
-        "desc": "Preview sample balances in multiple currencies; holding, spending, and live conversion are unavailable."
+        "desc": "Pre-deployment sample balances in multiple currencies; holding, spending, and live conversion are unavailable."
       },
       {
         "id": "w2",
@@ -222,13 +222,13 @@
       },
       {
         "id": "w3",
-        "title": "Currency Exchange Preview",
+        "title": "Currency Exchange Pre-deployment",
         "desc": "Simulate conversions using illustrative rates; no currency is bought, sold, or settled."
       },
       {
         "id": "w4",
         "title": "Virtual & Physical Cards",
-        "desc": "Preview proposed card and currency-selection controls; no payment card is issued in this environment."
+        "desc": "Explore proposed card and currency-selection controls; no payment card is issued in this environment."
       },
       {
         "id": "w5",
@@ -248,7 +248,7 @@
     "headlineAccent": "Design",
     "subheadline": "Review implemented account controls and the additional provider, compliance, and security work required before a financial launch.",
     "zeroIncidentsHeadline": "No Live Financial Exposure",
-    "zeroIncidentsSub": "The preview does not accept deposits, custody assets, issue cards, or execute live transactions.",
+    "zeroIncidentsSub": "The pre-deployment does not accept deposits, custody assets, issue cards, or execute live transactions.",
     "featureBullets": [
       {
         "id": "sec1",
@@ -257,18 +257,18 @@
       },
       {
         "id": "sec2",
-        "title": "Biometric Interface Preview",
+        "title": "Biometric Interface Pre-deployment",
         "desc": "The interface demonstrates biometric and liveness journeys; production biometric verification is not active."
       },
       {
         "id": "sec3",
         "title": "Cold Storage Custody",
-        "desc": "Custody is not active in the preview and requires a contracted, independently reviewed provider before launch."
+        "desc": "Custody is not active in the pre-deployment platform and requires a contracted, independently reviewed provider before launch."
       },
       {
         "id": "sec4",
         "title": "Fraud-Control Design",
-        "desc": "The preview demonstrates risk signals and review workflows; live transaction monitoring requires an approved provider."
+        "desc": "The pre-deployment demonstrates risk signals and review workflows; live transaction monitoring requires an approved provider."
       }
     ]
   },
@@ -276,8 +276,8 @@
     "eyebrow": "Mobile App",
     "headline1": "The Platform in Your",
     "headlineAccent": "Pocket",
-    "subheadline": "Preview the proposed mobile experience. Native iOS and Android applications and live financial functions are not yet available.",
-    "awardLabel": "Mobile Product Preview",
+    "subheadline": "Explore the proposed mobile experience. Native iOS and Android applications and live financial functions are not yet available.",
+    "awardLabel": "Mobile Pre-deployment Platform",
     "awardSub": "Demonstration interface · No live transactions",
     "appChips": [
       {
@@ -309,12 +309,12 @@
       {
         "id": "ma1",
         "title": "Instant Notifications",
-        "desc": "Preview proposed alerts for demonstration transactions, transfers, and price movements."
+        "desc": "Explore proposed alerts for demonstration transactions, transfers, and price movements."
       },
       {
         "id": "ma2",
         "title": "Biometric Login",
-        "desc": "Preview the intended Face ID and Touch ID experience; native biometric login is not active."
+        "desc": "Explore the intended Face ID and Touch ID experience; native biometric login is not active."
       },
       {
         "id": "ma3",
@@ -329,7 +329,7 @@
       {
         "id": "ma5",
         "title": "One-tap Transfers",
-        "desc": "Preview saved-recipient and confirmation workflows without sending money."
+        "desc": "Pre-deployment saved-recipient and confirmation workflows without sending money."
       }
     ]
   },
@@ -354,7 +354,7 @@
       },
       {
         "id": "pt4",
-        "label": "No payment card required for preview"
+        "label": "No payment card required for pre-deployment"
       }
     ]
   },
@@ -438,7 +438,7 @@
         "avatar": "L",
         "color": "#EC4899",
         "rating": 5,
-        "text": "This scenario demonstrates a multi-currency card experience; coverage and exchange terms are not live in the preview."
+        "text": "This scenario demonstrates a multi-currency card experience; coverage and exchange terms are not live in the pre-deployment."
       },
       {
         "id": "t8",
@@ -466,25 +466,25 @@
         "id": "fq1",
         "cat": "Security",
         "q": "Is City Gate Capital safe?",
-        "a": "The preview includes account-security controls such as multi-factor authentication and secure sessions. It does not hold customer funds or crypto assets, and no custody service is active."
+        "a": "The pre-deployment includes account-security controls such as multi-factor authentication and secure sessions. It does not hold customer funds or crypto assets, and no custody service is active."
       },
       {
         "id": "fq2",
         "cat": "Security",
         "q": "What happens if I lose access to my account?",
-        "a": "The preview supports password-reset and account-security workflows. Support response times and identity re-verification service levels are not guaranteed."
+        "a": "The pre-deployment supports password-reset and account-security workflows. Support response times and identity re-verification service levels are not guaranteed."
       },
       {
         "id": "fq3",
         "cat": "Accounts",
         "q": "How quickly can I open an account?",
-        "a": "You can create a preview profile to explore the interface. Live identity verification, funding, and transactions are not enabled."
+        "a": "You can create a pre-deployment profile to explore the interface. Live identity verification, funding, and transactions are not enabled."
       },
       {
         "id": "fq4",
         "cat": "Accounts",
         "q": "What currencies and crypto do you support?",
-        "a": "The preview displays selected fiat currencies and digital assets using sample or market data. Live availability will depend on approved providers and launch jurisdictions."
+        "a": "The pre-deployment displays selected fiat currencies and digital assets using sample or market data. Live availability will depend on approved providers and launch jurisdictions."
       },
       {
         "id": "fq5",
@@ -496,7 +496,7 @@
         "id": "fq6",
         "cat": "Pricing",
         "q": "Are there hidden fees on transfers?",
-        "a": "The preview uses illustrative fees and rates. Final pricing, spreads, and disclosures will be published only after provider and legal approval."
+        "a": "The pre-deployment uses illustrative fees and rates. Final pricing, spreads, and disclosures will be published only after provider and legal approval."
       },
       {
         "id": "fq7",
@@ -508,29 +508,29 @@
         "id": "fq8",
         "cat": "Transfers",
         "q": "Can I schedule or automate recurring transfers?",
-        "a": "Recurring transfers and target-rate actions are demonstration features. The preview does not execute live payments or currency conversions."
+        "a": "Recurring transfers and target-rate actions are demonstration features. The pre-deployment does not execute live payments or currency conversions."
       }
     ]
   },
   "finalCta": {
-    "badge": "Product preview access",
+    "badge": "Pre-deployment platform access",
     "headline1": "Ready to Explore",
-    "headlineAccent": "the Preview?",
+    "headlineAccent": "the Pre-deployment?",
     "subheadline": "Explore the City Gate Capital vision for global transfers, digital assets, investments, and everyday account management.",
-    "ctaPrimary": "Create Preview Profile",
+    "ctaPrimary": "Create Pre-deployment Profile",
     "ctaSecondary": "Talk to Sales",
     "featureStrip": [
       {
         "id": "fs1",
-        "label": "Security controls preview"
+        "label": "Security controls pre-deployment"
       },
       {
         "id": "fs2",
-        "label": "Multi-currency preview"
+        "label": "Multi-currency pre-deployment"
       },
       {
         "id": "fs3",
-        "label": "Preview profile creation"
+        "label": "Pre-deployment profile creation"
       },
       {
         "id": "fs4",
@@ -538,7 +538,7 @@
       },
       {
         "id": "fs5",
-        "label": "Free product preview"
+        "label": "Free pre-deployment platform"
       }
     ]
   },
@@ -552,7 +552,7 @@
       "highlight": false,
       "badge": "",
       "color": "#627EEA",
-      "cta": "Explore Standard Preview",
+      "cta": "Explore Standard Pre-deployment",
       "features": [
         {
           "id": "pf1",
@@ -561,7 +561,7 @@
         },
         {
           "id": "pf2",
-          "label": "Virtual card design preview",
+          "label": "Virtual card design pre-deployment",
           "included": true
         },
         {
@@ -576,7 +576,7 @@
         },
         {
           "id": "pf5",
-          "label": "Mobile interface preview",
+          "label": "Mobile interface pre-deployment",
           "included": true
         },
         {
@@ -624,7 +624,7 @@
         },
         {
           "id": "pf12",
-          "label": "Expanded transfer workflow preview",
+          "label": "Expanded transfer workflow pre-deployment",
           "included": true
         },
         {
@@ -639,7 +639,7 @@
         },
         {
           "id": "pf15",
-          "label": "Support concept preview",
+          "label": "Support concept pre-deployment",
           "included": true
         },
         {

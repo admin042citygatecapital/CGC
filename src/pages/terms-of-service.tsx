@@ -34,11 +34,11 @@ const sections = [
     content: [
       {
         subtitle: '2.1 Service Description',
-        body: `This website currently provides a product preview of proposed account, card, transfer, wallet, analytics, and administration experiences. It does not accept deposits, issue payment instruments, provide custody, execute trades, or process live financial transactions.`,
+        body: `This website currently provides a pre-deployment platform of proposed account, card, transfer, wallet, analytics, and administration experiences. It does not accept deposits, issue payment instruments, provide custody, execute trades, or process live financial transactions.`,
       },
       {
         subtitle: '2.2 Service Availability',
-        body: `Preview access is provided on an as-available basis without an uptime guarantee. We may suspend it for maintenance, security updates, testing, or legal review.`,
+        body: `Pre-deployment access is provided on an as-available basis without an uptime guarantee. We may suspend it for maintenance, security updates, testing, or legal review.`,
       },
       {
         subtitle: '2.3 Service Changes',
@@ -53,7 +53,7 @@ const sections = [
     content: [
       {
         subtitle: '3.1 Account Opening',
-        body: `You may create a preview profile to explore the software. Do not upload real identity documents or use the preview as a substitute for a bank, broker, wallet, payment account, or custodian.`,
+        body: `You may create a pre-deployment profile to explore the software. Do not upload real identity documents or use the pre-deployment platform as a substitute for a bank, broker, wallet, payment account, or custodian.`,
       },
       {
         subtitle: '3.2 Identity Verification',
@@ -80,15 +80,15 @@ const sections = [
       },
       {
         subtitle: '4.2 Fees',
-        body: `Any fee, rate, yield, price, exchange rate, or return shown in the preview is illustrative and is not an offer or contractual term. Live commercial terms will require separate publication and approval.`,
+        body: `Any fee, rate, yield, price, exchange rate, or return shown in the pre-deployment platform is illustrative and is not an offer or contractual term. Live commercial terms will require separate publication and approval.`,
       },
       {
         subtitle: '4.3 Transaction Limits',
-        body: `Preview limits are illustrative controls only. They do not create an entitlement or ability to move funds.`,
+        body: `Pre-deployment limits are illustrative controls only. They do not create an entitlement or ability to move funds.`,
       },
       {
         subtitle: '4.4 Declined Transactions',
-        body: `The preview does not submit or settle transactions. Demonstration actions may be rejected by software controls and should not be treated as a decision by a bank, payment provider, exchange, or custodian.`,
+        body: `The pre-deployment does not submit or settle transactions. Demonstration actions may be rejected by software controls and should not be treated as a decision by a bank, payment provider, exchange, or custodian.`,
       },
     ],
   },
@@ -99,15 +99,15 @@ const sections = [
     content: [
       {
         subtitle: '5.1 Prohibited Activities',
-        body: `You must not misuse the preview for unlawful activity, fraud, impersonation, unauthorised access, malware, interference with the service, sanctions evasion, or any activity that violates applicable law. The preview must not be used to solicit, receive, hold, transfer, or trade real funds or assets.`,
+        body: `You must not misuse the pre-deployment for unlawful activity, fraud, impersonation, unauthorised access, malware, interference with the service, sanctions evasion, or any activity that violates applicable law. The pre-deployment must not be used to solicit, receive, hold, transfer, or trade real funds or assets.`,
       },
       {
         subtitle: '5.2 Access Restrictions',
-        body: `We may restrict preview access where required for security, operational, sanctions, export-control, or other legal reasons. Any future financial service will require a documented, provider-supported country policy and jurisdiction-specific legal review before launch.`,
+        body: `We may restrict pre-deployment access where required for security, operational, sanctions, export-control, or other legal reasons. Any future financial service will require a documented, provider-supported country policy and jurisdiction-specific legal review before launch.`,
       },
       {
         subtitle: '5.3 Consequences',
-        body: `We may suspend or terminate preview access when we reasonably believe these rules have been breached. We may preserve records or make a report where required by applicable law. There are no real balances or pending financial transactions to forfeit or settle in this environment.`,
+        body: `We may suspend or terminate pre-deployment access when we reasonably believe these rules have been breached. We may preserve records or make a report where required by applicable law. There are no real balances or pending financial transactions to forfeit or settle in this environment.`,
       },
     ],
   },
@@ -122,7 +122,7 @@ const sections = [
       },
       {
         subtitle: '6.2 Custody',
-        body: `City Gate Capital does not hold cryptocurrency or provide custody in this preview. Wallet addresses, balances, orders, and portfolio values are demonstrations. Do not send assets to any identifier displayed by the preview.`,
+        body: `City Gate Capital does not hold cryptocurrency or provide custody in this pre-deployment. Wallet addresses, balances, orders, and portfolio values are demonstrations. Do not send assets to any identifier displayed by the pre-deployment.`,
       },
       {
         subtitle: '6.3 Regulatory Status',
@@ -171,11 +171,11 @@ const sections = [
     content: [
       {
         subtitle: '9.1 Termination by You',
-        body: `You may request closure of your preview profile by contacting support@citygate.capital. Because the preview does not hold funds or process live transactions, closing a profile does not involve returning a balance or settling a transaction.`,
+        body: `You may request closure of your pre-deployment profile by contacting support@citygate.capital. Because the pre-deployment platform does not hold funds or process live transactions, closing a profile does not involve returning a balance or settling a transaction.`,
       },
       {
         subtitle: '9.2 Termination by Us',
-        body: `We may suspend or terminate preview access if you breach these Terms, create a security risk, misuse the service, or if access must be restricted for legal or operational reasons. We will provide notice where reasonably practicable and legally permitted.`,
+        body: `We may suspend or terminate pre-deployment access if you breach these Terms, create a security risk, misuse the service, or if access must be restricted for legal or operational reasons. We will provide notice where reasonably practicable and legally permitted.`,
       },
       {
         subtitle: '9.3 Effect of Termination',
@@ -190,11 +190,11 @@ const sections = [
     content: [
       {
         subtitle: '10.1 Governing Law',
-        body: `These Terms govern access to the product-preview website only. The responsible legal entity and governing-law clause must be confirmed and published before regulated financial services are offered. Nothing in these Terms limits mandatory rights that apply to you under applicable law.`,
+        body: `These Terms govern access to the pre-deployment website only. The responsible legal entity and governing-law clause must be confirmed and published before regulated financial services are offered. Nothing in these Terms limits mandatory rights that apply to you under applicable law.`,
       },
       {
         subtitle: '10.2 Dispute Resolution',
-        body: `We encourage you to contact us first about a preview-related concern. Available court, regulator, ombudsman, or alternative-dispute-resolution routes depend on the confirmed entity, jurisdiction, service, and your mandatory legal rights; no specific financial redress scheme is represented as available in this preview.`,
+        body: `We encourage you to contact us first about a pre-deployment-related concern. Available court, regulator, ombudsman, or alternative-dispute-resolution routes depend on the confirmed entity, jurisdiction, service, and your mandatory legal rights; no specific financial redress scheme is represented as available in this pre-deployment.`,
       },
       {
         subtitle: '10.3 Contact',

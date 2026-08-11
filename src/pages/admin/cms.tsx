@@ -45,39 +45,39 @@ const TABS = [
 
 const INITIAL = {
   heroTitle: 'Explore the Future of Digital Finance',
-  heroSubtitle: 'A product preview of proposed multi-currency, transfer, wallet, card, and administration experiences.',
-  heroCTA: 'Create Preview Profile',
-  metaTitle: 'City Gate Capital — Digital Finance Product Preview',
-  metaDescription: 'Explore the City Gate Capital product preview. No deposits, custody, insurance, or live financial transactions are available.',
+  heroSubtitle: 'A pre-deployment platform of proposed multi-currency, transfer, wallet, card, and administration experiences.',
+  heroCTA: 'Create Pre-deployment Profile',
+  metaTitle: 'City Gate Capital — Digital Finance Pre-deployment Platform',
+  metaDescription: 'Explore the City Gate Capital pre-deployment platform. No deposits, custody, insurance, or live financial transactions are available.',
   ogImage: 'https://citygate.capital/api/og',
   footerEmail: 'info@citygate.capital',
   footerPhone: '+44 7888 382458',
   footerAddress: 'Citygate, 51 Mosley Street, Manchester, M2 3HQ, United Kingdom',
   welcomeEmailSubject: 'Welcome to City Gate Capital',
-  welcomeEmailBody: 'Dear {{name}},\n\nWelcome to the City Gate Capital product preview. Your demonstration profile has been created successfully. No live financial account or payment service has been opened.\n\nBest regards,\nCity Gate Capital Team',
-  bannerText: 'Product preview: balances and transactions are demonstrations.',
+  welcomeEmailBody: 'Dear {{name}},\n\nWelcome to the City Gate Capital pre-deployment platform. Your demonstration profile has been created successfully. No live financial account or payment service has been opened.\n\nBest regards,\nCity Gate Capital Team',
+  bannerText: 'Product pre-deployment: balances and transactions are demonstrations.',
   bannerActive: true,
   // Digital Banking page fields
-  dbHeroTitle:        'Preview a Digital Finance Experience',
+  dbHeroTitle:        'Pre-deployment Digital Finance Experience',
   dbHeroSubtitle:     'Explore proposed card controls, analytics, payments, and insights using demonstration data.',
-  dbHeroCTA:          'Create Preview Profile',
+  dbHeroCTA:          'Create Pre-deployment Profile',
   dbHeroSecondaryCTA: 'Book a Demo',
-  dbCtaTitle:         'Explore the Product Preview',
+  dbCtaTitle:         'Explore the Platform',
   dbCtaSubtitle:      'Create a demonstration profile. No bank account, payment card, or financial service is issued.',
-  dbCtaPrimary:       'Create Preview Profile',
+  dbCtaPrimary:       'Create Pre-deployment Profile',
   dbCtaSecondary:     'Book a Demo',
   // Feature cards
-  dbFeature1Title: 'Virtual Card Prototype', dbFeature1Desc: 'Preview proposed virtual-card controls. No payment card is issued.',
-  dbFeature2Title: 'Freeze & Unfreeze Preview', dbFeature2Desc: 'Explore proposed card-lock controls using demonstration data.',
-  dbFeature3Title: 'Alert Prototype', dbFeature3Desc: 'Preview how transaction notifications could appear after provider integration.',
+  dbFeature1Title: 'Virtual Card Prototype', dbFeature1Desc: 'Explore proposed virtual-card controls. No payment card is issued.',
+  dbFeature2Title: 'Freeze & Unfreeze Pre-deployment', dbFeature2Desc: 'Explore proposed card-lock controls using demonstration data.',
+  dbFeature3Title: 'Alert Prototype', dbFeature3Desc: 'Pre-deployment how transaction notifications could appear after provider integration.',
   dbFeature4Title: 'Top-up Simulation', dbFeature4Desc: 'Explore proposed top-up rules without linking a bank or moving funds.',
-  dbFeature5Title: 'Spend Analytics Preview', dbFeature5Desc: 'Explore illustrative purchase categorisation and charts.',
+  dbFeature5Title: 'Spend Analytics Pre-deployment', dbFeature5Desc: 'Explore illustrative purchase categorisation and charts.',
   dbFeature6Title: 'Wallet Integration Concept', dbFeature6Desc: 'Mobile-wallet support is proposed and not currently active.',
   dbFeature7Title: 'FX Pricing Concept', dbFeature7Desc: 'View illustrative currency conversions. Rates and fees are not live offers.',
   dbFeature8Title: 'Payment Security Design', dbFeature8Desc: 'Provider authentication and fraud controls must be validated before launch.',
   dbFeature9Title: 'Insights Prototype', dbFeature9Desc: 'Explore proposed insights generated from demonstration activity.',
   // Stats strip
-  dbStat1Value: '1',      dbStat1Label: 'Unified Preview',
+  dbStat1Value: '1',      dbStat1Label: 'Unified Pre-deployment',
   dbStat2Value: '$0',     dbStat2Label: 'Live Funds Processed',
   dbStat3Value: '50+',    dbStat3Label: 'Prototype Currencies',
   dbStat4Value: '2FA',    dbStat4Label: 'Account Protection',
@@ -253,7 +253,7 @@ export default function AdminCMS() {
                     {field('bannerActive', '', 'toggle')}
                   </div>
                   <div className="p-4 rounded-xl border border-primary/20" style={{ background: 'rgba(201,168,76,0.05)' }}>
-                    <p className="text-xs text-white/50 mb-1">Preview:</p>
+                    <p className="text-xs text-white/50 mb-1">Pre-deployment:</p>
                     <div className={`px-4 py-2 rounded-lg text-xs font-medium text-black ${form.bannerActive ? 'opacity-100' : 'opacity-30'}`}
                       style={{ background: 'linear-gradient(90deg, #C9A84C, #F0D080)' }}>
                       {form.bannerText}
@@ -363,7 +363,7 @@ function HeroMediaTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
           <Field label="Image Alt Text" value={cfg.heroImageAlt ?? ''} onChange={v => setCfg((p: any) => ({ ...p, heroImageAlt: v }))} />
           {cfg.heroImageUrl && (
             <div className="rounded-xl overflow-hidden border border-white/8" style={{ maxHeight: 180 }}>
-              <img src={cfg.heroImageUrl} alt="preview" className="w-full h-full object-cover" />
+              <img src={cfg.heroImageUrl} alt="pre-deployment" className="w-full h-full object-cover" />
             </div>
           )}
         </div>
@@ -453,18 +453,18 @@ function LogoTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }
         <div className="space-y-3">
           {cfg.primaryLogoUrl && (
             <div className="p-4 rounded-xl border border-white/8 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.9)', minHeight: 80 }}>
-              <img src={cfg.primaryLogoUrl} alt="primary logo preview" style={{ maxHeight: 60, maxWidth: '100%', objectFit: 'contain' }} />
+              <img src={cfg.primaryLogoUrl} alt="primary logo pre-deployment" style={{ maxHeight: 60, maxWidth: '100%', objectFit: 'contain' }} />
             </div>
           )}
           {cfg.darkLogoUrl && (
             <div className="p-4 rounded-xl border border-white/8 flex items-center justify-center" style={{ background: '#0A0A0A', minHeight: 80 }}>
-              <img src={cfg.darkLogoUrl} alt="dark logo preview" style={{ maxHeight: 60, maxWidth: '100%', objectFit: 'contain' }} />
+              <img src={cfg.darkLogoUrl} alt="dark logo pre-deployment" style={{ maxHeight: 60, maxWidth: '100%', objectFit: 'contain' }} />
             </div>
           )}
           {!cfg.primaryLogoUrl && !cfg.darkLogoUrl && (
             <div className="p-8 rounded-xl border border-white/5 flex flex-col items-center justify-center gap-2 text-white/20">
               <Image size={24} />
-              <p className="text-xs">Enter a URL to preview</p>
+              <p className="text-xs">Enter a URL to display the image</p>
             </div>
           )}
         </div>

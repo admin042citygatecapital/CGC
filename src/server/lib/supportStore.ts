@@ -115,7 +115,7 @@ const DEFAULT_CANNED: CannedResponse[] = [
   },
   {
     id: 'cr_default_4', category: 'KYC',
-    title: 'KYC Preview Status',
+    title: 'KYC Pre-deployment Status',
     body: "The KYC screen is a product demonstration only. Do not upload identity documents. An administrator may review demonstration profile data, but this is not regulated identity verification or approval for a financial account.",
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
@@ -133,7 +133,7 @@ const DEFAULT_CANNED: CannedResponse[] = [
   },
   {
     id: 'cr_default_7', category: 'Card Issues',
-    title: 'Card Preview Support',
+    title: 'Card Pre-deployment Support',
     body: "No payment card is issued in this environment. Card numbers, controls, balances, and activity shown in the dashboard are demonstration data and cannot be used for purchases.",
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },

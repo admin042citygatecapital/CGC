@@ -282,9 +282,9 @@ function WidgetTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
           ))}
         </div>
 
-        {/* Right: live preview */}
+        {/* Right: live pre-deployment */}
         <div className="space-y-4">
-          <p className="text-white/25 text-[10px] uppercase tracking-widest">Live Preview</p>
+          <p className="text-white/25 text-[10px] uppercase tracking-widest">Live Example</p>
           <div className="relative rounded-2xl border border-white/8 overflow-hidden" style={{ background: '#0d0d0d', minHeight: 320 }}>
             {/* Mock browser bar */}
             <div className="flex items-center gap-1.5 px-3 py-2 border-b border-white/5" style={{ background: 'rgba(255,255,255,0.03)' }}>

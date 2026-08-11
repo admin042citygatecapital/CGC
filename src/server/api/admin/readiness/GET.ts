@@ -262,7 +262,7 @@ function checkFinancialLaunchGate(): ReadinessCheck {
     return {
       id: 'financial_launch', name: 'Financial Launch Gate', subsystem: 'Compliance & Providers',
       status: 'FAIL', critical: true,
-      message: 'Product preview mode is active; live financial operations remain disabled.',
+      message: 'Product pre-deployment mode is active; live financial operations remain disabled.',
       detail: `This is the safe expected state. Outstanding evidence:\n- ${gaps.join('\n- ')}`,
     };
   }

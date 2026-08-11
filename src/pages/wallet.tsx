@@ -31,12 +31,12 @@ const fiatCurrencyMeta = [
 ];
 
 const securityFeatures = [
-  { icon: Lock,   title: 'Custody Status',       desc: 'No crypto custody is active in this preview. A contracted and reviewed provider is required before launch.',     color: '#C9A84C' },
+  { icon: Lock,   title: 'Custody Status',       desc: 'No crypto custody is active in this pre-deployment. A contracted and reviewed provider is required before launch.',     color: '#C9A84C' },
   { icon: Shield, title: 'Provider Security',      desc: 'Custody signing, key management, and withdrawal controls require a contracted provider and independent review.', color: '#627EEA' },
-  { icon: RefreshCw, title: 'Monitoring Required', desc: 'Production fraud, sanctions, and transaction monitoring are not connected in this preview.',                     color: '#10B981' },
-  { icon: Zap,    title: 'Settlement Preview',    desc: 'The interface demonstrates how settlement and conversion status could be presented after providers are approved.', color: '#9945FF' },
+  { icon: RefreshCw, title: 'Monitoring Required', desc: 'Production fraud, sanctions, and transaction monitoring are not connected in this pre-deployment.',                     color: '#10B981' },
+  { icon: Zap,    title: 'Settlement Pre-deployment',    desc: 'The interface demonstrates how settlement and conversion status could be presented after providers are approved.', color: '#9945FF' },
   { icon: Globe,  title: 'Launch Readiness',      desc: 'Legal review, KYC/AML providers, geographic controls, and custody approval are required before launch.',         color: '#EC4899' },
-  { icon: ArrowLeftRight, title: 'Exchange Preview', desc: 'Compare supported crypto and fiat currencies using transparent indicative rates and flags.', color: '#F7931A' },
+  { icon: ArrowLeftRight, title: 'Exchange Pre-deployment', desc: 'Compare supported crypto and fiat currencies using transparent indicative rates and flags.', color: '#F7931A' },
 ];
 
 
@@ -244,10 +244,10 @@ export default function WalletPage() {
       <Helmet>
         <title>Crypto & Fiat Wallet — 50+ Currencies | CGC</title>
         <meta name="robots" content="noindex, nofollow" />
-        <meta name="description" content="Preview a unified crypto and fiat wallet interface using demonstration balances. Live custody, trading, and transfers are unavailable." />
+        <meta name="description" content="Explore a unified crypto and fiat wallet interface using demonstration balances. Live custody, trading, and transfers are unavailable." />
         <link rel="canonical" href="https://citygate.capital/wallet" />
         <meta property="og:title" content="Crypto & Fiat Wallet — Hold 50+ Currencies" />
-        <meta property="og:description" content="Preview a unified crypto and fiat wallet interface using demonstration balances." />
+        <meta property="og:description" content="Explore a unified crypto and fiat wallet interface using demonstration balances." />
         <meta property="og:url" content="https://citygate.capital/wallet" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -261,7 +261,7 @@ export default function WalletPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Crypto & Fiat Wallet — City Gate Capital" />
-        <meta name="twitter:description" content="Preview a unified crypto and fiat wallet interface with demonstration balances. Live custody, exchange, and transfers are unavailable." />
+        <meta name="twitter:description" content="Explore a unified crypto and fiat wallet interface with demonstration balances. Live custody, exchange, and transfers are unavailable." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -275,7 +275,7 @@ export default function WalletPage() {
           mainEntity: {
             '@type': 'FinancialProduct',
             name: 'City Gate Capital Multi-Currency Wallet',
-            description: 'Product preview of a crypto and fiat wallet interface using demonstration balances.',
+            description: 'Product pre-deployment of a crypto and fiat wallet interface using demonstration balances.',
             provider: { '@id': 'https://citygate.capital/#organization' },
             feesAndCommissionsSpecification: 'Zero hidden fees. Real mid-market exchange rates.',
           },
@@ -332,7 +332,7 @@ export default function WalletPage() {
               </div>
             </motion.div>
 
-            {/* Wallet preview */}
+            {/* Wallet pre-deployment */}
             <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.2 }}>
               <div className="glass-card rounded-3xl p-6 gradient-border" style={{ boxShadow: 'var(--gold-glow)' }}>
                 <div className="flex items-center justify-between mb-5">
@@ -465,14 +465,14 @@ export default function WalletPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
               <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-                Exchange Preview
+                Exchange Pre-deployment
               </span>
               <h2 className="text-4xl font-bold text-foreground mb-5 tracking-tight">
                 Explore Asset Swaps<br />
                 <span className="text-gold-gradient">Without Moving Funds</span>
               </h2>
               <p className="text-foreground/50 leading-relaxed mb-8">
-                Explore how crypto and fiat conversions could appear using illustrative prices. This preview does not execute orders, settle transactions, or custody assets.
+                Explore how crypto and fiat conversions could appear using illustrative prices. This pre-deployment platform does not execute orders, settle transactions, or custody assets.
               </p>
               <div className="space-y-3">
                 {[

@@ -57,7 +57,7 @@ describe('chatbot FAQ safety', () => {
     const store = await import('../../server/lib/smartsuppStore.js');
     const [migrated] = store.getFaq();
     expect(migrated.id).toBe('legacy-transfer');
-    expect(migrated.answer).toContain('not available in this product preview');
+    expect(migrated.answer).toContain('not available in this pre-deployment platform');
     expect(migrated.answer).not.toMatch(/typically settle/i);
     expect(fs.readFileSync(path.join(chatbotDir, 'faq.jsonl'), 'utf8')).not.toMatch(/typically settle/i);
   });

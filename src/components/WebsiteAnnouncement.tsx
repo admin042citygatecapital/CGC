@@ -24,7 +24,7 @@ export default function WebsiteAnnouncement() {
     || location.pathname === '/login'
     || location.pathname === '/register'
     || location.pathname.startsWith('/dashboard');
-  const isDemoAnnouncement = /\b(?:demo|demonstration|product preview|preview environment)\b/i.test(announcement.text);
+  const isDemoAnnouncement = /\b(?:demo|demonstration|pre-deployment platform|pre-deployment environment)\b/i.test(announcement.text);
   if (!announcement.enabled || (isDemoAnnouncement && !isDemoWorkspace)) return null;
 
   const content = (

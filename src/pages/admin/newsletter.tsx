@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────
  * 4 tabs:
  *   1. Subscribers — list, search, filter, manual unsub, CSV export/import
- *   2. Campaign Builder — create/edit, segment, schedule, preview, save draft
+ *   2. Campaign Builder — create/edit, segment, schedule, pre-deployment, save draft
  *   3. Campaign History — sent campaigns with stats, duplicate & resend
  *   4. Compliance — unsubscribe info, GDPR notes
  */
@@ -111,7 +111,7 @@ function StatusBadge({ status }: { status: Campaign['status'] }) {
   );
 }
 
-// ── Preview Modal ─────────────────────────────────────────────────────────────
+// ── Pre-deployment Modal ─────────────────────────────────────────────────────────────
 
 function PreviewModal({ subject, body, onClose }: { subject: string; body: string; onClose: () => void }) {
   const [view, setView] = useState<'desktop' | 'mobile'>('desktop');
@@ -133,7 +133,7 @@ function PreviewModal({ subject, body, onClose }: { subject: string; body: strin
       <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
           <div>
-            <p className="text-sm font-bold text-white">Email Preview</p>
+            <p className="text-sm font-bold text-white">Email Example</p>
             <p className="text-xs text-white/40 truncate max-w-sm">{subject}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ function PreviewModal({ subject, body, onClose }: { subject: string; body: strin
               srcDoc={html}
               className="w-full border-0 rounded-xl"
               style={{ height: '600px', background: '#111' }}
-              title="Email preview"
+              title="Email pre-deployment"
             />
           </div>
         </div>
@@ -724,7 +724,7 @@ export default function AdminNewsletter() {
                     <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-white/6">
                       <button onClick={() => setPreviewCamp(editCampaign as Campaign)}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white/60 border border-white/10 hover:border-white/20 hover:text-white transition-colors">
-                        <Eye size={14} /> Preview
+                        <Eye size={14} /> Pre-deployment
                       </button>
                       <button onClick={() => saveCampaign(true)} disabled={campSaving}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white/60 border border-white/10 hover:border-white/20 hover:text-white transition-colors disabled:opacity-50">
@@ -906,7 +906,7 @@ export default function AdminNewsletter() {
           )}
         </div>
 
-        {/* Preview modal */}
+        {/* Pre-deployment modal */}
         {previewCamp && (
           <PreviewModal
             subject={previewCamp.subject ?? ''}

@@ -120,32 +120,32 @@ export class UnsupportedFaqClaimError extends Error {
 
 const SAFE_FAQ_DEFAULTS: Array<Pick<FaqEntry, 'question' | 'answer' | 'category' | 'triggerKeywords'>> = [
   {
-    question: 'How do I create a preview profile?',
-    answer: 'Select "Create Preview Profile" and complete the registration form. This creates access to the product demonstration only; KYC and live financial accounts are not available.',
+    question: 'How do I create a pre-deployment profile?',
+    answer: 'Select "Create Pre-deployment Profile" and complete the registration form. This creates access to the product demonstration only; KYC and live financial accounts are not available.',
     category: 'Account',
-    triggerKeywords: ['open account', 'register', 'sign up', 'preview profile'],
+    triggerKeywords: ['open account', 'register', 'sign up', 'pre-deployment profile'],
   },
   {
     question: 'How do I transfer money internationally?',
-    answer: 'International transfers are not available in this product preview. You may explore the proposed workflow, but no payment is submitted or settled and no real recipient banking details should be entered.',
+    answer: 'International transfers are not available in this pre-deployment platform. You may explore the proposed workflow, but no payment is submitted or settled and no real recipient banking details should be entered.',
     category: 'Transfers',
     triggerKeywords: ['transfer', 'wire', 'international', 'send money'],
   },
   {
     question: 'What are the withdrawal limits?',
-    answer: 'Withdrawals are not available in this product preview because City Gate Capital does not accept or hold customer funds. Any displayed limits or balances are demonstration data only.',
+    answer: 'Withdrawals are not available in this pre-deployment platform because City Gate Capital does not accept or hold customer funds. Any displayed limits or balances are demonstration data only.',
     category: 'Limits',
     triggerKeywords: ['withdrawal limit', 'how much', 'daily limit'],
   },
   {
     question: 'How do I freeze my card?',
-    answer: 'No payment card is issued in this product preview. Card controls are illustrative only and cannot freeze, unfreeze, authorise, or block a real card.',
+    answer: 'No payment card is issued in this pre-deployment platform. Card controls are illustrative only and cannot freeze, unfreeze, authorise, or block a real card.',
     category: 'Cards',
     triggerKeywords: ['freeze card', 'lock card', 'lost card'],
   },
   {
     question: 'Is my money protected?',
-    answer: 'This product preview does not accept customer money. Demonstration balances are not deposits and are not insured. Do not send funds or digital assets to any details shown in the preview.',
+    answer: 'This pre-deployment platform does not accept customer money. Demonstration balances are not deposits and are not insured. Do not send funds or digital assets to any details shown in the pre-deployment.',
     category: 'Security',
     triggerKeywords: ['safe', 'protected', 'insured', 'regulated'],
   },
@@ -154,7 +154,7 @@ const SAFE_FAQ_DEFAULTS: Array<Pick<FaqEntry, 'question' | 'answer' | 'category'
 const UNSUPPORTED_FAQ_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: new RegExp(['transfers? typically ', 'settle in\\s+1.{0,3}3 business days'].join(''), 'i'), reason: 'promises an unsupported transfer settlement time' },
   { pattern: new RegExp(['standard accounts?:', '[\\s\\S]{0,80}10,000\\s*\\/\\s*day'].join(''), 'i'), reason: 'states invented withdrawal limits' },
-  { pattern: new RegExp(['go to dash\u0062oard', '[\\s\\S]{0,100}cards[\\s\\S]{0,100}(?:tap|select)[\\s\\S]{0,40}freeze'].join(''), 'i'), reason: 'presents preview card controls as operational' },
+  { pattern: new RegExp(['go to dash\u0062oard', '[\\s\\S]{0,100}cards[\\s\\S]{0,100}(?:tap|select)[\\s\\S]{0,40}freeze'].join(''), 'i'), reason: 'presents pre-deployment card controls as operational' },
 ];
 
 export function findUnsupportedFaqClaim(value: string): string | undefined {

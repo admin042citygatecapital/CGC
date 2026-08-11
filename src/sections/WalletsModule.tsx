@@ -83,9 +83,9 @@ export function WalletsSection() {
 
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { icon: ArrowRight, label: 'Preview Send'     },
-                  { icon: RefreshCw,  label: 'Preview Exchange' },
-                  { icon: CreditCard, label: 'Preview Top Up'   },
+                  { icon: ArrowRight, label: 'Pre-deployment Send'     },
+                  { icon: RefreshCw,  label: 'Pre-deployment Exchange' },
+                  { icon: CreditCard, label: 'Pre-deployment Top Up'   },
                 ].map(btn => (
                   <button key={btn.label} className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-primary/8 hover:bg-primary/15 transition-colors group">
                     <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center group-hover:bg-primary/25 transition-colors">

@@ -81,7 +81,7 @@ function safeDescription(
   metadataDescription?: string,
 ): string {
   if (isLockedFinancialMutation(path, method)) {
-    return 'Preview-locked financial operation endpoint; no live provider execution.';
+    return 'Pre-deployment-locked financial operation endpoint; no live provider execution.';
   }
   if (path.startsWith('/api/admin/sponsor-readiness')) {
     return 'Sponsor-readiness evidence workflow; approval does not enable financial operations.';

@@ -364,7 +364,7 @@ function SettingsPanel({
               {/* Biometric */}
               <SettingsRow
                 icon={Fingerprint}
-                label="Biometric Interface Preview"
+                label="Biometric Interface Pre-deployment"
                 sub="Demonstration setting; native login is not active"
                 checked={settings.biometric}
                 onChange={v => onUpdate({ biometric: v })}
@@ -1437,12 +1437,12 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground/60">No cards yet</p>
-                      <p className="text-xs text-foreground/30 mt-1">Card issuance is unavailable in the preview</p>
+                      <p className="text-xs text-foreground/30 mt-1">Card issuance is unavailable in the pre-deployment</p>
                     </div>
                     <Link to="/dashboard/cards"
                       className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:brightness-110"
                       style={{ background: 'rgba(201,168,76,0.12)', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.22)' }}>
-                      <Plus size={12} /> View Card Preview
+                      <Plus size={12} /> View Card Pre-deployment
                     </Link>
                   </div>
                 ) : (

@@ -461,7 +461,7 @@ export default function NewsletterPage() {
                 <p className="text-xs text-foreground/40 leading-relaxed">
                   Emails are currently <strong className="text-foreground/60">recorded in private server storage</strong> but not delivered.
                   To enable real delivery, connect an SMTP provider (e.g. SendGrid, Mailgun, or Resend) via the email integration.
-                  The preview sequence workflow, templates, and subscriber records remain available for testing.
+                  The pre-deployment sequence workflow, templates, and subscriber records remain available for testing.
                 </p>
               </div>
             </div>

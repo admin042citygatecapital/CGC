@@ -285,12 +285,12 @@ export default function AdminLinks() {
           })}
         </div>
 
-        {/* Dashboard quick-links preview */}
+        {/* Dashboard quick-links pre-deployment */}
         {links.filter(l => l.enabled && l.showInDashboard).length > 0 && (
           <div className="mt-6 rounded-2xl border border-white/5 p-5" style={{ background: 'rgba(255,255,255,0.025)' }}>
             <div className="flex items-center gap-2 mb-4">
               <Globe size={14} className="text-primary" />
-              <p className="text-white text-sm font-semibold">Dashboard Quick Links Preview</p>
+              <p className="text-white text-sm font-semibold">Dashboard Quick Links Example</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {links.filter(l => l.enabled && l.showInDashboard).map(l => {

@@ -54,7 +54,7 @@ const docs: DocFile[] = [
   {
     id: 'postman',
     title: 'Postman Collection',
-    description: 'Reference Postman collection for controlled testing. Review each request against current authorization and preview-lock behavior before use.',
+    description: 'Reference Postman collection for controlled testing. Review each request against current authorization and pre-deployment-lock behavior before use.',
     format: 'JSON (.json)',
     filename: 'postman-collection.json',
     path: '/api/admin/documentation/postman',
@@ -83,7 +83,7 @@ const stats = [
   { label: 'Protected Formats', value: '4' },
   { label: 'Snapshot Date', value: '2026-06-04' },
   { label: 'Current Inventory', value: 'Developer Center' },
-  { label: 'Financial Writes', value: 'Preview Locked' },
+  { label: 'Financial Writes', value: 'Pre-deployment Locked' },
 ];
 
 export default function AdminDocumentation() {
@@ -117,7 +117,7 @@ export default function AdminDocumentation() {
     setDownloadError('');
     const preview = window.open('', '_blank');
     if (!preview) {
-      setDownloadError('Document preview was blocked by the browser');
+      setDownloadError('Document pre-deployment was blocked by the browser');
       return;
     }
     preview.opener = null;
@@ -128,7 +128,7 @@ export default function AdminDocumentation() {
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (error) {
       preview.close();
-      setDownloadError(error instanceof Error ? error.message : 'Document preview failed');
+      setDownloadError(error instanceof Error ? error.message : 'Document pre-deployment failed');
     }
   }
 
@@ -281,12 +281,12 @@ export default function AdminDocumentation() {
                     ['/api/users/balance', 'GET', 'Demonstration balance projection', 'Customer'],
                     ['/api/users/transactions', 'GET', 'Demonstration transaction history', 'Customer'],
                     ['/api/users/cards', 'GET', 'Demonstration card records', 'Customer'],
-                    ['/api/users/transfer', 'POST', 'Preview-locked transfer route', 'Customer'],
+                    ['/api/users/transfer', 'POST', 'Pre-deployment-locked transfer route', 'Customer'],
                     ['/api/admin/auth/login', 'POST', 'Admin login', 'Public'],
                     ['/api/admin/stats', 'GET', 'Dashboard KPIs', 'Admin'],
                     ['/api/admin/users', 'GET', 'List / search users', 'Admin'],
-                    ['/api/admin/transactions/real', 'GET', 'Persistent preview transaction records', 'Admin'],
-                    ['/api/admin/balance/adjust', 'POST', 'Preview-locked balance adjustment', 'Admin'],
+                    ['/api/admin/transactions/real', 'GET', 'Persistent pre-deployment transaction records', 'Admin'],
+                    ['/api/admin/balance/adjust', 'POST', 'Pre-deployment-locked balance adjustment', 'Admin'],
                     ['/api/admin/kyc/queue', 'GET', 'Demonstration KYC review queue', 'Admin'],
                     ['/api/admin/security/logs', 'GET', 'Security logs', 'Admin'],
                     ['/api/admin/cms', 'GET/POST', 'CMS content', 'Admin'],

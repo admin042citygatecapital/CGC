@@ -17,8 +17,8 @@ const accountTypes = [
     icon: User,
     name: 'Personal',
     tagline: 'For individuals',
-    desc: 'Preview the everyday account, portfolio, and transfer experience in one workspace.',
-    price: 'Preview',
+    desc: 'Explore the everyday account, portfolio, and transfer experience in one workspace.',
+    price: 'Pre-deployment',
     color: '#C9A84C',
     accentClass: 'from-primary/20 to-primary/5',
     features: [
@@ -35,9 +35,9 @@ const accountTypes = [
   {
     icon: TrendingUp,
     name: 'Savings',
-    tagline: 'Goal-based preview',
+    tagline: 'Goal-based pre-deployment',
     desc: 'Explore savings goals, automated rules, and projected returns using demonstration data.',
-    price: 'Preview',
+    price: 'Pre-deployment',
     color: '#10B981',
     highlight: true,
     accentClass: 'from-emerald-500/20 to-emerald-500/5',
@@ -48,7 +48,7 @@ const accountTypes = [
       { text: 'Withdrawal flow demonstration',         included: true  },
       { text: 'Auto-save rules & round-ups',           included: true  },
       { text: 'Savings goals & tracking',              included: true  },
-      { text: 'No deposits accepted in preview',       included: true  },
+      { text: 'No deposits accepted in pre-deployment',       included: true  },
       { text: 'Dedicated savings manager',             included: false },
     ],
   },
@@ -56,8 +56,8 @@ const accountTypes = [
     icon: Building2,
     name: 'Business',
     tagline: 'For companies',
-    desc: 'Preview multi-user access, expense workflows, and proposed API integrations.',
-    price: 'Preview',
+    desc: 'Pre-deployment multi-user access, expense workflows, and proposed API integrations.',
+    price: 'Pre-deployment',
     color: '#627EEA',
     accentClass: 'from-blue-500/20 to-blue-500/5',
     features: [
@@ -74,37 +74,37 @@ const accountTypes = [
 ];
 
 const kycSteps = [
-  { icon: User,        step: '01', title: 'Create Preview',    desc: 'Enter your email and set a secure password to access the demonstration workspace.',                  color: '#C9A84C' },
-  { icon: Camera,      step: '02', title: 'Review KYC Flow',   desc: 'Preview the identity-verification journey. A contracted KYC provider is required before launch.',  color: '#627EEA' },
-  { icon: Fingerprint, step: '03', title: 'Security Preview',  desc: 'Review the proposed biometric interface; native biometric login is not active.',                   color: '#10B981' },
+  { icon: User,        step: '01', title: 'Create Pre-deployment',    desc: 'Enter your email and set a secure password to access the demonstration workspace.',                  color: '#C9A84C' },
+  { icon: Camera,      step: '02', title: 'Review KYC Flow',   desc: 'Explore the identity-verification journey. A contracted KYC provider is required before launch.',  color: '#627EEA' },
+  { icon: Fingerprint, step: '03', title: 'Security Pre-deployment',  desc: 'Review the proposed biometric interface; native biometric login is not active.',                   color: '#10B981' },
   { icon: DollarSign,  step: '04', title: 'Explore Demo Data', desc: 'Use demonstration balances and transactions. This environment cannot receive or move real funds.', color: '#9945FF' },
 ];
 
 const trustBadges = [
-  { icon: Shield,      label: 'Preview Safeguard', desc: 'No live deposits',           color: '#C9A84C' },
-  { icon: Fingerprint, label: 'Biometric Concept', desc: 'Interface preview only',    color: '#627EEA' },
+  { icon: Shield,      label: 'Pre-deployment Safeguard', desc: 'No live deposits',           color: '#C9A84C' },
+  { icon: Fingerprint, label: 'Biometric Concept', desc: 'Interface pre-deployment only',    color: '#627EEA' },
   { icon: FileText,    label: 'Launch Gated',      desc: 'Approvals required',         color: '#10B981' },
-  { icon: Zap,         label: 'Guided Setup',      desc: 'Preview workflow',           color: '#9945FF' },
+  { icon: Zap,         label: 'Guided Setup',      desc: 'Pre-deployment workflow',           color: '#9945FF' },
   { icon: Lock,        label: 'Secure Sessions',   desc: 'Protected account access', color: '#EC4899' },
   { icon: Globe,       label: 'Multi-Currency',    desc: 'Prototype coverage',        color: '#F7931A' },
   { icon: CreditCard,  label: 'Virtual Cards',     desc: 'Demonstration only',        color: '#14B8A6' },
-  { icon: Star,        label: 'Responsive UI',     desc: 'Web preview',                color: '#F0D080' },
+  { icon: Star,        label: 'Responsive UI',     desc: 'Web pre-deployment',                color: '#F0D080' },
 ];
 
 const testimonials = [
-  { name: 'Personal Preview', role: 'Illustrative scenario', text: 'See balances, cards, transfers, and spending insights together in a guided account experience.', rating: 5 },
-  { name: 'Business Preview', role: 'Illustrative scenario', text: 'Explore team access, expense controls, approval flows, and reporting before provider integrations go live.', rating: 5 },
-  { name: 'Savings Preview', role: 'Illustrative scenario', text: 'Model goals and projected returns with demonstration data; no deposit or advertised yield is offered.', rating: 5 },
+  { name: 'Personal Pre-deployment', role: 'Illustrative scenario', text: 'See balances, cards, transfers, and spending insights together in a guided account experience.', rating: 5 },
+  { name: 'Business Pre-deployment', role: 'Illustrative scenario', text: 'Explore team access, expense controls, approval flows, and reporting before provider integrations go live.', rating: 5 },
+  { name: 'Savings Pre-deployment', role: 'Illustrative scenario', text: 'Model goals and projected returns with demonstration data; no deposit or advertised yield is offered.', rating: 5 },
 ];
 
 // Comparison table data
 const comparisonRows = [
-  { feature: 'Preview access',        personal: 'Included',   savings: 'Included',    business: 'Included' },
+  { feature: 'Pre-deployment access', personal: 'Included', savings: 'Included', business: 'Included' },
   { feature: 'Currencies supported',  personal: '50+',        savings: '50+',         business: '50+' },
   { feature: 'Virtual cards',         personal: '1',          savings: '1',           business: 'Unlimited' },
   { feature: 'Physical metal card',   personal: null,         savings: null,          business: true },
   { feature: 'Return modelling',      personal: null,         savings: true,          business: null },
-  { feature: 'Transfer preview',      personal: true,         savings: true,          business: true },
+  { feature: 'Transfer pre-deployment',      personal: true,         savings: true,          business: true },
   { feature: 'Team seats',            personal: null,         savings: null,          business: 'Up to 10' },
   { feature: 'API access',            personal: null,         savings: null,          business: true },
   { feature: 'Priority support',      personal: null,         savings: null,          business: true },
@@ -117,7 +117,7 @@ function ComparisonCell({ value }: { value: string | boolean | null }) {
   return <span className="text-xs text-foreground/60">{value}</span>;
 }
 
-// Hero account preview card
+// Hero account pre-deployment card
 const heroStats = [
   { label: 'Total Balance', value: '$48,291.40', sub: '+2.4% this month', color: '#C9A84C' },
   { label: 'Projected Return', value: '$210.18', sub: 'Illustrative only', color: '#10B981' },
@@ -148,7 +148,7 @@ export default function AccountsPage() {
   );
   function getPlanCTALabel(planName: string): string {
     if (planCTA.variant === 'action') return 'Get Started — Free';
-    if (planCTA.variant === 'social') return 'Explore the Preview';
+    if (planCTA.variant === 'social') return 'Explore the Platform';
     return `Open ${planName} Account`;
   }
 
@@ -156,11 +156,11 @@ export default function AccountsPage() {
     <>
       <Helmet>
         <title>Open an Account — Personal, Savings & Business | CGC</title>
-        <meta name="description" content="Preview City Gate Capital personal, savings, and business account experiences using demonstration balances and workflows." />
+        <meta name="description" content="Pre-deployment City Gate Capital personal, savings, and business account experiences using demonstration balances and workflows." />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://citygate.capital/accounts" />
         <meta property="og:title" content="Open a Bank Account — Personal, Savings & Business" />
-        <meta property="og:description" content="Explore personal, savings, and business account experiences in the City Gate Capital product preview." />
+        <meta property="og:description" content="Explore personal, savings, and business account experiences in the City Gate Capital pre-deployment platform." />
         <meta property="og:url" content="https://citygate.capital/accounts" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -173,7 +173,7 @@ export default function AccountsPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Open a Bank Account — City Gate Capital" />
-        <meta name="twitter:description" content="Explore personal, savings, and business account experiences in the product preview." />
+        <meta name="twitter:description" content="Explore personal, savings, and business account experiences in the pre-deployment platform." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -187,9 +187,9 @@ export default function AccountsPage() {
             '@type': 'ItemList',
             name: 'City Gate Capital Account Types',
             itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Personal account experience preview' },
-              { '@type': 'ListItem', position: 2, name: 'Savings goals experience preview' },
-              { '@type': 'ListItem', position: 3, name: 'Business account experience preview' },
+              { '@type': 'ListItem', position: 1, name: 'Personal account experience pre-deployment' },
+              { '@type': 'ListItem', position: 2, name: 'Savings goals experience pre-deployment' },
+              { '@type': 'ListItem', position: 3, name: 'Business account experience pre-deployment' },
             ],
           },
         }) }} />
@@ -215,7 +215,7 @@ export default function AccountsPage() {
             {/* Left copy */}
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
               <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-6 tracking-widest uppercase">
-                Preview Profiles
+                Pre-deployment Profiles
               </span>
               <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight">
                 Explore Proposed Profiles,<br />
@@ -227,7 +227,7 @@ export default function AccountsPage() {
 
               {/* Feature pills */}
               <div className="flex flex-wrap gap-2 mb-10">
-                {['Demonstration account', 'KYC flow preview', 'No live deposits', 'Preview access', 'No financial transactions'].map(tag => (
+                {['Demonstration account', 'KYC workflow', 'No live deposits', 'Pre-deployment access', 'No financial transactions'].map(tag => (
                   <span key={tag} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-primary bg-primary/10 border border-primary/20">
                     <CheckCircle size={10} />
                     {tag}
@@ -238,7 +238,7 @@ export default function AccountsPage() {
               <div className="flex flex-wrap gap-4">
                 <button onClick={() => { trackConversion('signup_started', location.pathname, { source: 'hero_cta' }); openModal(selectedType); }} className="group relative inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-bold text-black overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                  <span className="relative">Create Preview Profile</span>
+                  <span className="relative">Create Pre-deployment Profile</span>
                   <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
                 </button>
                 <button
@@ -251,7 +251,7 @@ export default function AccountsPage() {
               </div>
             </motion.div>
 
-            {/* Right — live account preview */}
+            {/* Right — live account pre-deployment */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -500,7 +500,7 @@ export default function AccountsPage() {
                 KYC Verification
               </span>
               <h2 className="text-4xl font-bold text-foreground mb-4 tracking-tight">
-                Explore the <span className="text-gold-gradient">Verification Preview</span>
+                Explore the <span className="text-gold-gradient">Verification Workflow</span>
               </h2>
               <p className="text-foreground/55 max-w-md mx-auto text-sm">Review the proposed identity-verification journey. Real document collection and approval remain disabled until a contracted provider and legal review are in place.</p>
             </motion.div>
@@ -629,7 +629,7 @@ export default function AccountsPage() {
             <div className="flex flex-wrap justify-center gap-4 relative">
               <button onClick={() => { trackConversion('signup_started', location.pathname, { source: 'bottom_cta' }); openModal(selectedType); }} className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <span className="relative">Create Preview Profile</span>
+                <span className="relative">Create Pre-deployment Profile</span>
                 <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
               </button>
               <Link to="/contact" className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-medium text-foreground/60 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors">
@@ -648,7 +648,7 @@ export default function AccountsPage() {
             className="flex-1 relative py-3.5 rounded-xl text-sm font-bold text-black text-center overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-            <span className="relative">Create Preview Profile</span>
+            <span className="relative">Create Pre-deployment Profile</span>
           </button>
           <Link
             to="/contact"

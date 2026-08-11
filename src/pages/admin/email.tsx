@@ -5,14 +5,14 @@
  *   1.  SMTP Status          — live transport health (OAuth + manual)
  *   2.  Zoho Status          — OAuth token health, re-auth link
  *   3.  Templates            — edit all 10 system templates inline
- *   4.  OTP                  — preview & test OTP email
- *   5.  Password Reset       — preview & test password-reset email
- *   6.  Welcome              — preview & test welcome email
- *   7.  Security Alerts      — preview & test security-alert email
- *   8.  Transaction Emails   — preview & test transaction notification
- *   9.  Deposit Emails       — preview & test deposit confirmation
- *  10.  Withdrawal Emails    — preview & test withdrawal approval
- *  11.  Transfer Emails      — preview & test transfer sent/received
+ *   4.  OTP                  — pre-deployment & test OTP email
+ *   5.  Password Reset       — pre-deployment & test password-reset email
+ *   6.  Welcome              — pre-deployment & test welcome email
+ *   7.  Security Alerts      — pre-deployment & test security-alert email
+ *   8.  Transaction Emails   — pre-deployment & test transaction notification
+ *   9.  Deposit Emails       — pre-deployment & test deposit confirmation
+ *  10.  Withdrawal Emails    — pre-deployment & test withdrawal approval
+ *  11.  Transfer Emails      — pre-deployment & test transfer sent/received
  *  12.  Newsletter           — link to /admin/newsletter
  *  13.  Send Test Email      — send any type to any address
  *  14.  Retry Failed Emails  — queue viewer + bulk retry
@@ -443,7 +443,7 @@ function TemplatesTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs transition-colors ${
                 preview ? 'border-primary/30 bg-primary/10 text-primary' : 'border-white/8 text-white/40 hover:text-white'
               }`}>
-              <Eye size={11} /> {preview ? 'Edit' : 'Preview'}
+              <Eye size={11} /> {preview ? 'Edit' : 'Example'}
             </button>
             <button onClick={() => setEditing(null)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/8 text-white/40 text-xs hover:text-white">
@@ -567,7 +567,7 @@ function TemplatesTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
           </label>
 
           <div className="rounded-xl border border-white/8 bg-[#0b0b0b] p-4">
-            <p className="text-white/25 text-[10px] uppercase tracking-widest mb-3">Live Branding Preview</p>
+            <p className="text-white/25 text-[10px] uppercase tracking-widest mb-3">Live Branding Example</p>
             <div className="flex flex-col items-center text-center gap-3">
               <a href={branding.websiteUrl} target="_blank" rel="noreferrer" className="block">
                 <img src={branding.logoUrl} alt={branding.brandName} className="max-h-24 max-w-full object-contain" />
@@ -691,7 +691,7 @@ function TestTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }
         )}
       </AnimatePresence>
 
-      {/* Template preview cards */}
+      {/* Template pre-deployment cards */}
       <div>
         <p className="text-white/25 text-[10px] uppercase tracking-widest mb-3">Transactional Template Quick-Send</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">

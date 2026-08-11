@@ -379,7 +379,7 @@ export default function AdminMediaPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/5">
-                    {['Preview','Name','Type','Size','Folder','Optimized','Date','Actions'].map(h => (
+                    {['Pre-deployment','Name','Type','Size','Folder','Optimized','Date','Actions'].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-white/25 text-[10px] uppercase tracking-wide font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -449,7 +449,7 @@ export default function AdminMediaPage() {
           )}
         </div>
 
-        {/* ── Preview modal ─────────────────────────────────────────────── */}
+        {/* ── Pre-deployment modal ─────────────────────────────────────────────── */}
         <AnimatePresence>
           {selected && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

@@ -64,7 +64,7 @@ interface WebsiteSettings {
 
 const DEFAULT: WebsiteSettings = {
   siteName: 'City Gate Capital',
-  siteTagline: 'Digital Finance Product Preview',
+  siteTagline: 'Digital Finance Pre-deployment Platform',
   logoUrl: '/assets/brand/city-gate-capital-horizontal.png',
   faviconUrl: '/assets/brand/city-gate-capital-favicon.png',
   primaryColor: '#C9A84C',
@@ -73,8 +73,8 @@ const DEFAULT: WebsiteSettings = {
   fontBody: 'Inter',
 
   heroTitle: 'Explore the Future of Digital Finance',
-  heroSubtitle: 'A product preview of proposed account, wallet, transfer, card, analytics, and administration experiences.',
-  heroCTA: 'Create Preview Profile',
+  heroSubtitle: 'A pre-deployment platform of proposed account, wallet, transfer, card, analytics, and administration experiences.',
+  heroCTA: 'Create Pre-deployment Profile',
   heroCTALink: '/accounts',
   heroSecondaryCTA: 'Explore Features',
   heroSecondaryCTALink: '/digital-banking',
@@ -87,7 +87,7 @@ const DEFAULT: WebsiteSettings = {
     { label: 'Transfers',       href: '/transfers' },
     { label: 'About',           href: '/about' },
   ],
-  navCTALabel: 'Create Preview Profile',
+  navCTALabel: 'Create Pre-deployment Profile',
   navCTALink: '/accounts',
   showSupportInNav: true,
   showLoginInNav: true,
@@ -103,7 +103,7 @@ const DEFAULT: WebsiteSettings = {
   showTrustBadgesInFooter: true,
 
   announcementEnabled: true,
-  announcementText: 'Product preview: balances and transactions are demonstrations.',
+  announcementText: 'Pre-deployment platform: balances and transactions are demonstrations.',
   announcementLink: '/accounts',
 
   darkMode: true,
@@ -293,7 +293,7 @@ export default function AdminWebsite() {
             <p className="text-white/30 text-sm">Full control over branding, layout, navigation, and content</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Preview device toggle */}
+            {/* Pre-deployment device toggle */}
             <div className="hidden md:flex items-center gap-1 bg-white/[0.04] border border-white/8 rounded-xl p-1">
               {([['desktop', Monitor], ['tablet', Tablet], ['mobile', Smartphone]] as const).map(([d, Icon]) => (
                 <button key={d} onClick={() => setPreview(d)}
@@ -304,7 +304,7 @@ export default function AdminWebsite() {
             </div>
             <a href="/" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-white/40 border border-white/8 hover:text-white hover:border-white/20 transition-colors">
-              <Eye size={13} /> Preview
+              <Eye size={13} /> Pre-deployment
             </a>
             {saved && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
@@ -358,10 +358,10 @@ export default function AdminWebsite() {
                   <Field k="logoUrl" label="Logo URL" placeholder="/assets/logo.jpg" />
                   <Field k="faviconUrl" label="Favicon URL" placeholder="/assets/favicon.ico" />
                 </div>
-                {/* Logo preview */}
+                {/* Logo pre-deployment */}
                 {cfg.logoUrl && (
                   <div className="p-4 rounded-xl border border-white/8 flex items-center gap-4" style={{ background: 'rgba(0,0,0,0.3)' }}>
-                    <img src={cfg.logoUrl} alt="Logo preview" className="h-12 w-auto object-contain" />
+                    <img src={cfg.logoUrl} alt="Logo pre-deployment" className="h-12 w-auto object-contain" />
                     <div>
                       <p className="text-white text-sm font-bold">{cfg.siteName}</p>
                       <p className="text-white/30 text-xs">{cfg.siteTagline}</p>
@@ -422,7 +422,7 @@ export default function AdminWebsite() {
                     ))}
                   </div>
                 </div>
-                {/* Hero preview */}
+                {/* Hero pre-deployment */}
                 <div className="rounded-xl border border-white/8 overflow-hidden" style={{ background: '#0A0A0A' }}>
                   <div className="px-6 py-8 text-center">
                     <p className="text-white text-lg font-bold mb-2">{cfg.heroTitle || 'Hero Title'}</p>
@@ -446,7 +446,7 @@ export default function AdminWebsite() {
               <>
                 <h3 className="text-white font-semibold text-sm flex items-center gap-2"><Navigation size={14} className="text-primary" /> Navigation</h3>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <Field k="navCTALabel" label="Nav CTA Button Label" placeholder="Create Preview Profile" />
+                  <Field k="navCTALabel" label="Nav CTA Button Label" placeholder="Create Pre-deployment Profile" />
                   <Field k="navCTALink" label="Nav CTA Link" placeholder="/accounts" />
                 </div>
                 <Toggle k="showSupportInNav" label="Show Support Link" desc="Display Support in header" />
@@ -517,7 +517,7 @@ export default function AdminWebsite() {
                     <div className="flex items-start gap-2">
                       <MapPin size={15} className="mt-0.5 shrink-0 text-primary" />
                       <div>
-                        <p className="text-xs font-semibold text-white">Live Google Map Preview</p>
+                        <p className="text-xs font-semibold text-white">Live Google Map Example</p>
                         <p className="mt-0.5 max-w-xl text-[11px] text-white/40">{businessLocation.address}</p>
                       </div>
                     </div>
@@ -532,7 +532,7 @@ export default function AdminWebsite() {
                   </div>
                   <iframe
                     key={businessLocation.mapEmbedUrl}
-                    title="Business address map preview"
+                    title="Business address map pre-deployment"
                     src={businessLocation.mapEmbedUrl}
                     className="h-72 w-full border-0"
                     loading="lazy"
@@ -541,11 +541,11 @@ export default function AdminWebsite() {
                   />
                 </div>
                 <p className="text-[11px] leading-relaxed text-white/35">
-                  The preview changes while you type. Saving keeps it as an admin draft unless the verified publication control above is enabled.
+                  The pre-deployment changes while you type. Saving keeps it as an admin draft unless the verified publication control above is enabled.
                 </p>
                 <Field k="footerCopyright" label="Copyright Text (use {year} for dynamic year)" placeholder="© {year} City Gate Capital Ltd." />
                 <Toggle k="showNewsletterInFooter" label="Newsletter Signup" desc="Show newsletter form in footer" />
-                <Toggle k="showTrustBadgesInFooter" label="Trust Badges" desc="Show preview safeguards and launch-status badges" />
+                <Toggle k="showTrustBadgesInFooter" label="Trust Badges" desc="Show pre-deployment safeguards and launch-status badges" />
               </>
             )}
 
@@ -554,9 +554,9 @@ export default function AdminWebsite() {
               <>
                 <h3 className="text-white font-semibold text-sm flex items-center gap-2"><Type size={14} className="text-primary" /> Announcement Banner</h3>
                 <Toggle k="announcementEnabled" label="Show Announcement Banner" desc="Display ticker/banner below header" />
-                <Field k="announcementText" label="Announcement Text" placeholder="Product preview: no live deposits or transactions." />
+                <Field k="announcementText" label="Announcement Text" placeholder="Pre-deployment platform: no live deposits or transactions." />
                 <Field k="announcementLink" label="Announcement Link (optional)" placeholder="/accounts" />
-                {/* Preview */}
+                {/* Pre-deployment */}
                 <div className="rounded-xl overflow-hidden border border-white/8">
                   <div className={`px-4 py-2 text-center text-xs font-medium text-black transition-opacity ${cfg.announcementEnabled ? 'opacity-100' : 'opacity-30'}`}
                     style={{ background: `linear-gradient(90deg, ${cfg.primaryColor}, #F0D080)` }}>
@@ -658,7 +658,7 @@ export default function AdminWebsite() {
                   </div>
                 </div>
                 <div className="p-4 rounded-xl border border-white/8 space-y-3" style={{ background: 'rgba(0,0,0,0.3)' }}>
-                  <p className="text-white/25 text-xs">Theme Preview</p>
+                  <p className="text-white/25 text-xs">Theme Sample</p>
                   <div className="flex gap-2">
                     <div className={`px-4 py-2 text-xs font-bold text-black ${cfg.borderRadius === 'sharp' ? 'rounded' : cfg.borderRadius === 'pill' ? 'rounded-full' : 'rounded-xl'}`}
                       style={{ background: `linear-gradient(135deg, ${cfg.primaryColor}, #F0D080)` }}>

@@ -385,7 +385,7 @@ function ActivityDrawer({ card, onClose }: { card: AdminCard; onClose: () => voi
           <button onClick={onClose} className="text-white/30 hover:text-white"><X size={16} /></button>
         </div>
 
-        {/* Card mini-preview */}
+        {/* Card mini-pre-deployment */}
         <div className="mx-4 my-3 rounded-2xl overflow-hidden shrink-0"
           style={{
             background: 'linear-gradient(135deg, rgba(201,168,76,0.12) 0%, rgba(10,10,10,0.95) 50%, rgba(98,126,234,0.10) 100%)',

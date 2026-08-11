@@ -120,7 +120,7 @@ export default function AdminTransactions() {
       record.reference,
       record.flagged ? 'Yes' : 'No',
       new Date(record.createdAt).toISOString(),
-      'Synthetic preview record',
+      'Synthetic pre-deployment record',
     ]);
     const csv = [headers, ...rows]
       .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
@@ -128,7 +128,7 @@ export default function AdminTransactions() {
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `cgc-preview-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.download = `cgc-pre-deployment-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -156,7 +156,7 @@ export default function AdminTransactions() {
           <Database size={16} className="mt-0.5 shrink-0 text-sky-300" />
           <div>
             <p className="text-sm font-semibold text-sky-100">Persistent demonstration register</p>
-            <p className="mt-1 text-xs leading-relaxed text-sky-100/55">Records come from the application database and may contain synthetic preview activity. They are not sponsor-ledger entries or evidence that funds moved. This screen is read-only, and production financial mutations remain disabled.</p>
+            <p className="mt-1 text-xs leading-relaxed text-sky-100/55">Records come from the application database and may contain synthetic pre-deployment activity. They are not sponsor-ledger entries or evidence that funds moved. This screen is read-only, and production financial mutations remain disabled.</p>
           </div>
         </div>
 

@@ -307,7 +307,7 @@ export default function AdminConfigPage() {
                               label="Trust Badge"
                               value={s('homepage').trustBadge ?? ''}
                               onChange={v => patch('homepage','trustBadge',v)}
-                              hint='Small pill above the headline — e.g. "City Gate Capital product preview"'
+                              hint='Small pill above the headline — e.g. "City Gate Capital pre-deployment platform"'
                             />
                           </div>
                           <Field

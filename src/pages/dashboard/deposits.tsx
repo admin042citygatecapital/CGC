@@ -128,7 +128,7 @@ export default function DepositsPage() {
               style={{ background: 'rgba(255,255,255,0.01)' }}>
               <div className="px-5 py-4 border-b border-white/5">
                 <p className="text-sm font-semibold text-foreground">
-                  {tab === 'wire' ? 'Wire Transfer Preview' : 'Crypto Deposit Preview'}
+                  {tab === 'wire' ? 'Wire Transfer Demonstration' : 'Crypto Deposit Demonstration'}
                 </p>
                 <p className="text-xs text-foreground/35 mt-0.5">
                   {tab === 'wire'

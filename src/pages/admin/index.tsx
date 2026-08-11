@@ -6,7 +6,7 @@
  *  ② Financial KPIs     — Deposits / Withdrawals / Transfers / Revenue
  *  ③ Pending Flows      — Pending Deposits / Withdrawals / Transfers
  *  ④ Exchange Rates     — USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
- *  ⑤ Preview status     — financial locks and sponsor-readiness boundary
+ *  ⑤ Pre-deployment status     — financial locks and sponsor-readiness boundary
  *  ⑥ Fee Activity       — 14-day fee-record and activity chart
  *  ⑦ Notifications      — administrative activity feed, 15 s poll
  *  ⑧ System Health      — API, DB, Email, Server, Storage, Memory, CPU,
@@ -239,14 +239,14 @@ function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section: Preview data boundary
+// Section: Pre-deployment data boundary
 // ─────────────────────────────────────────────────────────────────────────────
 function PreviewDataPanel() {
   return (
     <div className="rounded-2xl border border-white/[0.05] p-4" style={{ background: 'rgba(255,255,255,0.025)' }}>
       <div className="mb-4 flex items-center gap-2">
         <Lock size={13} className="text-amber-300" />
-        <h3 className="text-sm font-semibold text-white">Preview financial boundary</h3>
+        <h3 className="text-sm font-semibold text-white">Pre-deployment financial boundary</h3>
       </div>
       <div className="space-y-2 text-xs">
         {[['Money movement', 'Disabled'], ['Sponsor ledger', 'Not connected'], ['Custody and crypto', 'Deferred'], ['Provider adapters', 'Not implemented']].map(([label, value]) => (
@@ -516,7 +516,7 @@ function RevenueChart({ data }: { data: Stats['dailyRevenue'] }) {
             <BarChart2 size={13} className="text-white/40" />
             <h3 className="text-white font-semibold text-sm">Recorded fees & activity</h3>
           </div>
-          <p className="text-white/25 text-[10px] mt-0.5">14-day preview register · gold = fee records · blue = activity</p>
+          <p className="text-white/25 text-[10px] mt-0.5">14-day pre-deployment register · gold = fee records · blue = activity</p>
         </div>
         <div className="text-right">
           <p className="text-white font-bold text-sm tabular-nums">{fmt(totalRev, '$')}</p>
@@ -618,9 +618,9 @@ export default function AdminDashboard() {
 
   // ── Financial KPI cards ─────────────────────────────────────────────────────
   const financialCards = [
-    { label: 'Recorded Deposits',    value: fmt(k.totalDeposits?.value, '$'),    change: k.totalDeposits?.change ?? 0,    icon: TrendingUp,   color: '#10B981', href: '/admin/transactions', sub: 'Synthetic preview records', sparkKey: 'revenue' },
-    { label: 'Recorded Withdrawals', value: fmt(k.totalWithdrawals?.value, '$'), change: k.totalWithdrawals?.change ?? 0, icon: TrendingDown, color: '#EF4444', href: '/admin/transactions', sub: 'Synthetic preview records', sparkKey: 'revenue' },
-    { label: 'Recorded Transfers',   value: fmt(k.totalTransfers?.value, '$'),   change: k.totalTransfers?.change ?? 0,   icon: Send,         color: '#627EEA', href: '/admin/transactions', sub: 'Synthetic preview records', sparkKey: 'revenue' },
+    { label: 'Recorded Deposits',    value: fmt(k.totalDeposits?.value, '$'),    change: k.totalDeposits?.change ?? 0,    icon: TrendingUp,   color: '#10B981', href: '/admin/transactions', sub: 'Synthetic pre-deployment records', sparkKey: 'revenue' },
+    { label: 'Recorded Withdrawals', value: fmt(k.totalWithdrawals?.value, '$'), change: k.totalWithdrawals?.change ?? 0, icon: TrendingDown, color: '#EF4444', href: '/admin/transactions', sub: 'Synthetic pre-deployment records', sparkKey: 'revenue' },
+    { label: 'Recorded Transfers',   value: fmt(k.totalTransfers?.value, '$'),   change: k.totalTransfers?.change ?? 0,   icon: Send,         color: '#627EEA', href: '/admin/transactions', sub: 'Synthetic pre-deployment records', sparkKey: 'revenue' },
     { label: 'Recorded Fees',        value: fmt(k.totalRevenue?.value, '$'),     change: k.totalRevenue?.change ?? 0,     icon: DollarSign,   color: '#C9A84C', href: '/admin/reports',      sub: 'Not recognised revenue',   sparkKey: 'revenue' },
   ];
 
@@ -639,7 +639,7 @@ export default function AdminDashboard() {
     <>
       <Helmet>
         <title>Executive Dashboard — City Gate Capital Admin</title>
-        <meta name="description" content="City Gate Capital preview administration dashboard for customers, synthetic records, readiness and system health." />
+        <meta name="description" content="City Gate Capital pre-deployment administration dashboard for customers, synthetic records, readiness and system health." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/admin" />
       </Helmet>
@@ -669,7 +669,7 @@ export default function AdminDashboard() {
 
         <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3">
           <Lock size={15} className="mt-0.5 shrink-0 text-amber-200" />
-          <div><p className="text-sm font-semibold text-amber-100">Product-preview administration</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">Financial figures below summarize persistent synthetic application records. They are not bank balances, safeguarded funds, assets under management, recognised revenue, or provider-ledger entries. Money movement and provider adapters remain disabled.</p></div>
+          <div><p className="text-sm font-semibold text-amber-100">Pre-deployment administration</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">Financial figures below summarize persistent synthetic application records. They are not bank balances, safeguarded funds, assets under management, recognised revenue, or provider-ledger entries. Money movement and provider adapters remain disabled.</p></div>
         </div>
 
         {loading ? (
@@ -726,10 +726,10 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* ── Section 4: Preview analytics, rates and boundary ── */}
+            {/* ── Section 4: Pre-deployment analytics, rates and boundary ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
-                <BarChart2 size={10} /> Preview analytics & configuration
+                <BarChart2 size={10} /> Pre-deployment analytics & configuration
               </p>
               <div className="grid lg:grid-cols-3 gap-4">
                 {/* Revenue chart — spans 1 col on lg */}

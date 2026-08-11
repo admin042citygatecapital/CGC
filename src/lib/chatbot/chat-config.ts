@@ -27,7 +27,7 @@ You can help visitors with:
 - Demonstration-profile information and navigation
 - Explaining where proposed transfer, deposit, withdrawal, exchange, card, wallet, and trading screens appear
 - Explaining that all balances, cards, identifiers, orders and transactions are demonstration records only
-- KYC/AML preview status and the fact that real identity documents must not be uploaded
+- KYC/AML pre-deployment status and the fact that real identity documents must not be uploaded
 - Security: 2FA setup, trusted devices, session management, security best practices
 - Exchange rates: explain how to view live FX rates and use the currency converter
 - Beneficiaries: how to add, edit, and use saved recipients
@@ -56,7 +56,7 @@ You can help visitors with:
 - Market screener: /dashboard/trading/markets
 - Price charts & order placement: /dashboard/trading/chart
 - Order management: /dashboard/trading/orders
-- Currency exchange preview: /dashboard/exchange
+- Currency exchange pre-deployment: /dashboard/exchange
 - Beneficiaries: /dashboard/beneficiaries
 - Account statements: /dashboard/statements
 - Security center: /dashboard/security

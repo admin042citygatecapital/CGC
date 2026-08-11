@@ -18,12 +18,12 @@ const faqs = [
   {
     category: 'Getting Started',
     q: 'How do I open an account?',
-    a: 'Click "Open Account" to create a preview profile and explore the demonstration. Identity verification is not live; a contracted KYC provider and legal approval are required before launch.',
+    a: 'Click "Open Account" to create a pre-deployment profile and explore the demonstration. Identity verification is not live; a contracted KYC provider and legal approval are required before launch.',
   },
   {
     category: 'Account & KYC',
     q: 'Is my money safe with City Gate Capital?',
-    a: 'This preview does not accept or protect customer funds. Demonstration balances are not deposits and are not insured. The application uses security controls for preview access, but live financial operation requires approved providers and independent review.',
+    a: 'This pre-deployment platform does not accept or protect customer funds. Demonstration balances are not deposits and are not insured. The application uses security controls for pre-deployment access, but live financial operation requires approved providers and independent review.',
   },
   {
     category: 'Transfers',
@@ -33,7 +33,7 @@ const faqs = [
   {
     category: 'Transfers',
     q: 'How long do international transfers take?',
-    a: 'No live transfers are processed in this preview. Future settlement estimates will depend on the contracted payment rail, currency, recipient bank, compliance review, and jurisdiction.',
+    a: 'No live transfers are processed in this pre-deployment. Future settlement estimates will depend on the contracted payment rail, currency, recipient bank, compliance review, and jurisdiction.',
   },
   {
     category: 'Crypto & Wallet',
@@ -43,12 +43,12 @@ const faqs = [
   {
     category: 'Cards & Payments',
     q: 'How do I freeze my card?',
-    a: 'Card controls are demonstrations only. No payment card is issued in this environment, and the preview freeze control does not affect a real card.',
+    a: 'Card controls are demonstrations only. No payment card is issued in this environment, and the pre-deployment freeze control does not affect a real card.',
   },
   {
     category: 'Account & KYC',
     q: 'What is the daily transfer limit?',
-    a: 'Preview limits are illustrative and do not authorize financial transactions. Live limits will be defined by risk policy, provider contracts, verification level, and applicable law.',
+    a: 'Pre-deployment limits are illustrative and do not authorize financial transactions. Live limits will be defined by risk policy, provider contracts, verification level, and applicable law.',
   },
   {
     category: 'Getting Started',
@@ -58,7 +58,7 @@ const faqs = [
   {
     category: 'Security',
     q: 'What security features protect my account?',
-    a: 'The preview includes password controls, optional two-factor authentication, protected sessions, security headers, rate limits, and administrative audit events. Do not infer biometric, hardware-key, fraud-monitoring, or certification coverage unless it is specifically enabled and verified.',
+    a: 'The pre-deployment includes password controls, optional two-factor authentication, protected sessions, security headers, rate limits, and administrative audit events. Do not infer biometric, hardware-key, fraud-monitoring, or certification coverage unless it is specifically enabled and verified.',
   },
   {
     category: 'Cards & Payments',
@@ -90,7 +90,7 @@ function FaqItem({ q, a, category }: { q: string; a: string; category: string })
 }
 
 const supportStats = [
-  { value: 'Web',      label: 'Preview Support',      icon: Zap,           color: '#C9A84C' },
+  { value: 'Web',      label: 'Pre-deployment Support',      icon: Zap,           color: '#C9A84C' },
   { value: 'Email',    label: 'Contact Channel',      icon: Clock,         color: '#627EEA' },
   { value: 'Tracked',  label: 'Support Requests',     icon: MessageCircle, color: '#10B981' },
   { value: 'Clear',    label: 'Launch Disclosures',   icon: Star,          color: '#9945FF' },
@@ -188,14 +188,14 @@ export default function SupportPage() {
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/png" />
-        <meta property="og:image:alt" content="City Gate Capital product preview support" />
+        <meta property="og:image:alt" content="City Gate Capital pre-deployment platform support" />
         <meta property="og:site_name" content="City Gate Capital" />
         <meta property="og:locale" content="en_GB" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Customer Support — City Gate Capital" />
-        <meta name="twitter:description" content="Support channels and FAQs for the City Gate Capital product preview. Response times vary." />
+        <meta name="twitter:description" content="Support channels and FAQs for the City Gate Capital pre-deployment platform. Response times vary." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -233,7 +233,7 @@ export default function SupportPage() {
               How Can We <span className="text-gold-shimmer">Help?</span>
             </h1>
             <p className="text-xl text-foreground/50 mb-10 max-w-lg mx-auto">
-              Find preview-specific answers or contact the team through the available channels. Response times vary.
+              Find pre-deployment-specific answers or contact the team through the available channels. Response times vary.
             </p>
             {/* Search */}
             <div className="relative max-w-xl mx-auto">

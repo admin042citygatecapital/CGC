@@ -204,7 +204,7 @@ export default function AdminCompliance() {
     <>
       <Helmet>
         <title>Compliance — City Gate Capital Admin</title>
-        <meta name="description" content="Internal KYC and AML decision controls for the City Gate Capital product preview." />
+        <meta name="description" content="Internal KYC and AML decision controls for the City Gate Capital pre-deployment platform." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/admin/compliance" />
       </Helmet>

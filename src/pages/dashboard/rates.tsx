@@ -1,5 +1,5 @@
 /**
- * /dashboard/exchange — Currency Exchange Preview
+ * /dashboard/exchange — Currency Exchange Pre-deployment
  * Shows admin-configured indicative FX rates, crypto prices, and a converter.
  * Pulls from /api/settings/rates (public) and /api/users/balance for context.
  */
@@ -156,14 +156,14 @@ export default function ExchangeRatesPage() {
   return (
     <>
       <Helmet>
-        <title>Currency Exchange Preview — City Gate Capital</title>
-        <meta name="description" content="Preview multi-currency exchange rates and conversions at City Gate Capital." />
+        <title>Currency Exchange Pre-deployment — City Gate Capital</title>
+        <meta name="description" content="Pre-deployment multi-currency exchange rates and conversions at City Gate Capital." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/dashboard/exchange" />
       </Helmet>
 
       <div className="min-h-screen bg-background text-foreground">
-        <h1 className="sr-only">Currency Exchange Preview</h1>
+        <h1 className="sr-only">Currency Exchange Interface</h1>
         <header className="sticky top-0 z-40 border-b border-white/5 bg-[rgba(10,10,10,0.92)] backdrop-blur-xl">
           <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
             <Link to="/dashboard"
@@ -196,7 +196,7 @@ export default function ExchangeRatesPage() {
             style={{ background: 'linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(10,10,10,0.8) 100%)' }}>
             <div className="flex items-center justify-between gap-3 mb-4">
               <p className="text-[11px] font-semibold text-foreground/40 uppercase tracking-[0.12em]">Currency Converter</p>
-              <span className="text-[9px] font-semibold px-2 py-1 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20">Preview only</span>
+              <span className="text-[9px] font-semibold px-2 py-1 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20">Pre-deployment only</span>
             </div>
 
             <div className="flex items-center gap-3 flex-wrap">
@@ -253,7 +253,7 @@ export default function ExchangeRatesPage() {
             {convertedAmount !== null && !loading && (
               <p className="text-[10px] text-foreground/30 mt-3">
                 1 {fromCcy} = {fmtRate(convertedAmount / parseFloat(amount || '1'), toCcy)} {toCcy}
-                {' • '}Indicative preview rate
+                {' • '}Indicative pre-deployment rate
               </p>
             )}
 
@@ -316,7 +316,7 @@ export default function ExchangeRatesPage() {
                         <p className="text-sm font-bold text-foreground/80 tabular-nums">
                           {fmtRate(pair.rate, pair.to)}
                         </p>
-                        <p className="text-[9px] text-foreground/25 mt-0.5">Preview</p>
+                        <p className="text-[9px] text-foreground/25 mt-0.5">Pre-deployment</p>
                       </div>
                     </motion.div>
                   );
@@ -329,7 +329,7 @@ export default function ExchangeRatesPage() {
           <div className="flex items-start gap-3 px-4 py-3 rounded-2xl border border-white/5 bg-white/[0.015]">
             <Globe size={13} className="text-foreground/20 mt-0.5 shrink-0" />
             <p className="text-[10px] text-foreground/25 leading-relaxed">
-              Rates are indicative, administrator-configured preview values. No currency exchange is executed in this environment.
+              Rates are indicative, administrator-configured pre-deployment values. No currency exchange is executed in this environment.
               Live launch requires approved FX, payments, KYC/AML, and banking providers. Rates are not financial advice.
             </p>
           </div>

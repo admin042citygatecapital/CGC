@@ -203,9 +203,9 @@ function FeeRuleEditor({
         </div>
       </div>
 
-      {/* Preview */}
+      {/* Pre-deployment */}
       <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5 text-[10px] text-white/40">
-        Preview on $1,000 transaction:{' '}
+        Estimate on $1,000 transaction:{' '}
         <span className="text-white/70 font-semibold">
           {rule.mode === 'flat'
             ? `$${rule.flat.toFixed(2)}`
@@ -408,7 +408,7 @@ export default function AdminRates() {
       const d = await res.json();
       if (res.ok) {
         showSaved('rates');
-        // Refresh config so fxMarkup preview callout stays accurate
+        // Refresh config so fxMarkup pre-deployment callout stays accurate
         loadConfig();
       } else setError(d.error ?? 'Save failed');
     } catch { setError('Network error'); }
@@ -528,7 +528,7 @@ export default function AdminRates() {
                   <div className="grid grid-cols-[1fr_auto_auto_auto] gap-0 text-[10px] uppercase tracking-wide text-white/25 px-4 py-2.5 border-b border-white/5">
                     <span>Currency Pair</span>
                     <span className="text-right pr-4">Markup %</span>
-                    <span className="text-right pr-4">Preview on $10k</span>
+                    <span className="text-right pr-4">Estimate on $10k</span>
                     <span className="text-right">Enabled</span>
                   </div>
                   <div className="divide-y divide-white/[0.03]">
