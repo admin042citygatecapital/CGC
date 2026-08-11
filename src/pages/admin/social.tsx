@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import AdminLayout from '@/layouts/AdminLayout';
 import { authHeaders, useAdminAuth } from '@/lib/adminAuth';
+import { SocialPlatformIcon } from '@/components/SocialPlatformIcon';
 
 type PlatformId = 'twitter' | 'linkedin' | 'instagram' | 'facebook' | 'telegram' | 'whatsapp' | 'tiktok' | 'youtube' | 'discord';
 type View = 'profiles' | 'share' | 'activity';
@@ -251,7 +252,7 @@ export default function AdminSocial() {
                 return (
                   <div key={item.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold" style={{ color: item.color, backgroundColor: `${item.color}18` }}>{item.mark}</div>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ color: item.color, backgroundColor: `${item.color}18` }}><SocialPlatformIcon platform={item.id} className="h-5 w-5" /></div>
                       <div className="flex-1"><p className="text-white text-sm font-semibold">{item.name}</p><p className="text-white/30 text-xs">{link.enabled && link.url ? 'Linked and visible' : 'Not active'}</p></div>
                       <button onClick={() => updateLink(item.id, { enabled: !link.enabled })} aria-label={`${link.enabled ? 'Disable' : 'Enable'} ${item.name}`}
                         className={`relative w-10 h-5 rounded-full ${link.enabled ? 'bg-emerald-500' : 'bg-white/10'}`}>
@@ -294,7 +295,7 @@ export default function AdminSocial() {
                 {PLATFORMS.map(item => (
                   <button key={item.id} onClick={() => togglePlatform(item.id)}
                     className={`rounded-xl border px-3 py-2.5 text-left text-xs transition-colors ${selectedPlatforms.includes(item.id) ? 'border-primary/45 bg-primary/[0.08] text-white' : 'border-white/[0.06] text-white/40'}`}>
-                    <span className="font-bold mr-2" style={{ color: item.color }}>{item.mark}</span>{item.name}
+                    <SocialPlatformIcon platform={item.id} className="inline-block h-4 w-4 mr-2" style={{ color: item.color }} />{item.name}
                   </button>
                 ))}
               </div>
@@ -318,7 +319,7 @@ export default function AdminSocial() {
                     return (
                       <button key={target.platformId} onClick={() => void openShare(target)}
                         className="w-full flex items-center gap-3 rounded-xl border border-white/[0.07] bg-black/15 p-3 text-left hover:border-primary/30 transition-colors">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold" style={{ color: item.color, backgroundColor: `${item.color}18` }}>{item.mark}</div>
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ color: item.color, backgroundColor: `${item.color}18` }}><SocialPlatformIcon platform={item.id} className="h-4 w-4" /></div>
                         <div className="flex-1"><p className="text-white text-sm font-medium">{item.name}</p><p className="text-white/30 text-[11px]">{target.mode === 'intent' ? 'Open official share dialog' : 'Copy content for manual posting'}</p></div>
                         {opened ? <CheckCircle2 size={16} className="text-emerald-400" /> : target.mode === 'intent' ? <ExternalLink size={15} className="text-white/35" /> : <Copy size={15} className="text-white/35" />}
                       </button>

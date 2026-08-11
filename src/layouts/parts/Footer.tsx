@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Globe, ArrowRight, CheckCircle, Loader2, ExternalLink, MapPin } from 'lucide-react';
+import { Shield, Globe, ArrowRight, CheckCircle, Loader2, MapPin } from 'lucide-react';
 import CgcLogo from '@/components/CgcLogo';
+import { SocialPlatformIcon } from '@/components/SocialPlatformIcon';
 import type { BusinessLocation } from '@/lib/businessLocation';
 
 const footerLinks = {
@@ -196,7 +197,7 @@ export default function Footer() {
                       rel="noopener noreferrer"
                       className="w-9 h-9 rounded-lg glass flex items-center justify-center text-foreground/35 hover:text-primary hover:border-primary/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
-                      <ExternalLink size={13} />
+                      <SocialPlatformIcon platform={s.platformId} className="h-4 w-4" />
                     </a>
                   ))}
                 </div>

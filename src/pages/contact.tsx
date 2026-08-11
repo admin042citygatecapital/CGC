@@ -2,8 +2,9 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, Send, CheckCircle, MessageCircle, ArrowRight, ExternalLink, MapPin, Navigation } from 'lucide-react';
+import { Phone, Mail, Send, CheckCircle, MessageCircle, ArrowRight, MapPin, Navigation } from 'lucide-react';
 import type { BusinessLocation } from '@/lib/businessLocation';
+import { SocialPlatformIcon } from '@/components/SocialPlatformIcon';
 
 interface SocialLink {
   platformId: string; url: string; enabled: boolean;
@@ -204,7 +205,7 @@ export default function ContactPage() {
                   className="flex items-center gap-3 glass-card rounded-xl px-4 py-3 gradient-border hover:border-primary/25 transition-colors group cursor-pointer no-underline">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
                     style={{ background: `${meta.color}15` }}>
-                    <ExternalLink size={15} style={{ color: meta.color }} />
+                    <SocialPlatformIcon platform={s.platformId} className="h-4 w-4" style={{ color: meta.color }} />
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-foreground">{meta.label}</p>

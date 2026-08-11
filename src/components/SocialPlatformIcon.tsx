@@ -1,0 +1,27 @@
+import type { SVGProps } from 'react';
+
+export type SocialPlatformId = 'twitter' | 'linkedin' | 'instagram' | 'facebook' | 'telegram' | 'whatsapp' | 'tiktok' | 'youtube' | 'discord';
+
+export const SOCIAL_PLATFORM_META: Record<SocialPlatformId, { label: string; color: string }> = {
+  twitter: { label: 'X / Twitter', color: '#E5E7EB' }, linkedin: { label: 'LinkedIn', color: '#0A66C2' },
+  instagram: { label: 'Instagram', color: '#E1306C' }, facebook: { label: 'Facebook', color: '#1877F2' },
+  telegram: { label: 'Telegram', color: '#26A5E4' }, whatsapp: { label: 'WhatsApp', color: '#25D366' },
+  tiktok: { label: 'TikTok', color: '#FF0050' }, youtube: { label: 'YouTube', color: '#FF0000' },
+  discord: { label: 'Discord', color: '#5865F2' },
+};
+
+export function SocialPlatformIcon({ platform, ...props }: SVGProps<SVGSVGElement> & { platform: string }) {
+  const common = { viewBox: '0 0 24 24', fill: 'currentColor', 'aria-hidden': true, focusable: false, ...props } as SVGProps<SVGSVGElement>;
+  switch (platform) {
+    case 'facebook': return <svg {...common}><path d="M13.5 22v-9h3l.45-3.5H13.5V7.27c0-1.01.28-1.7 1.74-1.7H17.1V2.44c-.32-.04-1.42-.14-2.7-.14-2.67 0-4.5 1.63-4.5 4.63V9.5H7v3.5h2.9v9h3.6Z" /></svg>;
+    case 'whatsapp': return <svg {...common}><path fillRule="evenodd" d="M12 2a9.84 9.84 0 0 0-8.46 14.85L2 22l5.3-1.5A9.95 9.95 0 1 0 12 2Zm0 17.9a8 8 0 0 1-4.08-1.12l-.3-.18-3.15.89.91-3.06-.2-.31A7.93 7.93 0 1 1 12 19.9Zm4.36-5.93c-.24-.12-1.41-.7-1.63-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-1.41-.7-2.34-1.26-3.28-2.86-.25-.43.25-.4.71-1.33.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62 1.52.66 2.12.71 2.88.6.46-.07 1.41-.58 1.61-1.13.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z" clipRule="evenodd" /></svg>;
+    case 'instagram': return <svg {...common}><path fillRule="evenodd" d="M7.2 2h9.6A5.2 5.2 0 0 1 22 7.2v9.6a5.2 5.2 0 0 1-5.2 5.2H7.2A5.2 5.2 0 0 1 2 16.8V7.2A5.2 5.2 0 0 1 7.2 2Zm-.18 1.8A3.22 3.22 0 0 0 3.8 7.02v9.96a3.22 3.22 0 0 0 3.22 3.22h9.96a3.22 3.22 0 0 0 3.22-3.22V7.02a3.22 3.22 0 0 0-3.22-3.22H7.02ZM12 7.14A4.86 4.86 0 1 1 12 16.86 4.86 4.86 0 0 1 12 7.14Zm0 1.8a3.06 3.06 0 1 0 0 6.12 3.06 3.06 0 0 0 0-6.12Zm6.26-2.01a1.13 1.13 0 1 1-2.26 0 1.13 1.13 0 0 1 2.26 0Z" clipRule="evenodd" /></svg>;
+    case 'linkedin': return <svg {...common}><path d="M5.34 7.35A2.17 2.17 0 1 1 5.34 3a2.17 2.17 0 0 1 0 4.35ZM3.47 8.94h3.75V21H3.47V8.94Zm5.7 0h3.6v1.65h.05c.5-.95 1.73-1.96 3.55-1.96 3.8 0 4.5 2.5 4.5 5.76V21h-3.75v-5.86c0-1.4-.03-3.2-1.95-3.2-1.95 0-2.25 1.53-2.25 3.1V21H9.17V8.94Z" /></svg>;
+    case 'youtube': return <svg {...common}><path d="M23.5 6.2a3 3 0 0 0-2.1-2.12C19.55 3.58 12 3.58 12 3.58s-7.55 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.06 0 12 0 12s0 3.94.5 5.8a3 3 0 0 0 2.1 2.12c1.85.5 9.4.5 9.4.5s7.55 0 9.4-.5a3 3 0 0 0 2.1-2.12c.5-1.86.5-5.8.5-5.8s0-3.94-.5-5.8ZM9.6 15.6V8.4l6.26 3.6-6.26 3.6Z" /></svg>;
+    case 'telegram': return <svg {...common}><path d="M21.8 3.25 18.55 20c-.24 1.18-.88 1.47-1.78.92l-4.95-3.65-2.39 2.3c-.26.26-.48.48-.99.48l.36-5.04 9.17-8.29c.4-.35-.09-.55-.62-.2L6.02 13.66 1.14 12.14c-1.06-.33-1.08-1.06.22-1.57L20.45 3.2c.88-.33 1.65.2 1.35.05Z" /></svg>;
+    case 'twitter': return <svg {...common}><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.96 2H9.36l4.42 5.84L18.9 2Zm-1.1 17.84h1.73L8.42 4.05H6.57L17.8 19.84Z" /></svg>;
+    case 'tiktok': return <svg {...common}><path d="M16.6 2c.33 2.84 1.91 4.54 4.65 4.72v3.2a8.7 8.7 0 0 1-4.62-1.07v6.18c0 7.86-8.57 10.32-12.02 4.68-2.22-3.63-.86-10 5.4-10.25v3.38c-.56.09-1.16.23-1.7.42-1.63.55-2.55 1.59-2.3 3.42.48 3.5 6.92 4.54 6.39-2.3V2h4.2Z" /></svg>;
+    case 'discord': return <svg {...common}><path d="M19.54 5.34A16.4 16.4 0 0 0 15.44 4l-.5 1.02a15.2 15.2 0 0 0-5.87 0L8.56 4a16.65 16.65 0 0 0-4.1 1.35C1.86 9.2 1.16 12.96 1.51 16.67a16.8 16.8 0 0 0 5.03 2.54l1.22-1.67a10.7 10.7 0 0 1-1.93-.92l.47-.36c3.73 1.72 7.78 1.72 11.46 0l.47.36c-.62.37-1.27.68-1.93.92l1.22 1.67a16.7 16.7 0 0 0 5.02-2.54c.42-4.3-.72-8.03-3-11.33ZM8.58 14.4c-1.12 0-2.04-1.03-2.04-2.29s.9-2.29 2.04-2.29c1.15 0 2.06 1.04 2.04 2.29 0 1.26-.9 2.29-2.04 2.29Zm6.84 0c-1.12 0-2.04-1.03-2.04-2.29s.9-2.29 2.04-2.29c1.15 0 2.06 1.04 2.04 2.29 0 1.26-.89 2.29-2.04 2.29Z" /></svg>;
+    default: return <svg {...common}><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M8 12h8M12 8v8" fill="none" stroke="currentColor" strokeWidth="2" /></svg>;
+  }
+}
