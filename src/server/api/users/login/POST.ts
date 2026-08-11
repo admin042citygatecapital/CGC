@@ -136,6 +136,7 @@ export default async function handler(req: Request, res: Response) {
       amlStatus: user.amlStatus ?? 'not_screened',
       amlRiskLevel: user.amlRiskLevel ?? 'unrated',
       balance:   user.balance ?? 0,
+      totpEnabled: user.totpEnabled ?? false,
     },
   });
 }

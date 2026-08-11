@@ -29,6 +29,7 @@ export interface CustomerUser {
   idNumber:    string;
   kycSubmittedAt: string;
   primaryCurrency: string;
+  totpEnabled: boolean;
 }
 
 interface CustomerAuthCtx {

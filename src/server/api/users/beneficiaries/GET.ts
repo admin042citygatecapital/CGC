@@ -1,48 +1,51 @@
-/**
- * GET /api/users/beneficiaries
- * Returns saved beneficiaries for the customer (stored in user record).
- */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken } from '../../../lib/userStore.js';
-import fs from 'node:fs';
-import path from 'node:path';
-import { privateSubdirectory } from '../../../lib/storagePaths.js';
+import { updateUser } from '../../../lib/userStore.js';
 
-const BENE_DIR  = privateSubdirectory('beneficiaries');
-const beneFile  = (userId: string) => path.join(BENE_DIR, `${userId}.json`);
+export type BeneficiaryVerification = 'unverified' | 'pending' | 'verified' | 'rejected';
 
 export interface Beneficiary {
-  id:              string;
-  name:            string;
-  accountNumber:   string;
-  bankName:        string;
-  country:         string;
-  currency:        string;
-  email?:          string;
-  note?:           string;
-  createdAt:       string;
+  id: string;
+  name: string;
+  type: 'individual' | 'business';
+  accountNumber: string;
+  bankName: string;
+  bankCode?: string;
+  country: string;
+  currency: string;
+  email?: string;
+  reference?: string;
+  favorite: boolean;
+  verificationState: BeneficiaryVerification;
+  createdAt: string;
+  updatedAt: string;
+  lastUsedAt?: string;
 }
 
-export function loadBeneficiaries(userId: string): Beneficiary[] {
-  try {
-    const f = beneFile(userId);
-    if (!fs.existsSync(f)) return [];
-    return JSON.parse(fs.readFileSync(f, 'utf8')) as Beneficiary[];
-  } catch { return []; }
+export function loadBeneficiaries(value: unknown): Beneficiary[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is Beneficiary => {
+    if (!item || typeof item !== 'object') return false;
+    const row = item as Partial<Beneficiary>;
+    return typeof row.id === 'string' && typeof row.name === 'string' && typeof row.accountNumber === 'string';
+  }).map(row => ({
+    ...row,
+    type: row.type === 'business' ? 'business' : 'individual',
+    favorite: row.favorite === true,
+    verificationState: row.verificationState ?? 'unverified',
+    updatedAt: row.updatedAt ?? row.createdAt,
+  }));
 }
 
-export function saveBeneficiaries(userId: string, list: Beneficiary[]) {
-  if (!fs.existsSync(BENE_DIR)) fs.mkdirSync(BENE_DIR, { recursive: true });
-  fs.writeFileSync(beneFile(userId), JSON.stringify(list, null, 2));
+export async function saveBeneficiaries(userId: string, list: Beneficiary[]) {
+  await updateUser(userId, { beneficiaries: list });
 }
 
 export default async function handler(req: Request, res: Response) {
-  const auth  = req.headers.authorization ?? '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-
-  const user = await findUserBySessionToken(token);
-  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
-
-  return res.json({ beneficiaries: loadBeneficiaries(user.id) });
+  const user = req.customerUser;
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
+  const query = typeof req.query.search === 'string' ? req.query.search.trim().toLowerCase().slice(0, 100) : '';
+  const list = loadBeneficiaries(user.beneficiaries)
+    .filter(item => !query || [item.name, item.bankName, item.currency, item.country].some(value => value.toLowerCase().includes(query)))
+    .sort((a, b) => Number(b.favorite) - Number(a.favorite) || Date.parse(b.lastUsedAt ?? b.createdAt) - Date.parse(a.lastUsedAt ?? a.createdAt));
+  return res.json({ beneficiaries: list });
 }

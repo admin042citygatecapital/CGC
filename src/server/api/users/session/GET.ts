@@ -39,6 +39,7 @@ export default async function handler(req: Request, res: Response) {
       kycSubmittedAt: user.kycSubmittedAt ?? '',
       // Admin-assigned primary display currency
       primaryCurrency: user.primaryCurrency ?? 'USD',
+      totpEnabled: user.totpEnabled ?? false,
     },
   });
 }

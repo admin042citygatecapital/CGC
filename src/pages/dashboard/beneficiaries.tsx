@@ -14,6 +14,7 @@ Globe,
 Loader2,
 Plus,
 Send,
+Star,
 Trash2,
 User,
 Users,
@@ -34,8 +35,14 @@ interface Beneficiary {
   country:     string;
   email?:      string;
   reference?:  string;
+  favorite: boolean;
+  verificationState: 'unverified' | 'pending' | 'verified' | 'rejected';
+  updatedAt: string;
+  lastUsedAt?: string;
   createdAt:   string;
 }
+
+type BeneficiaryInput = Pick<Beneficiary, 'name' | 'type' | 'accountNumber' | 'bankName' | 'bankCode' | 'currency' | 'country' | 'email' | 'reference'>;
 
 const CURRENCIES = ['USD','EUR','GBP','NGN','AED','CAD','AUD','CHF','JPY','SGD'];
 const COUNTRIES  = ['United States','United Kingdom','Nigeria','UAE','Canada','Australia','Germany','France','Singapore','Japan'];
@@ -49,7 +56,7 @@ function BeneficiaryForm({
   initial, onSave, onCancel, saving,
 }: {
   initial?: Partial<Beneficiary>;
-  onSave: (data: Omit<Beneficiary, 'id' | 'createdAt'>) => void;
+  onSave: (data: BeneficiaryInput) => void;
   onCancel: () => void;
   saving: boolean;
 }) {
@@ -161,6 +168,7 @@ export default function BeneficiariesPage() {
   const [deletingId,setDeletingId]= useState<string | null>(null);
   const [search,    setSearch]    = useState('');
   const [msg,       setMsg]       = useState<{ text: string; ok: boolean } | null>(null);
+  const [stepUp,    setStepUp]    = useState('');
 
   useEffect(() => {
     if (!loading && !customer) navigate('/login?reason=session_expired', { replace: true });
@@ -176,13 +184,14 @@ export default function BeneficiariesPage() {
       .finally(() => setFetching(false));
   }, [token]);
 
-  async function handleSave(data: Omit<Beneficiary, 'id' | 'createdAt'>) {
+  async function handleSave(data: BeneficiaryInput) {
     if (!token) return;
     setSaving(true);
     setMsg(null);
     try {
       const url    = editing ? '/api/users/beneficiaries/update' : '/api/users/beneficiaries/add';
-      const body   = editing ? { ...data, id: editing.id } : data;
+      const verification = customer?.totpEnabled ? { otp: stepUp } : { currentPassword: stepUp };
+      const body   = editing ? { ...data, id: editing.id, ...verification } : { ...data, ...verification };
       const res    = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -199,6 +208,7 @@ export default function BeneficiariesPage() {
         }
         setShowForm(false);
         setEditing(null);
+        setStepUp('');
       } else {
         setMsg({ text: json.error ?? 'Failed to save beneficiary.', ok: false });
       }
@@ -217,11 +227,12 @@ export default function BeneficiariesPage() {
       const res = await fetch('/api/users/beneficiaries/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id, ...(customer?.totpEnabled ? { otp: stepUp } : { currentPassword: stepUp }) }),
       });
       if (res.ok) {
         setBeneficiaries(prev => prev.filter(b => b.id !== id));
         setMsg({ text: 'Beneficiary removed.', ok: true });
+        setStepUp('');
       } else {
         setMsg({ text: 'Failed to remove beneficiary.', ok: false });
       }
@@ -230,6 +241,21 @@ export default function BeneficiariesPage() {
     } finally {
       setDeletingId(null);
     }
+  }
+
+  async function handleFavorite(beneficiary: Beneficiary) {
+    if (!stepUp) { setMsg({ text: 'Complete security verification before changing a beneficiary.', ok: false }); return; }
+    setSaving(true); setMsg(null);
+    try {
+      const res = await fetch('/api/users/beneficiaries/update', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: beneficiary.id, favorite: !beneficiary.favorite, ...(customer?.totpEnabled ? { otp: stepUp } : { currentPassword: stepUp }) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg({ text: data.error ?? 'Unable to update favorite.', ok: false }); return; }
+      setBeneficiaries(items => items.map(item => item.id === beneficiary.id ? data.beneficiary : item));
+      setStepUp('');
+    } finally { setSaving(false); }
   }
 
   if (loading || !customer) {
@@ -304,6 +330,17 @@ export default function BeneficiariesPage() {
             )}
           </AnimatePresence>
 
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="beneficiary-step-up" className="text-[10px] text-foreground/40 font-medium uppercase tracking-wider">
+              Security verification · {customer.totpEnabled ? 'Authenticator code' : 'Current password'}
+            </label>
+            <input id="beneficiary-step-up" type={customer.totpEnabled ? 'text' : 'password'}
+              inputMode={customer.totpEnabled ? 'numeric' : undefined} autoComplete={customer.totpEnabled ? 'one-time-code' : 'current-password'}
+              value={stepUp} onChange={e => setStepUp(customer.totpEnabled ? e.target.value.replace(/\D/g, '').slice(0, 6) : e.target.value)}
+              placeholder={customer.totpEnabled ? '6-digit code' : 'Required to add, edit, favorite, or remove'}
+              className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-xs text-foreground/70 placeholder-foreground/20 focus:outline-none focus:border-primary/40 transition-colors" />
+          </div>
+
           {/* Search */}
           {beneficiaries.length > 3 && (
             <input
@@ -354,6 +391,13 @@ export default function BeneficiariesPage() {
                         style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)' }}>
                         {b.type}
                       </span>
+                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 capitalize"
+                        style={{
+                          background: b.verificationState === 'verified' ? 'rgba(16,185,129,0.10)' : 'rgba(245,158,11,0.08)',
+                          color: b.verificationState === 'verified' ? '#34D399' : '#F59E0B',
+                        }}>
+                        {b.verificationState}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-[10px] text-foreground/40">
@@ -368,6 +412,11 @@ export default function BeneficiariesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => handleFavorite(b)} disabled={saving}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-white/5 transition-colors"
+                      style={{ color: b.favorite ? '#C9A84C' : 'rgba(255,255,255,0.25)' }} title={b.favorite ? 'Remove favorite' : 'Add favorite'}>
+                      <Star size={12} fill={b.favorite ? 'currentColor' : 'none'} />
+                    </button>
                     <Link
                       to={`/dashboard/transfers?beneficiary=${b.id}`}
                       className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/8"
@@ -400,7 +449,7 @@ export default function BeneficiariesPage() {
           <div className="flex items-start gap-3 px-4 py-3 rounded-2xl border border-white/5 bg-white/[0.015]">
             <Globe size={13} className="text-foreground/20 mt-0.5 shrink-0" />
             <p className="text-[10px] text-foreground/25 leading-relaxed">
-              Saved beneficiaries are encrypted and stored securely. Account numbers are masked in the display.
+              Beneficiary changes require security verification. Account numbers are masked in the display; verification remains unverified until confirmed by an approved payment provider.
             </p>
           </div>
 
