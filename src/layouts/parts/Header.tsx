@@ -9,6 +9,7 @@ const navLinks = [
   { label: 'Digital Banking', href: '/digital-banking' },
   { label: 'Accounts',        href: '/accounts'          },
   { label: 'About',           href: '/about'            },
+  { label: 'Our Story',       href: '/our-story'        },
   { label: 'Contact',         href: '/contact'          },
   { label: 'Support',         href: '/support'          },
 ];

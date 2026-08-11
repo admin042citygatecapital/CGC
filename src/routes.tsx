@@ -31,6 +31,7 @@ function CustomerOnly({ children }: { children: ReactNode }) {
 
 const HomePage = lazy(() => import('./pages/index'));
 const AboutPage = lazy(() => import('./pages/about'));
+const OurStoryPage = lazy(() => import('./pages/our-story'));
 const DigitalBankingPage = lazy(() => import('./pages/digital-banking'));
 const WalletPage = lazy(() => import('./pages/wallet'));
 const AccountsPage = lazy(() => import('./pages/accounts'));
@@ -122,6 +123,7 @@ export const routes: RouteObject[] = [
   { path: '/', element: <HomePage /> },
   { path: '/demo', element: <Navigate to="/" replace /> },
   { path: '/about', element: <AboutPage /> },
+  { path: '/our-story', element: <OurStoryPage /> },
   { path: '/digital-banking', element: <DigitalBankingPage /> },
   { path: '/demo/digital-banking', element: <Navigate to="/digital-banking" replace /> },
   // /wallet and /transfers contain account data — require customer auth
