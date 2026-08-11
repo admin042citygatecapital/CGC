@@ -920,6 +920,31 @@ export const complaintEvents = pgTable('complaint_events', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('complaint_events_complaint_idx').on(t.complaintId, t.createdAt)]);
 
+// Independent-assurance exercise metadata. Original reports and sensitive
+// findings remain in a controlled evidence repository; this register stores
+// only references, hashes, decisions and immutable lifecycle history.
+export const assuranceExercises = pgTable('assurance_exercises', {
+  id: text('id').primaryKey(),
+  kind: text('kind').$type<'penetration_test'|'disaster_recovery'|'compliance_acceptance'>().notNull(),
+  title: text('title').notNull(), scope: text('scope').notNull(), owner: text('owner').notNull(),
+  provider: text('provider'), status: text('status').$type<'planned'|'in_progress'|'submitted'|'accepted'|'rejected'>().notNull().default('planned'),
+  outcome: text('outcome').$type<'not_run'|'passed'|'passed_with_findings'|'failed'>().notNull().default('not_run'),
+  evidenceUrl: text('evidence_url'), evidenceSha256: text('evidence_sha256'),
+  startedAt: timestamp('started_at', { withTimezone: true }), completedAt: timestamp('completed_at', { withTimezone: true }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }), criticalFindings: integer('critical_findings').notNull().default(0),
+  highFindings: integer('high_findings').notNull().default(0), openFindings: integer('open_findings').notNull().default(0),
+  notes: text('notes'), createdBy: text('created_by').notNull(), lastEditedBy: text('last_edited_by').notNull(),
+  submittedBy: text('submitted_by'), submittedAt: timestamp('submitted_at', { withTimezone: true }),
+  reviewedBy: text('reviewed_by'), reviewedAt: timestamp('reviewed_at', { withTimezone: true }), reviewNote: text('review_note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(), updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('assurance_exercises_kind_status_idx').on(t.kind, t.status), index('assurance_exercises_expiry_idx').on(t.expiresAt)]);
+
+export const assuranceExerciseEvents = pgTable('assurance_exercise_events', {
+  id: text('id').primaryKey(), exerciseId: text('exercise_id').notNull(), action: text('action').notNull(), actorId: text('actor_id').notNull(),
+  actorRole: adminRoleEnum('actor_role').notNull(), fromStatus: text('from_status'), toStatus: text('to_status'),
+  details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}), createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('assurance_exercise_events_exercise_idx').on(t.exerciseId, t.createdAt)]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -963,3 +988,5 @@ export type ProviderSandboxEventRow = typeof providerSandboxEvents.$inferSelect;
 export type OnboardingProviderEventRow = typeof onboardingProviderEvents.$inferSelect;
 export type ComplaintRow = typeof complaints.$inferSelect;
 export type ComplaintEventRow = typeof complaintEvents.$inferSelect;
+export type AssuranceExerciseRow = typeof assuranceExercises.$inferSelect;
+export type AssuranceExerciseEventRow = typeof assuranceExerciseEvents.$inferSelect;
