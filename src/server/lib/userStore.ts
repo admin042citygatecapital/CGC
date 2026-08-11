@@ -81,6 +81,7 @@ export interface UserRecord {
   sessionExpiresAt?: string;
   primaryCurrency?: string;
   accountTier?: 'personal' | 'savings' | 'business';
+  requestedProduct?: string;
   totpSecret?: string;
   totpEnabled?: boolean;
   locale?: string;
@@ -149,6 +150,7 @@ function toRecord(u: User): UserRecord {
     rejectionReason:     u.rejectionReason ?? undefined,
     primaryCurrency:     u.primaryCurrency ?? 'USD',
     accountTier:         (u.accountTier ?? 'personal') as 'personal' | 'savings' | 'business',
+    requestedProduct:    u.requestedProduct ?? undefined,
     totpSecret:          u.totpSecret ?? undefined,
     totpEnabled:         u.totpEnabled ?? false,
     locale:              u.locale ?? undefined,
@@ -250,6 +252,10 @@ export async function createUser(
     balance:            data.balance ?? 0,
     primaryCurrency:    data.primaryCurrency ?? 'USD',
     accountTier:        (data.accountTier ?? 'personal') as User['accountTier'],
+    requestedProduct:   data.requestedProduct ?? null,
+    address:            data.address ?? null,
+    city:               data.city ?? null,
+    postalCode:         data.postalCode ?? null,
     createdAt:          now,
     updatedAt:          now,
   };

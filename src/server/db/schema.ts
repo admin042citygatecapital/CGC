@@ -166,6 +166,7 @@ export const users = pgTable('users', {
   // Preferences
   primaryCurrency:     text('primary_currency').default('USD'),
   accountTier:         accountTierEnum('account_tier').default('personal'),
+  requestedProduct:    text('requested_product'),
   // Notification preferences (stored as JSONB)
   notificationPrefs:   jsonb('notification_prefs'),
   // Beneficiaries (stored as JSONB array)

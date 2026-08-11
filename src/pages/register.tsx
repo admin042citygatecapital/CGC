@@ -1,10 +1,11 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { UserPlus, Eye, EyeOff, AlertCircle, CheckCircle, Mail, Lock, User, Phone, Globe } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, AlertCircle, CheckCircle, Mail, Lock, User, Phone, Globe, MapPin, Building2 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
+import { getProductBySlug, PRODUCT_CATALOGUE } from '@/lib/productCatalogue';
 
 const COUNTRIES = [
   'United Kingdom', 'United States', 'Canada', 'Australia', 'Germany',
@@ -15,9 +16,12 @@ const COUNTRIES = [
 export default function RegisterPage() {
   const { customer, loading } = useCustomerAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialProduct = getProductBySlug(searchParams.get('product'))?.slug ?? 'personal-account';
 
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirm: '', phone: '', country: '',
+    address: '', city: '', postalCode: '', requestedProduct: initialProduct,
   });
   const [showPw,     setShowPw]     = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -39,8 +43,8 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (!form.name || !form.email || !form.password) {
-      setError('Name, email and password are required.'); return;
+    if (!form.name || !form.email || !form.password || !form.phone || !form.country || !form.address || !form.city || !form.postalCode || !form.requestedProduct) {
+      setError('Complete all required application fields.'); return;
     }
     if (form.password !== form.confirm) {
       setError('Passwords do not match.'); return;
@@ -63,6 +67,10 @@ export default function RegisterPage() {
           password: form.password,
           phone:    form.phone,
           country:  form.country,
+          address:  form.address,
+          city:     form.city,
+          postalCode: form.postalCode,
+          requestedProduct: form.requestedProduct,
           termsAccepted: legalAccepted,
         }),
       });
@@ -97,10 +105,10 @@ export default function RegisterPage() {
             <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
               <CheckCircle size={32} className="text-emerald-400" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">Check your email</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-3">Application received</h1>
             <p className="text-foreground/50 text-sm mb-6">
               We've sent a verification link to <span className="text-foreground font-medium">{form.email}</span>.
-              Click the link to activate your account, then log in.
+              Verify your email to continue the {getProductBySlug(form.requestedProduct)?.label ?? 'selected service'} onboarding process.
             </p>
             <Link
               to="/login"
@@ -144,8 +152,8 @@ export default function RegisterPage() {
               <CgcLogo size={40} withWordmark glow />
             </div>
 
-            <h1 className="text-2xl font-bold text-foreground mb-1">Create your account</h1>
-            <p className="text-sm text-foreground/50 mb-8">Create a secure platform profile. This does not open a bank or payment account.</p>
+            <h1 className="text-2xl font-bold text-foreground mb-1">Start your application</h1>
+            <p className="text-sm text-foreground/50 mb-8">Register your interest and create a secure platform profile. Account or service activation remains subject to eligibility, verification, and an approved provider.</p>
 
             {error && (
               <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 mb-6">
@@ -155,6 +163,16 @@ export default function RegisterPage() {
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="requested-product" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Selected service</label>
+                <div className="relative">
+                  <Building2 size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                  <select id="requested-product" value={form.requestedProduct} onChange={set('requestedProduct')} className="w-full pl-10 pr-4 py-3 rounded-xl bg-primary/[0.07] border border-primary/25 text-foreground text-sm focus:outline-none focus:border-primary/60 transition-colors appearance-none" required>
+                    {PRODUCT_CATALOGUE.map(product => <option key={product.slug} value={product.slug}>{product.label}</option>)}
+                  </select>
+                </div>
+              </div>
+
               {/* Full name */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="name" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Full name</label>
@@ -183,12 +201,13 @@ export default function RegisterPage() {
 
               {/* Phone (optional) */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="phone" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Phone <span className="text-foreground/30 normal-case">(optional)</span></label>
+                <label htmlFor="phone" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Phone number</label>
                 <div className="relative">
                   <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
                   <input
                     id="phone" type="tel" autoComplete="tel" value={form.phone} onChange={set('phone')}
                     placeholder="+44 7700 900000"
+                    required
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm placeholder:text-foreground/25 focus:outline-none focus:border-primary/50 transition-colors"
                   />
                 </div>
@@ -196,17 +215,27 @@ export default function RegisterPage() {
 
               {/* Country */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="country" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Country <span className="text-foreground/30 normal-case">(optional)</span></label>
+                <label htmlFor="country" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Country of residence</label>
                 <div className="relative">
                   <Globe size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30 pointer-events-none" />
                   <select
-                    id="country" value={form.country} onChange={set('country')}
+                    id="country" value={form.country} onChange={set('country')} required
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors appearance-none"
                   >
                     <option value="">Select country…</option>
                     {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="address" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Residential or business address</label>
+                <div className="relative"><MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30"/><input id="address" type="text" autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="Street address" required className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm placeholder:text-foreground/25 focus:outline-none focus:border-primary/50 transition-colors"/></div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5"><label htmlFor="city" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">City</label><input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={set('city')} required className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors"/></div>
+                <div className="flex flex-col gap-1.5"><label htmlFor="postal-code" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Postal code</label><input id="postal-code" type="text" autoComplete="postal-code" value={form.postalCode} onChange={set('postalCode')} required className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors"/></div>
               </div>
 
               {/* Password */}
@@ -258,7 +287,7 @@ export default function RegisterPage() {
                 ) : (
                   <span className="flex items-center justify-center gap-2">
                     <UserPlus size={15} />
-                    Create Account
+                    Submit Application
                   </span>
                 )}
               </button>

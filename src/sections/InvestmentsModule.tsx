@@ -6,10 +6,21 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GlassCard } from '@/lib/homeShared';
+import type { ProductSlug } from '@/lib/productCatalogue';
 
-const accountProducts = [
+interface ProductCardItem {
+  icon: typeof Wallet;
+  slug: ProductSlug;
+  label: string;
+  desc: string;
+  color: string;
+  status: string;
+}
+
+const accountProducts: ProductCardItem[] = [
   {
     icon: Wallet,
+    slug: 'personal-account',
     label: 'Personal Account',
     desc: 'Everyday account experience with balances, statements, beneficiary management, and security controls.',
     color: '#C9A84C',
@@ -17,6 +28,7 @@ const accountProducts = [
   },
   {
     icon: PiggyBank,
+    slug: 'savings-account',
     label: 'Savings Account',
     desc: 'Goal-led savings organisation, scheduled contributions, statements, and configurable account restrictions.',
     color: '#10B981',
@@ -24,6 +36,7 @@ const accountProducts = [
   },
   {
     icon: Building2,
+    slug: 'business-account',
     label: 'Business Account',
     desc: 'Business profiles, authorised users, approval workflows, expense visibility, and operational reporting.',
     color: '#627EEA',
@@ -31,6 +44,7 @@ const accountProducts = [
   },
   {
     icon: Globe2,
+    slug: 'multi-currency-wallet',
     label: 'Multi-Currency Service Wallet',
     desc: 'A unified view for configured GBP, EUR, USD, CAD, AUD, and CHF balances and conversion instructions.',
     color: '#00B4D8',
@@ -38,9 +52,10 @@ const accountProducts = [
   },
 ];
 
-const wealthServices = [
+const wealthServices: ProductCardItem[] = [
   {
     icon: Bitcoin,
+    slug: 'digital-asset-wallet',
     label: 'Digital-Asset Wallet',
     desc: 'Portfolio and transaction views for configured assets, with custody and withdrawals dependent on an approved custodian.',
     color: '#F7931A',
@@ -48,6 +63,7 @@ const wealthServices = [
   },
   {
     icon: BarChart3,
+    slug: 'markets-investments',
     label: 'Markets & Investments',
     desc: 'Market data, watchlists, holdings, orders, and performance reporting with market data separated from execution.',
     color: '#9945FF',
@@ -55,6 +71,7 @@ const wealthServices = [
   },
   {
     icon: Users,
+    slug: 'retirement-beneficiaries',
     label: 'Retirement & Beneficiaries',
     desc: 'Beneficiary designations and retirement-account servicing designed for jurisdiction-specific pension or 401(k) providers.',
     color: '#EC4899',
@@ -62,6 +79,7 @@ const wealthServices = [
   },
   {
     icon: FileText,
+    slug: 'tax-document-centre',
     label: 'Tax Document Centre',
     desc: 'Secure delivery of provider-issued statements and applicable tax documents; City Gate Capital does not provide tax advice.',
     color: '#F0D080',
@@ -69,16 +87,10 @@ const wealthServices = [
   },
 ];
 
-function ProductCard({ product, index }: { product: typeof accountProducts[number]; index: number }) {
+function ProductCard({ product, index }: { product: ProductCardItem; index: number }) {
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.06, duration: 0.45 }}
-      whileHover={{ y: -3 }}
-      className="group glass-card rounded-2xl p-5 gradient-border relative overflow-hidden"
-    >
+    <Link to={`/register?product=${product.slug}`} aria-label={`Register for ${product.label}`} className="block h-full">
+      <motion.article initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.06, duration: 0.45 }} whileHover={{ y: -3 }} className="group glass-card rounded-2xl p-5 gradient-border relative overflow-hidden h-full">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105" style={{ background: `${product.color}16` }}>
           <product.icon size={20} style={{ color: product.color }} />
@@ -87,7 +99,9 @@ function ProductCard({ product, index }: { product: typeof accountProducts[numbe
       </div>
       <h3 className="text-sm font-semibold text-foreground mb-2" style={{ fontFamily: 'var(--font-heading)' }}>{product.label}</h3>
       <p className="text-xs text-foreground/45 leading-relaxed">{product.desc}</p>
-    </motion.article>
+      <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary">Register interest <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5"/></span>
+      </motion.article>
+    </Link>
   );
 }
 

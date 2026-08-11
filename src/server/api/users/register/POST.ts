@@ -8,6 +8,7 @@ import { sendVerificationEmail, sendAdminNewUserAlert } from '../../../lib/email
 import { sanitizeString, isValidEmail, validatePassword } from '../../../lib/inputValidator.js';
 import { requirePublicRegistration } from '../../../lib/platformMode.js';
 import { issueKycUploadToken } from '../../../lib/purposeToken.js';
+import { getProductBySlug } from '../../../../lib/productCatalogue.js';
 
 const TERMS_VERSION = '2026-08-10';
 const PRIVACY_VERSION = '2026-08-10';
@@ -26,10 +27,20 @@ export default async function handler(req: Request, res: Response) {
   const password = typeof raw.password === 'string' ? raw.password : '';
   const phone    = sanitizeString(raw.phone);
   const country  = sanitizeString(raw.country);
+  const address  = sanitizeString(raw.address);
+  const city     = sanitizeString(raw.city);
+  const postalCode = sanitizeString(raw.postalCode);
+  const product = getProductBySlug(raw.requestedProduct);
   const ip       = req.ip ?? 'unknown';
   const termsAccepted = raw.termsAccepted === true;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email and password are required' });
+  }
+  if (!phone || !country || !address || !city || !postalCode) {
+    return res.status(400).json({ error: 'Phone, country, address, city and postal code are required.' });
+  }
+  if (!product) {
+    return res.status(400).json({ error: 'Select a valid City Gate Capital service.' });
   }
   if (!isValidEmail(email)) {
     return res.status(400).json({ error: 'Invalid email address' });
@@ -60,6 +71,11 @@ export default async function handler(req: Request, res: Response) {
     name,
     phone: phone || undefined,
     country: country || undefined,
+    address,
+    city,
+    postalCode,
+    accountTier: product.accountTier,
+    requestedProduct: product.slug,
     status: 'pending_verification',
     kycStatus: 'not_submitted',
     emailVerified: false,
@@ -81,6 +97,8 @@ export default async function handler(req: Request, res: Response) {
         acceptedAt: new Date().toISOString(),
         method: 'explicit_checkbox',
       },
+      requestedProduct: product.slug,
+      accountTier: product.accountTier,
     },
   });
 
