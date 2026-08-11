@@ -1,0 +1,82 @@
+import AdminLayout from '@/layouts/AdminLayout';
+import { authHeaders, useAdminAuth } from '@/lib/adminAuth';
+import { Helmet } from '@dr.pogodin/react-helmet';
+import { CheckCircle2, Clock, FileCheck2, Loader2, RefreshCw, ShieldAlert, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+type Status = 'draft' | 'submitted' | 'under_review' | 'needs_info' | 'approved' | 'rejected' | 'expired';
+type CaseRow = { id: string; userId: string; caseType: 'individual' | 'business'; status: Status; version: number; submittedBy?: string; lastEditedBy: string; updatedAt: string };
+type Bundle = { case: CaseRow; evidence: Array<{ id: string; kind: string; referenceType: string; reference: string; sha256?: string }>; events: Array<{ id: string; action: string; actorId: string; createdAt: string; fromStatus?: string; toStatus?: string }> };
+type ComplianceCase = { id: string; kind: 'aml' | 'sanctions'; status: string; riskLevel: string; summary: string; openedBy: string; lastEditedBy: string };
+
+export default function AdminOnboardingPage() {
+  const { admin } = useAdminAuth();
+  const [cases, setCases] = useState<CaseRow[]>([]);
+  const [selected, setSelected] = useState<Bundle | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [complianceCases, setComplianceCases] = useState<ComplianceCase[]>([]);
+  const [caseSummary, setCaseSummary] = useState('');
+  const [caseKind, setCaseKind] = useState<'aml' | 'sanctions'>('aml');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const response = await fetch('/api/admin/onboarding', { headers: authHeaders() });
+    const body = await response.json();
+    setCases(body.data ?? []); setLoading(false);
+  }, []);
+  useEffect(() => { if (admin) void load(); }, [admin, load]);
+
+  async function openCase(id: string) {
+    const response = await fetch(`/api/admin/onboarding?caseId=${encodeURIComponent(id)}`, { headers: authHeaders() });
+    const next = await response.json(); setSelected(next); setReason(''); setError('');
+    const casesResponse = await fetch(`/api/admin/onboarding/compliance-cases?userId=${encodeURIComponent(next.case.userId)}`, { headers: authHeaders() });
+    setComplianceCases((await casesResponse.json()).data ?? []);
+  }
+  async function openComplianceCase() {
+    if (!selected || caseSummary.trim().length < 10) { setError('A case summary of at least 10 characters is required.'); return; }
+    const response = await fetch('/api/admin/onboarding/compliance-cases', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: selected.case.userId, kind: caseKind, riskLevel: 'unrated', summary: caseSummary }) });
+    const body = await response.json(); if (!response.ok) setError(body.error ?? 'Unable to open case.'); else { setCaseSummary(''); await openCase(selected.case.id); }
+  }
+  async function transitionCompliance(record: ComplianceCase, status: string) {
+    const rationale = window.prompt(`Enter the required rationale to mark this ${record.kind} case ${status}:`)?.trim() ?? '';
+    if (rationale.length < 10) { setError('A rationale of at least 10 characters is required.'); return; }
+    const response = await fetch('/api/admin/onboarding/compliance-cases', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ caseId: record.id, status, riskLevel: record.riskLevel, reason: rationale }) });
+    const body = await response.json(); if (!response.ok) setError(body.error ?? 'Case update failed.'); else if (selected) await openCase(selected.case.id);
+  }
+  async function decide(decision: Status) {
+    if (!selected) return;
+    setBusy(true); setError('');
+    const response = await fetch('/api/admin/onboarding/review', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ caseId: selected.case.id, decision, reason }) });
+    const body = await response.json();
+    if (!response.ok) setError(body.error ?? 'Review failed.');
+    else { await load(); await openCase(selected.case.id); }
+    setBusy(false);
+  }
+
+  return <AdminLayout>
+    <Helmet><title>Customer Onboarding | City Gate Capital Admin</title></Helmet>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">Customer Onboarding</h1><p className="text-sm text-foreground/50">KYC/KYB evidence, maker-checker review and immutable case history.</p></div><button onClick={() => void load()} className="p-2 rounded-lg border border-white/10"><RefreshCw size={16}/></button></div>
+      <div className="grid lg:grid-cols-[1fr_1.4fr] gap-5">
+        <div className="rounded-2xl border border-white/10 overflow-hidden">
+          {loading ? <div className="p-8 flex justify-center"><Loader2 className="animate-spin"/></div> : cases.length === 0 ? <div className="p-8 text-sm text-foreground/45">No onboarding cases yet.</div> : cases.map(item => <button key={item.id} onClick={() => void openCase(item.id)} className="w-full text-left p-4 border-b border-white/8 hover:bg-white/5">
+            <div className="flex justify-between gap-3"><span className="font-semibold">{item.userId}</span><span className="text-xs uppercase text-primary">{item.status.replace('_',' ')}</span></div>
+            <div className="text-xs text-foreground/40 mt-1">{item.caseType} · version {item.version} · {new Date(item.updatedAt).toLocaleString()}</div>
+          </button>)}
+        </div>
+        <div className="rounded-2xl border border-white/10 p-5">
+          {!selected ? <div className="h-full min-h-64 flex items-center justify-center text-foreground/40"><FileCheck2 className="mr-2"/> Select a case</div> : <div className="space-y-5">
+            <div><h2 className="font-bold text-lg">Case {selected.case.id}</h2><p className="text-xs text-foreground/45">Submitter: {selected.case.submittedBy ?? 'not submitted'} · Last editor: {selected.case.lastEditedBy}</p></div>
+            <section><h3 className="text-xs font-bold uppercase text-foreground/50 mb-2">Evidence metadata</h3>{selected.evidence.map(e => <div key={e.id} className="rounded-xl bg-white/5 p-3 mb-2 text-sm"><div className="font-semibold">{e.kind} · {e.referenceType}</div><div className="text-xs text-foreground/45 break-all">{e.reference}</div>{e.sha256 && <div className="text-[10px] font-mono text-foreground/35 break-all">SHA-256 {e.sha256}</div>}</div>)}</section>
+            <section><h3 className="text-xs font-bold uppercase text-foreground/50 mb-2">Immutable history</h3>{selected.events.map(e => <div key={e.id} className="flex gap-2 text-xs py-2 border-b border-white/5"><Clock size={12}/><span>{new Date(e.createdAt).toLocaleString()} · {e.action} · {e.actorId}</span></div>)}</section>
+            <section className="space-y-2"><h3 className="text-xs font-bold uppercase text-foreground/50">AML and sanctions cases</h3>{complianceCases.map(item=><div key={item.id} className="rounded-xl bg-white/5 p-3"><div className="flex justify-between text-sm"><span className="font-semibold uppercase">{item.kind}</span><span>{item.status}</span></div><p className="text-xs text-foreground/45 my-2">{item.summary}</p>{!['cleared','blocked'].includes(item.status)&&<div className="flex gap-2"><button onClick={()=>void transitionCompliance(item,'escalated')} className="text-xs text-amber-300">Escalate</button><button onClick={()=>void transitionCompliance(item,'cleared')} className="text-xs text-emerald-300">Clear</button><button onClick={()=>void transitionCompliance(item,'blocked')} className="text-xs text-red-300">Block</button></div>}</div>)}<div className="grid grid-cols-[auto_1fr_auto] gap-2"><select value={caseKind} onChange={e=>setCaseKind(e.target.value as 'aml'|'sanctions')} className="bg-white/5 border border-white/10 rounded-lg p-2 text-sm"><option value="aml">AML</option><option value="sanctions">Sanctions</option></select><input value={caseSummary} onChange={e=>setCaseSummary(e.target.value)} placeholder="Case summary" className="bg-white/5 border border-white/10 rounded-lg p-2 text-sm"/><button onClick={()=>void openComplianceCase()} className="px-3 rounded-lg bg-primary/20 text-primary text-sm">Open</button></div></section>
+            {['submitted','under_review','needs_info'].includes(selected.case.status) && <section className="space-y-3"><textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="Required review rationale (minimum 10 characters)" className="w-full min-h-24 rounded-xl bg-white/5 border border-white/10 p-3 text-sm"/>{error && <p className="text-sm text-red-400 flex gap-2"><ShieldAlert size={15}/>{error}</p>}<div className="flex flex-wrap gap-2"><button disabled={busy} onClick={()=>void decide('under_review')} className="px-3 py-2 rounded-lg bg-blue-500/15 text-blue-300">Start review</button><button disabled={busy} onClick={()=>void decide('needs_info')} className="px-3 py-2 rounded-lg bg-amber-500/15 text-amber-300">Request information</button><button disabled={busy} onClick={()=>void decide('approved')} className="px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-300 flex gap-1"><CheckCircle2 size={15}/>Approve</button><button disabled={busy} onClick={()=>void decide('rejected')} className="px-3 py-2 rounded-lg bg-red-500/15 text-red-300 flex gap-1"><XCircle size={15}/>Reject</button></div></section>}
+          </div>}
+        </div>
+      </div>
+    </div>
+  </AdminLayout>;
+}

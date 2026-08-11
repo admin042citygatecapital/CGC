@@ -1,9 +1,9 @@
 /**
  * POST /api/admin/users/override
- * Emergency admin override: resend verification, manually approve/activate,
- * trigger OTP, or manually verify email for a user.
+ * Emergency super-admin controls. Verification links can be resent, but email
+ * verification itself cannot be bypassed by an administrator.
  *
- * Body: { userId: string; action: 'resend_verification' | 'approve' | 'activate' | 'resend_otp' | 'manual_verify' }
+ * Body: { userId: string; action: 'resend_verification' | 'approve' | 'activate' | 'resend_welcome' }
  * Requires: superadmin role
  */
 import type { Request, Response } from 'express';
@@ -22,7 +22,7 @@ function baseUrl(req: Request): string {
   return `${req.protocol}://${req.hostname}`;
 }
 
-const VALID_ACTIONS = ['resend_verification', 'approve', 'activate', 'manual_verify', 'resend_welcome'] as const;
+const VALID_ACTIONS = ['resend_verification', 'approve', 'activate', 'resend_welcome'] as const;
 type OverrideAction = typeof VALID_ACTIONS[number];
 
 export default async function handler(req: Request, res: Response) {
@@ -48,17 +48,6 @@ export default async function handler(req: Request, res: Response) {
         return res.json({ ok: true, message: `Verification email resent to ${user.email}` });
       }
 
-      case 'manual_verify': {
-        await updateUser(userId, {
-          emailVerified: true,
-          emailVerifyToken: undefined,
-          emailVerifyExpiry: undefined,
-          status: user.status === 'pending_verification' ? 'pending_kyc' : user.status,
-        });
-        appendAudit({ event: 'admin_manual_verify', userId, email: user.email, adminId });
-        return res.json({ ok: true, message: `Email manually verified for ${user.email}` });
-      }
-
       case 'approve': {
         const compliance = await evaluateFinancialAccess({ ...user, status: 'active' });
         if (!compliance.allowed) {
@@ -71,6 +60,10 @@ export default async function handler(req: Request, res: Response) {
       }
 
       case 'activate': {
+        const compliance = await evaluateFinancialAccess({ ...user, status: 'active' });
+        if (!compliance.allowed) {
+          return res.status(409).json({ error: `Activation cannot bypass compliance: ${compliance.message}`, code: compliance.code, compliance });
+        }
         await updateUser(userId, { status: 'active' });
         appendAudit({ event: 'admin_override_activate', userId, email: user.email, adminId });
         return res.json({ ok: true, message: `Account activated for ${user.email}` });

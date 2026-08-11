@@ -8,6 +8,8 @@ import { appendAudit } from '../../../../lib/auditLog.js';
 import { sendApprovalEmail } from '../../../../lib/emailService.js';
 import { appendKycNote } from '../../../../lib/kycStore.js';
 import { sanitizeNote } from '../../../../lib/inputValidator.js';
+import { getLatestOnboardingCaseForUser, reviewOnboardingCase } from '../../../../lib/onboardingStore.js';
+import { createNotification } from '../../../../lib/notificationStore.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -18,6 +20,15 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const onboardingCase = await getLatestOnboardingCaseForUser(userId);
+  if (!onboardingCase) return res.status(409).json({ error: 'A submitted onboarding case is required.', code: 'ONBOARDING_CASE_REQUIRED' });
+  try {
+    await reviewOnboardingCase({ caseId: onboardingCase.id, reviewerId: session.adminId, decision: 'approved', reason: note });
+  } catch (error) {
+    const typed = error as Error & { code?: string };
+    return res.status(409).json({ error: typed.message, code: typed.code });
+  }
 
   await updateUser(userId, {
     status:       'pending_approval',
@@ -51,6 +62,7 @@ export default async function handler(req: Request, res: Response) {
   });
 
   await sendApprovalEmail(user.email, user.name);
+  await createNotification(userId, 'Identity review complete', 'Your identity review is approved. AML screening remains pending and financial services are not active.', '/kyc');
 
   return res.json({ ok: true, message: `${user.name} KYC approved. AML clearance is now pending.` });
 }

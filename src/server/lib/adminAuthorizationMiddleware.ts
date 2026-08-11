@@ -43,8 +43,10 @@ const RULES: readonly Rule[] = [
   { prefix: '/env-report', roles: ['SECURITY_ADMIN'] },
 
   { prefix: '/kyc', roles: ['COMPLIANCE_ADMIN'] },
+  { prefix: '/onboarding', roles: ['COMPLIANCE_ADMIN'] },
   { prefix: '/users/approve', roles: ['COMPLIANCE_ADMIN'] },
   { prefix: '/users/reject', roles: ['COMPLIANCE_ADMIN'] },
+  { prefix: '/users/action', roles: ['SECURITY_ADMIN', 'COMPLIANCE_ADMIN'] },
   { prefix: '/users/reset-2fa', roles: ['SECURITY_ADMIN'] },
   { prefix: '/users/:id/security-events', roles: ['SECURITY_ADMIN'] },
   { prefix: '/users/:id/devices', roles: ['SECURITY_ADMIN'] },

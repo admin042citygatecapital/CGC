@@ -6,7 +6,7 @@
  *  - userId validated with safeParseId() — rejects __proto__, path traversal, etc.
  *  - patch filtered to ALLOWED_FIELDS allowlist before any store write
  *  - all string values sanitized with sanitizeString()
- *  - enum fields (status, kycStatus, idType, accountTier, primaryCurrency) validated
+ *  - enum fields (accountTier, primaryCurrency) validated
  *    against explicit allowlists — rejects arbitrary strings
  *  - stripDangerousKeys() applied to the final patch as a last-resort guard
  */
@@ -16,7 +16,6 @@ import { appendAudit } from '../../../../lib/auditLog.js';
 import {
   safeParseId,
   sanitizeString,
-  sanitizeNote,
   isOneOf,
   stripDangerousKeys,
 } from '../../../../lib/inputValidator.js';
@@ -25,19 +24,15 @@ import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 // Fields the admin is allowed to patch
 const ALLOWED_FIELDS = new Set([
   'name', 'email', 'phone', 'country',
-  'status', 'kycStatus', 'emailVerified', 'balance',
+  'balance',
   'bankName', 'bankAccountNumber', 'bankRoutingNumber', 'bankSwift', 'bankIban',
   'walletBtc', 'walletEth', 'walletUsdt', 'walletSol',
-  'dateOfBirth', 'address', 'city', 'postalCode', 'idType', 'idNumber',
-  'kycRejectionReason',
+  'address', 'city', 'postalCode',
   'primaryCurrency',
   'accountTier',
 ]);
 
 // Enum allowlists for fields that must match a fixed set of values
-const STATUS_VALUES    = ['pending_verification','pending_kyc','pending_approval','active','suspended','frozen','rejected'] as const;
-const KYC_VALUES       = ['not_submitted','submitted','approved','rejected'] as const;
-const ID_TYPE_VALUES   = ['passport','national_id','drivers_license','residence_permit'] as const;
 const TIER_VALUES      = ['personal','savings','business'] as const;
 const CURRENCY_VALUES  = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'] as const;
 
@@ -81,24 +76,6 @@ export default async function handler(req: Request, res: Response) {
 
     // Per-field type and enum validation
     switch (key) {
-      case 'status': {
-        const v = isOneOf(value, STATUS_VALUES);
-        if (!v) { rejectedFields.push(`${key}:invalid_enum`); continue; }
-        safePatch[key] = v;
-        break;
-      }
-      case 'kycStatus': {
-        const v = isOneOf(value, KYC_VALUES);
-        if (!v) { rejectedFields.push(`${key}:invalid_enum`); continue; }
-        safePatch[key] = v;
-        break;
-      }
-      case 'idType': {
-        const v = isOneOf(value, ID_TYPE_VALUES);
-        if (!v) { rejectedFields.push(`${key}:invalid_enum`); continue; }
-        safePatch[key] = v;
-        break;
-      }
       case 'accountTier': {
         const v = isOneOf(value, TIER_VALUES);
         if (!v) { rejectedFields.push(`${key}:invalid_enum`); continue; }
@@ -111,20 +88,12 @@ export default async function handler(req: Request, res: Response) {
         safePatch[key] = v;
         break;
       }
-      case 'emailVerified': {
-        if (typeof value !== 'boolean') { rejectedFields.push(`${key}:must_be_boolean`); continue; }
-        safePatch[key] = value;
-        break;
-      }
       case 'balance': {
         const n = Number(value);
         if (!Number.isFinite(n) || n < 0) { rejectedFields.push(`${key}:invalid_number`); continue; }
         safePatch[key] = Math.round(n * 100) / 100;
         break;
       }
-      case 'kycRejectionReason':
-        safePatch[key] = sanitizeNote(value);
-        break;
       default:
         // All remaining allowed fields are free-text strings
         safePatch[key] = sanitizeString(value, 200);

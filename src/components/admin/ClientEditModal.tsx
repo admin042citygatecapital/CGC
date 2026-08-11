@@ -78,7 +78,14 @@ export default function ClientEditModal({ user, onClose, onSuccess }: Props) {
       const res = await fetch('/api/admin/users/edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ userId: user.id, patch: form }),
+        body: JSON.stringify({ userId: user.id, patch: {
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          country: form.country,
+          primaryCurrency: form.primaryCurrency,
+          accountTier: form.accountTier,
+        } }),
       });
       const d = await res.json();
       if (!res.ok) { setError(d.error ?? 'Save failed'); setSaving(false); setConfirm(false); return; }

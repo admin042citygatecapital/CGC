@@ -22,6 +22,13 @@ import admin_trading_logs_get from "./api/admin/trading/logs/GET";
 import admin_users_id_get from "./api/admin/users/[id]/GET";
 import { initializeFaqSafety } from "./lib/smartsuppStore";
 import admin_documentation_format_get from "./api/admin/documentation/[format]/GET";
+import admin_onboarding_get from "./api/admin/onboarding/GET";
+import admin_onboarding_review_post from "./api/admin/onboarding/review/POST";
+import admin_onboarding_compliance_cases_get from "./api/admin/onboarding/compliance-cases/GET";
+import admin_onboarding_compliance_cases_post from "./api/admin/onboarding/compliance-cases/POST";
+import users_onboarding_get from "./api/users/onboarding/GET";
+import users_onboarding_evidence_post from "./api/users/onboarding/evidence/POST";
+import users_onboarding_submit_post from "./api/users/onboarding/submit/POST";
 
 // <api-imports>
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
@@ -518,6 +525,10 @@ app.use(['/api/zoho/connect', '/api/zoho/status'], (req: Request, res: Response,
 
 // <api-registrations>
 app.get("/api/admin/kyc/document", admin_kyc_document_get);
+app.get("/api/admin/onboarding", admin_onboarding_get);
+app.post("/api/admin/onboarding/review", admin_onboarding_review_post);
+app.get("/api/admin/onboarding/compliance-cases", admin_onboarding_compliance_cases_get);
+app.post("/api/admin/onboarding/compliance-cases", admin_onboarding_compliance_cases_post);
 app.post("/api/accounts/apply", accounts_apply_post_0);
 app.get("/api/admin/audit", admin_audit_get_1);
 app.get("/api/admin/auth/diag", admin_auth_diag_get_2);
@@ -777,6 +788,9 @@ app.post("/api/users/deposit", users_deposit_post_238);
 app.get("/api/users/devices", users_devices_get_239);
 app.post("/api/users/devices/revoke", users_devices_revoke_post_240);
 app.post("/api/users/kyc-document", users_kyc_document_post_241);
+app.get("/api/users/onboarding", users_onboarding_get);
+app.post("/api/users/onboarding/evidence", users_onboarding_evidence_post);
+app.post("/api/users/onboarding/submit", users_onboarding_submit_post);
 app.post("/api/users/login", users_login_post_242);
 app.get("/api/users/login-history", users_login_history_get_243);
 app.post("/api/users/logout", users_logout_post_244);

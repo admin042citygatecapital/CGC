@@ -7,6 +7,7 @@ import {
   type AMLRiskLevel,
   type AMLStatus,
 } from '../../../../lib/userStore.js';
+import { createNotification } from '../../../../lib/notificationStore.js';
 
 const AML_STATUSES = ['not_screened', 'pending', 'cleared', 'review', 'blocked'] as const;
 const RISK_LEVELS = ['unrated', 'low', 'medium', 'high'] as const;
@@ -39,6 +40,9 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserById(userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
+  if (user.approvedBy === session.adminId && ['cleared', 'review', 'blocked'].includes(amlStatus)) {
+    return res.status(409).json({ error: 'A different compliance administrator must complete AML review after KYC approval.', code: 'MAKER_CHECKER_REQUIRED' });
+  }
 
   const now = new Date().toISOString();
   const nextAccountStatus = amlStatus === 'blocked' && ['active', 'pending_approval'].includes(user.status)
@@ -71,6 +75,10 @@ export default async function handler(req: Request, res: Response) {
       accountStatus: nextAccountStatus,
     },
   });
+
+  await createNotification(userId, `AML review ${amlStatus}`, amlStatus === 'blocked'
+    ? 'Your platform profile is restricted while a compliance review is completed.'
+    : 'Your AML review status has changed. This does not activate financial services.', '/kyc');
 
   return res.json({ ok: true, user: updated });
 }

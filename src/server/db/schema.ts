@@ -770,6 +770,85 @@ export const sponsorEvidenceEvents = pgTable('sponsor_evidence_events', {
   index('sponsor_evidence_events_package_idx').on(t.packageId, t.createdAt),
 ]);
 
+export const onboardingCases = pgTable('onboarding_cases', {
+  id:           text('id').primaryKey(),
+  userId:       text('user_id').notNull(),
+  caseType:     text('case_type').$type<'individual' | 'business'>().notNull(),
+  status:       text('status').$type<'draft' | 'submitted' | 'under_review' | 'needs_info' | 'approved' | 'rejected' | 'expired'>().notNull().default('draft'),
+  version:      integer('version').notNull().default(1),
+  assignedTo:   text('assigned_to'),
+  submittedBy:  text('submitted_by'),
+  submittedAt:  timestamp('submitted_at', { withTimezone: true }),
+  lastEditedBy: text('last_edited_by').notNull(),
+  reviewedBy:   text('reviewed_by'),
+  reviewedAt:   timestamp('reviewed_at', { withTimezone: true }),
+  reviewReason: text('review_reason'),
+  createdAt:    timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:    timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('onboarding_cases_status_updated_idx').on(t.status, t.updatedAt),
+  index('onboarding_cases_user_idx').on(t.userId),
+]);
+
+export const onboardingEvidence = pgTable('onboarding_evidence', {
+  id:           text('id').primaryKey(),
+  caseId:       text('case_id').notNull(),
+  kind:         text('kind').$type<'identity' | 'address' | 'selfie' | 'company' | 'ownership' | 'authority' | 'screening'>().notNull(),
+  referenceType:text('reference_type').$type<'provider' | 'controlled_url' | 'internal'>().notNull(),
+  reference:    text('reference').notNull(),
+  sha256:       text('sha256'),
+  issuedAt:     timestamp('issued_at', { withTimezone: true }),
+  expiresAt:    timestamp('expires_at', { withTimezone: true }),
+  createdBy:    text('created_by').notNull(),
+  lastEditedBy: text('last_edited_by').notNull(),
+  createdAt:    timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:    timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('onboarding_evidence_case_idx').on(t.caseId, t.createdAt)]);
+
+export const onboardingEvents = pgTable('onboarding_events', {
+  id:         text('id').primaryKey(),
+  caseId:     text('case_id').notNull(),
+  userId:     text('user_id').notNull(),
+  action:     text('action').notNull(),
+  actorId:    text('actor_id').notNull(),
+  actorType:  text('actor_type').$type<'customer' | 'admin' | 'system'>().notNull(),
+  fromStatus: text('from_status'),
+  toStatus:   text('to_status'),
+  details:    jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('onboarding_events_case_created_idx').on(t.caseId, t.createdAt),
+  index('onboarding_events_user_created_idx').on(t.userId, t.createdAt),
+]);
+
+export const complianceCases = pgTable('compliance_cases', {
+  id:           text('id').primaryKey(),
+  userId:       text('user_id').notNull(),
+  kind:         text('kind').$type<'aml' | 'sanctions'>().notNull(),
+  status:       text('status').$type<'open' | 'investigating' | 'escalated' | 'cleared' | 'blocked'>().notNull().default('open'),
+  riskLevel:    text('risk_level').$type<'unrated' | 'low' | 'medium' | 'high'>().notNull().default('unrated'),
+  summary:      text('summary').notNull(),
+  assignedTo:   text('assigned_to'),
+  openedBy:     text('opened_by').notNull(),
+  lastEditedBy: text('last_edited_by').notNull(),
+  reviewedBy:   text('reviewed_by'),
+  reviewedAt:   timestamp('reviewed_at', { withTimezone: true }),
+  resolution:   text('resolution'),
+  createdAt:    timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:    timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('compliance_cases_status_updated_idx').on(t.status, t.updatedAt), index('compliance_cases_user_idx').on(t.userId, t.createdAt)]);
+
+export const complianceCaseEvents = pgTable('compliance_case_events', {
+  id:         text('id').primaryKey(),
+  caseId:     text('case_id').notNull(),
+  action:     text('action').notNull(),
+  actorId:    text('actor_id').notNull(),
+  fromStatus: text('from_status'),
+  toStatus:   text('to_status'),
+  details:    jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('compliance_case_events_case_idx').on(t.caseId, t.createdAt)]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -803,3 +882,8 @@ export type SocialShareEventRow  = typeof socialShareEvents.$inferSelect;
 export type SponsorPackageRow    = typeof sponsorPackages.$inferSelect;
 export type SponsorEvidenceRow   = typeof sponsorEvidence.$inferSelect;
 export type SponsorEvidenceEventRow = typeof sponsorEvidenceEvents.$inferSelect;
+export type OnboardingCaseRow     = typeof onboardingCases.$inferSelect;
+export type OnboardingEvidenceRow = typeof onboardingEvidence.$inferSelect;
+export type OnboardingEventRow    = typeof onboardingEvents.$inferSelect;
+export type ComplianceCaseRow     = typeof complianceCases.$inferSelect;
+export type ComplianceCaseEventRow = typeof complianceCaseEvents.$inferSelect;

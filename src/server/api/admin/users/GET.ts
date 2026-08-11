@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import { loadAllUsers } from '../../../lib/userStore.js';
 
 export default async function handler(req: Request, res: Response) {
+  const role = req.adminSession!.role;
+  const mayViewFinancialSummary = role === 'SUPER_ADMIN' || role === 'FINANCE_ADMIN';
   const { status, kyc, search, page = '1', limit = '20' } = req.query as Record<string, string>;
   const pageNum  = Math.max(1, parseInt(page, 10));
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
@@ -36,7 +38,7 @@ export default async function handler(req: Request, res: Response) {
     amlRiskLevel: u.amlRiskLevel ?? 'unrated',
     amlNextReviewAt: u.amlNextReviewAt,
     emailVerified: u.emailVerified,
-    balance: u.balance ?? 0,
+    ...(mayViewFinancialSummary ? { balance: u.balance ?? 0, primaryCurrency: u.primaryCurrency ?? 'USD' } : {}),
     createdAt: u.createdAt,
     approvedAt: u.approvedAt,
     rejectedAt: u.rejectedAt,
@@ -49,24 +51,10 @@ export default async function handler(req: Request, res: Response) {
     city: u.city,
     postalCode: u.postalCode,
     idType: u.idType,
-    idNumber: u.idNumber,
-    idDocumentUrl: u.idDocumentUrl,
-    selfieUrl: u.selfieUrl,
     kycSubmittedAt: u.kycSubmittedAt,
     kycRejectionReason: u.kycRejectionReason,
-    // Wallet addresses
-    walletBtc:  u.walletBtc,
-    walletEth:  u.walletEth,
-    walletUsdt: u.walletUsdt,
-    walletSol:  u.walletSol,
-    // Bank info
-    bankName: u.bankName,
-    bankAccountNumber: u.bankAccountNumber,
-    bankRoutingNumber: u.bankRoutingNumber,
-    bankSwift: u.bankSwift,
-    bankIban: u.bankIban,
-    // Currency & tier
-    primaryCurrency: u.primaryCurrency ?? 'USD',
+    // Raw document locations, identity numbers, bank credentials and wallet
+    // addresses are deliberately excluded from the general directory.
     accountTier:     u.accountTier     ?? 'personal',
   }));
 

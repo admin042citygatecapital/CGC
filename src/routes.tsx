@@ -99,6 +99,7 @@ const AdminLinks           = lazy(() => import('./pages/admin/links'));
 const AdminWebsite         = lazy(() => import('./pages/admin/website'));
 const AdminRates           = lazy(() => import('./pages/admin/rates'));
 const AdminKyc             = lazy(() => import('./pages/admin/kyc'));
+const AdminOnboarding      = lazy(() => import('./pages/admin/onboarding'));
 const AdminDocumentation   = lazy(() => import('./pages/admin/documentation'));
 const AdminReadiness       = lazy(() => import('./pages/admin/readiness'));
 const AdminSponsorReadiness = lazy(() => import('./pages/admin/sponsor-readiness'));
@@ -111,7 +112,7 @@ const AdminMedia           = lazy(() => import('./pages/admin/media'));
 const AdminConfig          = lazy(() => import('./pages/admin/config'));
 const AdminIntegrations    = lazy(() => import('./pages/admin/integrations'));
 const AdminTrading         = lazy(() => import('./pages/admin/trading'));
-const KycPage              = lazy(() => import('./pages/kyc'));
+const OnboardingPage       = lazy(() => import('./pages/onboarding'));
 
 export const routes: RouteObject[] = [
   { path: '/', element: <CorporateHomePage /> },
@@ -161,7 +162,8 @@ export const routes: RouteObject[] = [
   { path: '/dashboard/trading/analytics', element: <CustomerOnly><DashboardTradingAnalytics /></CustomerOnly> },
   { path: '/dashboard/trading/spot',      element: <CustomerOnly><DashboardTradingSpot /></CustomerOnly> },
   { path: '/dashboard/trading/trades',    element: <CustomerOnly><DashboardTradingTrades /></CustomerOnly> },
-  { path: '/kyc',                     element: <CustomerOnly><KycPage /></CustomerOnly> },
+  { path: '/kyc',                     element: <CustomerOnly><OnboardingPage /></CustomerOnly> },
+  { path: '/onboarding',              element: <CustomerOnly><OnboardingPage /></CustomerOnly> },
   // Admin routes (no RootLayout wrapper — AdminLayout handles its own chrome)
   { path: '/admin/login',             element: <AdminLoginPage /> },
   { path: '/admin/forgot-password',   element: <AdminForgotPasswordPage /> },
@@ -187,6 +189,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/website',      element: <AdminOnly><AdminWebsite /></AdminOnly> },
   { path: '/admin/rates',        element: <AdminOnly><AdminRates /></AdminOnly> },
   { path: '/admin/kyc',             element: <AdminOnly><AdminKyc /></AdminOnly> },
+  { path: '/admin/onboarding',      element: <AdminOnly><AdminOnboarding /></AdminOnly> },
   { path: '/admin/documentation',   element: <AdminOnly><AdminDocumentation /></AdminOnly> },
   { path: '/admin/readiness',       element: <AdminOnly><AdminReadiness /></AdminOnly> },
   { path: '/admin/sponsor-readiness', element: <AdminOnly><AdminSponsorReadiness /></AdminOnly> },

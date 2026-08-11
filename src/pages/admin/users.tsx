@@ -927,11 +927,20 @@ export default function AdminUsers() {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   async function doAction(userId: string, action: string, extra?: object) {
+    let actionPayload = extra ?? {};
+    if (['suspend', 'freeze', 'reactivate'].includes(action) && !('reason' in actionPayload)) {
+      const reason = window.prompt(`Enter the required rationale to ${action} this platform profile:`)?.trim() ?? '';
+      if (reason.length < 10) {
+        showToast('A rationale of at least 10 characters is required.', false);
+        return;
+      }
+      actionPayload = { ...actionPayload, reason };
+    }
     setAL(userId + action);
     const res = await fetch('/api/admin/users/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ userId, action, ...extra }),
+      body: JSON.stringify({ userId, action, ...actionPayload }),
     });
     const d = await res.json();
     setAL(null);

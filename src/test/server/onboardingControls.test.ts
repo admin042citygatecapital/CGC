@@ -1,0 +1,56 @@
+import { describe, expect, it } from 'vitest';
+import { assertMakerChecker, validateEvidenceReference } from '../../server/lib/onboardingStore';
+import { allowedRolesForAdminRequest } from '../../server/lib/adminAuthorizationMiddleware';
+import fs from 'node:fs';
+import path from 'node:path';
+
+describe('customer onboarding controls', () => {
+  it('rejects self-review by the submitter or last editor', () => {
+    expect(() => assertMakerChecker({ submittedBy: 'admin-a', lastEditedBy: 'customer-1' }, 'admin-a'))
+      .toThrow(/cannot review/i);
+    expect(() => assertMakerChecker({ submittedBy: 'customer-1', lastEditedBy: 'admin-b' }, 'admin-b'))
+      .toThrow(/cannot review/i);
+    expect(() => assertMakerChecker({ submittedBy: 'customer-1', lastEditedBy: 'customer-1' }, 'admin-c'))
+      .not.toThrow();
+  });
+
+  it('validates metadata-only evidence references', () => {
+    expect(validateEvidenceReference({ referenceType: 'provider', reference: 'provider-case-123' })).toBeNull();
+    expect(validateEvidenceReference({ referenceType: 'provider', reference: 'https://example.com/document' })).toMatch(/opaque reference/);
+    expect(validateEvidenceReference({ referenceType: 'controlled_url', reference: 'http://example.com/evidence' })).toMatch(/HTTPS/);
+    expect(validateEvidenceReference({ referenceType: 'controlled_url', reference: 'https://user:pass@example.com/evidence' })).toMatch(/credentials/);
+    expect(validateEvidenceReference({ referenceType: 'internal', reference: 'case/123', sha256: 'A'.repeat(64) })).toMatch(/SHA-256/);
+    expect(validateEvidenceReference({ referenceType: 'internal', reference: 'case/123', sha256: 'a'.repeat(64) })).toBeNull();
+    expect(validateEvidenceReference({ referenceType: 'internal', reference: 'case/123', issuedAt: '2026-02-02', expiresAt: '2026-01-01' })).toMatch(/after issue/);
+  });
+
+  it('limits onboarding decisions to compliance administrators and super-admin', () => {
+    expect(allowedRolesForAdminRequest('/onboarding/review', 'POST')).toEqual(['COMPLIANCE_ADMIN']);
+    expect(allowedRolesForAdminRequest('/users/action', 'POST')).toEqual(['SECURITY_ADMIN', 'COMPLIANCE_ADMIN']);
+  });
+
+  it('migrates append-only lifecycle history and metadata-only evidence', () => {
+    const sql = fs.readFileSync(path.join(process.cwd(), 'src/server/db/migrations/0008_customer_onboarding.sql'), 'utf8');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS onboarding_cases');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS onboarding_evidence');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS onboarding_events');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS compliance_cases');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS compliance_case_events');
+    expect(sql).toContain('BEFORE UPDATE OR DELETE ON onboarding_events');
+    expect(sql).toContain('BEFORE UPDATE OR DELETE ON compliance_case_events');
+    expect(sql).not.toMatch(/BYTEA|document_base64|password_hash/i);
+  });
+
+  it('does not expose raw identity, bank, wallet, or document fields in the general directory', () => {
+    const source = fs.readFileSync(path.join(process.cwd(), 'src/server/api/admin/users/GET.ts'), 'utf8');
+    expect(source).not.toMatch(/bankAccountNumber:\s*u\.|walletBtc:\s*u\.|idNumber:\s*u\.|idDocumentUrl:\s*u\.|selfieUrl:\s*u\./);
+  });
+
+  it('removes legacy administrator bypasses for verification and compliance states', () => {
+    const editor = fs.readFileSync(path.join(process.cwd(), 'src/server/api/admin/users/edit/POST.ts'), 'utf8');
+    const override = fs.readFileSync(path.join(process.cwd(), 'src/server/api/admin/users/override/POST.ts'), 'utf8');
+    expect(editor).not.toMatch(/'status',\s*'kycStatus'|'emailVerified'.*ALLOWED_FIELDS/s);
+    expect(override).not.toContain("'manual_verify'");
+    expect(override).toContain('Activation cannot bypass compliance');
+  });
+});
