@@ -28,6 +28,7 @@
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
     "verify": "npm run type-check && npm run lint -- --quiet && npm run test:ci && npm run build",
+    "verify:render": "node scripts/run-render-verify.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "clean": "rm -rf dist node_modules/.vite",
     "reset": "npm run clean && npm install",
