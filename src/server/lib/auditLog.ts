@@ -79,6 +79,11 @@ export function appendAudit(payload: LegacyAuditPayload): void {
  */
 export async function appendCriticalAudit(payload: LegacyAuditPayload): Promise<void> {
   const { event, adminId, userId, email, ip, reason, ua, meta, ...rest } = payload;
+  const actorId = adminId ?? userId ?? 'system';
+  if (process.env.NODE_ENV === 'production' && !isDatabaseConfigured()) {
+    console.error('[audit] critical audit storage unavailable', { event, adminId: actorId });
+    throw new Error('Critical audit storage is unavailable.');
+  }
   const details: Record<string, unknown> = { ...meta };
   if (reason) details.reason = reason;
   if (ua) details.ua = ua;
@@ -86,13 +91,22 @@ export async function appendCriticalAudit(payload: LegacyAuditPayload): Promise<
   for (const [key, value] of Object.entries(rest)) {
     if (value !== undefined) details[key] = value;
   }
-  await appendAuditEntry({
-    adminId: adminId ?? userId ?? 'system',
-    adminEmail: email ?? '',
-    action: event,
-    ip,
-    details: Object.keys(details).length > 0 ? details : undefined,
-  });
+  try {
+    await appendAuditEntry({
+      adminId: actorId,
+      adminEmail: email ?? '',
+      action: event,
+      ip,
+      details: Object.keys(details).length > 0 ? details : undefined,
+    });
+  } catch (error) {
+    console.error('[audit] critical audit write failed', {
+      event,
+      adminId: actorId,
+      errorType: error instanceof Error ? error.name : 'UnknownError',
+    });
+    throw error;
+  }
 }
 
 export async function appendAuditEntry(entry: Omit<AuditEntry, 'id' | 'ts'>): Promise<AuditEntry> {

@@ -44,7 +44,7 @@ Every sponsor-evidence create, edit, submit, review, expiry, package decision an
 
 The sole super-administrator may create and submit evidence but cannot approve their own submission. A separately authenticated independent checker uses the rate-limited external-review endpoint to approve or reject submitted evidence across all control categories and later review the submitted package. The checker credential is stored only as a SHA-256 hash and cannot create an administration session.
 
-Three existing internal controls can be introduced progressively as **draft** metadata using `npm run sponsor:evidence:drafts`: the customer-onboarding policy, signed-provider-webhook controls, and complaints procedure. The command is dry-run by default, calculates the source-file SHA-256 values at execution time, and skips controls that already have evidence. Applying it creates drafts only; it does not submit, approve, or satisfy external sponsor/counsel dependencies.
+Six existing internal controls can be introduced progressively as **draft** metadata using `npm run sponsor:evidence:drafts`: the customer-onboarding policy, signed-provider-webhook controls, complaints procedure, ledger-of-record boundary, privileged-access control inventory, and backup/restore runbook. The command is dry-run by default, calculates the source-file SHA-256 values at execution time, and skips controls that already have evidence. The final three records deliberately describe current boundaries or designs, not completed operating controls. Applying the command creates drafts only; it does not submit, approve, or satisfy contracted-provider, independent-review, restore-exercise, sponsor, counsel, or control-owner dependencies.
 
 ## Current 2026 regulatory baseline
 
