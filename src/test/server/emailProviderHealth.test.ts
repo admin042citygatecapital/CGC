@@ -24,6 +24,20 @@ describe('Resend provider health assessment', () => {
     expect(result).toMatchObject({ status: 'healthy', healthy: true, evidence: 'recent_delivery' });
   });
 
+  it('prefers a signed provider delivery event as operational evidence', () => {
+    const result = assessResendHealth(true, [], { status: 'permission_limited' }, now, [
+      { eventType: 'delivered', occurredAt: '2026-08-11T12:00:00Z' },
+    ]);
+    expect(result).toMatchObject({ status: 'healthy', healthy: true, evidence: 'webhook_delivery' });
+  });
+
+  it('does not let old webhook evidence override an invalid current credential', () => {
+    const result = assessResendHealth(true, [], { status: 'invalid' }, now, [
+      { eventType: 'delivered', occurredAt: '2026-08-11T12:00:00Z' },
+    ]);
+    expect(result).toMatchObject({ status: 'degraded', healthy: false, evidence: 'provider_error' });
+  });
+
   it('does not call a restricted key broken when it has no delivery evidence yet', () => {
     expect(assessResendHealth(true, [], { status: 'permission_limited' }, now)).toMatchObject({
       status: 'configured_unverified', healthy: false, evidence: 'configuration_only',

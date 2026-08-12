@@ -10,20 +10,22 @@ import { loadSmtpConfig } from '../../../../lib/smtpConfigStore.js';
 import { getSecret } from '#runtime/secrets';
 import { verifyResendProvider } from '../../../../lib/smtpTransport.js';
 import { assessResendHealth } from '../../../../lib/emailProviderHealth.js';
+import { getRecentResendDeliveryEvents } from '../../../../lib/resendWebhook.js';
 
 export default async function handler(_req: Request, res: Response) {
   const oauth   = diagnoseOAuthCredentials();
   const smtp    = loadSmtpConfig();
   const resendReady = !!getSecret('RESEND_API_KEY');
-  const [stats, pending, logs, verification] = await Promise.all([
+  const [stats, pending, logs, verification, providerEvents] = await Promise.all([
     getQueueStats(),
     getPendingQueue(),
     getEmailLogs(50),
     resendReady ? verifyResendProvider() : Promise.resolve({ status: 'unconfigured' as const }),
+    getRecentResendDeliveryEvents(100),
   ]);
 
   const lastFailed = logs.find(log => log.status === 'failed');
-  const resendHealth = assessResendHealth(resendReady, logs, verification);
+  const resendHealth = assessResendHealth(resendReady, logs, verification, Date.now(), providerEvents);
   const providerHealthy = resendReady ? resendHealth.healthy : (
     smtp.mode === 'oauth' ? oauth.clientSecretValid && oauth.refreshTokenValid : !!(smtp.host && smtp.username && smtp.password)
   );
@@ -47,6 +49,12 @@ export default async function handler(_req: Request, res: Response) {
     failedCount: stats.failed,
     lastSentAt: stats.lastSentAt || null,
     lastError: lastFailed?.errorMessage ?? null,
+    webhook: {
+      configured: !!getSecret('RESEND_WEBHOOK_SIGNING_SECRET'),
+      verifiedEventCount: providerEvents.length,
+      lastVerifiedEventAt: providerEvents[0]?.occurredAt ?? null,
+      lastVerifiedEventType: providerEvents[0]?.eventType ?? null,
+    },
     oauth,
     queue: { stats, pending: pending.slice(0, 20).map(toEmailDiagnostic) },
     recentLogs: logs.map(toEmailDiagnostic),

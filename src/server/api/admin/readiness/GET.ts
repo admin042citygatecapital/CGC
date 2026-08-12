@@ -28,6 +28,7 @@ import { getStorageBackend } from '../../../lib/supabaseStorage.js';
 import { verifyResendProvider } from '../../../lib/smtpTransport.js';
 import { getEmailLogs } from '../../../lib/emailQueue.js';
 import { assessResendHealth } from '../../../lib/emailProviderHealth.js';
+import { getRecentResendDeliveryEvents } from '../../../lib/resendWebhook.js';
 import { isDatabaseConfigured, testConnection } from '../../../db/db.js';
 import { getOperationalBackupStatus } from '../../../lib/operationalBackup.js';
 import { privateSubdirectory } from '../../../lib/storagePaths.js';
@@ -141,7 +142,11 @@ async function checkEmailDelivery(): Promise<ReadinessCheck> {
   const resendKey = s('RESEND_API_KEY');
   if (resendKey) {
     const { result: verification, ms } = await timed(() => verifyResendProvider());
-    const health = assessResendHealth(true, await getEmailLogs(50), verification);
+    const [logs, providerEvents] = await Promise.all([
+      getEmailLogs(50),
+      getRecentResendDeliveryEvents(100),
+    ]);
+    const health = assessResendHealth(true, logs, verification, Date.now(), providerEvents);
     return {
       id: 'email_delivery', name: 'Resend Email Delivery', subsystem: 'Email',
       status: health.status === 'healthy' ? 'PASS' : health.status === 'degraded' ? 'FAIL' : 'WARN',

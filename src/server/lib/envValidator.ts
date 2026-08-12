@@ -162,6 +162,12 @@ const REGISTRY: EnvVarSpec[] = [
     description: 'Resend API key used by the production email transport.',
   },
   {
+    name:        'RESEND_WEBHOOK_SIGNING_SECRET',
+    level:       'INFO',
+    service:     'Resend Delivery Webhooks',
+    description: 'Signing secret used to authenticate Resend delivery events. Store server-side only.',
+  },
+  {
     name:        'MAIL_PASSWORD',
     level:       'INFO',
     service:     'Manual SMTP (fallback)',

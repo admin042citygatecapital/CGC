@@ -616,6 +616,26 @@ export const emailQueue = pgTable('email_queue', {
   index('email_queue_scheduled_at_idx').on(t.scheduledAt),
 ]);
 
+// Signed provider delivery events. This is deliberately metadata-only: email
+// bodies, recipients, subjects, webhook signatures, and provider secrets are
+// never persisted. Event IDs provide replay protection.
+export const emailProviderEvents = pgTable('email_provider_events', {
+  id:            text('id').primaryKey(),
+  provider:      text('provider').notNull(),
+  messageId:     text('message_id').notNull(),
+  eventType:     text('event_type').$type<
+    'sent' | 'scheduled' | 'delivered' | 'delivery_delayed' | 'complained'
+    | 'bounced' | 'opened' | 'clicked' | 'failed' | 'suppressed'
+  >().notNull(),
+  occurredAt:    timestamp('occurred_at', { withTimezone: true }).notNull(),
+  receivedAt:    timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+  payloadSha256: text('payload_sha256').notNull(),
+}, (t) => [
+  index('email_provider_events_message_idx').on(t.messageId, t.occurredAt),
+  index('email_provider_events_type_idx').on(t.eventType, t.occurredAt),
+  uniqueIndex('email_provider_events_provider_id_idx').on(t.provider, t.id),
+]);
+
 // ── access_log ────────────────────────────────────────────────────────────────
 
 export const accessLog = pgTable('access_log', {

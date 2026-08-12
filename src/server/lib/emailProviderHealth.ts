@@ -1,4 +1,5 @@
 import type { QueuedEmail } from './emailQueue.js';
+import type { ResendDeliveryEvidence } from './resendWebhook.js';
 
 export type EmailProviderHealthStatus = 'healthy' | 'configured_unverified' | 'degraded';
 
@@ -10,7 +11,7 @@ export interface ProviderVerification {
 export interface EmailProviderHealth {
   status: EmailProviderHealthStatus;
   healthy: boolean;
-  evidence: 'live_api' | 'recent_delivery' | 'configuration_only' | 'provider_error' | 'not_configured';
+  evidence: 'live_api' | 'webhook_delivery' | 'recent_delivery' | 'configuration_only' | 'provider_error' | 'not_configured';
   message: string;
   detail?: string;
   lastSentAt: string | null;
@@ -30,14 +31,21 @@ export function assessResendHealth(
   logs: QueuedEmail[],
   verification: ProviderVerification,
   now = Date.now(),
+  providerEvents: ResendDeliveryEvidence[] = [],
 ): EmailProviderHealth {
   const sent = logs.filter(log => log.status === 'sent').sort((a, b) => eventTime(b) - eventTime(a))[0];
   const failed = logs.filter(log => log.status === 'failed').sort((a, b) => eventTime(b) - eventTime(a))[0];
   const lastSentMs = sent ? eventTime(sent) : 0;
   const lastFailureMs = failed ? eventTime(failed) : 0;
   const recentSuccessfulDelivery = lastSentMs > now - RECENT_DELIVERY_WINDOW_MS && lastSentMs >= lastFailureMs;
+  const deliveredEvent = providerEvents
+    .filter(event => event.eventType === 'delivered')
+    .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())[0];
+  const deliveredEventMs = deliveredEvent ? new Date(deliveredEvent.occurredAt).getTime() : 0;
+  const recentVerifiedDelivery = Number.isFinite(deliveredEventMs)
+    && deliveredEventMs > now - RECENT_DELIVERY_WINDOW_MS;
   const timestamps = {
-    lastSentAt: sent?.sentAt || null,
+    lastSentAt: deliveredEventMs > lastSentMs ? deliveredEvent?.occurredAt || null : sent?.sentAt || null,
     lastFailureAt: failed ? (failed.lastAttemptAt || failed.createdAt) : null,
   };
 
@@ -55,6 +63,24 @@ export function assessResendHealth(
     };
   }
 
+  if (verification.status === 'invalid') {
+    return {
+      status: 'degraded', healthy: false, evidence: 'provider_error',
+      message: 'Resend rejected the configured API credential.', detail: verification.detail, ...timestamps,
+    };
+  }
+
+  if (recentVerifiedDelivery) {
+    return {
+      status: 'healthy', healthy: true, evidence: 'webhook_delivery',
+      message: 'A recent signed Resend delivery event confirms operational email delivery.',
+      detail: verification.status === 'permission_limited'
+        ? 'The restricted sending key cannot inspect domains; a verified provider webhook is used as delivery evidence.'
+        : undefined,
+      ...timestamps,
+    };
+  }
+
   if (recentSuccessfulDelivery) {
     return {
       status: 'healthy', healthy: true, evidence: 'recent_delivery',
@@ -63,13 +89,6 @@ export function assessResendHealth(
         ? 'The restricted key cannot inspect domains; delivery history is used as operational evidence.'
         : undefined,
       ...timestamps,
-    };
-  }
-
-  if (verification.status === 'invalid') {
-    return {
-      status: 'degraded', healthy: false, evidence: 'provider_error',
-      message: 'Resend rejected the configured API credential.', detail: verification.detail, ...timestamps,
     };
   }
 

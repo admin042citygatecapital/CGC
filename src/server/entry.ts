@@ -30,6 +30,7 @@ import users_onboarding_get from "./api/users/onboarding/GET";
 import users_onboarding_evidence_post from "./api/users/onboarding/evidence/POST";
 import users_onboarding_submit_post from "./api/users/onboarding/submit/POST";
 import providers_onboarding_webhook_post from "./api/providers/onboarding/webhook/POST";
+import resend_webhook_post from "./api/webhooks/resend/POST";
 import admin_onboarding_screening_get from "./api/admin/onboarding/screening/GET";
 import admin_legal_entity_get from "./api/admin/legal-entity/GET";
 import admin_legal_entity_post from "./api/admin/legal-entity/POST";
@@ -436,7 +437,8 @@ app.use(requestSizeGuard(512));
 app.use(express.json({
   limit: '512kb',
   verify: (req, _res, buffer) => {
-    if ((req as Request).originalUrl.startsWith('/api/providers/onboarding/webhook/')) {
+    if ((req as Request).originalUrl.startsWith('/api/providers/onboarding/webhook/')
+      || (req as Request).originalUrl.startsWith('/api/webhooks/resend')) {
       (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer);
     }
   },
@@ -459,6 +461,12 @@ app.use('/api/providers/onboarding/webhook', rateLimitMiddleware(
   req => `provider-webhook:${req.ip}`,
   { windowMs: 60_000, max: 60 },
   'Provider webhook rate limit exceeded.',
+));
+
+app.use('/api/webhooks/resend', rateLimitMiddleware(
+  req => `resend-webhook:${req.ip}`,
+  { windowMs: 60_000, max: 120 },
+  'Email webhook rate limit exceeded.',
 ));
 
 app.use('/api/admin/sponsor-readiness/external-review', rateLimitMiddleware(
@@ -564,6 +572,7 @@ app.use(['/api/zoho/connect', '/api/zoho/status'], (req: Request, res: Response,
 
 // <api-registrations>
 app.post("/api/providers/onboarding/webhook/:provider", providers_onboarding_webhook_post);
+app.post("/api/webhooks/resend", resend_webhook_post);
 app.get("/api/admin/onboarding/screening", admin_onboarding_screening_get);
 app.get("/api/admin/legal-entity", admin_legal_entity_get);
 app.post("/api/admin/legal-entity", admin_legal_entity_post);
