@@ -63,7 +63,7 @@ export async function previewTestDataQuarantine(inputEmails: string[]): Promise<
            COUNT(t.id)::int AS transaction_count
     FROM users u
     LEFT JOIN transactions t ON t.user_id = u.id
-    WHERE lower(u.email) = ANY(${sql.array(emails, 25)})
+    WHERE lower(u.email) IN ${sql(emails)}
     GROUP BY u.id, u.email, u.status, u.data_classification
     ORDER BY lower(u.email)
   `;
@@ -127,7 +127,7 @@ export async function quarantineTestData(options: {
       SELECT id, lower(email) AS email, status, data_classification,
              quarantine_batch_id, quarantined_at
       FROM users
-      WHERE lower(email) = ANY(${transaction.array(emails, 25)})
+      WHERE lower(email) IN ${transaction(emails)}
       ORDER BY lower(email)
       FOR UPDATE
     `;
@@ -141,7 +141,7 @@ export async function quarantineTestData(options: {
     }>>`
       SELECT id, data_classification, quarantine_batch_id
       FROM transactions
-      WHERE user_id = ANY(${transaction.array(userIds, 25)})
+      WHERE user_id IN ${transaction(userIds)}
       ORDER BY id
       FOR UPDATE
     `;
@@ -189,19 +189,19 @@ export async function quarantineTestData(options: {
 
     const revoked = await transaction<Array<{ user_id: string }>>`
       DELETE FROM customer_sessions
-      WHERE user_id = ANY(${transaction.array(userIds, 25)})
+      WHERE user_id IN ${transaction(userIds)}
       RETURNING user_id
     `;
     await transaction`
       UPDATE transactions
       SET data_classification = 'synthetic_quarantined', quarantine_batch_id = ${batchId}
-      WHERE user_id = ANY(${transaction.array(userIds, 25)})
+      WHERE user_id IN ${transaction(userIds)}
     `;
     await transaction`
       UPDATE users
       SET status = 'suspended', data_classification = 'quarantined_test',
           quarantine_batch_id = ${batchId}, quarantined_at = NOW(), updated_at = NOW()
-      WHERE id = ANY(${transaction.array(userIds, 25)})
+      WHERE id IN ${transaction(userIds)}
     `;
     await transaction`
       UPDATE data_quarantine_batches SET status = 'applied', applied_at = NOW() WHERE id = ${batchId}
