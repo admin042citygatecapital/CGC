@@ -1053,6 +1053,32 @@ export const dataQuarantineRecords = pgTable('data_quarantine_records', {
   uniqueIndex('data_quarantine_records_batch_resource_idx').on(t.batchId, t.resourceType, t.resourceId),
 ]);
 
+export const operationsQuarantineBatches = pgTable('operations_quarantine_batches', {
+  id: text('id').primaryKey(),
+  backupFilename: text('backup_filename').notNull(),
+  backupSha256: text('backup_sha256').notNull(),
+  reason: text('reason').notNull(),
+  initiatedBy: text('initiated_by').notNull(),
+  status: text('status').$type<'planned'|'applied'|'restored'>().notNull().default('planned'),
+  itemCount: integer('item_count').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  appliedAt: timestamp('applied_at', { withTimezone: true }),
+  restoredAt: timestamp('restored_at', { withTimezone: true }),
+  restoreApprovalReference: text('restore_approval_reference'),
+});
+
+export const operationsQuarantineRecords = pgTable('operations_quarantine_records', {
+  id: text('id').primaryKey(),
+  batchId: text('batch_id').notNull().references(() => operationsQuarantineBatches.id),
+  operationsItemId: text('operations_item_id').notNull().references(() => operationsItems.id),
+  previousState: jsonb('previous_state').$type<Record<string, unknown>>().notNull(),
+  snapshotSha256: text('snapshot_sha256').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('operations_quarantine_records_batch_idx').on(t.batchId),
+  uniqueIndex('operations_quarantine_records_batch_item_idx').on(t.batchId, t.operationsItemId),
+]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
