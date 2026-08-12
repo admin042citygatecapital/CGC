@@ -26,7 +26,7 @@ describe('integration status reporting', () => {
   it('reports configured services independently from their optional enable switch', async () => {
     for (const [name, value] of Object.entries({
       RESEND_API_KEY: 're_test_key',
-      RESEND_WEBHOOK_SECRET: 'whsec_test_key',
+      RESEND_WEBHOOK_SIGNING_SECRET: 'whsec_test_key',
       ZOHO_CLIENT_ID: 'zoho-client',
       ZOHO_CLIENT_SECRET: 'zoho-secret',
       ZOHO_REFRESH_TOKEN: 'zoho-refresh',

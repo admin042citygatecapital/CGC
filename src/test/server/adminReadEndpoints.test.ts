@@ -32,6 +32,38 @@ function response() {
 }
 
 describe('admin read endpoint contracts', () => {
+  it('normalizes, searches and paginates immutable audit entries for both admin viewers', async () => {
+    const audit = await import('../../server/lib/auditLog.js');
+    await audit.appendAuditEntry({
+      adminId: 'admin-audit-contract',
+      adminEmail: 'audit-contract@example.test',
+      action: 'sponsor.evidence_rejected',
+      target: 'sponsor_evidence',
+      targetId: 'evidence-contract-1',
+      details: { reason: 'Independent review required', role: 'SUPER_ADMIN' },
+      ip: '192.0.2.44',
+    });
+
+    const handler = (await import('../../server/api/admin/audit/GET.js')).default;
+    const result = response();
+    await handler({ query: { search: 'evidence-contract-1', severity: 'warn', page: '1', limit: '25' } } as unknown as Request, result.res);
+
+    expect(result.state.status).toBe(200);
+    expect(result.state.body).toMatchObject({ total: 1, page: 1, limit: 25, pages: 1 });
+    expect(result.state.body.data).toHaveLength(1);
+    expect(result.state.body.data[0]).toMatchObject({
+      actor: 'audit-contract@example.test',
+      actorId: 'admin-audit-contract',
+      action: 'sponsor.evidence_rejected',
+      event: 'sponsor.evidence_rejected',
+      resource: 'sponsor_evidence',
+      resourceId: 'evidence-contract-1',
+      severity: 'warn',
+      result: 'failure',
+      reason: 'Independent review required',
+    });
+  });
+
   it('filters and paginates persisted login events', async () => {
     const loginLog = await import('../../server/lib/loginLog.js');
     await loginLog.appendLoginEvent('admin', 'security@example.test', 'success', '127.0.0.1', 'Mozilla/5.0 Chrome/120');

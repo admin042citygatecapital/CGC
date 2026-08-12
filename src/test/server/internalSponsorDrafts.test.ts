@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildInternalSponsorDrafts } from '../../server/lib/internalSponsorDrafts.js';
-import { findSponsorControl } from '../../server/lib/sponsorReadinessCatalogue.js';
+import { EXTERNAL_SPONSOR_EVIDENCE } from '../../server/lib/externalSponsorEvidence.js';
+import { findSponsorControl, SPONSOR_CONTROLS } from '../../server/lib/sponsorReadinessCatalogue.js';
 
 describe('progressive internal sponsor evidence', () => {
   it('produces controlled metadata and valid hashes without claiming external approval', () => {
@@ -72,5 +73,12 @@ describe('progressive internal sponsor evidence', () => {
       'sponsor_term_sheet',
       'programme_contract',
     ]));
+    const externalKeys = new Set<string>(EXTERNAL_SPONSOR_EVIDENCE.map(item => item.controlKey));
+    const allInternalControlKeys = SPONSOR_CONTROLS
+      .map(control => control.key)
+      .filter(key => !externalKeys.has(key))
+      .sort();
+    expect(drafts).toHaveLength(32);
+    expect(drafts.map(item => item.controlKey).sort()).toEqual(allInternalControlKeys);
   });
 });

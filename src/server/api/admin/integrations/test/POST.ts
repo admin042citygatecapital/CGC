@@ -46,7 +46,7 @@ async function testZohoMail(): Promise<{ ok: boolean; message: string }> {
 
 async function testResend(): Promise<{ ok: boolean; message: string }> {
   const apiKey = s('RESEND_API_KEY');
-  const webhookSecret = s('RESEND_WEBHOOK_SECRET');
+  const webhookSecret = s('RESEND_WEBHOOK_SIGNING_SECRET');
   if (!apiKey) return { ok: false, message: 'RESEND_API_KEY not configured' };
   try {
     const resp = await fetch('https://api.resend.com/domains', {
@@ -58,7 +58,7 @@ async function testResend(): Promise<{ ok: boolean; message: string }> {
         ok: Boolean(webhookSecret),
         message: webhookSecret
           ? 'Resend API verified and signed webhook verification is configured'
-          : 'Resend API verified, but RESEND_WEBHOOK_SECRET is not configured',
+          : 'Resend API verified, but RESEND_WEBHOOK_SIGNING_SECRET is not configured',
       };
     }
     if (resp.status === 401 || resp.status === 403) {

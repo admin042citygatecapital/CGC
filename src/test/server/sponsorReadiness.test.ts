@@ -107,6 +107,7 @@ describe('sponsor provider pack', () => {
       '26-fx-and-payment-corridor-governance.md', '27-independent-penetration-test-plan.md',
       '28-customer-funds-wording-approval.md',
       '29-external-evidence-acquisition-register.md',
+      '30-external-evidence-acquisition-register.csv',
       'README.md', 'evidence-manifest.json',
     ]);
     const allText = Object.values(archive).map(value => strFromU8(value)).join('\n');
@@ -140,6 +141,17 @@ describe('sponsor provider pack', () => {
     expect(allText).toContain('programme_contract');
     expect(allText).toContain('must never be used as a substitute for the evidence it describes');
     expect(allText).not.toMatch(/RESEND_API_KEY|DATABASE_URL|BEGIN PRIVATE KEY/);
+    const externalRegister = strFromU8(archive['30-external-evidence-acquisition-register.csv']);
+    expect(externalRegister).toContain('legal_entity_verified');
+    expect(externalRegister).toContain('programme_contract');
+    expect(externalRegister).toContain('missing');
+    const manifest = JSON.parse(strFromU8(archive['evidence-manifest.json'])) as {
+      externalEvidenceRequirements: Array<{ controlKey: string; status: string }>;
+      financialOperationsLocked: boolean;
+    };
+    expect(manifest.externalEvidenceRequirements).toHaveLength(5);
+    expect(manifest.externalEvidenceRequirements.every(item => item.status === 'missing')).toBe(true);
+    expect(manifest.financialOperationsLocked).toBe(true);
   });
 
   it('only marks a fully evidenced and final-approved package submission ready', () => {

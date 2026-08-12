@@ -26,6 +26,14 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
     reference: item.reference, sha256: item.sha256, owner: item.owner,
     issuedAt: item.issuedAt?.toISOString() ?? null, expiresAt: item.expiresAt?.toISOString() ?? null,
   }));
+  const externalEvidenceRows = snapshot.externalEvidenceRequirements.map(item => [
+    item.controlKey,
+    snapshot.controls.find(control => control.key === item.controlKey)?.title ?? item.controlKey,
+    item.status,
+    item.authority,
+    item.minimumAcceptance,
+    item.insufficientEvidence,
+  ]);
   return {
     'README.md': heading(snapshot, 'City Gate Capital UK Sponsor Readiness Pack') +
       `Package: ${snapshot.package.id} v${snapshot.package.version}\n\nThis pack contains evidence metadata and hashes only. It contains no credentials, identity documents, customer data, source documents or live-provider adapters. Evidence approval cannot enable financial operations.\n`,
@@ -54,6 +62,10 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
     '07-sponsor-rfp.md': heading(snapshot, 'Sponsor RFP Questionnaire') +
       `1. Which permissions, agency model and customer disclosures apply?\n2. Which safeguarding structure and reconciliation timetable are required?\n3. Which UK, SEPA and international corridors are supported and individually approvable?\n4. Which KYC/KYB, sanctions, monitoring and case-management providers are mandated?\n5. What are the authoritative ledger, webhook, idempotency and reversal requirements?\n6. What reporting, audit, capital, complaints and wind-down obligations apply?\n7. What security testing, incident notification, resilience and recovery evidence is required?\n`,
     '08-gaps-and-dependencies.md': heading(snapshot, 'Current Gaps and Dependencies') + gaps + '\n',
+    '30-external-evidence-acquisition-register.csv': csv([
+      ['Control key', 'Required evidence', 'Current status', 'Authoritative source', 'Minimum acceptance', 'Insufficient evidence'],
+      ...externalEvidenceRows,
+    ]),
     ...OPERATIONAL_PROCEDURES,
     'evidence-manifest.json': JSON.stringify({
       packageId: snapshot.package.id,
@@ -63,6 +75,13 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
       originalDocumentsIncluded: false,
       credentialsIncluded: false,
       financialOperationsLocked: true,
+      externalEvidenceRequirements: snapshot.externalEvidenceRequirements.map(item => ({
+        controlKey: item.controlKey,
+        status: item.status,
+        authority: item.authority,
+        minimumAcceptance: item.minimumAcceptance,
+        insufficientEvidence: item.insufficientEvidence,
+      })),
       evidence: manifest,
     }, null, 2) + '\n',
   };

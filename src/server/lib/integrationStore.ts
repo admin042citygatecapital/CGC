@@ -139,8 +139,8 @@ const META: Record<IntegrationId, IntegrationMeta> = {
     description: 'Primary transactional email delivery for verification, security, KYC and service notifications.',
     docsUrl:     'https://resend.com/docs',
     secretSpecs: [
-      { name: 'RESEND_API_KEY',        label: 'API Key',        required: true  },
-      { name: 'RESEND_WEBHOOK_SECRET', label: 'Webhook Secret', required: true  },
+      { name: 'RESEND_API_KEY',                    label: 'API Key',                required: true  },
+      { name: 'RESEND_WEBHOOK_SIGNING_SECRET', label: 'Webhook Signing Secret', required: true  },
     ],
     configFields: [
       { key: 'fromEmail', label: 'From Email', placeholder: 'noreply@citygate.capital' },

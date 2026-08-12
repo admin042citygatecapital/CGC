@@ -95,8 +95,8 @@ export default function AdminAudit() {
       const res = await fetch(`/api/admin/audit?${params}`, { headers: authHeaders() });
       if (res.ok) {
         const data = await res.json();
-        setEntries(data.entries ?? data.logs ?? []);
-        setTotal(data.total ?? data.entries?.length ?? 0);
+        setEntries(data.data ?? data.entries ?? data.logs ?? []);
+        setTotal(data.total ?? data.data?.length ?? data.entries?.length ?? 0);
       }
     } finally { setLoading(false); }
   }, [page, search, severity]);
