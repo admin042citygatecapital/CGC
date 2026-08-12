@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { OPERATIONAL_PROCEDURES } from './operationalProcedures.js';
 
 export interface InternalSponsorDraft {
   controlKey:
@@ -9,7 +10,13 @@ export interface InternalSponsorDraft {
     | 'complaints_resolution'
     | 'authoritative_ledger'
     | 'privileged_access'
-    | 'restore_test';
+    | 'restore_test'
+    | 'safeguarding_reconciliation'
+    | 'daily_reconciliation'
+    | 'breaks_escalation'
+    | 'incident_response'
+    | 'privacy_impact'
+    | 'retention_schedule';
   title: string;
   owner: string;
   sourceFile: string;
@@ -18,7 +25,20 @@ export interface InternalSponsorDraft {
   notes: string;
 }
 
-const SOURCES = [
+interface DraftSource {
+  controlKey: InternalSponsorDraft['controlKey'];
+  title: string;
+  owner: string;
+  sourceFile: string;
+  sourceContent?: string;
+  notes?: string;
+}
+
+const RECONCILIATION_PROCEDURE = '09-safeguarding-reconciliation-procedure.md';
+const PRIVACY_PROCEDURE = '10-privacy-and-data-rights-procedure.md';
+const INCIDENT_PROCEDURE = '11-incident-breach-response-procedure.md';
+
+const SOURCES: DraftSource[] = [
   {
     controlKey: 'consumer_kyc_policy' as const,
     title: 'Customer onboarding and provider-verification control plane',
@@ -55,23 +75,76 @@ const SOURCES = [
     owner: 'Security',
     sourceFile: 'docs/BACKUP-RECOVERY.md',
   },
-] as const;
+  {
+    controlKey: 'safeguarding_reconciliation',
+    title: 'Draft safeguarding reconciliation procedure',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${RECONCILIATION_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[RECONCILIATION_PROCEDURE],
+    notes: 'Draft control design only. Sponsor approval of the safeguarding structure, accounts, calculation method, thresholds and timetable remains outstanding, as does successful operating evidence.',
+  },
+  {
+    controlKey: 'daily_reconciliation',
+    title: 'Draft daily three-way reconciliation runbook',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${RECONCILIATION_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[RECONCILIATION_PROCEDURE],
+    notes: 'Draft runbook only. Sponsor approval, contracted provider statement feeds, authoritative ledger mapping, an approved timetable and successful daily-run evidence remain outstanding.',
+  },
+  {
+    controlKey: 'breaks_escalation',
+    title: 'Draft reconciliation-break classification and escalation process',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${RECONCILIATION_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[RECONCILIATION_PROCEDURE],
+    notes: 'Draft escalation design only. Sponsor approval of materiality and ageing thresholds, named owners and resolved-break operating evidence remain outstanding.',
+  },
+  {
+    controlKey: 'incident_response',
+    title: 'Draft security incident, breach and provider-outage procedure',
+    owner: 'Security',
+    sourceFile: `sponsor-pack/${INCIDENT_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[INCIDENT_PROCEDURE],
+    notes: 'Draft response design only. Sponsor approval, named response roles, contractual and regulatory notification matrices and completed exercise evidence remain outstanding.',
+  },
+  {
+    controlKey: 'privacy_impact',
+    title: 'Draft privacy impact and data-rights control procedure',
+    owner: 'Security',
+    sourceFile: `sponsor-pack/${PRIVACY_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[PRIVACY_PROCEDURE],
+    notes: 'Draft privacy control design only. Sponsor and DPO/counsel approval, a completed processing inventory, provider-specific DPIA, lawful-basis review and residual-risk acceptance remain outstanding.',
+  },
+  {
+    controlKey: 'retention_schedule',
+    title: 'Draft retention, deletion and legal-hold procedure',
+    owner: 'Security',
+    sourceFile: `sponsor-pack/${PRIVACY_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[PRIVACY_PROCEDURE],
+    notes: 'Draft procedure only. Sponsor/counsel approval, a system-specific retention schedule, deletion-job evidence and legal-hold governance remain outstanding.',
+  },
+];
 
 export function buildInternalSponsorDrafts(root = process.cwd()): InternalSponsorDraft[] {
   return SOURCES.map(source => {
-    const content = fs.readFileSync(path.resolve(root, source.sourceFile));
+    const content = source.sourceContent === undefined
+      ? fs.readFileSync(path.resolve(root, source.sourceFile))
+      : Buffer.from(source.sourceContent, 'utf8');
     const sha256 = crypto.createHash('sha256').update(content).digest('hex');
     return {
-      ...source,
-      reference: `repo:${source.sourceFile}:${sha256.slice(0, 16)}`,
+      controlKey: source.controlKey,
+      title: source.title,
+      owner: source.owner,
+      sourceFile: source.sourceFile,
+      reference: `${source.sourceContent === undefined ? 'repo' : 'generated'}:${source.sourceFile}:${sha256.slice(0, 16)}`,
       sha256,
-      notes: source.controlKey === 'authoritative_ledger'
+      notes: source.notes ?? (source.controlKey === 'authoritative_ledger'
         ? 'Draft boundary and gap evidence only. A contracted authoritative ledger, sponsor approval, reconciliation design and operating evidence remain outstanding.'
         : source.controlKey === 'privileged_access'
           ? 'Draft technical control inventory only. Independent access review, periodic recertification, sponsor approval and operating evidence remain outstanding.'
           : source.controlKey === 'restore_test'
             ? 'Draft recovery design only. A completed isolated restore, measured RPO/RTO, control-owner approval and sponsor acceptance remain outstanding.'
-            : 'Draft internal engineering evidence only. Sponsor, counsel, control-owner approval and operating evidence remain outstanding.',
+            : 'Draft internal engineering evidence only. Sponsor, counsel, control-owner approval and operating evidence remain outstanding.'),
     };
   });
 }
