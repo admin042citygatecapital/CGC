@@ -34,11 +34,16 @@ describe('production test-data quarantine controls', () => {
   it('uses append-only snapshots and never deletes customer or transaction history', () => {
     const migration = readFileSync('src/server/db/migrations/0017_data_quarantine.sql', 'utf8');
     const forwardMigration = readFileSync('src/server/db/migrations/0019_quarantine_backup_verification.sql', 'utf8');
+    const statusGuardMigration = readFileSync('src/server/db/migrations/0020_quarantine_status_guard.sql', 'utf8');
     expect(migration).toContain('data_quarantine_records_append_only');
     expect(migration).toContain('provider_backup_verified_at TIMESTAMPTZ NOT NULL');
     expect(migration).toContain('BEFORE UPDATE OR DELETE ON data_quarantine_records');
     expect(migration).not.toMatch(/DELETE\s+FROM\s+(users|transactions)/i);
     expect(forwardMigration).toContain('ALTER COLUMN provider_backup_verified_at SET NOT NULL');
     expect(forwardMigration).not.toMatch(/UPDATE\s+data_quarantine_batches/i);
+    expect(statusGuardMigration).toContain('users_quarantine_status_guard');
+    expect(statusGuardMigration).toContain("NEW.status := 'suspended'");
+    expect(statusGuardMigration).toContain("NEW.data_classification = 'quarantined_test'");
+    expect(statusGuardMigration).not.toMatch(/DELETE\s+FROM\s+(users|transactions)/i);
   });
 });
