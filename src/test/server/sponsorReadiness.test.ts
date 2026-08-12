@@ -94,6 +94,7 @@ describe('sponsor provider pack', () => {
       '24-identity-screening-provider-due-diligence.md', '25-compliance-officer-mandate.md',
       '26-fx-and-payment-corridor-governance.md', '27-independent-penetration-test-plan.md',
       '28-customer-funds-wording-approval.md',
+      '29-external-evidence-acquisition-register.md',
       'README.md', 'evidence-manifest.json',
     ]);
     const allText = Object.values(archive).map(value => strFromU8(value)).join('\n');
@@ -119,6 +120,13 @@ describe('sponsor provider pack', () => {
     expect(allText).toContain('No provider, price, currency or corridor is approved');
     expect(allText).toContain('This is a test plan, not a penetration-test report');
     expect(allText).toContain('This workflow does not approve live customer-funds claims');
+    expect(allText).toContain('cannot be created or self-attested by the project team');
+    expect(allText).toContain('legal_entity_verified');
+    expect(allText).toContain('beneficial_owners_verified');
+    expect(allText).toContain('regulatory_perimeter_opinion');
+    expect(allText).toContain('sponsor_term_sheet');
+    expect(allText).toContain('programme_contract');
+    expect(allText).toContain('must never be used as a substitute for the evidence it describes');
     expect(allText).not.toMatch(/RESEND_API_KEY|DATABASE_URL|BEGIN PRIVATE KEY/);
   });
 

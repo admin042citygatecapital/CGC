@@ -161,4 +161,63 @@ Inventory every statement about accounts, deposits, safeguarding, segregation, c
 
 Current wording describes unavailable services and sample data. This workflow does not approve live customer-funds claims. Final wording requires the confirmed legal entity, sponsor, safeguarding structure, permissions, redress route and independently approved evidence.
 `,
+
+  '29-external-evidence-acquisition-register.md': `# External Evidence Acquisition Register
+
+${common}## Purpose and evidence boundary
+
+This register defines how City Gate will request, validate and submit the five readiness items that cannot be created or self-attested by the project team. It is a collection and acceptance checklist only. It is not legal-entity evidence, an ownership verification, legal advice, a sponsor commitment or an executed programme agreement.
+
+No item may be marked approved from this register. The original authoritative evidence must be retained in the approved controlled repository; the sponsor-readiness workspace stores only its controlled reference, SHA-256 hash, owner, issue and expiry dates, and non-sensitive notes.
+
+## Required external evidence
+
+### 1. Legal entity and ownership evidence (legal_entity_verified)
+
+- Source: the authoritative corporate registry, certified constitutional records and formal authority records for the proposed contracting entity.
+- Minimum acceptance: exact legal name, registration number, jurisdiction, registered office, active status, governing documents, directors/controllers, signing authority and evidence date all agree.
+- Validation: Compliance independently verifies registry provenance and current status; counsel confirms the proposed entity can enter the programme documents. A website, brand name, domain, invoice or unverified company-number match is insufficient.
+- Review: a Compliance maker submits metadata and a different authorised external checker records the decision. Material corporate change or expiry returns the item to review.
+
+### 2. Beneficial owners and controllers (beneficial_owners_verified)
+
+- Source: certified ownership structure, authoritative registers where available, shareholder/control records and provider-verified natural-person results under the sponsor-approved threshold.
+- Minimum acceptance: the chain from the contracting entity through every intermediate entity to natural persons is complete; ownership and control bases, percentages, dates and unexplained discrepancies are documented.
+- Validation: Compliance reconciles sources, screens required persons through the contracted provider and routes opacity, nominee arrangements, trusts, sanctions/PEP issues and source-of-funds concerns under the approved risk model.
+- Review: identity documents and screening files remain outside this pack. Only controlled references and hashes are submitted, with independent review and an approved refresh trigger.
+
+### 3. UK regulatory perimeter opinion (regulatory_perimeter_opinion)
+
+- Source: a written opinion from suitably qualified UK financial-services counsel addressed to the confirmed legal entity and based on the final sponsor model and product scope.
+- Minimum acceptance: the opinion identifies permissions and responsible entities, agency/distributor status, financial-promotion boundaries, safeguarding and customer-funds treatment, complaints/redress, customer disclosures, prohibited activities, launch conditions and material assumptions.
+- Validation: Compliance maps every condition and assumption to a named control, owner and launch gate. A generic memorandum, marketing review or draft produced before the sponsor model is known is insufficient.
+- Review: a different authorised checker confirms scope and version; product, entity, provider, jurisdiction or regulatory change triggers renewed counsel review.
+
+### 4. Sponsor institution term sheet (sponsor_term_sheet)
+
+- Source: a dated written term sheet or equivalent commitment issued by an authorised sponsor institution to the confirmed legal entity.
+- Minimum acceptance: proposed regulated model, eligible customers, products, currencies and corridors; safeguarding approach; compliance ownership; commercial terms; due-diligence conditions; implementation/certification stages; dependencies; exclusivity if any; termination and validity period are explicit.
+- Validation: Finance verifies issuer authority and commercial completeness; Compliance verifies permissions and control ownership; Security verifies material assurance obligations. Introductory emails, sales presentations and unsigned pricing sheets are insufficient.
+- Review: the term sheet remains non-binding unless it expressly states otherwise and cannot unlock customer funds or live transactions. Expiry or material change requires resubmission.
+
+### 5. Executed programme/provider contract (programme_contract)
+
+- Source: the fully executed agreement set between the confirmed legal entities, including applicable schedules, data-processing terms, service levels and referenced operating manuals.
+- Minimum acceptance: permissions and agency model, responsibilities, safeguarding, KYC/KYB and financial-crime controls, ledger authority, payment/FX execution, reconciliation, complaints, customer disclosures, data processing, security, audit rights, incident notice, resilience, subcontracting, liability, termination, exit and wind-down are resolved without contradictory gaps.
+- Validation: authorised signatories and effective date are verified; Finance, Compliance, Security and qualified counsel complete their respective reviews; open conditions precedent are recorded as blockers.
+- Review: the original contract is never exported in this pack. Metadata may be approved only after execution, condition tracking and independent maker-checker review; amendment, expiry or termination invalidates affected readiness decisions.
+
+## Intake and decision workflow
+
+1. Assign a named owner and target date without inventing an issue date, expiry date, provider, adviser or legal entity.
+2. Receive evidence through the approved restricted channel and verify source authenticity before hashing the exact reviewed version.
+3. Record only metadata in sponsor readiness. Redact secrets and personal data from notes; never upload the source document to this workspace.
+4. The category owner submits the metadata. The submitter and last editor cannot review it; the external checker must be separately authenticated and authorised for the control.
+5. A rejection records specific deficiencies and required replacement evidence. Editing after submission returns the record to draft.
+6. Approval of one item does not imply approval of another, final package approval or permission to enable provider adapters, customer funds or financial operations.
+
+## Current state
+
+All five items remain outstanding until their authoritative sources exist and pass independent review. This register must continue to appear in a draft pack and must never be used as a substitute for the evidence it describes.
+`,
 };
