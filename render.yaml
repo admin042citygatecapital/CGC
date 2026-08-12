@@ -6,7 +6,7 @@ services:
     region: oregon
     buildCommand: npm ci --include=dev && npm run preview-claims && npm run verify:render && npm run build && npm run production-guard
     startCommand: npm start
-    preDeployCommand: npm run db:migrate && npm run preview:seed
+    preDeployCommand: npm run db:migrate
     healthCheckPath: /api/health
     autoDeployTrigger: checksPass
     maxShutdownDelaySeconds: 30
@@ -35,8 +35,6 @@ services:
         value: "1"
       - key: VITE_ALLOW_PUBLIC_REGISTRATION
         value: "1"
-      - key: ENABLE_PREVIEW_USER_SEED
-        value: "1"
       - key: DATABASE_POOL_SIZE
         value: "5"
       - key: PRIVATE_DATA_ROOT
@@ -63,9 +61,3 @@ services:
         sync: false
       - key: ADMIN_EMAIL
         sync: false
-      - key: PREVIEW_USER_EMAIL
-        sync: false
-      - key: PREVIEW_USER_PASSWORD
-        sync: false
-      - key: PREVIEW_USER_NAME
-        value: City Gate Preview

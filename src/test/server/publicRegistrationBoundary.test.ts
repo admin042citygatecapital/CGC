@@ -9,6 +9,17 @@ describe('public platform registration boundary', () => {
     expect(render).toMatch(/ENABLE_FINANCIAL_OPERATIONS\s*\r?\n\s*value: "0"/);
   });
 
+  it('never seeds preview customers in the production deployment blueprint', () => {
+    const production = readFileSync('render.yaml', 'utf8');
+    const preview = readFileSync('render.preview.yaml', 'utf8');
+    expect(production).not.toContain('preview:seed');
+    expect(production).not.toContain('ENABLE_PREVIEW_USER_SEED');
+    expect(production).not.toContain('PREVIEW_USER_EMAIL');
+    expect(production).not.toContain('PREVIEW_USER_PASSWORD');
+    expect(preview).toContain('preview:seed');
+    expect(preview).toContain('ENABLE_PREVIEW_USER_SEED');
+  });
+
   it('requires explicit legal acceptance and records server-controlled versions', () => {
     const route = readFileSync('src/server/api/users/register/POST.ts', 'utf8');
     const page = readFileSync('src/pages/register.tsx', 'utf8');
