@@ -22,7 +22,10 @@ export interface InternalSponsorDraft {
     | 'vulnerable_customers'
     | 'double_entry_design'
     | 'cross_border_map'
-    | 'business_kyb_policy';
+    | 'business_kyb_policy'
+    | 'aml_risk_assessment'
+    | 'transaction_monitoring'
+    | 'terms_disclosures';
   title: string;
   owner: string;
   sourceFile: string;
@@ -49,6 +52,9 @@ const VULNERABLE_CUSTOMER_PROCEDURE = '15-vulnerable-customer-support-procedure.
 const DOUBLE_ENTRY_PROCEDURE = '16-double-entry-ledger-integration-procedure.md';
 const CROSS_BORDER_PROCEDURE = '17-cross-border-data-transfer-mapping-procedure.md';
 const BUSINESS_KYB_PROCEDURE = '18-business-kyb-and-ownership-procedure.md';
+const AML_RISK_PROCEDURE = '19-enterprise-aml-risk-assessment-procedure.md';
+const TRANSACTION_MONITORING_PROCEDURE = '20-transaction-monitoring-governance-procedure.md';
+const TERMS_DISCLOSURE_PROCEDURE = '21-customer-terms-and-disclosure-approval-procedure.md';
 
 const SOURCES: DraftSource[] = [
   {
@@ -182,6 +188,30 @@ const SOURCES: DraftSource[] = [
     sourceFile: `sponsor-pack/${BUSINESS_KYB_PROCEDURE}`,
     sourceContent: OPERATIONAL_PROCEDURES[BUSINESS_KYB_PROCEDURE],
     notes: 'Draft onboarding design only. Sponsor approval of risk appetite, jurisdiction, entity scope and ownership thresholds, contracted verification providers, named compliance ownership and operating evidence remain outstanding.',
+  },
+  {
+    controlKey: 'aml_risk_assessment',
+    title: 'Draft enterprise AML risk-assessment methodology',
+    owner: 'Compliance',
+    sourceFile: `sponsor-pack/${AML_RISK_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[AML_RISK_PROCEDURE],
+    notes: 'Draft methodology only. Sponsor and qualified MLRO approval, verified business and geographic scope, authoritative data, calibrated risk appetite, completed assessment and governance evidence remain outstanding.',
+  },
+  {
+    controlKey: 'transaction_monitoring',
+    title: 'Draft transaction-monitoring governance procedure',
+    owner: 'Compliance',
+    sourceFile: `sponsor-pack/${TRANSACTION_MONITORING_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[TRANSACTION_MONITORING_PROCEDURE],
+    notes: 'Draft governance design only. Sponsor and qualified MLRO approval, a contracted monitoring provider, authoritative transaction feeds, approved scenarios and thresholds, SAR procedures, validation and operating evidence remain outstanding.',
+  },
+  {
+    controlKey: 'terms_disclosures',
+    title: 'Draft customer terms and product-disclosure approval procedure',
+    owner: 'Compliance',
+    sourceFile: `sponsor-pack/${TERMS_DISCLOSURE_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[TERMS_DISCLOSURE_PROCEDURE],
+    notes: 'Draft approval workflow only. Sponsor and qualified counsel approval, final legal entity and provider identities, regulated scope, commercial terms, protection wording, jurisdictional schedules and customer-testing evidence remain outstanding.',
   },
 ];
 

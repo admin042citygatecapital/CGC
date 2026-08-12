@@ -88,6 +88,8 @@ describe('sponsor provider pack', () => {
       '15-vulnerable-customer-support-procedure.md',
       '16-double-entry-ledger-integration-procedure.md', '17-cross-border-data-transfer-mapping-procedure.md',
       '18-business-kyb-and-ownership-procedure.md',
+      '19-enterprise-aml-risk-assessment-procedure.md', '20-transaction-monitoring-governance-procedure.md',
+      '21-customer-terms-and-disclosure-approval-procedure.md',
       'README.md', 'evidence-manifest.json',
     ]);
     const allText = Object.values(archive).map(value => strFromU8(value)).join('\n');
@@ -103,6 +105,9 @@ describe('sponsor provider pack', () => {
     expect(allText).toContain('Existing application balances and transactions are demonstration projections');
     expect(allText).toContain('This procedure is a mapping method, not a completed transfer assessment');
     expect(allText).toContain('KYB approval does not create a live account or enable payments');
+    expect(allText).toContain('it is not a completed enterprise risk assessment');
+    expect(allText).toContain('No production transaction-monitoring programme is active');
+    expect(allText).toContain('Existing pre-deployment terms are not suitable for live financial services');
     expect(allText).not.toMatch(/RESEND_API_KEY|DATABASE_URL|BEGIN PRIVATE KEY/);
   });
 

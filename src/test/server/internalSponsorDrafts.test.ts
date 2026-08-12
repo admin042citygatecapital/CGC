@@ -7,6 +7,7 @@ describe('progressive internal sponsor evidence', () => {
     const drafts = buildInternalSponsorDrafts();
     expect(drafts.map(item => item.controlKey).sort()).toEqual([
       'authoritative_ledger',
+      'aml_risk_assessment',
       'complaints_resolution',
       'consumer_kyc_policy',
       'business_kyb_policy',
@@ -23,6 +24,8 @@ describe('progressive internal sponsor evidence', () => {
       'returns_reversals',
       'safeguarding_reconciliation',
       'signed_webhooks',
+      'terms_disclosures',
+      'transaction_monitoring',
       'vulnerable_customers',
     ].sort());
     for (const draft of drafts) {
@@ -41,5 +44,8 @@ describe('progressive internal sponsor evidence', () => {
     expect(drafts.find(item => item.controlKey === 'double_entry_design')?.notes).toMatch(/contracted sponsor\/core ledger.*outstanding/i);
     expect(drafts.find(item => item.controlKey === 'cross_border_map')?.notes).toMatch(/named processors.*outstanding/i);
     expect(drafts.find(item => item.controlKey === 'business_kyb_policy')?.notes).toMatch(/contracted verification providers.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'aml_risk_assessment')?.notes).toMatch(/qualified MLRO approval.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'transaction_monitoring')?.notes).toMatch(/contracted monitoring provider.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'terms_disclosures')?.notes).toMatch(/qualified counsel approval.*outstanding/i);
   });
 });
