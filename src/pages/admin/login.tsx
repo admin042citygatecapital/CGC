@@ -8,10 +8,10 @@ import {
 import { useAdminAuth } from '@/lib/adminAuth';
 import CgcLogo from '@/components/CgcLogo';
 
-type Step = 'credentials' | 'success';
+type Step = 'credentials' | 'otp' | 'success';
 
 export default function AdminLoginPage() {
-  const { login }  = useAdminAuth();
+  const { login, verifyOtp }  = useAdminAuth();
   const navigate   = useNavigate();
 
   const [step, setStep]         = useState<Step>('credentials');
@@ -20,6 +20,9 @@ export default function AdminLoginPage() {
   const [showPw, setShowPw]     = useState(false);
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
+  const [challengeId, setChallengeId] = useState('');
+  const [otp, setOtp] = useState('');
+  const [rememberDevice, setRememberDevice] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,6 +36,25 @@ export default function AdminLoginPage() {
       return;
     }
 
+    if (result.otpRequired && result.challengeId) {
+      setChallengeId(result.challengeId);
+      setStep('otp');
+      return;
+    }
+    setStep('success');
+    setTimeout(() => navigate('/admin'), 900);
+  }
+
+  async function handleOtpSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const result = await verifyOtp(challengeId, otp, rememberDevice);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     setStep('success');
     setTimeout(() => navigate('/admin'), 900);
   }
@@ -212,13 +234,69 @@ export default function AdminLoginPage() {
                   {/* Security note */}
                   <div className="mt-5 p-3 rounded-xl border border-primary/10 bg-primary/[0.03]">
                     <p className="text-[11px] text-white/25 text-center">
-                      Protected by AES-256 encryption · Session-bound · Audit logged
+                      Protected by HTTPS · Multi-factor verification · Session-bound · Audit logged
                     </p>
                   </div>
                 </motion.div>
               )}
 
               {/* ── Success step ── */}
+              {step === 'otp' && (
+                <motion.div
+                  key="otp"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div className="flex items-center gap-3 mb-7">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10 border border-primary/20">
+                      <Shield size={17} className="text-primary" />
+                    </div>
+                    <div>
+                      <h1 className="text-white font-bold text-lg">Verify your login</h1>
+                      <p className="text-white/30 text-xs mt-0.5">Enter the six-digit code sent to the administrator email.</p>
+                    </div>
+                  </div>
+                  <form onSubmit={handleOtpSubmit} className="space-y-4">
+                    <div>
+                      <label htmlFor="admin-otp" className="text-[11px] text-white/35 uppercase tracking-widest mb-2 block">
+                        Verification code
+                      </label>
+                      <input
+                        id="admin-otp"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        required
+                        pattern="[0-9]{6}"
+                        maxLength={6}
+                        value={otp}
+                        onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-center text-white text-xl tracking-[0.45em] font-mono focus:outline-none focus:border-primary/40"
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 text-xs text-white/40">
+                      <input type="checkbox" checked={rememberDevice} onChange={e => setRememberDevice(e.target.checked)} />
+                      Trust this device for 30 days
+                    </label>
+                    {error && <div className="p-3 rounded-xl bg-red-500/8 border border-red-500/20 text-red-400 text-sm">{error}</div>}
+                    <button
+                      type="submit"
+                      disabled={loading || otp.length !== 6}
+                      className="w-full py-3.5 rounded-xl font-bold text-black bg-gradient-to-r from-[#C9A84C] to-[#F0D080] disabled:opacity-50"
+                    >
+                      {loading ? 'Verifying...' : 'Verify and continue'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setStep('credentials'); setOtp(''); setChallengeId(''); setError(''); }}
+                      className="w-full text-xs text-white/30 hover:text-white/60"
+                    >
+                      Use different credentials
+                    </button>
+                  </form>
+                </motion.div>
+              )}
+
               {step === 'success' && (
                 <motion.div
                   key="success"
@@ -275,7 +353,7 @@ export default function AdminLoginPage() {
 
           {/* Security badges */}
           <div className="flex items-center justify-center gap-5 mt-6">
-            {['256-bit AES', 'HTTPS Secure', 'Audit Logged', 'IP Tracked'].map(badge => (
+            {['HTTPS Secure', 'MFA Required', 'Audit Logged', 'IP Tracked'].map(badge => (
               <div key={badge} className="flex items-center gap-1.5 text-[10px] text-white/15">
                 <Shield size={9} className="text-primary/30" />
                 {badge}

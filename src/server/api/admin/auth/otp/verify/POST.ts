@@ -48,7 +48,7 @@ export default async function handler(req: Request, res: Response) {
   }
 
   // Verify OTP
-  const result = verifyOtp(challengeId, otp);
+  const result = verifyOtp(challengeId, otp, { ip, ua });
 
   if (!result.ok) {
     await recordLoginFailure(email, ip);

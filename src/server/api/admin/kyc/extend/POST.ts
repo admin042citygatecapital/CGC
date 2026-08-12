@@ -6,7 +6,7 @@
 import type { Request, Response } from 'express';
 import { findUserById } from '../../../../lib/userStore.js';
 import { extendKyc, revokeKyc } from '../../../../lib/kycStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -21,6 +21,7 @@ export default async function handler(req: Request, res: Response) {
 
   if (action === 'extend') {
     const m = Number(months ?? 12);
+    await appendCriticalAudit({ event: 'admin_kyc_extend_intent', adminId: session.adminId, userId, email: user.email, meta: { months: m }, ip: req.ip ?? 'unknown' });
     await extendKyc(userId, m, session.adminId);
     appendAudit({ event: 'admin_kyc_extend', adminId: session.adminId, userId, email: user.email, meta: { months: m }, ip: req.ip ?? 'unknown' });
     return res.json({ ok: true, message: `KYC extended by ${m} months.` });
@@ -28,6 +29,7 @@ export default async function handler(req: Request, res: Response) {
 
   if (action === 'revoke') {
     const r = reason ?? 'KYC revoked by administrator.';
+    await appendCriticalAudit({ event: 'admin_kyc_revoke_intent', adminId: session.adminId, userId, email: user.email, reason: r, ip: req.ip ?? 'unknown' });
     await revokeKyc(userId, r, session.adminId);
     appendAudit({ event: 'admin_kyc_revoke', adminId: session.adminId, userId, email: user.email, reason: r, ip: req.ip ?? 'unknown' });
     return res.json({ ok: true, message: `KYC revoked for ${user.name}.` });

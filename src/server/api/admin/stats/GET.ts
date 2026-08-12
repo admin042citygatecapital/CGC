@@ -12,11 +12,7 @@ export default async function handler(_req: Request, res: Response) {
   const users = await loadAllUsers();
   const totalUsers           = users.length;
   const activeAccounts       = users.filter(u => u.status === 'active').length;
-  const pendingVerifications = users.filter(u =>
-    u.status === 'pending_verification' ||
-    u.status === 'pending_kyc' ||
-    u.status === 'pending_approval'
-  ).length;
+  const pendingVerifications = users.filter(u => u.kycStatus === 'submitted').length;
   const suspendedAccounts = users.filter(u => u.status === 'suspended' || u.status === 'frozen').length;
 
   const thirtyDaysAgo  = new Date(now - 30 * 86400000).toISOString();

@@ -5,7 +5,8 @@ import type { Request, Response } from 'express';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 const appendAudit = vi.fn();
-vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit }));
+const appendCriticalAudit = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit, appendCriticalAudit }));
 
 let root = '';
 
@@ -82,6 +83,10 @@ describe('super-administrator transaction metadata correction', () => {
         before: expect.objectContaining({ description: 'Original description', flagged: false }),
         after: expect.objectContaining({ description: 'Corrected description', flagged: true }),
       }),
+    }));
+    expect(appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({
+      event: 'transaction_metadata_correction_intent',
+      adminId: 'super-admin-test',
     }));
   });
 

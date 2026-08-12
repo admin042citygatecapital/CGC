@@ -232,7 +232,8 @@ export async function submitSponsorPackage(actor: SponsorActor): Promise<void> {
 }
 
 export async function reviewSponsorPackage(decision: 'approved' | 'rejected', note: string, actor: SponsorActor): Promise<void> {
-  if (actor.role !== 'SUPER_ADMIN') throw new SponsorReadinessError('Only a super-administrator may review the package.', 'SUPER_ADMIN_REQUIRED', 403);
+  const independentChecker = actor.role === 'COMPLIANCE_ADMIN' && actor.id.startsWith('external_checker_');
+  if (actor.role !== 'SUPER_ADMIN' && !independentChecker) throw new SponsorReadinessError('An authorised independent checker is required.', 'INDEPENDENT_CHECKER_REQUIRED', 403);
   const snapshot = await getSponsorReadiness();
   if (snapshot.package.status !== 'submitted') throw new SponsorReadinessError('Only a submitted package may be reviewed.', 'INVALID_STATE', 409);
   if (snapshot.package.submittedBy === actor.id) throw new SponsorReadinessError('Maker-checker prevents the package submitter from approving it.', 'MAKER_CHECKER_VIOLATION', 409);

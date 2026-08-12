@@ -5,7 +5,7 @@
  */
 import type { Request, Response } from 'express';
 import { findTransactionById, updateTransaction } from '../../../../lib/transactionStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -20,6 +20,12 @@ export default async function handler(req: Request, res: Response) {
   if (tx.status !== 'pending') {
     return res.status(400).json({ success: false, error: `Cannot reject a transaction with status: ${tx.status}` });
   }
+
+  await appendCriticalAudit({
+    event: 'transaction_rejection_intent', adminId: session.adminId, userId: tx.userId,
+    email: tx.userEmail, ip: req.ip ?? 'unknown', reason: String(reason).slice(0, 500),
+    meta: { txId, amount: tx.amount, currency: tx.currency, reference: tx.reference },
+  });
 
   const updated = await updateTransaction(txId, {
     status:           'rejected',

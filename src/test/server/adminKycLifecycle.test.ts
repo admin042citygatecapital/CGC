@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const dependencies = vi.hoisted(() => ({
-  findUserById: vi.fn(), updateUser: vi.fn(), appendAudit: vi.fn(), appendKycNote: vi.fn(),
+  findUserById: vi.fn(), updateUser: vi.fn(), appendAudit: vi.fn(), appendCriticalAudit: vi.fn(), appendKycNote: vi.fn(),
   sendMail: vi.fn().mockResolvedValue({ success: true }),
   sendApprovalEmail: vi.fn().mockResolvedValue(undefined),
   sendRejectionEmail: vi.fn().mockResolvedValue(undefined),
@@ -14,7 +14,7 @@ const dependencies = vi.hoisted(() => ({
 vi.mock('../../server/lib/userStore.js', () => ({
   findUserById: dependencies.findUserById, updateUser: dependencies.updateUser,
 }));
-vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit: dependencies.appendAudit }));
+vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit: dependencies.appendAudit, appendCriticalAudit: dependencies.appendCriticalAudit }));
 vi.mock('../../server/lib/kycStore.js', () => ({ appendKycNote: dependencies.appendKycNote }));
 vi.mock('../../server/lib/emailService.js', () => ({
   sendMail: dependencies.sendMail,
@@ -62,6 +62,7 @@ describe('super-administrator KYC lifecycle', () => {
     dependencies.getOrCreateOnboardingCase.mockResolvedValue(onboardingCase);
     dependencies.submitOnboardingCase.mockResolvedValue({ ...onboardingCase, status: 'submitted' });
     dependencies.assertProviderVerificationComplete.mockResolvedValue(undefined);
+    dependencies.appendCriticalAudit.mockResolvedValue(undefined);
   });
 
   it('submits a customer case for review without activating financial services', async () => {
@@ -107,6 +108,7 @@ describe('super-administrator KYC lifecycle', () => {
       status: 'pending_approval', kycStatus: 'approved', amlStatus: 'pending',
     }));
     expect(dependencies.appendAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_approve' }));
+    expect(dependencies.appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_approve_intent' }));
   });
 
   it('moves the case to needs-information, audits it, and escapes email content', async () => {
@@ -121,6 +123,7 @@ describe('super-administrator KYC lifecycle', () => {
     expect(email.html).not.toContain('<script>');
     expect(email.html).not.toContain('<Customer>');
     expect(dependencies.appendAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_request_info' }));
+    expect(dependencies.appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_request_info_intent' }));
   });
 
   it('rejects through the versioned case lifecycle with an immutable audit event', async () => {
@@ -134,5 +137,15 @@ describe('super-administrator KYC lifecycle', () => {
       status: 'rejected', kycStatus: 'rejected',
     }));
     expect(dependencies.appendAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_reject' }));
+    expect(dependencies.appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_reject_intent' }));
+  });
+
+  it('fails closed when the critical audit intent cannot be persisted', async () => {
+    dependencies.appendCriticalAudit.mockRejectedValueOnce(new Error('audit unavailable'));
+    const result = responseDouble();
+    await expect(approveKyc(request({ userId: user.id, note: 'Reviewed provider evidence and screening.' }), result.res))
+      .rejects.toThrow('audit unavailable');
+    expect(dependencies.reviewOnboardingCase).not.toHaveBeenCalled();
+    expect(dependencies.updateUser).not.toHaveBeenCalled();
   });
 });

@@ -22,6 +22,8 @@ const baseEnv: NodeJS.ProcessEnv = {
   ENABLE_PAPER_TRADING: '0',
   ALLOW_PUBLIC_REGISTRATION: '1',
   DISABLE_EXTERNAL_MARKET_DATA: '1',
+  E2E_TEST_MODE: '1',
+  E2E_ADMIN_OTP: E2E_ADMIN.otp,
   HOST: '127.0.0.1',
   PORT: port,
   PUBLIC_URL: `http://127.0.0.1:${port}`,

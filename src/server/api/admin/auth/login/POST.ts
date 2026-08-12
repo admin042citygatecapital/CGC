@@ -3,7 +3,8 @@
  *
  * Body: { email, password }
  *
- * Validates credentials and creates a session immediately — no OTP step.
+ * Validates credentials, requires device-bound email OTP on untrusted devices,
+ * and creates a session only after the second factor succeeds.
  * All other security systems remain active:
  *  - Brute-force lockout (per-email + per-IP, exponential backoff)
  *  - Secure Argon2id verification with legacy bcrypt/PBKDF2 compatibility
@@ -19,7 +20,9 @@ import { appendAudit } from '../../../../lib/auditLog.js';
 import { appendLoginEvent } from '../../../../lib/loginLog.js';
 import { checkLockout, recordLoginFailure, recordLoginSuccess, getFailCount } from '../../../../lib/bruteForce.js';
 import { COOKIE_NAME, sessionCookieOptions } from '../../../../lib/adminAuthMiddleware.js';
-import { sendAdminLoginAlertEmail } from '../../../../lib/emailService.js';
+import { sendAdminLoginAlertEmail, sendAdminOtpEmail } from '../../../../lib/emailService.js';
+import { issueOtp } from '../../../../lib/otpStore.js';
+import { DEVICE_COOKIE, validateTrustedDevice } from '../../../../lib/trustedDeviceStore.js';
 
 const SESSION_MAX_MS = (parseInt(process.env.SESSION_MAX_HOURS ?? '8', 10)) * 3_600_000;
 
@@ -64,6 +67,36 @@ export default async function handler(req: Request, res: Response) {
     return res.status(403).json({ error: 'This administration is restricted to the super-administrator.', code: 'SUPER_ADMIN_REQUIRED' });
   }
 
+  const trustedDeviceToken = (req.cookies as Record<string, string> | undefined)?.[DEVICE_COOKIE];
+  const trustedDevice = trustedDeviceToken
+    ? await validateTrustedDevice(trustedDeviceToken, admin.id)
+    : null;
+
+  if (!trustedDevice) {
+    const challenge = issueOtp(admin.email, ip, ua);
+    if (!challenge.ok || !challenge.challengeId || !challenge.otp) {
+      appendAudit({ event: 'otp_issue_failed', adminId: admin.id, email, ip, reason: challenge.error });
+      return res.status(challenge.rateLimited ? 429 : 503).json({
+        error: challenge.error ?? 'Unable to create a verification challenge.',
+      });
+    }
+
+    try {
+      await sendAdminOtpEmail(admin.email, admin.name, challenge.otp, ip, ua);
+    } catch {
+      appendAudit({ event: 'otp_delivery_failed', adminId: admin.id, email, ip });
+      return res.status(503).json({ error: 'Unable to deliver the verification code. Please try again.' });
+    }
+
+    appendAudit({ event: 'otp_issued', adminId: admin.id, email, ip });
+    return res.status(202).json({
+      ok: true,
+      otpRequired: true,
+      challengeId: challenge.challengeId,
+      expiresInSeconds: parseInt(process.env.OTP_TTL_SECONDS ?? '60', 10),
+    });
+  }
+
   // ── Credentials valid — create session immediately ───────────────────────
   await recordLoginSuccess(email, ip);
 
@@ -85,7 +118,7 @@ export default async function handler(req: Request, res: Response) {
   });
 
   // Fire-and-forget login alert email
-  sendAdminLoginAlertEmail(admin.email, admin.name, ip, ua, undefined, false).catch(() => {});
+  sendAdminLoginAlertEmail(admin.email, admin.name, ip, ua, trustedDevice.name, true).catch(() => {});
 
   // Set HttpOnly session cookie
   res.cookie(COOKIE_NAME, sessionToken, sessionCookieOptions(SESSION_MAX_MS));

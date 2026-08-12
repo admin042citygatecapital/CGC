@@ -4,7 +4,7 @@
  */
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { appendKycNote } from '../../../../lib/kycStore.js';
 import { sendMail } from '../../../../lib/emailService.js';
 import { escapeEmailHtml } from '../../../../lib/emailLayout.js';
@@ -24,6 +24,7 @@ export default async function handler(req: Request, res: Response) {
 
   const onboardingCase = await getLatestOnboardingCaseForUser(userId);
   if (!onboardingCase) return res.status(409).json({ error: 'A submitted onboarding case is required.', code: 'ONBOARDING_CASE_REQUIRED' });
+  await appendCriticalAudit({ event: 'admin_kyc_request_info_intent', adminId: session.adminId, userId, email: user.email, reason: message, ip: req.ip ?? 'unknown' });
   try {
     await reviewOnboardingCase({ caseId: onboardingCase.id, reviewerId: session.adminId, decision: 'needs_info', reason: message });
   } catch (error) {

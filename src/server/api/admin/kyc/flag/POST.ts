@@ -4,7 +4,7 @@
  */
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { appendKycNote } from '../../../../lib/kycStore.js';
 
 export default async function handler(req: Request, res: Response) {
@@ -14,6 +14,8 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
+
+  await appendCriticalAudit({ event: 'admin_kyc_flag_intent', adminId: session.adminId, userId, email: user.email, reason: note, ip: req.ip ?? 'unknown' });
 
   // Keep kycStatus as 'submitted' but add a note
   if (note) {

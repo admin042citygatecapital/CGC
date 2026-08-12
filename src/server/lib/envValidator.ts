@@ -88,6 +88,20 @@ const REGISTRY: EnvVarSpec[] = [
     isPublic:    true,
     defaultVal:  'admin@citygate.capital',
   },
+  {
+    name:        'SPONSOR_REVIEWER_EMAIL',
+    level:       'WARNING',
+    service:     'Independent Sponsor Review',
+    description: 'Identity of the independent sponsor-package checker; it does not grant administration access.',
+    isPublic:    true,
+  },
+  {
+    name:        'SPONSOR_REVIEWER_KEY_HASH',
+    level:       'WARNING',
+    service:     'Independent Sponsor Review',
+    validate:    value => /^[0-9a-f]{64}$/i.test(value) ? null : 'Must be exactly 64 hexadecimal SHA-256 characters.',
+    description: 'SHA-256 hash of the independent sponsor reviewer credential.',
+  },
 
   // ── Session security ───────────────────────────────────────────────────────
   {

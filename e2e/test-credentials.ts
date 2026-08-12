@@ -7,6 +7,7 @@ export const E2E_CUSTOMER = {
 export const E2E_ADMIN = {
   email: 'admin@citygate.capital',
   password: 'Preview-E2E-Admin-42!',
+  otp: '642817',
 } as const;
 
 export const E2E_UNVERIFIED_CUSTOMER = {

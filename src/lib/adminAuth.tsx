@@ -17,8 +17,17 @@ export interface AdminUser {
 interface AdminAuthCtx {
   admin: AdminUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ ok?: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  verifyOtp: (challengeId: string, otp: string, rememberDevice: boolean) => Promise<AuthResult>;
   logout: () => Promise<void>;
+}
+
+export interface AuthResult {
+  ok?: boolean;
+  error?: string;
+  otpRequired?: boolean;
+  challengeId?: string;
+  expiresInSeconds?: number;
 }
 
 const Ctx = createContext<AdminAuthCtx | null>(null);
@@ -86,9 +95,30 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      const data = await response.json() as { error?: string; admin?: AdminUser };
-      if (!response.ok || !data.admin) return { error: data.error ?? 'Login failed' };
+      const data = await response.json() as AuthResult & { admin?: AdminUser };
+      if (!response.ok) return { error: data.error ?? 'Login failed' };
+      if (data.otpRequired && data.challengeId) return data;
+      if (!data.admin) return { error: data.error ?? 'Login failed' };
 
+      clearLegacyToken();
+      setAdmin(data.admin);
+      await refreshAdminCsrfToken();
+      return { ok: true };
+    } catch {
+      return { error: 'Network error — please check your connection' };
+    }
+  }
+
+  async function verifyOtp(challengeId: string, otp: string, rememberDevice: boolean) {
+    try {
+      const response = await fetch('/api/admin/auth/otp/verify', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challengeId, otp, rememberDevice }),
+      });
+      const data = await response.json() as AuthResult & { admin?: AdminUser };
+      if (!response.ok || !data.admin) return { error: data.error ?? 'Verification failed' };
       clearLegacyToken();
       setAdmin(data.admin);
       await refreshAdminCsrfToken();
@@ -112,7 +142,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ admin, loading, login, logout }}>
+    <Ctx.Provider value={{ admin, loading, login, verifyOtp, logout }}>
       {children}
     </Ctx.Provider>
   );

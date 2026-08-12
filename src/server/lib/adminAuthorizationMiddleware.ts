@@ -17,6 +17,7 @@ const PUBLIC_ADMIN_PATHS = new Set([
   '/auth/diag',
   '/auth/verify',
   '/zoho/oauth/callback',
+  '/sponsor-readiness/external-review',
 ]);
 
 function normalizePath(path: string): string {

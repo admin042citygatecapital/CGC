@@ -6,6 +6,8 @@ async function loginAdmin(page: import('@playwright/test').Page) {
   await page.locator('input[type="email"]').fill(E2E_ADMIN.email);
   await page.locator('input[type="password"]').fill(E2E_ADMIN.password);
   await page.getByRole('button', { name: /access admin panel/i }).click();
+  await page.getByLabel('Verification code').fill(E2E_ADMIN.otp);
+  await page.getByRole('button', { name: /verify and continue/i }).click();
   await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
   await expect(page.getByText('Pre-deployment administration')).toBeVisible();
 }

@@ -89,7 +89,7 @@ interface EnvVar {
 interface DeveloperData {
   generatedAt: string;
   routes: { total: number; byGroup: Record<string, number>; byMethod: Record<string, number>; catalogue: RouteEntry[] };
-  db: { files: DbFile[]; totalFiles: number; healthy: number; unhealthy: number; totalRows: number; totalBytes: number };
+  db: { backend: string; files: DbFile[]; totalFiles: number; healthy: number; unhealthy: number; totalRows: number; totalBytes: number };
   performance: PerfMetrics;
   dependencies: DepHealth;
   errors: ErrorMonitor;
@@ -410,7 +410,7 @@ function DbDiagnostics({ data }: { data: DeveloperData['db'] }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatPill label="Total Files"   value={data.totalFiles} />
+        <StatPill label="Data Stores"   value={data.totalFiles} />
         <StatPill label="Healthy"       value={data.healthy}   color="#10B981" />
         <StatPill label="Unhealthy"     value={data.unhealthy} color={data.unhealthy > 0 ? '#EF4444' : '#10B981'} />
         <StatPill label="Total Storage" value={fmtBytes(data.totalBytes)} color="#8B5CF6" />
@@ -940,7 +940,7 @@ export default function AdminDeveloper() {
                 <ApiExplorer routes={data.routes.catalogue} />
               </SectionCard>
 
-              <SectionCard title="Database Diagnostics" subtitle={`${data.db.totalFiles} flat-file stores · ${fmtBytes(data.db.totalBytes)} total · ${data.db.healthy} healthy`} icon={Database} color="#8B5CF6">
+              <SectionCard title="Database Diagnostics" subtitle={`${data.db.backend} · ${data.db.totalFiles} stores · ${data.db.healthy} healthy`} icon={Database} color="#8B5CF6">
                 <DbDiagnostics data={data.db} />
               </SectionCard>
 

@@ -3,7 +3,7 @@
  * remain immutable; every correction records before/after audit evidence.
  */
 import type { Request, Response } from 'express';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { sanitizeNote, sanitizeString } from '../../../../lib/inputValidator.js';
 import { findTransactionById, updateTransaction } from '../../../../lib/transactionStore.js';
 
@@ -70,6 +70,12 @@ export default async function handler(req: Request, res: Response) {
   }
   if (hasAdminNote) patch.adminNote = sanitizeNote(body?.adminNote ?? '').slice(0, 500);
   if (hasFlagged) patch.flagged = body?.flagged as boolean;
+
+  await appendCriticalAudit({
+    event: 'transaction_metadata_correction_intent', adminId: session.adminId,
+    email: session.email, userId: transaction.userId, ip: req.ip ?? 'unknown', reason,
+    meta: { txId, reference: transaction.reference, fields: Object.keys(patch) },
+  });
 
   const updated = await updateTransaction(txId, patch);
   if (!updated) return res.status(404).json({ error: 'Transaction not found.' });

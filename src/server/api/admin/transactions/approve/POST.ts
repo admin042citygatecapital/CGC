@@ -5,7 +5,7 @@
  */
 import type { Request, Response } from 'express';
 import { findTransactionById, updateTransaction } from '../../../../lib/transactionStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
 import { findUserById } from '../../../../lib/userStore.js';
 import { sanitizeNote } from '../../../../lib/inputValidator.js';
@@ -50,6 +50,12 @@ export default async function handler(req: Request, res: Response) {
   if (note.length < 10) {
     return res.status(400).json({ success: false, error: 'An approval note of at least 10 characters is required.' });
   }
+
+  await appendCriticalAudit({
+    event: 'transaction_approval_intent', adminId: session.adminId, userId: tx.userId,
+    email: tx.userEmail, ip: req.ip ?? 'unknown', reason: note,
+    meta: { txId, amount: tx.amount, currency: tx.currency, reference: tx.reference },
+  });
 
   const updated = await updateTransaction(txId, {
     status:     'completed',

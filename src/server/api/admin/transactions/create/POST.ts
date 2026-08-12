@@ -9,7 +9,7 @@ import {
   createTransaction, updateTransaction,
   type TxType, type TxStatus, type TxCurrency,
 } from '../../../../lib/transactionStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { safeParseId, sanitizeString, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
 import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
 import { requireFinancialOperations } from '../../../../lib/platformMode.js';
@@ -70,6 +70,12 @@ export default async function handler(req: Request, res: Response) {
       return res.status(409).json({ ok: false, error: compliance.message, code: compliance.code, compliance });
     }
   }
+
+  await appendCriticalAudit({
+    event: 'admin_transaction_create_intent', adminId: session.adminId, userId: user.id,
+    email: user.email, ip: req.ip ?? 'unknown', reason: safeNote ?? safeDescription,
+    meta: { type: safeType, amount: Number(amount), currency: safeCurrency, status: safeStatus },
+  });
 
   const tx = await createTransaction({
     type:        safeType,

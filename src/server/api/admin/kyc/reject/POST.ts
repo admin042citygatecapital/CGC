@@ -4,7 +4,7 @@
  */
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { sendRejectionEmail } from '../../../../lib/emailService.js';
 import { getLatestOnboardingCaseForUser, reviewOnboardingCase } from '../../../../lib/onboardingStore.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
@@ -22,6 +22,7 @@ export default async function handler(req: Request, res: Response) {
 
   const onboardingCase = await getLatestOnboardingCaseForUser(userId);
   if (!onboardingCase) return res.status(409).json({ error: 'A submitted onboarding case is required.', code: 'ONBOARDING_CASE_REQUIRED' });
+  await appendCriticalAudit({ event: 'admin_kyc_reject_intent', adminId: session.adminId, userId, email: user.email, reason, meta: { reasonCode }, ip: req.ip ?? 'unknown' });
   try {
     await reviewOnboardingCase({ caseId: onboardingCase.id, reviewerId: session.adminId, decision: 'rejected', reason });
   } catch (error) {

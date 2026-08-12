@@ -63,7 +63,36 @@ export function appendAudit(payload: LegacyAuditPayload): void {
     action:     event,
     ip,
     details:    Object.keys(details).length > 0 ? details : undefined,
-  }).catch(() => { /* fire-and-forget — never throw on audit failure */ });
+  }).catch((error) => {
+    console.error('[audit] asynchronous audit write failed', {
+      event,
+      adminId: adminId ?? userId ?? 'system',
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
+}
+
+/**
+ * Persist an audit intent before a sensitive mutation. Unlike the legacy
+ * fire-and-forget helper, this rejects on storage failure so callers fail
+ * closed before changing regulated state.
+ */
+export async function appendCriticalAudit(payload: LegacyAuditPayload): Promise<void> {
+  const { event, adminId, userId, email, ip, reason, ua, meta, ...rest } = payload;
+  const details: Record<string, unknown> = { ...meta };
+  if (reason) details.reason = reason;
+  if (ua) details.ua = ua;
+  if (userId) details.userId = userId;
+  for (const [key, value] of Object.entries(rest)) {
+    if (value !== undefined) details[key] = value;
+  }
+  await appendAuditEntry({
+    adminId: adminId ?? userId ?? 'system',
+    adminEmail: email ?? '',
+    action: event,
+    ip,
+    details: Object.keys(details).length > 0 ? details : undefined,
+  });
 }
 
 export async function appendAuditEntry(entry: Omit<AuditEntry, 'id' | 'ts'>): Promise<AuditEntry> {

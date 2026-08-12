@@ -61,6 +61,8 @@ interface SmtpStatus {
   mode: 'resend' | 'oauth' | 'manual';
   provider: 'resend' | 'zoho' | 'smtp';
   resendReady: boolean;
+  providerHealthy: boolean;
+  healthStatus: 'healthy' | 'configured_unverified' | 'degraded';
   oauthReady: boolean;
   manualReady: boolean;
   hasRefreshToken: boolean;
@@ -234,7 +236,7 @@ function StatusTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
     </div>
   );
 
-  const smtpOk  = status.resendReady || (status.mode === 'oauth' ? status.oauthReady : status.manualReady);
+  const smtpOk  = status.providerHealthy;
   const zohoOk  = status.oauthReady && status.hasRefreshToken && status.refreshTokenValid;
 
   return (
@@ -248,7 +250,7 @@ function StatusTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
               <Wifi size={14} className={smtpOk ? 'text-emerald-400' : 'text-red-400'} />
               <p className="text-white font-semibold text-sm">Production Delivery</p>
             </div>
-            <StatusPill ok={smtpOk} label={smtpOk ? 'Healthy' : 'Degraded'} />
+            <StatusPill ok={smtpOk} label={smtpOk ? 'Healthy' : status.resendReady ? 'Configured · unverified' : 'Degraded'} />
           </div>
           <div className="space-y-1.5 text-xs">
             <div className="flex justify-between">

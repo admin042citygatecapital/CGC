@@ -26,6 +26,7 @@ import { getValidAccessToken } from '../../../lib/zohoTokenStore.js';
 import { seoRoutes } from '../../../../lib/seo-routes.js';
 import { getStorageBackend } from '../../../lib/supabaseStorage.js';
 import { verifyManualSmtp } from '../../../lib/smtpTransport.js';
+import { getEmailLogs } from '../../../lib/emailQueue.js';
 import { isDatabaseConfigured, testConnection } from '../../../db/db.js';
 import { getOperationalBackupStatus } from '../../../lib/operationalBackup.js';
 import { privateSubdirectory } from '../../../lib/storagePaths.js';
@@ -139,11 +140,18 @@ async function checkEmailDelivery(): Promise<ReadinessCheck> {
   const resendKey = s('RESEND_API_KEY');
   if (resendKey) {
     const { result, ms } = await timed(() => verifyManualSmtp());
-    return result.ok
+    const logs = await getEmailLogs(20);
+    const recentSuccessfulDelivery = logs.some(log =>
+      log.status === 'sent' && !!log.sentAt && new Date(log.sentAt).getTime() > Date.now() - 30 * 86_400_000
+    );
+    return result.ok || recentSuccessfulDelivery
       ? {
           id: 'email_delivery', name: 'Resend Email Delivery', subsystem: 'Email',
           status: 'PASS', critical: false,
-          message: 'Resend API connectivity succeeded. Email delivery is operational.',
+          message: result.ok
+            ? 'Resend API connectivity succeeded. Email delivery is operational.'
+            : 'Recent successful Resend delivery confirms the sending-only API key is operational.',
+          detail: result.ok ? undefined : 'The key cannot list domains, so readiness used recent accepted delivery evidence.',
           durationMs: ms,
         }
       : {

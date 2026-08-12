@@ -121,15 +121,43 @@ export async function getKycQueue(): Promise<UserRecord[]> {
 }
 
 export async function getKycStats(): Promise<{
-  total: number; submitted: number; approved: number; rejected: number; notSubmitted: number;
+  pending: number;
+  approvedThisWeek: number;
+  rejectedThisWeek: number;
+  expired: number;
+  approachingExpiry: number;
+  avgReviewHours: number;
+  totalApproved: number;
+  totalRejected: number;
 }> {
   const users = await loadAllUsers();
+  const settings = await readKycSettings();
+  const now = Date.now();
+  const weekAgo = now - 7 * 86_400_000;
+  const reminderDeadline = now + settings.renewalReminderDays * 86_400_000;
+  const expiryMs = (user: UserRecord) => user.kycApprovedAt
+    ? new Date(user.kycApprovedAt).getTime() + settings.expiryMonths * 30 * 86_400_000
+    : 0;
+  const completedReviewHours = users.flatMap(user => {
+    const decidedAt = user.kycApprovedAt ?? user.kycRejectedAt;
+    if (!user.kycSubmittedAt || !decidedAt) return [];
+    const duration = new Date(decidedAt).getTime() - new Date(user.kycSubmittedAt).getTime();
+    return Number.isFinite(duration) && duration >= 0 ? [duration / 3_600_000] : [];
+  });
   return {
-    total:        users.length,
-    submitted:    users.filter(u => u.kycStatus === 'submitted').length,
-    approved:     users.filter(u => u.kycStatus === 'approved').length,
-    rejected:     users.filter(u => u.kycStatus === 'rejected').length,
-    notSubmitted: users.filter(u => u.kycStatus === 'not_submitted').length,
+    pending: users.filter(user => user.kycStatus === 'submitted').length,
+    approvedThisWeek: users.filter(user => user.kycApprovedAt && new Date(user.kycApprovedAt).getTime() >= weekAgo).length,
+    rejectedThisWeek: users.filter(user => user.kycRejectedAt && new Date(user.kycRejectedAt).getTime() >= weekAgo).length,
+    expired: users.filter(user => user.kycStatus === 'approved' && expiryMs(user) > 0 && expiryMs(user) <= now).length,
+    approachingExpiry: users.filter(user => {
+      const expiry = expiryMs(user);
+      return user.kycStatus === 'approved' && expiry > now && expiry <= reminderDeadline;
+    }).length,
+    avgReviewHours: completedReviewHours.length
+      ? Number((completedReviewHours.reduce((sum, hours) => sum + hours, 0) / completedReviewHours.length).toFixed(1))
+      : 0,
+    totalApproved: users.filter(user => user.kycStatus === 'approved').length,
+    totalRejected: users.filter(user => user.kycStatus === 'rejected').length,
   };
 }
 
@@ -214,4 +242,3 @@ export function buildKycQueueEntry(user: UserRecord) {
     risk:            { score: computeKycRiskScore(user) },
   };
 }
-

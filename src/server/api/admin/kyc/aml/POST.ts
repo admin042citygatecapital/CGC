@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { sanitizeNote, safeParseId, isOneOf } from '../../../../lib/inputValidator.js';
 import {
   findUserById,
@@ -43,6 +43,12 @@ export default async function handler(req: Request, res: Response) {
   if (user.approvedBy === session.adminId && ['cleared', 'review', 'blocked'].includes(amlStatus)) {
     return res.status(409).json({ error: 'A different compliance administrator must complete AML review after KYC approval.', code: 'MAKER_CHECKER_REQUIRED' });
   }
+
+  await appendCriticalAudit({
+    event: 'admin_aml_decision_intent', adminId: session.adminId, userId,
+    email: user.email, ip: req.ip ?? 'unknown', reason,
+    meta: { amlStatus, amlRiskLevel, nextReviewAt: amlNextReviewAt ?? null },
+  });
 
   const now = new Date().toISOString();
   const nextAccountStatus = amlStatus === 'blocked' && ['active', 'pending_approval'].includes(user.status)

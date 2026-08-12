@@ -12,7 +12,7 @@ import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
 import { createTransaction } from '../../../../lib/transactionStore.js';
 import { appendBalanceTx } from '../../../../lib/balanceStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { sendBalanceAdjustmentEmail } from '../../../../lib/emailService.js';
 import { safeParseId, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
 import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
@@ -77,6 +77,11 @@ export default async function handler(req: Request, res: Response) {
   if (safeNote.length < 10) {
     return res.status(400).json({ success: false, error: 'A balance-adjustment rationale of at least 10 characters is required.' });
   }
+
+  await appendCriticalAudit({
+    event: `balance_${type}_intent`, adminId, userId, email: user.email, ip,
+    reason: safeNote, meta: { amount, currency, previousBalance: Number(user.balance ?? 0) },
+  });
 
   // Create a transaction record in the specified currency
   await createTransaction({

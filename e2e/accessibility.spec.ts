@@ -55,6 +55,13 @@ test('administrator login and dashboard support keyboard-only access and WCAG A/
   await tabTo(page, submit);
   await page.keyboard.press('Enter');
 
+  const otp = form.getByLabel('Verification code');
+  await expect(otp).toBeVisible();
+  await tabTo(page, otp);
+  await page.keyboard.type(E2E_ADMIN.otp);
+  await tabTo(page, form.getByRole('button', { name: /verify and continue/i }));
+  await page.keyboard.press('Enter');
+
   await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
   await expectNoSeriousAccessibilityViolations(page);
 });

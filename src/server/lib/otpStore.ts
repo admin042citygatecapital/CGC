@@ -76,6 +76,7 @@ export interface OtpIssueResult {
  */
 export function issueOtp(email: string, ip: string, ua: string): OtpIssueResult {
   const now = Date.now();
+  const isolatedE2e = process.env.NODE_ENV !== 'production' && process.env.E2E_TEST_MODE === '1';
 
   // Per-email rate limit
   const rateKey = `otp:${email.toLowerCase()}`;
@@ -86,7 +87,7 @@ export function issueOtp(email: string, ip: string, ua: string): OtpIssueResult 
   rate.count += 1;
   rateStore.set(rateKey, rate);
 
-  if (rate.count > MAX_OTP_PER_WINDOW) {
+  if (!isolatedE2e && rate.count > MAX_OTP_PER_WINDOW) {
     return { ok: false, rateLimited: true, error: 'Too many OTP requests. Please wait 10 minutes.' };
   }
 
@@ -96,7 +97,12 @@ export function issueOtp(email: string, ip: string, ua: string): OtpIssueResult 
   }
 
   // Generate 6-digit OTP using crypto (not Math.random)
-  const otp = String(crypto.randomInt(100000, 999999));
+  const testOtp = isolatedE2e
+    ? process.env.E2E_ADMIN_OTP
+    : undefined;
+  const otp = /^\d{6}$/.test(testOtp ?? '')
+    ? testOtp!
+    : String(crypto.randomInt(100000, 999999));
   const challengeId = crypto.randomBytes(16).toString('hex');
 
   challenges.set(challengeId, {
@@ -124,7 +130,11 @@ export interface OtpVerifyResult {
  * Verify an OTP against a challenge.
  * Consumes the challenge on success (single-use).
  */
-export function verifyOtp(challengeId: string, otp: string): OtpVerifyResult {
+export function verifyOtp(
+  challengeId: string,
+  otp: string,
+  fingerprint?: { ip: string; ua: string },
+): OtpVerifyResult {
   const challenge = challenges.get(challengeId);
 
   if (!challenge) {
@@ -133,6 +143,11 @@ export function verifyOtp(challengeId: string, otp: string): OtpVerifyResult {
 
   if (challenge.used) {
     return { ok: false, error: 'This verification code has already been used.' };
+  }
+
+  if (fingerprint && (challenge.ip !== fingerprint.ip || challenge.ua !== fingerprint.ua)) {
+    challenges.delete(challengeId);
+    return { ok: false, locked: true, error: 'The verification session is not valid for this device.' };
   }
 
   if (Date.now() > challenge.expiresAt) {

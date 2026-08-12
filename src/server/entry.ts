@@ -136,6 +136,7 @@ import admin_sponsor_readiness_evidence_review_post from "./api/admin/sponsor-re
 import admin_sponsor_readiness_export_get from "./api/admin/sponsor-readiness/export/GET";
 import admin_sponsor_readiness_package_submit_post from "./api/admin/sponsor-readiness/package/submit/POST";
 import admin_sponsor_readiness_package_review_post from "./api/admin/sponsor-readiness/package/review/POST";
+import admin_sponsor_readiness_external_review_post from "./api/admin/sponsor-readiness/external-review/POST";
 import admin_provider_sandbox_get from "./api/admin/provider-sandbox/GET";
 import admin_provider_sandbox_post from "./api/admin/provider-sandbox/POST";
 import admin_assurance_exercises_get from "./api/admin/assurance-exercises/GET";
@@ -483,6 +484,7 @@ app.use('/api/admin', (req: Request, res: Response, next: NextFunction) => {
     '/auth/diag',
     '/auth/verify',          // lightweight session check — used by login page
     '/zoho/oauth/callback',  // Zoho redirects here — no session yet
+    '/sponsor-readiness/external-review',
   ]);
   const suffix = req.path.endsWith('/') && req.path.length > 1 ? req.path.slice(0, -1) : req.path || '/';
   if (PUBLIC_SUFFIXES.has(suffix)) return next();
@@ -668,6 +670,7 @@ app.post("/api/admin/sponsor-readiness/evidence/:id/review", admin_sponsor_readi
 app.get("/api/admin/sponsor-readiness/export", admin_sponsor_readiness_export_get);
 app.post("/api/admin/sponsor-readiness/package/submit", admin_sponsor_readiness_package_submit_post);
 app.post("/api/admin/sponsor-readiness/package/review", admin_sponsor_readiness_package_review_post);
+app.post("/api/admin/sponsor-readiness/external-review", admin_sponsor_readiness_external_review_post);
 app.get("/api/admin/provider-sandbox", admin_provider_sandbox_get);
 app.post("/api/admin/provider-sandbox", admin_provider_sandbox_post);
 app.get("/api/admin/assurance-exercises", admin_assurance_exercises_get);

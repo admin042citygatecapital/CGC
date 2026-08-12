@@ -4,7 +4,7 @@
  */
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { sendApprovalEmail } from '../../../../lib/emailService.js';
 import { appendKycNote } from '../../../../lib/kycStore.js';
 import { sanitizeNote } from '../../../../lib/inputValidator.js';
@@ -24,6 +24,7 @@ export default async function handler(req: Request, res: Response) {
 
   const onboardingCase = await getLatestOnboardingCaseForUser(userId);
   if (!onboardingCase) return res.status(409).json({ error: 'A submitted onboarding case is required.', code: 'ONBOARDING_CASE_REQUIRED' });
+  await appendCriticalAudit({ event: 'admin_kyc_approve_intent', adminId: session.adminId, userId, email: user.email, reason: note, ip: req.ip ?? 'unknown' });
   try {
     await assertProviderVerificationComplete(onboardingCase.id, onboardingCase.caseType);
     await reviewOnboardingCase({ caseId: onboardingCase.id, reviewerId: session.adminId, decision: 'approved', reason: note });

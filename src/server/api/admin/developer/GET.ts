@@ -16,6 +16,7 @@ import os   from 'node:os';
 import { buildEnvReport } from '../../../lib/envValidator.js';
 import { mediaAssetRoot, privateDataRoot, privateSubdirectory } from '../../../lib/storagePaths.js';
 import { getRegisteredRouteCatalogue, type DeveloperRouteEntry } from '../../../lib/developerRouteInventory.js';
+import { getQueryClient, isDatabaseConfigured, testConnection } from '../../../db/db.js';
 
 // ─── Route catalogue (static — derived from entry.ts registration) ────────────
 
@@ -24,7 +25,7 @@ const ROUTE_CATALOGUE: DeveloperRouteEntry[] = [
   { method:'POST', path:'/api/admin/auth/login',                  group:'Admin Auth',       auth:'public',  description:'Admin login — bcrypt + session cookie' },
   { method:'POST', path:'/api/admin/auth/logout',                 group:'Admin Auth',       auth:'public',  description:'Destroy admin session' },
   { method:'GET',  path:'/api/admin/auth/verify',                 group:'Admin Auth',       auth:'public',  description:'Lightweight session check' },
-  { method:'POST', path:'/api/admin/auth/otp/verify',             group:'Admin Auth',       auth:'public',  description:'TOTP second-factor verification' },
+  { method:'POST', path:'/api/admin/auth/otp/verify',             group:'Admin Auth',       auth:'public',  description:'Email OTP second-factor verification' },
   { method:'POST', path:'/api/admin/auth/password-reset',         group:'Admin Auth',       auth:'public',  description:'Initiate admin password reset' },
   { method:'POST', path:'/api/admin/auth/password-reset/confirm', group:'Admin Auth',       auth:'public',  description:'Confirm admin password reset' },
   { method:'POST', path:'/api/admin/auth/unlock',                 group:'Admin Auth',       auth:'public',  description:'Unlock brute-force locked account' },
@@ -258,6 +259,41 @@ const ROUTE_CATALOGUE: DeveloperRouteEntry[] = [
 interface DbFile {
   name: string; path: string; type: 'jsonl' | 'json';
   rows: number; sizeBytes: number; lastModified: string; healthy: boolean; error?: string;
+}
+
+async function scanPostgresTables(): Promise<DbFile[]> {
+  if (!isDatabaseConfigured()) return scanDbFiles();
+
+  const connection = await testConnection();
+  if (!connection.ok) {
+    return [{
+      name: 'PostgreSQL', path: 'public', type: 'json', rows: 0, sizeBytes: 0,
+      lastModified: '', healthy: false, error: 'Database connection failed',
+    }];
+  }
+
+  try {
+    const tables = await getQueryClient()<Array<{ table_name: string }>>`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+      ORDER BY table_name
+    `;
+    return tables.map(({ table_name }) => ({
+      name: table_name,
+      path: `public.${table_name}`,
+      type: 'json' as const,
+      rows: 0,
+      sizeBytes: 0,
+      lastModified: '',
+      healthy: true,
+    }));
+  } catch {
+    return [{
+      name: 'PostgreSQL', path: 'public', type: 'json', rows: 0, sizeBytes: 0,
+      lastModified: '', healthy: false, error: 'Table inventory unavailable',
+    }];
+  }
 }
 
 function scanDbFiles(): DbFile[] {
@@ -536,7 +572,7 @@ export default async function handler(req: Request, res: Response) {
       Promise.resolve(getErrorMonitor()),
       Promise.resolve(getBuildInfo(routeCatalogue.length)),
       Promise.resolve(getDeploymentInfo()),
-      Promise.resolve(scanDbFiles()),
+      scanPostgresTables(),
       Promise.resolve(buildEnvReport()),
     ]);
 
@@ -557,6 +593,7 @@ export default async function handler(req: Request, res: Response) {
         catalogue:  routeCatalogue,
       },
       db: {
+        backend:    isDatabaseConfigured() ? 'PostgreSQL' : 'Legacy local storage',
         files:      dbFiles,
         totalFiles: dbFiles.length,
         healthy:    dbFiles.filter(f => f.healthy).length,
