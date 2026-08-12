@@ -27,6 +27,17 @@ describe('progressive internal sponsor evidence', () => {
       'terms_disclosures',
       'transaction_monitoring',
       'vulnerable_customers',
+      'responsibility_matrix',
+      'safeguarding_method',
+      'safeguarding_audit',
+      'identity_provider_diligence',
+      'screening_provider',
+      'compliance_officer',
+      'fx_provider',
+      'fx_disclosures',
+      'corridor_approval',
+      'penetration_test',
+      'safeguarding_wording',
     ].sort());
     for (const draft of drafts) {
       expect(findSponsorControl(draft.controlKey)).toBeDefined();
@@ -47,5 +58,19 @@ describe('progressive internal sponsor evidence', () => {
     expect(drafts.find(item => item.controlKey === 'aml_risk_assessment')?.notes).toMatch(/qualified MLRO approval.*outstanding/i);
     expect(drafts.find(item => item.controlKey === 'transaction_monitoring')?.notes).toMatch(/contracted monitoring provider.*outstanding/i);
     expect(drafts.find(item => item.controlKey === 'terms_disclosures')?.notes).toMatch(/qualified counsel approval.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'safeguarding_method')?.notes).toMatch(/authorised sponsor.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'identity_provider_diligence')?.notes).toMatch(/contracted identity provider.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'screening_provider')?.notes).toMatch(/contracted screening provider.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'compliance_officer')?.notes).toMatch(/qualified named individual.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'corridor_approval')?.notes).toMatch(/no production corridor is approved/i);
+    expect(drafts.find(item => item.controlKey === 'penetration_test')?.notes).toMatch(/completed test report.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'safeguarding_wording')?.notes).toMatch(/customer-funds treatment.*outstanding/i);
+    expect(drafts.map(item => item.controlKey)).not.toEqual(expect.arrayContaining([
+      'legal_entity_verified',
+      'beneficial_owners_verified',
+      'regulatory_perimeter_opinion',
+      'sponsor_term_sheet',
+      'programme_contract',
+    ]));
   });
 });

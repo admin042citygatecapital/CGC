@@ -28,4 +28,137 @@ export const OPERATIONAL_PROCEDURES: Record<string, string> = {
   '20-transaction-monitoring-governance-procedure.md': `# Transaction-Monitoring Governance Procedure\n\n${common}## Control objective\n\nDetect, investigate and escalate suspicious or prohibited activity from complete authoritative transaction and customer-risk data, while preserving explainability, case history, confidentiality and sponsor/MLRO accountability. No production transaction-monitoring programme is active in this environment.\n\n## Programme design\n\n1. Inventory authoritative inputs for customers, beneficial owners, accounts, beneficiaries, devices, counterparties, payments, FX, returns, reversals, sanctions events and ledger postings. Missing, stale or irreconcilable mandatory feeds block the affected corridor.\n2. Derive scenarios from the approved enterprise risk assessment and sponsor typologies. Each scenario records purpose, population, data fields, logic, threshold rationale, exclusions, severity, owner, version and effective dates; administrators cannot silently alter thresholds.\n3. Validate data completeness, scenario implementation, alert generation, duplicate handling and expected positive/negative cases before activation. Material changes require maker-checker approval, regression testing and documented back-testing where appropriate.\n4. Route alerts to restricted, immutable cases with customer and transaction references, risk context, evidence, investigator actions, decisions and timestamps. Clearing an alert cannot manufacture a provider screening result or modify transaction history.\n5. Escalation to the qualified MLRO follows approved triage and confidentiality rules. Suspicious-activity reporting, consent/defence requests, law-enforcement interaction, account restriction and customer communication use jurisdiction-specific approved procedures; the application must not expose sensitive reporting status to customers.\n6. Measure feed health, alert volumes, ageing, dispositions, investigator quality, false negatives/positives, scenario coverage and remediation. Independent quality assurance and periodic effectiveness review feed back into the risk assessment.\n\n## Activation boundary\n\nThe existing compliance queue and synthetic events demonstrate workflow structure only. Launch requires contracted provider capability, authoritative feeds, approved scenarios and thresholds, qualified investigators and MLRO, validated filing procedures, independent testing and sustained operating evidence.\n`,
 
   '21-customer-terms-and-disclosure-approval-procedure.md': `# Customer Terms and Product-Disclosure Approval Procedure\n\n${common}## Control objective\n\nEnsure every public claim, contractual term, fee, FX disclosure, funds-protection statement and customer communication accurately reflects the final legal entity, sponsor, provider, jurisdiction, product and operating capability before publication or acceptance.\n\n## Controlled content lifecycle\n\n1. Maintain a register of required documents and disclosures by audience, product, jurisdiction, channel and journey. Assign legal, compliance, product and sponsor approvers and record dependencies such as provider names, permissions, safeguarding structure, complaints route, fees and service limits.\n2. Draft in plain language with version, effective date, owner and controlled source. Unresolved placeholders, unsupported claims, contradictory pages or unknown commercial terms prevent approval. Existing pre-deployment terms are not suitable for live financial services.\n3. Verify consistency across the website, registration, dashboards, quotes, confirmations, receipts, email, support scripts and accessibility formats. Product controls and feature flags must match the approved wording and cannot enable a capability absent from the terms.\n4. Compliance and counsel review legal accuracy, consumer outcomes and prominence; Finance verifies fees, FX and protection wording; Security/Privacy verify data statements. The sponsor gives final programme approval through an independent recorded decision.\n5. Publish only the approved immutable version and record SHA-256, effective time and channels. Capture the version accepted by each customer and provide durable access; material changes follow approved notice and renewed-consent rules.\n6. Monitor complaints, abandonment, misunderstanding, accessibility and customer outcomes. Emergency corrections preserve prior versions, decision history and affected-customer analysis.\n\n## Approval boundary\n\nThis workflow does not approve current public wording. Final live terms require the verified legal entity, contracted sponsor/providers, confirmed permissions and protection structure, approved commercial schedules, jurisdiction-specific redress and completed customer-outcomes testing.\n`,
+  '22-sponsor-provider-responsibility-matrix.md': `# Sponsor, City Gate and Provider Responsibility Matrix
+
+${common}## Control objective
+
+Assign every regulated, operational and technical duty to an accountable legal entity and named role before contracting or launch, and prevent gaps or duplicated assumptions between the sponsor, City Gate and specialist providers.
+
+## Matrix lifecycle
+
+1. Catalogue each activity covering permissions, customer terms, safeguarding, onboarding, screening, monitoring, complaints, funds movement, FX, ledger, reconciliation, fraud, security, privacy, resilience, reporting, audit, support, wind-down and regulatory interaction.
+2. For every activity record the accountable legal entity, responsible operator, consulted parties, evidence producer, decision authority, escalation owner, service level and contract clause. A product brand or software component is not an accountable legal entity.
+3. Reconcile the matrix against provider contracts, operating procedures, data flows, customer disclosures, incident plans and regulatory submissions. Conflicts and unassigned duties block the affected phase.
+4. Require maker-checker approval for changes and preserve version, effective date, rationale and prior allocation. Material provider, product, corridor or regulatory changes trigger renewed sponsor and counsel review.
+5. Test the matrix through onboarding, screening outage, payment unknown-state, safeguarding break, complaint, data breach and wind-down scenarios. Record unresolved decisions and corrective owners.
+
+## Approval boundary
+
+This document is a draft allocation method. It does not name or bind a sponsor or provider and is not an executed responsibility schedule. Final approval requires the contracted parties, accountable people and consistent contract evidence.
+`,
+
+  '23-safeguarding-structure-and-assurance-plan.md': `# Safeguarding Structure and Independent Assurance Plan
+
+${common}## Structure decision
+
+1. The authorised sponsor and qualified counsel determine which safeguarding regime applies, who receives customer funds, the account and trust/segregation structure, acknowledgement requirements, permitted diversification and insolvency treatment.
+2. Finance maps each receipt, pending item, fee, FX conversion, payout, return and reversal to the safeguarding calculation and authoritative ledger. City Gate never receives or controls funds outside the approved structure.
+3. Document the daily calculation, timing cut-offs, currency treatment, unmatched items, access controls, signatories, provider statements, reconciliation dependencies and break escalation. Unknown treatment blocks the product or corridor.
+4. Obtain executed account evidence and sponsor approval before any customer funding instruction is displayed. Public wording must match the approved legal structure and must not imply deposit insurance or bank-account status without verified entitlement.
+
+## Assurance plan
+
+Define the applicable independent assurance or audit scope, reviewer qualifications, frequency, evidence access, sampling, deficiency rating, sponsor reporting, remediation and governing-body oversight. Operating evidence includes completed calculations, reconciliations, break closure, access reviews and tested insolvency/wind-down scenarios. A procedure or synthetic test is design evidence only.
+
+## Activation boundary
+
+No safeguarding structure, account, reviewer or assurance conclusion is approved by this draft. Customer funds and funding instructions remain unavailable until the authorised sponsor and counsel approve the complete structure and operating evidence.
+`,
+
+  '24-identity-screening-provider-due-diligence.md': `# Identity and Screening Provider Due-Diligence Procedure
+
+${common}## Evaluation register
+
+For each candidate, record the contracting legal entity, regulated and geographic coverage, identity sources, document/biometric assurance, sanctions/PEP/adverse-media lists, refresh cadence, rescreening triggers, matching behavior, manual review, explainability, fraud controls, data locations, subprocessors, retention, security assurance, resilience, audit rights, service levels, exit support and pricing.
+
+## Validation
+
+1. Compliance defines approved populations, documents, jurisdictions, risk levels and prohibited gaps from the enterprise risk assessment and sponsor policy.
+2. Privacy and Security complete data-flow, DPIA, transfer, access, encryption, incident and deletion reviews before production data is supplied.
+3. Test representative positive, negative, ambiguous, duplicate, expired, tampered, transliterated and accessibility cases with synthetic data. Screening tests cover list freshness, aliases, fuzzy matching, false positives, rescreening and outage behavior.
+4. Validate signed event delivery, idempotency, correlation, replay protection, manual overrides, audit exports and evidence retention. Provider unavailability or unverifiable results fail closed.
+5. Record residual gaps, compensating controls, owner, deadline and independent approval. Contract execution does not replace sponsor/MLRO acceptance or operating validation.
+
+## Approval boundary
+
+This procedure does not select, endorse or connect a provider. Production onboarding and screening require contracted providers, verified capability, completed diligence, certified integration and sponsor/MLRO approval.
+`,
+
+  '25-compliance-officer-mandate.md': `# Compliance Officer and MLRO Mandate
+
+${common}## Role design
+
+The governing body and sponsor must appoint suitably qualified named individuals with documented authority, independence, direct escalation access, adequate resources, information access, confidentiality protections and authority to restrict onboarding, products, customers and transactions. Required regulatory approval or notification must be completed before the appointment is represented as effective.
+
+## Responsibilities
+
+1. Own the enterprise financial-crime risk assessment, policies, risk appetite, customer and corridor eligibility, enhanced due diligence and continuing review.
+2. Oversee sanctions/PEP/adverse-media screening, transaction monitoring, investigation quality, suspicious-activity escalation, reporting and prohibited customer disclosure.
+3. Report material risks, breaches, backlogs, control performance and remediation to the governing body and sponsor without management filtering.
+4. Approve competent deputies, absence cover, conflicts management, training, quality assurance and record retention. Administrators cannot appoint themselves by changing a setting.
+5. Maintain fit-and-proper, experience, capacity, training, appointment, reporting-line and periodic effectiveness evidence through controlled references.
+
+## Approval boundary
+
+This draft defines a mandate, not a person. No compliance officer or MLRO is appointed until identity, competence, authority, capacity, reporting line and sponsor/regulatory acceptance are independently evidenced.
+`,
+
+  '26-fx-and-payment-corridor-governance.md': `# Provider-Executed FX and Payment-Corridor Governance
+
+${common}## Provider-authoritative FX
+
+1. A contracted provider returns quote ID, source/target currencies, amounts, rate, spread, fees, expiry, settlement conditions and execution eligibility. City Gate does not manufacture live prices or execution results.
+2. The customer receives the complete approved disclosure before confirmation. Expired or changed quotes require renewed consent; unknown execution states remain pending and restricted.
+3. Commands use idempotency and correlation identifiers. State changes require authenticated responses or signed replay-protected events and reconcile to provider and ledger identifiers.
+
+## Corridor register
+
+For each origin/destination, currency, rail, customer type and use case, record sponsor/provider availability, permissions, sanctions and AML assessment, beneficiary/data requirements, limits, cut-offs, fees, returns/reversals, safeguarding and settlement treatment, reconciliation mapping, customer terms, support, complaints, testing, effective dates and approvers. Approval is corridor-specific and does not inherit from another rail or currency.
+
+## Change and suspension
+
+Pricing, provider, sanctions, data, settlement or performance changes trigger impact review and maker-checker approval. Missing screening, stale quote, provider outage, unreconciled break or expired approval suspends only the affected scope and records customer-impact handling.
+
+## Activation boundary
+
+No provider, price, currency or corridor is approved by this document. Production activation requires executed contracts, sponsor approval, certified integration, final disclosures and sustained reconciliation evidence.
+`,
+
+  '27-independent-penetration-test-plan.md': `# Independent Penetration-Test and Remediation Plan
+
+${common}## Scope and independence
+
+Security defines internet-facing applications, APIs, authentication, customer and administrator authorization, sessions, uploads, webhooks, cloud configuration, network boundaries and relevant mobile/provider interfaces. A qualified independent tester confirms rules of engagement, credentials, data handling, exclusions, safe-testing windows, incident contacts and retest terms. Exclusions require risk-owner and sponsor acceptance.
+
+## Required coverage
+
+Test OWASP-class weaknesses, business-logic abuse, IDOR/BOLA, privilege escalation, customer/admin separation, maker-checker bypass, account recovery, MFA, CSRF, XSS, injection, SSRF, file handling, rate limits, webhook authentication/replay, secrets exposure, logging and cloud misconfiguration. Financial tests must prove locked operations cannot be enabled through client input, evidence approval or administrator override.
+
+## Findings and closure
+
+Record severity, exploit evidence, affected asset/version, owner, target date, compensating controls and release impact without placing sensitive exploit material in the sponsor workspace. Critical/high findings and systemic authorization defects block launch. Closure requires remediation, regression tests, independent retest and security/sponsor acceptance; risk acceptance requires accountable rationale and expiry.
+
+## Approval boundary
+
+This is a test plan, not a penetration-test report. No assurance conclusion exists until an independent test, remediation and retest have been completed and approved against the production release scope.
+`,
+
+  '28-customer-funds-wording-approval.md': `# Customer-Funds and Safeguarding Wording Approval
+
+${common}## Claim register
+
+Inventory every statement about accounts, deposits, safeguarding, segregation, custody, ownership, availability, settlement, insolvency, compensation, insurance, issuer/sponsor identity, regulated status and complaints/redress across the website, registration, dashboard, funding instructions, confirmations, receipts, support and email.
+
+## Approval workflow
+
+1. Link each claim to the verified legal entity, sponsor contract, permissions analysis, safeguarding structure, account evidence, product terms and operational capability.
+2. Compliance and counsel verify legal accuracy and prominence; Finance verifies funds flow and reconciliation; Product confirms the interface cannot contradict the wording; the sponsor gives final programme approval.
+3. Prohibit unsupported use of bank, bank account, deposit, insured, protected, guaranteed, custodian or equivalent language. Explain material differences between safeguarding and deposit protection in approved plain language.
+4. Test comprehension and accessibility with the target audience. Record version, hash, channels, effective date and customer acceptance; preserve prior versions and change notices.
+5. Monitor complaints, misunderstanding and service changes. A material change suspends affected claims until reapproved.
+
+## Approval boundary
+
+Current wording describes unavailable services and sample data. This workflow does not approve live customer-funds claims. Final wording requires the confirmed legal entity, sponsor, safeguarding structure, permissions, redress route and independently approved evidence.
+`,
 };

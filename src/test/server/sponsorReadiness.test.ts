@@ -90,6 +90,10 @@ describe('sponsor provider pack', () => {
       '18-business-kyb-and-ownership-procedure.md',
       '19-enterprise-aml-risk-assessment-procedure.md', '20-transaction-monitoring-governance-procedure.md',
       '21-customer-terms-and-disclosure-approval-procedure.md',
+      '22-sponsor-provider-responsibility-matrix.md', '23-safeguarding-structure-and-assurance-plan.md',
+      '24-identity-screening-provider-due-diligence.md', '25-compliance-officer-mandate.md',
+      '26-fx-and-payment-corridor-governance.md', '27-independent-penetration-test-plan.md',
+      '28-customer-funds-wording-approval.md',
       'README.md', 'evidence-manifest.json',
     ]);
     const allText = Object.values(archive).map(value => strFromU8(value)).join('\n');
@@ -108,6 +112,13 @@ describe('sponsor provider pack', () => {
     expect(allText).toContain('it is not a completed enterprise risk assessment');
     expect(allText).toContain('No production transaction-monitoring programme is active');
     expect(allText).toContain('Existing pre-deployment terms are not suitable for live financial services');
+    expect(allText).toContain('not an executed responsibility schedule');
+    expect(allText).toContain('No safeguarding structure, account, reviewer or assurance conclusion is approved');
+    expect(allText).toContain('does not select, endorse or connect a provider');
+    expect(allText).toContain('This draft defines a mandate, not a person');
+    expect(allText).toContain('No provider, price, currency or corridor is approved');
+    expect(allText).toContain('This is a test plan, not a penetration-test report');
+    expect(allText).toContain('This workflow does not approve live customer-funds claims');
     expect(allText).not.toMatch(/RESEND_API_KEY|DATABASE_URL|BEGIN PRIVATE KEY/);
   });
 

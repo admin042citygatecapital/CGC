@@ -25,7 +25,18 @@ export interface InternalSponsorDraft {
     | 'business_kyb_policy'
     | 'aml_risk_assessment'
     | 'transaction_monitoring'
-    | 'terms_disclosures';
+    | 'terms_disclosures'
+    | 'responsibility_matrix'
+    | 'safeguarding_method'
+    | 'safeguarding_audit'
+    | 'identity_provider_diligence'
+    | 'screening_provider'
+    | 'compliance_officer'
+    | 'fx_provider'
+    | 'fx_disclosures'
+    | 'corridor_approval'
+    | 'penetration_test'
+    | 'safeguarding_wording';
   title: string;
   owner: string;
   sourceFile: string;
@@ -55,6 +66,13 @@ const BUSINESS_KYB_PROCEDURE = '18-business-kyb-and-ownership-procedure.md';
 const AML_RISK_PROCEDURE = '19-enterprise-aml-risk-assessment-procedure.md';
 const TRANSACTION_MONITORING_PROCEDURE = '20-transaction-monitoring-governance-procedure.md';
 const TERMS_DISCLOSURE_PROCEDURE = '21-customer-terms-and-disclosure-approval-procedure.md';
+const RESPONSIBILITY_PROCEDURE = '22-sponsor-provider-responsibility-matrix.md';
+const SAFEGUARDING_METHOD_PROCEDURE = '23-safeguarding-structure-and-assurance-plan.md';
+const PROVIDER_DILIGENCE_PROCEDURE = '24-identity-screening-provider-due-diligence.md';
+const COMPLIANCE_OFFICER_PROCEDURE = '25-compliance-officer-mandate.md';
+const FX_CORRIDOR_PROCEDURE = '26-fx-and-payment-corridor-governance.md';
+const PENETRATION_TEST_PROCEDURE = '27-independent-penetration-test-plan.md';
+const SAFEGUARDING_WORDING_PROCEDURE = '28-customer-funds-wording-approval.md';
 
 const SOURCES: DraftSource[] = [
   {
@@ -212,6 +230,94 @@ const SOURCES: DraftSource[] = [
     sourceFile: `sponsor-pack/${TERMS_DISCLOSURE_PROCEDURE}`,
     sourceContent: OPERATIONAL_PROCEDURES[TERMS_DISCLOSURE_PROCEDURE],
     notes: 'Draft approval workflow only. Sponsor and qualified counsel approval, final legal entity and provider identities, regulated scope, commercial terms, protection wording, jurisdictional schedules and customer-testing evidence remain outstanding.',
+  },
+  {
+    controlKey: 'responsibility_matrix',
+    title: 'Draft sponsor, City Gate and provider responsibility matrix',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${RESPONSIBILITY_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[RESPONSIBILITY_PROCEDURE],
+    notes: 'Draft responsibility model only. Named sponsor/provider entities, executed contracts, accountable owners, escalation contacts and independent sponsor approval remain outstanding.',
+  },
+  {
+    controlKey: 'safeguarding_method',
+    title: 'Draft safeguarding structure decision and approval procedure',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${SAFEGUARDING_METHOD_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[SAFEGUARDING_METHOD_PROCEDURE],
+    notes: 'Draft decision method only. The authorised sponsor, safeguarding account structure, account acknowledgements, calculation method, insolvency analysis and sponsor/counsel approval remain outstanding.',
+  },
+  {
+    controlKey: 'safeguarding_audit',
+    title: 'Draft safeguarding assurance and reporting plan',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${SAFEGUARDING_METHOD_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[SAFEGUARDING_METHOD_PROCEDURE],
+    notes: 'Draft assurance plan only. Applicable assurance scope, qualified independent reviewer, reporting calendar, sponsor approval and completed operating evidence remain outstanding.',
+  },
+  {
+    controlKey: 'identity_provider_diligence',
+    title: 'Draft identity-provider due-diligence procedure',
+    owner: 'Compliance',
+    sourceFile: `sponsor-pack/${PROVIDER_DILIGENCE_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[PROVIDER_DILIGENCE_PROCEDURE],
+    notes: 'Draft diligence method only. A selected contracted identity provider, verified coverage and assurance levels, privacy/security reviews, fallback process, certification and sponsor approval remain outstanding.',
+  },
+  {
+    controlKey: 'screening_provider',
+    title: 'Draft sanctions, PEP and adverse-media provider diligence procedure',
+    owner: 'Compliance',
+    sourceFile: `sponsor-pack/${PROVIDER_DILIGENCE_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[PROVIDER_DILIGENCE_PROCEDURE],
+    notes: 'Draft diligence method only. A selected contracted screening provider, list coverage, rescreening rules, matching validation, escalation design, certification and sponsor/MLRO approval remain outstanding.',
+  },
+  {
+    controlKey: 'compliance_officer',
+    title: 'Draft compliance officer and MLRO mandate',
+    owner: 'Compliance',
+    sourceFile: `sponsor-pack/${COMPLIANCE_OFFICER_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[COMPLIANCE_OFFICER_PROCEDURE],
+    notes: 'Draft role mandate only. A suitably qualified named individual, fit-and-proper evidence, appointment authority, reporting line, capacity assessment, deputy coverage and sponsor/regulatory approval remain outstanding.',
+  },
+  {
+    controlKey: 'fx_provider',
+    title: 'Draft provider-executed FX governance procedure',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${FX_CORRIDOR_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[FX_CORRIDOR_PROCEDURE],
+    notes: 'Draft governance design only. A contracted FX/payment provider, approved currencies and corridors, quote/execution certification, pricing schedule, settlement model and sponsor approval remain outstanding.',
+  },
+  {
+    controlKey: 'fx_disclosures',
+    title: 'Draft FX pricing and slippage disclosure procedure',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${FX_CORRIDOR_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[FX_CORRIDOR_PROCEDURE],
+    notes: 'Draft disclosure design only. Final provider pricing, spreads, fees, expiry and slippage behavior, legal review, customer testing and sponsor approval remain outstanding.',
+  },
+  {
+    controlKey: 'corridor_approval',
+    title: 'Draft payment-corridor activation register and gate',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${FX_CORRIDOR_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[FX_CORRIDOR_PROCEDURE],
+    notes: 'Draft activation method only. No production corridor is approved; sponsor/provider availability, sanctions assessment, limits, disclosures, reconciliation evidence and operating approval remain outstanding.',
+  },
+  {
+    controlKey: 'penetration_test',
+    title: 'Draft independent penetration-test scope and remediation procedure',
+    owner: 'Security',
+    sourceFile: `sponsor-pack/${PENETRATION_TEST_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[PENETRATION_TEST_PROCEDURE],
+    notes: 'Draft assurance plan only. An independent qualified tester, approved scope and rules, completed test report, remediation, retest and sponsor/security approval remain outstanding.',
+  },
+  {
+    controlKey: 'safeguarding_wording',
+    title: 'Draft customer-funds and safeguarding wording approval procedure',
+    owner: 'Compliance',
+    sourceFile: `sponsor-pack/${SAFEGUARDING_WORDING_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[SAFEGUARDING_WORDING_PROCEDURE],
+    notes: 'Draft approval workflow only. The final legal entity, sponsor, safeguarding structure, customer-funds treatment, redress route, counsel review, customer testing and sponsor approval remain outstanding.',
   },
 ];
 
