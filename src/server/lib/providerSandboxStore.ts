@@ -6,7 +6,7 @@ import { appendAuditEntry } from './auditLog.js';
 import type { Currency } from './providerContracts.js';
 import {
   ProviderSandboxError, SANDBOX_CURRENCIES, SyntheticProviderAdapter,
-  signSyntheticWebhook, verifySyntheticWebhook,
+  signSyntheticWebhook, SyntheticWebhookReplayGuard,
 } from './syntheticProviderSandbox.js';
 
 export interface ProviderSandboxActor { id: string; email: string; ip?: string; }
@@ -80,7 +80,10 @@ export async function runProviderSandbox(input: ProviderSandboxInput, actor: Pro
     const reconciliation = await adapter.reconcile({ ...command(id, 'reconciliation'), reconciliationId: `syn_recon_${crypto.randomUUID()}`, businessDate, providerStatementRef: `syn_statement_${crypto.randomUUID()}` }); add('reconciliation_completed', reconciliation);
     const webhookSecret = crypto.randomBytes(32).toString('hex');
     const envelope = signSyntheticWebhook({ runId: id, status: 'passed' }, webhookSecret);
-    if (!verifySyntheticWebhook(envelope, webhookSecret)) throw new ProviderSandboxError('Synthetic signed-webhook verification failed.', 'WEBHOOK_VERIFICATION_FAILED');
+    const replayGuard = new SyntheticWebhookReplayGuard();
+    if (!replayGuard.verify(envelope, webhookSecret) || replayGuard.verify(envelope, webhookSecret)) {
+      throw new ProviderSandboxError('Synthetic signed-webhook verification or replay protection failed.', 'WEBHOOK_VERIFICATION_FAILED');
+    }
     events.push({ eventType: 'signed_webhook_verified', providerRef: envelope.eventId, details: { timestamp: envelope.timestamp, replayWindowSeconds: 300 } });
 
     await getDb().transaction(async tx => {

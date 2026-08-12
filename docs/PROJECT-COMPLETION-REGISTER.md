@@ -1,6 +1,6 @@
 # City Gate Capital project completion register
 
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-12
 
 ## Source of truth
 
@@ -17,7 +17,7 @@ This register reconciles the original shared project conversation (230 user mess
 | Chat and social | Website chat plus administrator-controlled social links and sharing. | Tawk widget configuration, chatbot administration, social profile and share-intent workspace. | Implemented; provider-side staffing and policies remain operational. |
 | Security | No hard-coded credentials, protected admin access, 2FA, rate limits, CSRF, audit logs and vulnerability remediation. | Secure cookies, separated sessions, central RBAC, mutation audit middleware, CSP/HSTS, production validation, zero known production npm advisories at this review. | Engineering baseline implemented; independent penetration test remains outstanding. |
 | Accessibility | Keyboard access and readable public, customer and administration interfaces. | Automated serious WCAG 2.0/2.1 A/AA scanning covers the homepage, customer/admin login and recovery, both authenticated dashboards and keyboard-only authentication/skip navigation. | Release baseline implemented; expand coverage with each new journey. |
-| Data and deployment | Persistent database, backups, GitHub, production hosting, custom domain and health checks. | PostgreSQL migrations, Render pre-deploy migration, managed custom domain, 8-part health endpoint and release guard. | Deployed; managed-backup confirmation and restore exercise still require provider evidence. |
+| Data and deployment | Persistent database, backups, GitHub, production hosting, custom domain and health checks. | PostgreSQL migrations, Render pre-deploy migration, managed custom domain, 8-part health endpoint and release guard. Render recovery shows a 3-day point-in-time window and a logical export created on 2026-08-10. | Deployed; restrict database ingress and complete an isolated restore exercise. |
 | Regulated financial launch | Move beyond demonstration without bypassing legal, sponsor, safeguarding, KYC/AML, ledger or provider requirements. | Database-backed UK sponsor-readiness control plane, phased product scope and deterministic provider pack. Provider adapter constant remains false. | Preparation implemented; external authorisation and provider work outstanding. |
 | Legal entity and ownership | Verify the operating entity, beneficial owners/controllers and authority without storing sensitive documents. | Structured PostgreSQL register with official registry URL/hash, opaque provider references, maker-checker review, expiry, immutable history and sponsor-package hard gate. | Software control implemented; authoritative ownership evidence, provider verification, counsel and sponsor acceptance remain external. |
 
@@ -83,7 +83,7 @@ These items cannot be completed by application code or by an administrator chang
 
 1. Continue removing or converting legacy mock-oriented admin views so every operational number comes from PostgreSQL or is explicitly labelled synthetic/deferred.
 2. Expand accessibility and browser coverage to responsive navigation, administrator role boundaries and database-backed sponsor evidence lifecycle journeys.
-3. Once a sponsor is selected, implement one provider sandbox adapter behind the existing provider-neutral contracts, signed-webhook validation and reconciliation harness.
+3. Once a sponsor is selected, replace the synthetic certification adapter with one contracted provider's sandbox adapter behind the existing provider-neutral contracts, persistent signed-webhook inbox and reconciliation harness. The synthetic adapter now enforces idempotency conflicts, quote expiry/single conversion, payment reversal state, balanced postings and webhook replay rejection; it is not evidence of provider certification.
 4. Only after sponsor certification, replace the application balance model with the sponsor/core double-entry ledger projection.
 
 ## Launch invariant

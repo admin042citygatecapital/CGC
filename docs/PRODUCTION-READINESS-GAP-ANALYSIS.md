@@ -1,6 +1,6 @@
 # Production-readiness gap analysis
 
-Last reviewed: 2026-08-10
+Last reviewed: 2026-08-12
 
 ## Launch boundary
 
@@ -24,6 +24,7 @@ The supplied regulatory checklist is primarily US-focused, while the project cur
 | Admin controls | Authenticated admin routes, roles, audit logging and compliance queues exist. | Independent RBAC review, least privilege, maker-checker for sensitive actions, privileged-access monitoring and periodic access certification. |
 | Security | TLS/HSTS/CSP, secure sessions, 2FA features, rate limiting, encrypted card storage, production secret validation and a repeatable unauthenticated HTTP baseline exist. | Independent authenticated penetration test, remediation closure, secure SDLC evidence, vulnerability management, incident exercises and any applicable SOC 2/PCI programme. |
 | Backups/recovery | Local operational snapshots, readiness attestations and a draft recovery-exercise procedure exist. | Provider-managed off-site backups, sponsor-approved RPO/RTO, completed isolated restore exercise and accepted continuity/provider-failure evidence. |
+| Render database | The Basic PostgreSQL instance exposes a 3-day point-in-time recovery window and has a logical export created on 2026-08-10. The provider retains export files for at least 7 days. Its external inbound rule currently allows `0.0.0.0/0`. | Replace internet-wide ingress with the narrowest Render/private-network and approved administrative sources, rotate credentials after the rule change, and complete an isolated restore with measured RPO/RTO evidence. |
 | Neon candidate database | A separate Neon project has production/staging/development branches and a dedicated application role, but is not established as the deployed system of record. | Resolve target architecture; rotate exported privileged credentials; review least privilege, Data API/BetterAuth exposure, network controls, paid retention and branch protection; complete migration and isolated restore evidence. See `NEON-READINESS-ASSESSMENT.md`. |
 | Legal authority | No verified legal entity, target jurisdiction, licence/registration, sponsor institution or approved operating model is recorded. | Written counsel advice, verified entity, required authorisations/registrations, executed sponsor contracts and regulator/provider approval. |
 | Customer protection | Preview terms prohibit real funds; database-backed complaint controls and draft privacy/incident procedures exist. | Obtain sponsor/counsel approval for terms, complaint deadlines, funds-protection wording, privacy schedule and consumer-protection procedures. |

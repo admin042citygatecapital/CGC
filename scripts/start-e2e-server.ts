@@ -3,7 +3,10 @@ import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import bcrypt from 'bcryptjs';
-import { E2E_ADMIN, E2E_CUSTOMER } from '../e2e/test-credentials.js';
+import {
+  E2E_ADMIN, E2E_CUSTOMER, E2E_RESET_CUSTOMER,
+  E2E_TWO_FACTOR_CUSTOMER, E2E_UNVERIFIED_CUSTOMER,
+} from '../e2e/test-credentials.js';
 
 const port = process.env.E2E_PORT ?? '5191';
 const root = mkdtempSync(join(tmpdir(), 'cgc-e2e-'));
@@ -17,7 +20,7 @@ const baseEnv: NodeJS.ProcessEnv = {
   ENFORCE_PREVIEW_LOCKS: '1',
   ENABLE_FINANCIAL_OPERATIONS: '0',
   ENABLE_PAPER_TRADING: '0',
-  ALLOW_PUBLIC_REGISTRATION: '0',
+  ALLOW_PUBLIC_REGISTRATION: '1',
   DISABLE_EXTERNAL_MARKET_DATA: '1',
   HOST: '127.0.0.1',
   PORT: port,
@@ -29,7 +32,10 @@ const baseEnv: NodeJS.ProcessEnv = {
   CARD_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
 };
 
-delete baseEnv.DATABASE_URL;
+for (const key of [
+  'DATABASE_URL', 'ZOHO_ACCESS_TOKEN', 'ZOHO_REFRESH_TOKEN', 'ZOHO_CLIENT_SECRET',
+  'ZOHO_SMTP_PASSWORD', 'SMTP_PASSWORD', 'RESEND_API_KEY',
+]) delete baseEnv[key];
 Object.assign(process.env, baseEnv);
 
 const [{ hashPassword }, { createUser }] = await Promise.all([
@@ -37,8 +43,11 @@ const [{ hashPassword }, { createUser }] = await Promise.all([
   import('../src/server/lib/userStore.js'),
 ]);
 
-const [customerHash, adminHash, validatorHash] = await Promise.all([
+const [customerHash, unverifiedHash, resetHash, twoFactorHash, adminHash, validatorHash] = await Promise.all([
   hashPassword(E2E_CUSTOMER.password),
+  hashPassword(E2E_UNVERIFIED_CUSTOMER.password),
+  hashPassword(E2E_RESET_CUSTOMER.password),
+  hashPassword(E2E_TWO_FACTOR_CUSTOMER.password),
   hashPassword(E2E_ADMIN.password),
   bcrypt.hash(E2E_ADMIN.password, 12),
 ]);
@@ -56,6 +65,31 @@ await createUser({
   balance: 125_000,
   primaryCurrency: 'GBP',
   accountTier: 'personal',
+});
+
+await createUser({
+  email: E2E_UNVERIFIED_CUSTOMER.email, name: E2E_UNVERIFIED_CUSTOMER.name,
+  country: 'United Kingdom', status: 'pending_verification', kycStatus: 'not_submitted',
+  emailVerified: false, emailVerifyToken: E2E_UNVERIFIED_CUSTOMER.token,
+  emailVerifyExpiry: new Date(Date.now() + 60 * 60_000).toISOString(),
+  passwordHash: unverifiedHash, balance: 0, primaryCurrency: 'GBP', accountTier: 'personal',
+});
+
+await createUser({
+  email: E2E_RESET_CUSTOMER.email, name: E2E_RESET_CUSTOMER.name,
+  country: 'United Kingdom', status: 'active', kycStatus: 'approved', amlStatus: 'cleared',
+  amlRiskLevel: 'low', emailVerified: true, passwordHash: resetHash,
+  passwordResetToken: E2E_RESET_CUSTOMER.token,
+  passwordResetExpiry: new Date(Date.now() + 60 * 60_000).toISOString(),
+  balance: 0, primaryCurrency: 'GBP', accountTier: 'personal',
+});
+
+await createUser({
+  email: E2E_TWO_FACTOR_CUSTOMER.email, name: E2E_TWO_FACTOR_CUSTOMER.name,
+  country: 'United Kingdom', status: 'active', kycStatus: 'approved', amlStatus: 'cleared',
+  amlRiskLevel: 'low', emailVerified: true, passwordHash: twoFactorHash,
+  totpEnabled: true, totpSecret: E2E_TWO_FACTOR_CUSTOMER.secret,
+  balance: 0, primaryCurrency: 'GBP', accountTier: 'personal',
 });
 
 const child = spawn(process.execPath, ['dist/server.bundle.mjs'], {

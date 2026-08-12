@@ -100,13 +100,13 @@ export async function sendMail(payload: MailPayload): Promise<SendResult> {
   };
   const body = JSON.stringify(bodyObj);
 
-  // Log first 300 chars of body for debugging
+  // Never log message content: transactional HTML can contain OTPs, password
+  // reset links, verification tokens, identity details, or support content.
   console.log(JSON.stringify({
     event:      'email.sending',
     to,
     subject,
-    accountId,
-    bodyPreview: body.slice(0, 300),
+    contentBytes: Buffer.byteLength(body, 'utf8'),
   }));
 
   let lastError = '';
@@ -251,7 +251,10 @@ function parseUaShort(ua: string): string {
 // ─── Transactional email functions ───────────────────────────────────────────
 
 export async function sendVerificationEmail(to: string, name: string, token: string, baseUrl: string) {
-  const url = `${baseUrl}/verify-email?token=${token}`;
+  // Verification is a server-side, single-use action that redirects back to
+  // the login page. Link directly to the registered API route so customers do
+  // not land on the SPA 404 page.
+  const url = `${baseUrl}/api/users/verify-email?token=${encodeURIComponent(token)}`;
   await send({
     to,
     subject: 'Verify Your Email — City Gate Capital',

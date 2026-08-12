@@ -10,6 +10,7 @@ import { appendKycNote } from '../../../../lib/kycStore.js';
 import { sanitizeNote } from '../../../../lib/inputValidator.js';
 import { getLatestOnboardingCaseForUser, reviewOnboardingCase } from '../../../../lib/onboardingStore.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
+import { assertProviderVerificationComplete } from '../../../../lib/onboardingProviderStore.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -24,6 +25,7 @@ export default async function handler(req: Request, res: Response) {
   const onboardingCase = await getLatestOnboardingCaseForUser(userId);
   if (!onboardingCase) return res.status(409).json({ error: 'A submitted onboarding case is required.', code: 'ONBOARDING_CASE_REQUIRED' });
   try {
+    await assertProviderVerificationComplete(onboardingCase.id, onboardingCase.caseType);
     await reviewOnboardingCase({ caseId: onboardingCase.id, reviewerId: session.adminId, decision: 'approved', reason: note });
   } catch (error) {
     const typed = error as Error & { code?: string };

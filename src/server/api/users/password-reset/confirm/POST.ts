@@ -6,6 +6,7 @@ import type { Request, Response } from 'express';
 import { hashPassword } from '../../../../lib/passwordHash.js';
 import { loadAllUsers, updateUser } from '../../../../lib/userStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
+import { deleteAllCustomerSessions } from '../../../../lib/customerSessionStore.js';
 import { sanitizeString, validatePassword } from '../../../../lib/inputValidator.js';
 
 export default async function handler(req: Request, res: Response) {
@@ -41,7 +42,14 @@ export default async function handler(req: Request, res: Response) {
     passwordResetExpiry: undefined,
   } as never);
 
-  appendAudit({ event: 'password_reset_completed', userId: user.id, email: user.email, ip });
+  // A recovered credential must invalidate every existing browser/device
+  // session. Otherwise a stolen session would survive the password reset.
+  const revokedSessions = await deleteAllCustomerSessions(user.id);
+
+  appendAudit({
+    event: 'password_reset_completed', userId: user.id, email: user.email, ip,
+    meta: { revokedSessions },
+  });
 
   return res.json({ ok: true, message: 'Password updated successfully. You can now log in.' });
 }
