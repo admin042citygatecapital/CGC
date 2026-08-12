@@ -40,6 +40,7 @@
     "db:validate": "npx tsx src/server/db/validateMigration.ts",
     "db:rollback": "npx tsx src/server/db/rollback.ts",
     "backup:operations": "npx tsx scripts/backup-operations.ts",
+    "data:quarantine": "npx tsx scripts/quarantine-production-test-data.ts",
     "preview:seed": "npx tsx scripts/seed-preview-user.ts",
     "audit": "better-npm-audit audit --level high --registry=https://registry.npmjs.org --exclude 1124282"
   },

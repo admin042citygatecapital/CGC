@@ -9,7 +9,7 @@ export default async function handler(_req: Request, res: Response) {
   const now = Date.now();
 
   // ── Users ─────────────────────────────────────────────────────────────────
-  const users = await loadAllUsers();
+  const users = (await loadAllUsers()).filter(user => user.dataClassification !== 'quarantined_test');
   const totalUsers           = users.length;
   const activeAccounts       = users.filter(u => u.status === 'active').length;
   const pendingVerifications = users.filter(u => u.kycStatus === 'submitted').length;
@@ -58,7 +58,8 @@ export default async function handler(_req: Request, res: Response) {
   const DEBIT_TYPES    = new Set(['withdrawal', 'manual_debit', 'fee', 'transfer', 'wire_transfer', 'crypto_buy']);
 
   // This is the application preview register, not a sponsor or core ledger.
-  const { data: allTxs } = await queryTransactions({ limit: 100_000 });
+  const { data: transactionRows } = await queryTransactions({ limit: 100_000 });
+  const allTxs = transactionRows.filter(transaction => transaction.dataClassification !== 'synthetic_quarantined');
   const completedTxs = allTxs.filter(t => (t.status as string) === 'completed' || (t.status as string) === 'approved');
 
   // All-time totals

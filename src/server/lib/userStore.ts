@@ -89,6 +89,9 @@ export interface UserRecord {
   notificationPrefs?: unknown;
   beneficiaries?: unknown;
   trustedDevices?: unknown;
+  dataClassification?: string;
+  quarantineBatchId?: string;
+  quarantinedAt?: string;
 }
 
 export type CreateUserInput =
@@ -158,6 +161,9 @@ function toRecord(u: User): UserRecord {
     notificationPrefs:   u.notificationPrefs ?? undefined,
     beneficiaries:       u.beneficiaries ?? undefined,
     trustedDevices:      u.trustedDevices ?? undefined,
+    dataClassification:  u.dataClassification,
+    quarantineBatchId:   u.quarantineBatchId ?? undefined,
+    quarantinedAt:       u.quarantinedAt?.toISOString() ?? undefined,
     createdAt:           u.createdAt.toISOString(),
     updatedAt:           u.updatedAt.toISOString(),
   };

@@ -173,6 +173,9 @@ export const users = pgTable('users', {
   beneficiaries:       jsonb('beneficiaries'),
   // Trusted devices (stored as JSONB array)
   trustedDevices:      jsonb('trusted_devices'),
+  dataClassification:  text('data_classification').notNull().default('customer'),
+  quarantineBatchId:   text('quarantine_batch_id'),
+  quarantinedAt:       timestamp('quarantined_at', { withTimezone: true }),
   // TOTP
   totpSecret:          text('totp_secret'),
   totpEnabled:         boolean('totp_enabled').default(false),
@@ -188,6 +191,7 @@ export const users = pgTable('users', {
   index('users_kyc_status_idx').on(t.kycStatus),
   index('users_aml_status_idx').on(t.amlStatus),
   index('users_created_at_idx').on(t.createdAt),
+  index('users_data_classification_idx').on(t.dataClassification),
 ]);
 
 // ── admins ───────────────────────────────────────────────────────────────
@@ -274,6 +278,8 @@ export const transactions = pgTable('transactions', {
   frozenAt:         timestamp('frozen_at', { withTimezone: true }),
   adminNote:        text('admin_note'),
   flagged:          boolean('flagged').notNull().default(false),
+  dataClassification: text('data_classification').notNull().default('application_record'),
+  quarantineBatchId: text('quarantine_batch_id'),
   ip:               text('ip'),
   createdAt:        timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt:        timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -283,6 +289,7 @@ export const transactions = pgTable('transactions', {
   index('transactions_type_idx').on(t.type),
   index('transactions_created_at_idx').on(t.createdAt),
   index('transactions_flagged_idx').on(t.flagged),
+  index('transactions_data_classification_idx').on(t.dataClassification),
   uniqueIndex('transactions_reference_idx').on(t.reference),
   uniqueIndex('transactions_user_idempotency_idx').on(t.userId, t.idempotencyKey),
 ]);
@@ -995,6 +1002,33 @@ export const plaidItems = pgTable('plaid_items', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex('plaid_items_item_idx').on(t.itemId), index('plaid_items_user_idx').on(t.userId, t.status)]);
 
+export const dataQuarantineBatches = pgTable('data_quarantine_batches', {
+  id: text('id').primaryKey(),
+  providerBackupReference: text('provider_backup_reference').notNull(),
+  reason: text('reason').notNull(),
+  initiatedBy: text('initiated_by').notNull(),
+  status: text('status').$type<'planned'|'applied'|'restored'>().notNull().default('planned'),
+  customerCount: integer('customer_count').notNull().default(0),
+  transactionCount: integer('transaction_count').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  appliedAt: timestamp('applied_at', { withTimezone: true }),
+  restoredAt: timestamp('restored_at', { withTimezone: true }),
+  restoreApprovalReference: text('restore_approval_reference'),
+});
+
+export const dataQuarantineRecords = pgTable('data_quarantine_records', {
+  id: text('id').primaryKey(),
+  batchId: text('batch_id').notNull().references(() => dataQuarantineBatches.id),
+  resourceType: text('resource_type').$type<'user'|'transaction'>().notNull(),
+  resourceId: text('resource_id').notNull(),
+  previousState: jsonb('previous_state').$type<Record<string, unknown>>().notNull(),
+  snapshotSha256: text('snapshot_sha256').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('data_quarantine_records_batch_idx').on(t.batchId),
+  uniqueIndex('data_quarantine_records_batch_resource_idx').on(t.batchId, t.resourceType, t.resourceId),
+]);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User                 = typeof users.$inferSelect;
@@ -1044,3 +1078,5 @@ export type LegalEntityProfileRow = typeof legalEntityProfiles.$inferSelect;
 export type BeneficialOwnerRecordRow = typeof beneficialOwnerRecords.$inferSelect;
 export type LegalEntityVerificationEventRow = typeof legalEntityVerificationEvents.$inferSelect;
 export type PlaidItemRow = typeof plaidItems.$inferSelect;
+export type DataQuarantineBatchRow = typeof dataQuarantineBatches.$inferSelect;
+export type DataQuarantineRecordRow = typeof dataQuarantineRecords.$inferSelect;

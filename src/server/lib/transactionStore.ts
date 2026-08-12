@@ -46,6 +46,8 @@ export interface Transaction {
   frozenAt?:       string;
   adminNote?:      string;
   flagged:         boolean;
+  dataClassification?: string;
+  quarantineBatchId?: string;
   ip?:             string;
   createdAt:       string;
   updatedAt:       string;
@@ -97,6 +99,8 @@ export function toTransactionRecord(r: DbTransaction): Transaction {
     frozenAt:        r.frozenAt?.toISOString() ?? undefined,
     adminNote:       r.adminNote ?? undefined,
     flagged:         r.flagged,
+    dataClassification: r.dataClassification,
+    quarantineBatchId: r.quarantineBatchId ?? undefined,
     ip:              r.ip ?? undefined,
     createdAt:       r.createdAt.toISOString(),
     updatedAt:       r.updatedAt.toISOString(),
