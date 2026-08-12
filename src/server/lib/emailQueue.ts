@@ -43,6 +43,15 @@ export interface QueuedEmail {
   sentAt:        string;
 }
 
+export type EmailDiagnostic = Omit<QueuedEmail, 'html'>;
+
+/** Remove message bodies before returning queue metadata to administration diagnostics. */
+export function toEmailDiagnostic(email: QueuedEmail): EmailDiagnostic {
+  const { html: _sensitiveBody, ...diagnostic } = email;
+  void _sensitiveBody;
+  return diagnostic;
+}
+
 const MAX_ATTEMPTS      = 5;
 const RETRY_INTERVAL_MS = 60_000;
 

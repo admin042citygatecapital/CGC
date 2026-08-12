@@ -24,6 +24,7 @@
 import { Resend } from 'resend';
 import { getSecret } from '#runtime/secrets';
 import type { SmtpMode } from './smtpConfigStore.js';
+import type { ProviderVerification } from './emailProviderHealth.js';
 
 export interface SendResult {
   success:    boolean;
@@ -132,14 +133,25 @@ export async function getEmailDeliveryStatus(
  * Verify transport connectivity — pings Resend API with a domains list call.
  * Used by admin SMTP status/verify endpoints.
  */
-export async function verifyManualSmtp(): Promise<{ ok: boolean; error?: string }> {
+export async function verifyResendProvider(): Promise<ProviderVerification> {
   const resend = getResend();
-  if (!resend) return { ok: false, error: 'RESEND_API_KEY not configured' };
+  if (!resend) return { status: 'unconfigured' };
   try {
     const { error } = await resend.domains.list();
-    if (error) return { ok: false, error: error.message };
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    if (!error) return { status: 'verified' };
+    const statusCode = (error as { statusCode?: number }).statusCode ?? 0;
+    if (statusCode === 401) return { status: 'invalid', detail: 'The provider rejected the API credential.' };
+    if (statusCode === 403) return { status: 'permission_limited' };
+    return { status: 'unavailable', detail: 'The provider verification endpoint is temporarily unavailable.' };
+  } catch {
+    return { status: 'unavailable', detail: 'The provider verification request could not be completed.' };
   }
+}
+
+/** @deprecated Use verifyResendProvider; retained for compatibility with older callers. */
+export async function verifyManualSmtp(): Promise<{ ok: boolean; error?: string }> {
+  const result = await verifyResendProvider();
+  return result.status === 'verified'
+    ? { ok: true }
+    : { ok: false, error: result.detail ?? result.status };
 }

@@ -25,8 +25,9 @@ import { APP_ENV, isProd } from '../../../lib/envConfig.js';
 import { getValidAccessToken } from '../../../lib/zohoTokenStore.js';
 import { seoRoutes } from '../../../../lib/seo-routes.js';
 import { getStorageBackend } from '../../../lib/supabaseStorage.js';
-import { verifyManualSmtp } from '../../../lib/smtpTransport.js';
+import { verifyResendProvider } from '../../../lib/smtpTransport.js';
 import { getEmailLogs } from '../../../lib/emailQueue.js';
+import { assessResendHealth } from '../../../lib/emailProviderHealth.js';
 import { isDatabaseConfigured, testConnection } from '../../../db/db.js';
 import { getOperationalBackupStatus } from '../../../lib/operationalBackup.js';
 import { privateSubdirectory } from '../../../lib/storagePaths.js';
@@ -139,28 +140,16 @@ function checkCustomerAuth(): ReadinessCheck {
 async function checkEmailDelivery(): Promise<ReadinessCheck> {
   const resendKey = s('RESEND_API_KEY');
   if (resendKey) {
-    const { result, ms } = await timed(() => verifyManualSmtp());
-    const logs = await getEmailLogs(20);
-    const recentSuccessfulDelivery = logs.some(log =>
-      log.status === 'sent' && !!log.sentAt && new Date(log.sentAt).getTime() > Date.now() - 30 * 86_400_000
-    );
-    return result.ok || recentSuccessfulDelivery
-      ? {
-          id: 'email_delivery', name: 'Resend Email Delivery', subsystem: 'Email',
-          status: 'PASS', critical: false,
-          message: result.ok
-            ? 'Resend API connectivity succeeded. Email delivery is operational.'
-            : 'Recent successful Resend delivery confirms the sending-only API key is operational.',
-          detail: result.ok ? undefined : 'The key cannot list domains, so readiness used recent accepted delivery evidence.',
-          durationMs: ms,
-        }
-      : {
-          id: 'email_delivery', name: 'Resend Email Delivery', subsystem: 'Email',
-          status: 'FAIL', critical: false,
-          message: 'Resend is configured but its API check failed.',
-          detail: result.error,
-          durationMs: ms,
-        };
+    const { result: verification, ms } = await timed(() => verifyResendProvider());
+    const health = assessResendHealth(true, await getEmailLogs(50), verification);
+    return {
+      id: 'email_delivery', name: 'Resend Email Delivery', subsystem: 'Email',
+      status: health.status === 'healthy' ? 'PASS' : health.status === 'degraded' ? 'FAIL' : 'WARN',
+      critical: false,
+      message: health.message,
+      detail: health.detail,
+      durationMs: ms,
+    };
   }
 
   const clientId     = s('ZOHO_CLIENT_ID',     'CLIENTID');

@@ -19,7 +19,7 @@ vi.mock('resend', () => ({
   },
 }));
 
-import { getEmailDeliveryStatus, sendEmail, verifyManualSmtp } from '../../server/lib/smtpTransport.js';
+import { getEmailDeliveryStatus, sendEmail, verifyResendProvider } from '../../server/lib/smtpTransport.js';
 
 describe('Resend transport security and delivery contract', () => {
   beforeEach(() => {
@@ -50,11 +50,23 @@ describe('Resend transport security and delivery contract', () => {
     }));
 
     await expect(getEmailDeliveryStatus('resend-message-1')).resolves.toEqual({ status: 'delivered' });
-    await expect(verifyManualSmtp()).resolves.toEqual({ ok: true });
+    await expect(verifyResendProvider()).resolves.toEqual({ status: 'verified' });
 
     const renderedLogs = log.mock.calls.flat().map(String).join('\n');
     expect(renderedLogs).toContain('email.sent');
     expect(renderedLogs).not.toContain(sensitiveMarker);
     expect(renderedLogs).not.toContain('re_test_api_key_must_not_be_logged');
+  });
+
+  it('classifies a restricted sending key without exposing provider details', async () => {
+    dependencies.domainsList.mockResolvedValue({ data: null, error: { statusCode: 403, message: 'restricted' } });
+    await expect(verifyResendProvider()).resolves.toEqual({ status: 'permission_limited' });
+  });
+
+  it('classifies a rejected credential as invalid', async () => {
+    dependencies.domainsList.mockResolvedValue({ data: null, error: { statusCode: 401, message: 'invalid secret value' } });
+    await expect(verifyResendProvider()).resolves.toEqual({
+      status: 'invalid', detail: 'The provider rejected the API credential.',
+    });
   });
 });

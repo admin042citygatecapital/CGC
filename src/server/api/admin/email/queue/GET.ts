@@ -4,7 +4,7 @@
  * Query: ?view=logs|pending&limit=100
  */
 import type { Request, Response } from 'express';
-import { getEmailLogs, getPendingQueue, getQueueStats } from '../../../../lib/emailQueue.js';
+import { getEmailLogs, getPendingQueue, getQueueStats, toEmailDiagnostic } from '../../../../lib/emailQueue.js';
 
 export default async function handler(req: Request, res: Response) {
   const { view = 'logs', limit = '100' } = req.query as { view?: string; limit?: string };
@@ -12,9 +12,9 @@ export default async function handler(req: Request, res: Response) {
 
   if (view === 'pending') {
     const [data, stats] = await Promise.all([getPendingQueue(), getQueueStats()]);
-    return res.json({ data, stats });
+    return res.json({ data: data.map(toEmailDiagnostic), stats });
   }
 
   const [data, stats] = await Promise.all([getEmailLogs(limitNum), getQueueStats()]);
-  return res.json({ data, stats });
+  return res.json({ data: data.map(toEmailDiagnostic), stats });
 }
