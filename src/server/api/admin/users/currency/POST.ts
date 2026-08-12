@@ -9,7 +9,7 @@
  */
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 
 const SUPPORTED = ['USD', 'EUR', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'SGD', 'AED', 'NGN',
                    'BTC', 'ETH', 'SOL', 'USDT', 'BNB'];
@@ -30,6 +30,8 @@ export default async function handler(req: Request, res: Response) {
   if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
 
   const previous = user.primaryCurrency ?? 'USD';
+  await appendCriticalAudit({ event: 'admin_set_user_currency_intent', adminId: session?.adminId ?? 'admin', userId,
+    email: session?.email ?? '', ip: req.ip ?? 'unknown', meta: { targetEmail: user.email, previousCurrency: previous, newCurrency: cur } });
   const updated  = await updateUser(userId, { primaryCurrency: cur });
   if (!updated) return res.status(500).json({ ok: false, error: 'Update failed' });
 

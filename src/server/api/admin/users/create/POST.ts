@@ -5,7 +5,7 @@
 import type { Request, Response } from 'express';
 import { hashPassword } from '../../../../lib/passwordHash.js';
 import { createUser, findUserByEmail } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 
 export default async function handler(req: Request, res: Response) {
@@ -28,6 +28,14 @@ export default async function handler(req: Request, res: Response) {
   if (existing) return res.status(409).json({ error: 'Email already registered' });
 
   const passwordHash = await hashPassword(String(password));
+
+  await appendCriticalAudit({
+    event: 'admin_user_create_intent',
+    adminId: session.adminId,
+    email: session.email,
+    ip: req.ip,
+    meta: { targetEmail: String(email).toLowerCase().trim(), status, kycStatus, accountTier },
+  });
 
   const user = await createUser({
     name: String(name),

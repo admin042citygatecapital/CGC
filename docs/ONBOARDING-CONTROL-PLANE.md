@@ -12,10 +12,11 @@ Approval cannot rely on a customer-typed provider reference. An individual requi
 
 ## Separation of duties
 
-- Compliance administrators and super-admins can access the administration workspace.
-- An administrator cannot review a case they submitted or last edited.
-- The administrator who approves KYC cannot complete the subsequent AML decision.
-- AML and sanctions cases require a different administrator to clear or block a case opened or last edited by another administrator.
+- The deployed administration surface uses one privileged super-administrator identity; no hidden or shared secondary administrator is created to satisfy a checkbox.
+- The independent maker is the allow-listed identity/screening provider. Its signed, replay-protected identity/KYB and screening events cannot be created through the administration UI.
+- The super-administrator is the accountable human checker. KYC and AML clearance both revalidate the current provider evidence, persist a fail-closed audit intent, and record distinct `kycReviewedBy`, `amlReviewedBy`, and final `approvedBy` identities/timestamps.
+- An administrator still cannot review customer evidence or a compliance case they personally submitted or last edited. Provider-opened AML and sanctions cases may be dispositioned by the super-administrator because the provider is the separate maker.
+- Final registration approval rechecks the provider evidence and requires recorded KYC and AML review history. It activates only the platform profile; it cannot unlock financial operations.
 - Direct edits to email-verification, KYC, and account-status fields are prohibited. Restrictions use the dedicated audited action API.
 
 ## Audit and notifications
@@ -45,8 +46,8 @@ The same signed callback supports `purpose: "rescreen"` only for screening
 events attached to an already approved onboarding case. A clear result records
 the screening time and schedules the next annual review. A provider review or
 match result fails closed: the customer AML state moves to review and an
-immutable AML or sanctions case is opened for a different compliance
-administrator to resolve. Provider callbacks cannot mark the human compliance
+immutable AML or sanctions case is opened by the provider for the accountable
+super-administrator to resolve. Provider callbacks cannot mark the human compliance
 case clear or activate financial operations.
 
 Ongoing screening queue:

@@ -46,7 +46,6 @@ Shield,
 ShieldCheck,
 ShieldOff,
 ShieldX,
-Trash2,
 Unlock,
 UserCheck,UserX,
 Wallet,
@@ -317,9 +316,9 @@ function ResetPasswordModal({ user, onClose, onSuccess }: { user: User; onClose:
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Delete Confirm Modal
+// Reversible customer suspension modal
 // ─────────────────────────────────────────────────────────────────────────────
-function DeleteModal({ user, onClose, onSuccess }: { user: User; onClose: () => void; onSuccess: (msg: string) => void }) {
+function SuspendModal({ user, onClose, onSuccess }: { user: User; onClose: () => void; onSuccess: (msg: string) => void }) {
   const [reason, setReason] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -329,31 +328,32 @@ function DeleteModal({ user, onClose, onSuccess }: { user: User; onClose: () => 
   async function submit() {
     if (confirm !== expected) { setError(`Type "${expected}" to confirm`); return; }
     setLoading(true); setError('');
-    const res = await fetch('/api/admin/users/delete', {
+    if (reason.trim().length < 10) { setError('Provide a rationale of at least 10 characters'); return; }
+    const res = await fetch('/api/admin/users/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ userId: user.id, reason }),
+      body: JSON.stringify({ userId: user.id, action: 'suspend', reason }),
     });
     const d = await res.json();
     setLoading(false);
-    if (res.ok) { onSuccess(d.message ?? 'Customer deleted'); onClose(); }
-    else setError(d.error ?? 'Deletion failed');
+    if (res.ok) { onSuccess(d.message ?? 'Customer access suspended'); onClose(); }
+    else setError(d.error ?? 'Suspension failed');
   }
 
   return (
-    <ModalShell title="Delete Customer Account" onClose={onClose} icon={Trash2} iconColor="#EF4444">
+    <ModalShell title="Suspend Customer Access" onClose={onClose} icon={ShieldOff} iconColor="#F59E0B">
       <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/8 border border-red-500/20 mb-4">
         <AlertTriangle size={16} className="text-red-400 shrink-0" />
         <div>
-          <p className="text-red-300 text-sm font-semibold">This action is permanent and cannot be undone.</p>
-          <p className="text-red-400/60 text-xs mt-0.5">All data for <strong className="text-red-300">{user.name}</strong> will be permanently removed.</p>
+          <p className="text-red-300 text-sm font-semibold">Access will be blocked immediately.</p>
+          <p className="text-red-400/60 text-xs mt-0.5">Records for <strong className="text-red-300">{user.name}</strong> are retained for audit and can be reactivated after review.</p>
         </div>
       </div>
       {error && <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4"><AlertTriangle size={13} />{error}</div>}
       <div className="space-y-3">
         <div>
-          <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Deletion Reason</label>
-          <input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Fraudulent account, duplicate, customer request..."
+          <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Suspension rationale</label>
+          <input value={reason} onChange={e => setReason(e.target.value)} placeholder="Explain why access must be suspended..."
             className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-red-500/40" />
         </div>
         <div>
@@ -368,8 +368,8 @@ function DeleteModal({ user, onClose, onSuccess }: { user: User; onClose: () => 
         <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/8 text-white/50 text-sm hover:bg-white/[0.04]">Cancel</button>
         <button onClick={submit} disabled={loading || confirm !== expected}
           className="flex-1 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-semibold hover:bg-red-500/30 flex items-center justify-center gap-2 disabled:opacity-40">
-          {loading ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-          Permanently Delete
+          {loading ? <Loader2 size={13} className="animate-spin" /> : <ShieldOff size={13} />}
+          Suspend Access
         </button>
       </div>
     </ModalShell>
@@ -861,11 +861,11 @@ function CustomerDrawer({
               <Bell size={13} className="text-blue-400" />
               <span className="text-[9px] text-blue-400/70">Notify</span>
             </button>
-            {/* Delete */}
-            <button onClick={() => onDelete(user)} title="Delete Account"
+            {/* Suspend and preserve */}
+            <button onClick={() => onDelete(user)} title="Suspend Account"
               className="flex flex-col items-center gap-1 p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-colors">
-              <Trash2 size={13} className="text-red-400" />
-              <span className="text-[9px] text-red-400/70">Delete</span>
+              <ShieldOff size={13} className="text-red-400" />
+              <span className="text-[9px] text-red-400/70">Suspend</span>
             </button>
           </div>
         </div>
@@ -1200,7 +1200,7 @@ export default function AdminUsers() {
 
         <AnimatePresence>
           {deleteUser && (
-            <DeleteModal
+            <SuspendModal
               user={deleteUser}
               onClose={() => setDeleteUser(null)}
               onSuccess={msg => { showToast(msg); fetchUsers(); setSelected(null); }}

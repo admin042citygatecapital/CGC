@@ -11,6 +11,8 @@ function customer(overrides: Partial<UserRecord> = {}): UserRecord {
     status: 'active',
     kycStatus: 'approved',
     kycApprovedAt: now,
+    kycReviewedBy: 'admin_compliance',
+    kycReviewReason: 'Reviewed current provider-backed identity evidence.',
     amlStatus: 'cleared',
     amlRiskLevel: 'low',
     amlReviewedAt: now,
@@ -49,6 +51,13 @@ describe('financial compliance gate', () => {
     await expect(evaluateFinancialAccess(customer({ kycApprovedAt: undefined }))).resolves.toMatchObject({
       allowed: false,
       code: 'KYC_REQUIRED',
+    });
+  });
+
+  it('fails closed when the KYC reviewer record or rationale is missing', async () => {
+    await expect(evaluateFinancialAccess(customer({ kycReviewedBy: undefined }))).resolves.toMatchObject({
+      allowed: false,
+      code: 'KYC_EVIDENCE_INCOMPLETE',
     });
   });
 

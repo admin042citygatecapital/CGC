@@ -37,14 +37,14 @@ export default async function handler(req: Request, res: Response) {
     status:       'pending_approval',
     kycStatus:    'approved',
     kycApprovedAt: new Date().toISOString(),
+    kycReviewedBy: session.adminId,
+    kycReviewReason: note,
     amlStatus:    'pending',
     amlRiskLevel: 'unrated',
     amlReviewedAt: '',
     amlReviewedBy: '',
     amlReviewReason: '',
     amlNextReviewAt: '',
-    approvedAt:   new Date().toISOString(),
-    approvedBy:   session.adminId,
   });
 
   appendAudit({

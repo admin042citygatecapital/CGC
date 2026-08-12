@@ -1,11 +1,13 @@
 /**
  * POST /api/admin/users/delete
- * Permanently deletes a customer record. Requires SUPER_ADMIN role.
- * Writes a tombstone to the audit log before deletion.
+ * Hard deletion is intentionally disabled. Regulated customer and financial
+ * records must be suspended, retained, or processed through the controlled
+ * quarantine/retention workflow.
  */
 import type { Request, Response } from 'express';
-import { deleteUser, findUserById } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { findUserById } from '../../../../lib/userStore.js';
+import { appendCriticalAudit } from '../../../../lib/auditLog.js';
+import { sanitizeNote } from '../../../../lib/inputValidator.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -15,24 +17,21 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
+  const rationale = sanitizeNote(reason ?? '').slice(0, 1000);
+  if (rationale.length < 10) return res.status(400).json({ error: 'A rationale of at least 10 characters is required.' });
 
-  // Write tombstone audit entry BEFORE deletion
-  appendAudit({
-    event: 'admin_user_deleted',
+  await appendCriticalAudit({
+    event: 'admin_user_hard_delete_blocked',
     adminId: session.adminId,
     userId: user.id,
-    email: user.email,
+    email: session.email,
     ip: req.ip,
-    reason: reason ?? 'Admin deletion',
-    meta: { name: user.name, status: user.status, kycStatus: user.kycStatus },
+    reason: rationale,
+    meta: { targetEmail: user.email, name: user.name, status: user.status, kycStatus: user.kycStatus },
   });
 
-  try {
-    const deleted = await deleteUser(userId);
-    if (!deleted) return res.status(404).json({ error: 'User not found' });
-  } catch (e) {
-    return res.status(500).json({ error: 'Failed to delete user', detail: String(e) });
-  }
-
-  return res.json({ ok: true, message: `Account for ${user.name} permanently deleted` });
+  return res.status(409).json({
+    error: 'Permanent customer deletion is disabled. Suspend the profile or use the controlled retention/quarantine workflow.',
+    code: 'HARD_DELETE_DISABLED',
+  });
 }

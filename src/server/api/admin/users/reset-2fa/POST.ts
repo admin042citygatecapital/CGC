@@ -5,7 +5,7 @@
  */
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -16,6 +16,8 @@ export default async function handler(req: Request, res: Response) {
   const user = await findUserById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
+  await appendCriticalAudit({ event: 'admin_user_2fa_reset_intent', adminId: session.adminId, userId,
+    email: session.email, ip: req.ip, meta: { targetEmail: user.email } });
   // Clear 2FA fields and invalidate session
   await updateUser(userId, {
     totpSecret:  undefined,

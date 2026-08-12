@@ -38,6 +38,10 @@ Cards, crypto custody and crypto execution are outside this package. The sponsor
 
 Only controlled evidence references, owners, dates and SHA-256 hashes belong in the sponsor-readiness workspace. Identity documents, credentials and original legal documents must remain in approved external repositories.
 
+### Evidence mutation and audit integrity
+
+Every sponsor-evidence create, edit, submit, review, expiry, package decision and export first persists a fail-closed central audit intent. The evidence state change and its immutable lifecycle event are then committed together in one PostgreSQL transaction. Concurrent edits or reviews are rejected rather than overwriting a newer decision. A central completion-log failure raises an operational alert while the append-only lifecycle event remains the durable completion record. None of these actions changes `LIVE_PROVIDER_ADAPTERS_IMPLEMENTED` or unlocks financial operations.
+
 ## Current 2026 regulatory baseline
 
 - The FCA's EMI application guidance requires adequate capital, robust governance and controls, fit-and-proper ownership and management, safeguarding, and Money Laundering Regulations compliance. It also expects supporting material covering risk management, wind-down, incidents, sensitive payment data, business continuity and outsourcing: [FCA — Electronic money institution applicants](https://www.fca.org.uk/firms/apply-emoney-payment-institution/emi).

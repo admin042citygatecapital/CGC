@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { sendRejectionEmail } from '../../../../lib/emailService.js';
 import { sanitizeNote } from '../../../../lib/inputValidator.js';
 
@@ -20,6 +20,8 @@ export default async function handler(req: Request, res: Response) {
   const rejectionReason = sanitizeNote(reason ?? '').slice(0, 1000);
   if (rejectionReason.length < 10) return res.status(400).json({ error: 'A denial rationale of at least 10 characters is required.' });
 
+  await appendCriticalAudit({ event: 'admin_user_reject_intent', adminId: session.adminId, userId, email: session.email,
+    reason: rejectionReason, meta: { targetEmail: user.email, previousStatus: user.status }, ip: req.ip });
   await updateUser(userId, {
     status: 'rejected',
     kycStatus: 'rejected',

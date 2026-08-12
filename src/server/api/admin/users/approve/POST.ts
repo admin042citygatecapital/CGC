@@ -1,9 +1,11 @@
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { sendApprovalEmail } from '../../../../lib/emailService.js';
 import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
 import { sanitizeNote } from '../../../../lib/inputValidator.js';
+import { getLatestOnboardingCaseForUser } from '../../../../lib/onboardingStore.js';
+import { assertProviderVerificationComplete } from '../../../../lib/onboardingProviderStore.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -24,8 +26,20 @@ export default async function handler(req: Request, res: Response) {
     return res.status(409).json({ error: 'User is already active' });
   }
 
-  if (user.approvedBy === session.adminId || user.amlReviewedBy === session.adminId) {
-    return res.status(409).json({ error: 'Final approval must be completed by a different administrator from the KYC and AML reviewers.', code: 'MAKER_CHECKER_REQUIRED' });
+  if (!user.kycReviewedBy || !user.amlReviewedBy) {
+    return res.status(409).json({ error: 'Recorded KYC and AML reviewers are required before final registration approval.', code: 'REVIEW_HISTORY_REQUIRED' });
+  }
+
+  // A signed, allow-listed provider verification is the independent maker;
+  // the sole super-administrator is the accountable checker. This avoids
+  // hidden administrator accounts without allowing self-generated evidence.
+  const onboardingCase = await getLatestOnboardingCaseForUser(userId);
+  if (!onboardingCase) return res.status(409).json({ error: 'A provider-backed onboarding case is required.', code: 'ONBOARDING_CASE_REQUIRED' });
+  try {
+    await assertProviderVerificationComplete(onboardingCase.id, onboardingCase.caseType);
+  } catch (error) {
+    const typed = error as Error & { code?: string };
+    return res.status(409).json({ error: typed.message, code: typed.code });
   }
 
   const compliance = await evaluateFinancialAccess({ ...user, status: 'active' });
@@ -37,6 +51,8 @@ export default async function handler(req: Request, res: Response) {
     });
   }
 
+  await appendCriticalAudit({ event: 'admin_user_approve_intent', adminId: session.adminId, userId, email: session.email, reason,
+    meta: { targetEmail: user.email, previousStatus: user.status, kycStatus: user.kycStatus, amlStatus: user.amlStatus }, ip: req.ip });
   await updateUser(userId, { status: 'active', approvedAt: new Date().toISOString(), approvedBy: session.adminId });
 
   appendAudit({ event: 'admin_user_approve', adminId: session.adminId, userId, email: user.email, reason,

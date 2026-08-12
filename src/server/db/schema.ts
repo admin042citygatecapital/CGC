@@ -154,6 +154,8 @@ export const users = pgTable('users', {
   idDocumentUrl:       text('id_document_url'),
   kycSubmittedAt:      timestamp('kyc_submitted_at', { withTimezone: true }),
   kycApprovedAt:       timestamp('kyc_approved_at', { withTimezone: true }),
+  kycReviewedBy:       text('kyc_reviewed_by'),
+  kycReviewReason:     text('kyc_review_reason'),
   kycRejectedAt:       timestamp('kyc_rejected_at', { withTimezone: true }),
   kycRejectionReason:  text('kyc_rejection_reason'),
   selfieUrl:           text('selfie_url'),

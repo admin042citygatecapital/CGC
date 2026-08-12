@@ -8,6 +8,8 @@ import {
   type AMLStatus,
 } from '../../../../lib/userStore.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
+import { getLatestOnboardingCaseForUser } from '../../../../lib/onboardingStore.js';
+import { assertProviderVerificationComplete } from '../../../../lib/onboardingProviderStore.js';
 
 const AML_STATUSES = ['not_screened', 'pending', 'cleared', 'review', 'blocked'] as const;
 const RISK_LEVELS = ['unrated', 'low', 'medium', 'high'] as const;
@@ -40,8 +42,15 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserById(userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
-  if (user.approvedBy === session.adminId && ['cleared', 'review', 'blocked'].includes(amlStatus)) {
-    return res.status(409).json({ error: 'A different compliance administrator must complete AML review after KYC approval.', code: 'MAKER_CHECKER_REQUIRED' });
+  if (amlStatus === 'cleared') {
+    const onboardingCase = await getLatestOnboardingCaseForUser(userId);
+    if (!onboardingCase) return res.status(409).json({ error: 'A provider-backed onboarding case is required.', code: 'ONBOARDING_CASE_REQUIRED' });
+    try {
+      await assertProviderVerificationComplete(onboardingCase.id, onboardingCase.caseType);
+    } catch (error) {
+      const typed = error as Error & { code?: string };
+      return res.status(409).json({ error: typed.message, code: typed.code });
+    }
   }
 
   await appendCriticalAudit({

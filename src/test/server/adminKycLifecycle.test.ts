@@ -106,6 +106,7 @@ describe('super-administrator KYC lifecycle', () => {
     }));
     expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, expect.objectContaining({
       status: 'pending_approval', kycStatus: 'approved', amlStatus: 'pending',
+      kycReviewedBy: adminSession.adminId,
     }));
     expect(dependencies.appendAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_approve' }));
     expect(dependencies.appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_approve_intent' }));

@@ -16,7 +16,8 @@ export default async function handler(req: Request, res: Response) {
         emailVerified: user.emailVerified, kycStatus: user.kycStatus,
         amlStatus: user.amlStatus, amlRiskLevel: user.amlRiskLevel,
         kycApprovedAt: user.kycApprovedAt, amlReviewedAt: user.amlReviewedAt,
-        amlNextReviewAt: user.amlNextReviewAt, approvedBy: user.approvedBy,
+        amlNextReviewAt: user.amlNextReviewAt, kycReviewedBy: user.kycReviewedBy,
+        approvedBy: user.approvedBy,
         amlReviewedBy: user.amlReviewedBy,
       } : null,
     });

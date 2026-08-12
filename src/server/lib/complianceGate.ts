@@ -6,6 +6,7 @@ export type FinancialAccessCode =
   | 'ACCOUNT_INACTIVE'
   | 'EMAIL_UNVERIFIED'
   | 'KYC_REQUIRED'
+  | 'KYC_EVIDENCE_INCOMPLETE'
   | 'KYC_EXPIRED'
   | 'AML_NOT_CLEARED'
   | 'AML_EVIDENCE_INCOMPLETE'
@@ -43,6 +44,9 @@ export async function evaluateFinancialAccess(user: UserRecord, suppliedSettings
   }
   if (!user.kycApprovedAt) {
     return { allowed: false, code: 'KYC_REQUIRED', message: 'KYC approval is missing its decision timestamp and must be reviewed.', ...base };
+  }
+  if (!user.kycReviewedBy || !user.kycReviewReason || user.kycReviewReason.trim().length < 10) {
+    return { allowed: false, code: 'KYC_EVIDENCE_INCOMPLETE', message: 'KYC approval is missing its accountable reviewer or rationale.', ...base };
   }
 
   const settings = suppliedSettings ?? await readKycSettings();

@@ -6,7 +6,7 @@
 import type { Request, Response } from 'express';
 import { hashPassword } from '../../../../lib/passwordHash.js';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -24,6 +24,8 @@ export default async function handler(req: Request, res: Response) {
 
   const passwordHash = await hashPassword(newPassword);
 
+  await appendCriticalAudit({ event: 'admin_user_password_reset_intent', adminId: session.adminId, userId,
+    email: session.email, ip: req.ip, meta: { targetEmail: user.email } });
   await updateUser(userId, {
     passwordHash,
     // Invalidate any active session

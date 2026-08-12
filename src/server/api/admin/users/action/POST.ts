@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAuditEntry } from '../../../../lib/auditLog.js';
+import { appendAuditEntry, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
 import { sanitizeNote, safeParseId } from '../../../../lib/inputValidator.js';
 
@@ -33,11 +33,21 @@ export default async function handler(req: Request, res: Response) {
     return res.status(409).json({ error: 'Reactivation requires verified email, approved KYC, and cleared AML.', code: 'COMPLIANCE_CLEARANCE_REQUIRED' });
   }
 
+  const nextStatus = action === 'reactivate' ? 'active' : action === 'freeze' ? 'frozen' : 'suspended';
+  await appendCriticalAudit({ event: `admin_user_${action}_intent`, adminId: session.adminId, userId,
+    email: session.email, ip: req.ip, reason, meta: { targetEmail: user.email, previousStatus: user.status, nextStatus } });
   await updateUser(userId, patches[action]);
-  await appendAuditEntry({
-    adminId: session.adminId, adminEmail: session.email, action: `admin_user_${action}`,
-    target: 'user', targetId: userId, ip: req.ip, details: { userId, reason, previousStatus: user.status, nextStatus: action === 'reactivate' ? 'active' : action === 'freeze' ? 'frozen' : 'suspended' },
-  });
+  try {
+    await appendAuditEntry({
+      adminId: session.adminId, adminEmail: session.email, action: `admin_user_${action}`,
+      target: 'user', targetId: userId, ip: req.ip, details: { userId, reason, previousStatus: user.status, nextStatus },
+    });
+  } catch (error) {
+    console.error('[admin-users] central audit completion write failed', {
+      action, userId, adminId: session.adminId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
   await createNotification(userId, `Platform profile ${action === 'reactivate' ? 'reactivated' : action + 'ed'}`, reason, '/dashboard/profile');
 
   return res.json({ ok: true });

@@ -12,7 +12,7 @@
  */
 import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import {
   safeParseId,
   sanitizeString,
@@ -111,6 +111,8 @@ export default async function handler(req: Request, res: Response) {
   // Final prototype-pollution guard before store write
   const guardedPatch = stripDangerousKeys(safePatch);
 
+  await appendCriticalAudit({ event: 'admin_client_edit_intent', adminId: session.adminId, userId,
+    email: session.email, ip: req.ip ?? 'unknown', meta: { targetEmail: user.email, fields: Object.keys(safePatch), previous: previousValues } });
   const updated = await updateUser(userId, guardedPatch as Parameters<typeof updateUser>[1]);
   if (!updated) return res.status(500).json({ ok: false, error: 'Update failed' });
 
