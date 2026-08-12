@@ -78,6 +78,9 @@ interface HealthData {
   stores: Record<string, { exists: boolean; sizeBytes: number; lineCount: number; lastModified: string | null }>;
   runtime: { activeSessions: number; nodeVersion: string; platform: string; pid: number };
   users: { total: number; verified: number; pending: number; suspended: number };
+  database: { ok: boolean; latencyMs: number | null; provider: string };
+  email: { configured: boolean; provider: string };
+  checks: Record<string, 'PASS' | 'WARN' | 'FAIL'>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -366,12 +369,12 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
       detail: health ? 'Responding' : 'Unreachable',
     },
     {
-      key: 'database',   label: 'Database',   icon: Database,   ok: !!(health?.stores.users?.exists),
-      detail: health ? `${health.stores.users?.lineCount ?? 0} users` : 'Unknown',
+      key: 'database',   label: 'Database',   icon: Database,   ok: !!health?.database.ok,
+      detail: health?.database.ok ? `PostgreSQL · ${health.database.latencyMs ?? 0}ms` : 'Unavailable',
     },
     {
-      key: 'email',      label: 'Email',      icon: Mail,       ok: !!(health?.stores.contacts?.exists !== false),
-      detail: 'Zoho Mail',
+      key: 'email',      label: 'Email',      icon: Mail,       ok: !!health?.email.configured,
+      detail: health?.email.provider ?? 'Unknown',
     },
     {
       key: 'server',     label: 'Server',     icon: Server,     ok: !!health,

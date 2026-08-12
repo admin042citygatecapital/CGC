@@ -342,9 +342,9 @@ function SystemHealthPill() {
   }, []);
 
   const cfg = {
-    ok:    { color: '#10B981', label: 'All Systems Operational', Icon: CheckCircle2 },
-    warn:  { color: '#F59E0B', label: 'Degraded',                Icon: AlertCircle },
-    error: { color: '#EF4444', label: 'System Alert',            Icon: AlertTriangle },
+    ok:    { color: '#10B981', label: 'Platform Healthy', Icon: CheckCircle2 },
+    warn:  { color: '#F59E0B', label: 'Platform Warning', Icon: AlertCircle },
+    error: { color: '#EF4444', label: 'Platform Alert',   Icon: AlertTriangle },
   }[status];
 
   return (

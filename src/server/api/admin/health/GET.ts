@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { getSecret } from '#runtime/secrets';
+import { isDatabaseConfigured, testConnection } from '../../../db/db.js';
 import { mediaAssetRoot, privateSubdirectory } from '../../../lib/storagePaths.js';
 
 interface StoreStats {
@@ -35,9 +37,18 @@ function countDir(dirPath: string): number {
   }
 }
 
-export default function handler(_req: Request, res: Response) {
+export default async function handler(_req: Request, res: Response) {
   const uptime   = process.uptime();
   const memUsage = process.memoryUsage();
+  const database = isDatabaseConfigured()
+    ? await testConnection()
+    : { ok: false, error: 'DATABASE_URL is not configured' };
+  const resendConfigured = Boolean(getSecret('RESEND_API_KEY'));
+  const zohoConfigured = Boolean(
+    getSecret('ZOHO_CLIENT_ID') && getSecret('ZOHO_CLIENT_SECRET') && getSecret('ZOHO_REFRESH_TOKEN')
+  );
+  const emailConfigured = resendConfigured || zohoConfigured;
+  const memoryWarning = memUsage.heapUsed / Math.max(memUsage.heapTotal, 1) >= 0.85;
 
   // Deep store inspection
   const adminDir = privateSubdirectory('admin');
@@ -87,7 +98,7 @@ export default function handler(_req: Request, res: Response) {
   } catch { /* no users yet */ }
 
   res.status(200).json({
-    status: 'ok',
+    status: database.ok ? 'ok' : 'error',
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version ?? '1.0.0',
     environment: process.env.NODE_ENV ?? 'development',
@@ -101,6 +112,21 @@ export default function handler(_req: Request, res: Response) {
       rssMb:        Math.round(memUsage.rss       / 1024 / 1024),
       freeRamMb:    Math.round(os.freemem()  / 1024 / 1024),
       totalRamMb:   Math.round(os.totalmem() / 1024 / 1024),
+    },
+    database: {
+      ok: database.ok,
+      latencyMs: database.latencyMs ?? null,
+      provider: 'postgresql',
+    },
+    email: {
+      configured: emailConfigured,
+      provider: resendConfigured ? 'Resend' : zohoConfigured ? 'Zoho fallback' : 'Not configured',
+    },
+    checks: {
+      api: 'PASS',
+      database: database.ok ? 'PASS' : 'FAIL',
+      email: emailConfigured ? 'PASS' : 'WARN',
+      memory: memoryWarning ? 'WARN' : 'PASS',
     },
     stores,
     assetDirs,

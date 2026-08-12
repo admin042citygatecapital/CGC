@@ -72,6 +72,18 @@ describe('sponsor readiness lifecycle and validation', () => {
 });
 
 describe('sponsor provider pack', () => {
+  it('exposes the five external acquisition requirements without treating them as evidence', () => {
+    const snapshot = buildSponsorReadinessSnapshot(packageRow, [], []);
+    expect(snapshot.externalEvidenceRequirements.map(item => item.controlKey)).toEqual([
+      'legal_entity_verified', 'beneficial_owners_verified', 'regulatory_perimeter_opinion',
+      'sponsor_term_sheet', 'programme_contract',
+    ]);
+    expect(snapshot.externalEvidenceRequirements.every(item => item.status === 'missing')).toBe(true);
+    expect(snapshot.externalEvidenceRequirements.every(item => item.authority.length > 40 && item.minimumAcceptance.length > 40 && item.insufficientEvidence.length > 30)).toBe(true);
+    expect(snapshot.evidence).toHaveLength(0);
+    expect(snapshot.financialOperationsLocked).toBe(true);
+  });
+
   it('exports deterministic draft contents without source documents or credentials', () => {
     const snapshot = buildSponsorReadinessSnapshot(packageRow, [], []);
     const first = buildSponsorPackZip(snapshot);

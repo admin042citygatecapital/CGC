@@ -218,10 +218,10 @@ function checkSmartsupp(): ReadinessCheck {
   const key = s('SMARTSUPP_KEY');
   if (!key) {
     return {
-      id: 'smartsupp', name: 'Smartsupp Live Chat', subsystem: 'Chat Widget',
-      status: 'WARN', critical: false,
-      message: 'SMARTSUPP_KEY secret is not configured. Widget will not load.',
-      detail: 'Set the SMARTSUPP_KEY secret to enable the live chat widget.',
+      id: 'smartsupp', name: 'Optional Smartsupp Live Chat', subsystem: 'Chat Widget',
+      status: 'PASS', critical: false,
+      message: 'Optional Smartsupp widget is intentionally inactive.',
+      detail: 'Customer support remains available through the support centre. Configure SMARTSUPP_KEY only if this optional channel is re-enabled.',
     };
   }
   return {

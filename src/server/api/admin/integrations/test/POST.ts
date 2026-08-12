@@ -44,6 +44,32 @@ async function testZohoMail(): Promise<{ ok: boolean; message: string }> {
   }
 }
 
+async function testResend(): Promise<{ ok: boolean; message: string }> {
+  const apiKey = s('RESEND_API_KEY');
+  const webhookSecret = s('RESEND_WEBHOOK_SECRET');
+  if (!apiKey) return { ok: false, message: 'RESEND_API_KEY not configured' };
+  try {
+    const resp = await fetch('https://api.resend.com/domains', {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (resp.ok) {
+      return {
+        ok: Boolean(webhookSecret),
+        message: webhookSecret
+          ? 'Resend API verified and signed webhook verification is configured'
+          : 'Resend API verified, but RESEND_WEBHOOK_SECRET is not configured',
+      };
+    }
+    if (resp.status === 401 || resp.status === 403) {
+      return { ok: false, message: `Resend credential could not inspect domains (HTTP ${resp.status})` };
+    }
+    return { ok: false, message: `Resend API returned HTTP ${resp.status}` };
+  } catch (e) {
+    return { ok: false, message: `Network error: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
 async function testSmartsuppApi(): Promise<{ ok: boolean; message: string }> {
   const apiKey = s('SMARTSUPP_API_KEY');
   const widgetKey = s('SMARTSUPP_KEY');
@@ -222,6 +248,7 @@ async function testBankingApi(): Promise<{ ok: boolean; message: string }> {
 // ─── Dispatch ─────────────────────────────────────────────────────────────────
 
 const TESTERS: Record<IntegrationId, () => Promise<{ ok: boolean; message: string }>> = {
+  resend:              testResend,
   zoho_mail:           testZohoMail,
   smartsupp:           testSmartsuppApi,
   cloudflare:          testCloudflare,

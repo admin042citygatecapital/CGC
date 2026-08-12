@@ -4,6 +4,7 @@ import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { beneficialOwnerRecords, legalEntityProfiles, sponsorEvidence, sponsorEvidenceEvents, sponsorPackages } from '../db/schema.js';
 import type { SponsorEvidenceRow } from '../db/schema.js';
 import { appendAuditEntry, appendCriticalAudit } from './auditLog.js';
+import { EXTERNAL_SPONSOR_EVIDENCE } from './externalSponsorEvidence.js';
 import {
   PRODUCT_PROFILE, SPONSOR_CONTROLS, SPONSOR_PACKAGE_ID, SPONSOR_PACKAGE_VERSION,
   canManageCategory, findSponsorControl,
@@ -183,6 +184,10 @@ export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages
     summary: { total: controlRows.length, approved: approvedCount, outstanding: gaps.length, percent: Math.round((approvedCount / controlRows.length) * 100), fullyReviewed, sponsorSubmissionReady },
     gaps,
     structuredLegalEntity: { entity, owners, verified: legalEntityState === 'verified' },
+    externalEvidenceRequirements: EXTERNAL_SPONSOR_EVIDENCE.map(requirement => ({
+      ...requirement,
+      status: controlRows.find(control => control.key === requirement.controlKey)?.status ?? 'missing',
+    })),
     financialOperationsLocked: true,
   };
 }

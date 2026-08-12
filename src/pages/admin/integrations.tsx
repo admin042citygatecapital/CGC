@@ -156,6 +156,7 @@ interface TestResult {
 // ─── Category icon map ────────────────────────────────────────────────────────
 
 const INTEGRATION_ICONS: Record<string, React.ElementType> = {
+  resend:             Mail,
   zoho_mail:          Mail,
   smartsupp:          MessageSquare,
   cloudflare:         Shield,

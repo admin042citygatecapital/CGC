@@ -8,7 +8,7 @@ import type { Request, Response } from 'express';
 import { updateIntegration, type IntegrationId } from '../../../lib/integrationStore.js';
 
 const VALID_IDS = new Set<IntegrationId>([
-  'zoho_mail', 'smartsupp', 'cloudflare', 'google_analytics',
+  'resend', 'zoho_mail', 'smartsupp', 'cloudflare', 'google_analytics',
   'google_tag_manager', 'google_maps', 'stripe', 'paypal',
   'twilio', 'whatsapp_business', 'banking_api',
 ]);

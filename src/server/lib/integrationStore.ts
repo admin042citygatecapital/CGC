@@ -19,6 +19,7 @@ const FILE = path.join(DIR, 'integrations.json');
 // ─── Integration IDs ──────────────────────────────────────────────────────────
 
 export type IntegrationId =
+  | 'resend'
   | 'zoho_mail'
   | 'smartsupp'
   | 'cloudflare'
@@ -52,7 +53,7 @@ function defaultRecord(id: IntegrationId): IntegrationRecord {
 }
 
 const ALL_IDS: IntegrationId[] = [
-  'zoho_mail', 'smartsupp', 'cloudflare', 'google_analytics',
+  'resend', 'zoho_mail', 'smartsupp', 'cloudflare', 'google_analytics',
   'google_tag_manager', 'google_maps', 'stripe', 'paypal',
   'twilio', 'whatsapp_business', 'banking_api',
 ];
@@ -132,10 +133,25 @@ interface IntegrationMeta {
 }
 
 const META: Record<IntegrationId, IntegrationMeta> = {
+  resend: {
+    name:        'Resend',
+    category:    'Email',
+    description: 'Primary transactional email delivery for verification, security, KYC and service notifications.',
+    docsUrl:     'https://resend.com/docs',
+    secretSpecs: [
+      { name: 'RESEND_API_KEY',        label: 'API Key',        required: true  },
+      { name: 'RESEND_WEBHOOK_SECRET', label: 'Webhook Secret', required: true  },
+    ],
+    configFields: [
+      { key: 'fromEmail', label: 'From Email', placeholder: 'noreply@citygate.capital' },
+      { key: 'fromName',  label: 'From Name',  placeholder: 'City Gate Capital' },
+      { key: 'replyTo',   label: 'Reply-To',   placeholder: 'support@citygate.capital' },
+    ],
+  },
   zoho_mail: {
     name:        'Zoho Mail',
     category:    'Email',
-    description: 'Transactional email delivery via Zoho Mail OAuth. Powers all system emails — KYC alerts, password resets, and notifications.',
+    description: 'Business mailbox and OAuth delivery fallback. Resend remains the primary transactional provider.',
     docsUrl:     'https://www.zoho.com/mail/help/api/',
     secretSpecs: [
       { name: 'ZOHO_CLIENT_ID',     label: 'Client ID',     required: true  },
@@ -298,14 +314,14 @@ const META: Record<IntegrationId, IntegrationMeta> = {
 
 // ─── Derive connection status from secrets ────────────────────────────────────
 
-function deriveStatus(id: IntegrationId, record: IntegrationRecord): ConnectionStatus {
-  if (!record.enabled) return 'disconnected';
+function deriveStatus(id: IntegrationId, _record: IntegrationRecord): ConnectionStatus {
   const specs = META[id].secretSpecs;
   const required = specs.filter(s => s.required);
   const optional = specs.filter(s => !s.required);
   const requiredPresent = required.every(s => hasSecret(s.name));
   const optionalPresent = optional.some(s => hasSecret(s.name));
   if (required.length === 0 && optional.length === 0) return 'unknown';
+  if (required.length === 0) return optionalPresent ? 'connected' : 'disconnected';
   if (requiredPresent) return 'connected';
   if (optionalPresent || required.some(s => hasSecret(s.name))) return 'partial';
   return 'disconnected';
