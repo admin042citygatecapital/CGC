@@ -1007,6 +1007,7 @@ export const plaidItems = pgTable('plaid_items', {
 export const dataQuarantineBatches = pgTable('data_quarantine_batches', {
   id: text('id').primaryKey(),
   providerBackupReference: text('provider_backup_reference').notNull(),
+  providerBackupVerifiedAt: timestamp('provider_backup_verified_at', { withTimezone: true }).notNull(),
   reason: text('reason').notNull(),
   initiatedBy: text('initiated_by').notNull(),
   status: text('status').$type<'planned'|'applied'|'restored'>().notNull().default('planned'),

@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import type { Request, Response } from 'express';
 import { getSecret } from '#runtime/secrets';
-import { reviewSponsorPackage } from '../../../../lib/sponsorReadinessStore.js';
+import { reviewSponsorEvidence, reviewSponsorPackage } from '../../../../lib/sponsorReadinessStore.js';
 import { sponsorError } from '../../../../lib/sponsorReadinessHttp.js';
 
 function safeEqualHex(left: string, right: string): boolean {
@@ -23,13 +23,27 @@ export default async function handler(req: Request, res: Response) {
       return res.status(400).json({ error: 'decision must be approved or rejected', code: 'VALIDATION_ERROR' });
     }
     const reviewerId = `external_checker_${crypto.createHash('sha256').update(reviewerEmail).digest('hex').slice(0, 16)}`;
-    await reviewSponsorPackage(decision, req.body?.note, {
+    const actor = {
       id: reviewerId,
       email: reviewerEmail,
       role: 'COMPLIANCE_ADMIN',
       ip: req.ip ?? 'unknown',
-    });
-    return res.json({ ok: true, reviewer: reviewerEmail, decision });
+    } as const;
+    const requestedTarget = req.body?.target ?? 'package';
+    if (requestedTarget !== 'evidence' && requestedTarget !== 'package') {
+      return res.status(400).json({ error: 'target must be evidence or package', code: 'VALIDATION_ERROR' });
+    }
+    const target = requestedTarget;
+    if (target === 'evidence') {
+      const evidenceId = String(req.body?.evidenceId ?? '').trim();
+      if (!/^sev_[A-Za-z0-9-]{8,100}$/.test(evidenceId)) {
+        return res.status(400).json({ error: 'A valid evidenceId is required.', code: 'VALIDATION_ERROR' });
+      }
+      await reviewSponsorEvidence(evidenceId, decision, req.body?.note, actor);
+      return res.json({ ok: true, reviewerId, target, evidenceId, decision });
+    }
+    await reviewSponsorPackage(decision, req.body?.note, actor);
+    return res.json({ ok: true, reviewerId, target, decision });
   } catch (error) {
     return sponsorError(res, error);
   }

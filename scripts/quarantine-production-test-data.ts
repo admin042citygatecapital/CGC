@@ -29,6 +29,9 @@ async function run() {
     emails: emails(),
     confirmationSha256: process.env.QUARANTINE_CONFIRM_SHA256 ?? '',
     providerBackupReference: process.env.PROVIDER_BACKUP_REFERENCE ?? '',
+    providerBackupVerifiedAt: process.env.PROVIDER_BACKUP_VERIFIED_AT ?? '',
+    expectedCustomerCount: Number(process.env.QUARANTINE_EXPECTED_CUSTOMERS),
+    expectedTransactionCount: Number(process.env.QUARANTINE_EXPECTED_TRANSACTIONS),
     reason: process.env.QUARANTINE_REASON ?? '',
     actor: process.env.QUARANTINE_ACTOR ?? '',
   });

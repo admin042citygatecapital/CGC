@@ -461,6 +461,12 @@ app.use('/api/providers/onboarding/webhook', rateLimitMiddleware(
   'Provider webhook rate limit exceeded.',
 ));
 
+app.use('/api/admin/sponsor-readiness/external-review', rateLimitMiddleware(
+  req => `sponsor-external-review:${req.ip}`,
+  { windowMs: 60_000, max: 10 },
+  'Independent sponsor review rate limit exceeded.',
+));
+
 // ── Force JSON-only responses on all /api routes ─────────────────────────────
 // Prevents Express default HTML error pages from reaching clients.
 // The JSON error handler registered after route registrations catches any

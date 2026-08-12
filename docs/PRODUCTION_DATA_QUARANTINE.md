@@ -6,7 +6,7 @@ This procedure suspends explicitly identified test customers and classifies thei
 
 1. Create a provider-managed PostgreSQL backup and record its immutable provider reference.
 2. Confirm the backup is complete and visible in the provider console.
-3. Prepare an exact comma-separated list of test addresses. The tool accepts only reserved domains such as `example.com` and `.test`; all other identities require manual review.
+3. Prepare an exact comma-separated list of test addresses. The tool accepts only non-public reserved/special-use domains such as `example.com`, `.test`, `.invalid`, `.local`, and `localhost`; all other identities require manual review.
 4. Run the preview and compare the candidate count and transaction count with the approved change record.
 5. Record the preview's SHA-256 confirmation value. A changed candidate list produces a different value and cannot be applied using an older confirmation.
 
@@ -24,10 +24,12 @@ The preview returns hashed email identifiers, record IDs, counts, and the requir
 
 Set all of the following only in the controlled operations environment:
 
-- `MANAGED_DATABASE_BACKUPS_CONFIRMED=1`
 - `PROVIDER_BACKUP_REFERENCE`
+- `PROVIDER_BACKUP_VERIFIED_AT` (a valid timestamp from the last 72 hours)
 - `QUARANTINE_USER_EMAILS`
 - `QUARANTINE_CONFIRM_SHA256`
+- `QUARANTINE_EXPECTED_CUSTOMERS`
+- `QUARANTINE_EXPECTED_TRANSACTIONS`
 - `QUARANTINE_REASON`
 - `QUARANTINE_ACTOR`
 
@@ -48,6 +50,8 @@ npm run data:quarantine -- --restore=dqb_BATCH_ID
 ```
 
 Every append-only snapshot hash is checked before restoration. Restoring classification and account status does not recreate revoked sessions; affected users must authenticate again.
+
+`PROVIDER_BACKUP_VERIFIED_AT` proves only that the specific pre-change backup was observed and available. It does not satisfy disaster-recovery readiness. Keep `MANAGED_DATABASE_BACKUPS_CONFIRMED=0` and do not set `BACKUP_LAST_RESTORE_TEST_AT` until an isolated restore exercise has actually passed.
 
 ## Invariants
 

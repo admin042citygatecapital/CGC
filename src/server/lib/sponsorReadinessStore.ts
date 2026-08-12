@@ -86,10 +86,13 @@ export function assertMakerChecker(evidence: Pick<SponsorEvidenceRow, 'submitted
   }
 }
 
-function assertCategoryRole(controlKey: string, role: AdminRole): void {
+export function assertSponsorCategoryOwnership(controlKey: string, actor: Pick<SponsorActor, 'id' | 'role'>): void {
   const control = findSponsorControl(controlKey);
   if (!control) throw new SponsorReadinessError('Unknown sponsor control.', 'UNKNOWN_CONTROL');
-  if (!canManageCategory(role, control.category)) throw new SponsorReadinessError('Your role does not own this control category.', 'CATEGORY_FORBIDDEN', 403);
+  const independentChecker = actor.id.startsWith('external_checker_');
+  if (!independentChecker && !canManageCategory(actor.role, control.category)) {
+    throw new SponsorReadinessError('Your role does not own this control category.', 'CATEGORY_FORBIDDEN', 403);
+  }
 }
 
 async function ensurePackage(): Promise<void> {
@@ -200,14 +203,14 @@ export function deriveLegalEntityState(evidence: Array<Pick<SponsorEvidenceRow, 
 
 export async function saveSponsorEvidence(input: EvidenceInput, actor: SponsorActor): Promise<SponsorEvidenceRow> {
   requireDatabase(); await ensurePackage();
-  const value = validateEvidenceInput(input); assertCategoryRole(value.controlKey, actor.role);
+  const value = validateEvidenceInput(input); assertSponsorCategoryOwnership(value.controlKey, actor);
   const db = getDb(); const now = new Date();
   let saved: SponsorEvidenceRow;
   if (input.id) {
     const evidenceId = input.id;
     const existing = await db.select().from(sponsorEvidence).where(and(eq(sponsorEvidence.id, evidenceId), eq(sponsorEvidence.packageId, SPONSOR_PACKAGE_ID))).limit(1);
     if (!existing[0]) throw new SponsorReadinessError('Evidence not found.', 'NOT_FOUND', 404);
-    assertCategoryRole(existing[0].controlKey, actor.role);
+    assertSponsorCategoryOwnership(existing[0].controlKey, actor);
     await auditIntent(actor, 'sponsor_evidence_edit_intent', evidenceId, { controlKey: value.controlKey, priorStatus: existing[0].status });
     saved = await db.transaction(async tx => {
       const rows = await tx.update(sponsorEvidence).set({ ...value, status: 'draft', lastEditedBy: actor.id, submittedBy: null, submittedAt: null, reviewedBy: null, reviewedAt: null, reviewNote: null, updatedAt: now }).where(and(eq(sponsorEvidence.id, evidenceId), eq(sponsorEvidence.updatedAt, existing[0].updatedAt))).returning();
@@ -236,7 +239,7 @@ export async function submitSponsorEvidence(id: string, actor: SponsorActor): Pr
   requireDatabase(); const db = getDb();
   const rows = await db.select().from(sponsorEvidence).where(and(eq(sponsorEvidence.id, id), eq(sponsorEvidence.packageId, SPONSOR_PACKAGE_ID))).limit(1);
   const current = rows[0]; if (!current) throw new SponsorReadinessError('Evidence not found.', 'NOT_FOUND', 404);
-  assertCategoryRole(current.controlKey, actor.role);
+  assertSponsorCategoryOwnership(current.controlKey, actor);
   const status = effectiveEvidenceStatus(current);
   if (status !== 'draft' && status !== 'rejected' && status !== 'expired') throw new SponsorReadinessError('Only draft, rejected or expired evidence can be submitted.', 'INVALID_STATE', 409);
   if (!current.sha256) throw new SponsorReadinessError('A SHA-256 digest is required before submission.', 'HASH_REQUIRED');
@@ -256,7 +259,7 @@ export async function reviewSponsorEvidence(id: string, decision: 'approved' | '
   requireDatabase(); const db = getDb();
   const rows = await db.select().from(sponsorEvidence).where(and(eq(sponsorEvidence.id, id), eq(sponsorEvidence.packageId, SPONSOR_PACKAGE_ID))).limit(1);
   const current = rows[0]; if (!current) throw new SponsorReadinessError('Evidence not found.', 'NOT_FOUND', 404);
-  assertCategoryRole(current.controlKey, actor.role); assertMakerChecker(current, actor.id);
+  assertSponsorCategoryOwnership(current.controlKey, actor); assertMakerChecker(current, actor.id);
   if (current.status !== 'submitted') throw new SponsorReadinessError('Only submitted evidence may be reviewed.', 'INVALID_STATE', 409);
   const reviewNote = cleanText(note, 'review note', 10, 1000); const now = new Date();
   await auditIntent(actor, `sponsor_evidence_${decision}_intent`, id, { controlKey: current.controlKey, priorStatus: current.status });

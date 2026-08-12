@@ -42,6 +42,10 @@ Only controlled evidence references, owners, dates and SHA-256 hashes belong in 
 
 Every sponsor-evidence create, edit, submit, review, expiry, package decision and export first persists a fail-closed central audit intent. The evidence state change and its immutable lifecycle event are then committed together in one PostgreSQL transaction. Concurrent edits or reviews are rejected rather than overwriting a newer decision. A central completion-log failure raises an operational alert while the append-only lifecycle event remains the durable completion record. None of these actions changes `LIVE_PROVIDER_ADAPTERS_IMPLEMENTED` or unlocks financial operations.
 
+The sole super-administrator may create and submit evidence but cannot approve their own submission. A separately authenticated independent checker uses the rate-limited external-review endpoint to approve or reject submitted evidence across all control categories and later review the submitted package. The checker credential is stored only as a SHA-256 hash and cannot create an administration session.
+
+Three existing internal controls can be introduced progressively as **draft** metadata using `npm run sponsor:evidence:drafts`: the customer-onboarding policy, signed-provider-webhook controls, and complaints procedure. The command is dry-run by default, calculates the source-file SHA-256 values at execution time, and skips controls that already have evidence. Applying it creates drafts only; it does not submit, approve, or satisfy external sponsor/counsel dependencies.
+
 ## Current 2026 regulatory baseline
 
 - The FCA's EMI application guidance requires adequate capital, robust governance and controls, fit-and-proper ownership and management, safeguarding, and Money Laundering Regulations compliance. It also expects supporting material covering risk management, wind-down, incidents, sensitive payment data, business continuity and outsourcing: [FCA — Electronic money institution applicants](https://www.fca.org.uk/firms/apply-emoney-payment-institution/emi).

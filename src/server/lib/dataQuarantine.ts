@@ -1,7 +1,10 @@
 import crypto from 'node:crypto';
 import { getQueryClient, isDatabaseConfigured } from '../db/db.js';
 
-const TEST_EMAIL = /^[^@\s]+@(example\.(com|net|org)|[^@\s]+\.(test|invalid)|localhost)$/i;
+// Only IANA/special-use non-public domains are accepted. `.local` is included
+// for the legacy City Gate preview identity; arbitrary production domains are
+// intentionally rejected even when an operator claims they are test data.
+const TEST_EMAIL = /^[^@\s]+@(example\.(com|net|org)|[^@\s]+\.(test|invalid|local)|localhost)$/i;
 const SAFE_REFERENCE = /^[A-Za-z0-9][A-Za-z0-9._:/-]{5,199}$/;
 
 export interface QuarantineCandidate {
@@ -84,12 +87,12 @@ export async function quarantineTestData(options: {
   emails: string[];
   confirmationSha256: string;
   providerBackupReference: string;
+  providerBackupVerifiedAt: string;
+  expectedCustomerCount: number;
+  expectedTransactionCount: number;
   reason: string;
   actor: string;
 }): Promise<{ batchId: string; customerCount: number; transactionCount: number; revokedSessions: number }> {
-  if (process.env.MANAGED_DATABASE_BACKUPS_CONFIRMED !== '1') {
-    throw new Error('Managed database backups must be confirmed before quarantine.');
-  }
   const emails = normalizeTestEmails(options.emails);
   const expectedConfirmation = sha256(emails.join('\n'));
   if (!/^[0-9a-f]{64}$/i.test(options.confirmationSha256) ||
@@ -97,6 +100,17 @@ export async function quarantineTestData(options: {
     throw new Error('Quarantine confirmation hash does not match the exact candidate list.');
   }
   const providerBackupReference = assertReference(options.providerBackupReference, 'Provider backup reference');
+  const providerBackupVerifiedAt = new Date(options.providerBackupVerifiedAt);
+  const backupAgeMs = Date.now() - providerBackupVerifiedAt.getTime();
+  if (!Number.isFinite(providerBackupVerifiedAt.getTime()) || backupAgeMs < -5 * 60_000 || backupAgeMs > 72 * 60 * 60_000) {
+    throw new Error('Provider backup verification must be a valid timestamp from the last 72 hours.');
+  }
+  if (!Number.isInteger(options.expectedCustomerCount) || options.expectedCustomerCount < 1 || options.expectedCustomerCount !== emails.length) {
+    throw new Error('Expected customer count must exactly match the approved email list.');
+  }
+  if (!Number.isInteger(options.expectedTransactionCount) || options.expectedTransactionCount < 0) {
+    throw new Error('Expected transaction count must be a non-negative integer.');
+  }
   const actor = options.actor.trim();
   const reason = options.reason.trim();
   if (actor.length < 3 || actor.length > 200) throw new Error('A valid quarantine actor is required.');
@@ -117,7 +131,7 @@ export async function quarantineTestData(options: {
       ORDER BY lower(email)
       FOR UPDATE
     `;
-    if (candidates.length !== emails.length) throw new Error('Candidate set changed after preview; run preview again.');
+    if (candidates.length !== options.expectedCustomerCount) throw new Error('Candidate set changed after preview; run preview again.');
     if (candidates.some(row => row.quarantine_batch_id || row.data_classification === 'quarantined_test')) {
       throw new Error('One or more candidates are already quarantined.');
     }
@@ -131,12 +145,15 @@ export async function quarantineTestData(options: {
       ORDER BY id
       FOR UPDATE
     `;
+    if (transactionRows.length !== options.expectedTransactionCount) {
+      throw new Error('Linked transaction set changed after preview; run preview again.');
+    }
 
     await transaction`
       INSERT INTO data_quarantine_batches
-        (id, provider_backup_reference, reason, initiated_by, status, customer_count, transaction_count)
+        (id, provider_backup_reference, provider_backup_verified_at, reason, initiated_by, status, customer_count, transaction_count)
       VALUES
-        (${batchId}, ${providerBackupReference}, ${reason}, ${actor}, 'planned', ${candidates.length}, ${transactionRows.length})
+        (${batchId}, ${providerBackupReference}, ${providerBackupVerifiedAt}, ${reason}, ${actor}, 'planned', ${candidates.length}, ${transactionRows.length})
     `;
 
     for (const row of candidates) {
@@ -195,7 +212,7 @@ export async function quarantineTestData(options: {
       VALUES
         (${`al_${crypto.randomBytes(8).toString('hex')}`}, ${actor}, ${actor}, 'production_test_data_quarantined',
          'data_quarantine_batch', ${batchId},
-         ${transaction.json({ providerBackupReference, reason, customerCount: candidates.length, transactionCount: transactionRows.length, candidateEmailHashes: candidates.map(row => sha256(row.email)) })}, NOW())
+         ${transaction.json({ providerBackupReference, providerBackupVerifiedAt: providerBackupVerifiedAt.toISOString(), reason, customerCount: candidates.length, transactionCount: transactionRows.length, candidateEmailHashes: candidates.map(row => sha256(row.email)) })}, NOW())
     `;
     return { batchId, customerCount: candidates.length, transactionCount: transactionRows.length, revokedSessions: revoked.length };
   });

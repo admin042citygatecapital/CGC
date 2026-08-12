@@ -13,6 +13,7 @@ ALTER TABLE transactions
 CREATE TABLE IF NOT EXISTS data_quarantine_batches (
   id TEXT PRIMARY KEY,
   provider_backup_reference TEXT NOT NULL,
+  provider_backup_verified_at TIMESTAMPTZ NOT NULL,
   reason TEXT NOT NULL,
   initiated_by TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'planned',

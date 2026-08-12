@@ -9,7 +9,7 @@ import { SPONSOR_CONTROLS, canManageCategory } from '../../server/lib/sponsorRea
 import { buildSponsorPackFiles, buildSponsorPackZip } from '../../server/lib/sponsorReadinessExport.js';
 import {
   SponsorReadinessError, assertMakerChecker, buildSponsorReadinessSnapshot,
-  deriveLegalEntityState, effectiveEvidenceStatus, validateEvidenceInput,
+  assertSponsorCategoryOwnership, deriveLegalEntityState, effectiveEvidenceStatus, validateEvidenceInput,
 } from '../../server/lib/sponsorReadinessStore.js';
 
 describe('legal entity state', () => {
@@ -66,6 +66,8 @@ describe('sponsor readiness lifecycle and validation', () => {
     expect(canManageCategory('COMPLIANCE_ADMIN', 'aml_sanctions')).toBe(true);
     expect(canManageCategory('SECURITY_ADMIN', 'privacy')).toBe(true);
     expect(canManageCategory('SUPPORT_ADMIN', 'privacy')).toBe(false);
+    expect(() => assertSponsorCategoryOwnership('authoritative_ledger', { id: 'compliance-admin', role: 'COMPLIANCE_ADMIN' })).toThrow(/does not own/);
+    expect(() => assertSponsorCategoryOwnership('authoritative_ledger', { id: 'external_checker_12345678', role: 'COMPLIANCE_ADMIN' })).not.toThrow();
   });
 });
 
