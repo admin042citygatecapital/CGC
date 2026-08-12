@@ -61,6 +61,7 @@ interface DepHealth {
   runtimeDeps: Array<{ name: string; version: string }>;
 }
 interface ErrorMonitor {
+  source: 'postgresql' | 'unavailable'; windowHours: number;
   recentErrors: Array<{ ts: string; type: string; detail: string; ip?: string }>;
   http5xx: number; http4xx: number; totalRequests: number; errorRate: number;
 }
@@ -420,7 +421,7 @@ function DbDiagnostics({ data }: { data: DeveloperData['db'] }) {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-white/5">
-              {['Status','Name','Type','Rows','Size','Last Modified','Path'].map(h => (
+              {['Status','Name','Type','Estimated Rows','Size','Last Maintained','Path'].map(h => (
                 <th key={h} className="text-left text-white/25 font-medium py-2.5 px-3 whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -435,7 +436,7 @@ function DbDiagnostics({ data }: { data: DeveloperData['db'] }) {
                 </td>
                 <td className="py-2.5 px-3 text-white/70 font-medium whitespace-nowrap">{f.name}</td>
                 <td className="py-2.5 px-3">
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${f.type === 'jsonl' ? 'text-blue-400 bg-blue-400/10' : 'text-purple-400 bg-purple-400/10'}`}>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded text-purple-400 bg-purple-400/10">
                     {f.type.toUpperCase()}
                   </span>
                 </td>
@@ -590,7 +591,7 @@ function ErrorMonitor({ data }: { data: ErrorMonitor }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatPill label="Total Requests"  value={fmtNum(data.totalRequests)} />
+        <StatPill label={`Requests (${data.windowHours}h)`} value={fmtNum(data.totalRequests)} />
         <StatPill label="5xx Errors"      value={data.http5xx}    color={data.http5xx > 0 ? '#EF4444' : '#10B981'} />
         <StatPill label="4xx Errors"      value={data.http4xx}    color={data.http4xx > 0 ? '#F59E0B' : '#10B981'} />
         <StatPill label="Error Rate"      value={`${data.errorRate}%`} color={errColor} />
@@ -618,7 +619,7 @@ function ErrorMonitor({ data }: { data: ErrorMonitor }) {
         </div>
       ) : (
         <div className="flex items-center gap-2 p-4 rounded-xl bg-emerald-400/[0.04] border border-emerald-400/10 text-emerald-400 text-xs">
-          <CheckCircle2 size={13} /> No recent threat events
+          <CheckCircle2 size={13} /> {data.source === 'postgresql' ? 'No recent threat or server-error events' : 'PostgreSQL diagnostics unavailable'}
         </div>
       )}
     </div>

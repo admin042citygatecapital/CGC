@@ -14,7 +14,7 @@ import fs   from 'node:fs';
 import path from 'node:path';
 import os   from 'node:os';
 import { buildEnvReport } from '../../../lib/envValidator.js';
-import { mediaAssetRoot, privateDataRoot, privateSubdirectory } from '../../../lib/storagePaths.js';
+import { mediaAssetRoot, privateDataRoot } from '../../../lib/storagePaths.js';
 import { getRegisteredRouteCatalogue, type DeveloperRouteEntry } from '../../../lib/developerRouteInventory.js';
 import { getQueryClient, isDatabaseConfigured, testConnection } from '../../../db/db.js';
 
@@ -257,97 +257,56 @@ const ROUTE_CATALOGUE: DeveloperRouteEntry[] = [
 // ─── DB diagnostics ───────────────────────────────────────────────────────────
 
 interface DbFile {
-  name: string; path: string; type: 'jsonl' | 'json';
+  name: string; path: string; type: 'table';
   rows: number; sizeBytes: number; lastModified: string; healthy: boolean; error?: string;
 }
 
-async function scanPostgresTables(): Promise<DbFile[]> {
-  if (!isDatabaseConfigured()) return scanDbFiles();
+export async function scanPostgresTables(): Promise<DbFile[]> {
+  if (!isDatabaseConfigured()) {
+    return [{
+      name: 'PostgreSQL', path: 'public', type: 'table', rows: 0, sizeBytes: 0,
+      lastModified: '', healthy: false, error: 'Database is not configured',
+    }];
+  }
 
   const connection = await testConnection();
   if (!connection.ok) {
     return [{
-      name: 'PostgreSQL', path: 'public', type: 'json', rows: 0, sizeBytes: 0,
+      name: 'PostgreSQL', path: 'public', type: 'table', rows: 0, sizeBytes: 0,
       lastModified: '', healthy: false, error: 'Database connection failed',
     }];
   }
 
   try {
-    const tables = await getQueryClient()<Array<{ table_name: string }>>`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-      ORDER BY table_name
+    const tables = await getQueryClient()<Array<{
+      table_name: string;
+      estimated_rows: number | string;
+      size_bytes: number | string;
+      last_maintained: Date | string | null;
+    }>>`
+      SELECT
+        relname AS table_name,
+        COALESCE(n_live_tup, 0) AS estimated_rows,
+        pg_total_relation_size(relid) AS size_bytes,
+        GREATEST(last_vacuum, last_autovacuum, last_analyze, last_autoanalyze) AS last_maintained
+      FROM pg_stat_user_tables
+      ORDER BY relname
     `;
-    return tables.map(({ table_name }) => ({
+    return tables.map(({ table_name, estimated_rows, size_bytes, last_maintained }) => ({
       name: table_name,
       path: `public.${table_name}`,
-      type: 'json' as const,
-      rows: 0,
-      sizeBytes: 0,
-      lastModified: '',
+      type: 'table' as const,
+      rows: Number(estimated_rows) || 0,
+      sizeBytes: Number(size_bytes) || 0,
+      lastModified: last_maintained ? new Date(last_maintained).toISOString() : '',
       healthy: true,
     }));
   } catch {
     return [{
-      name: 'PostgreSQL', path: 'public', type: 'json', rows: 0, sizeBytes: 0,
+      name: 'PostgreSQL', path: 'public', type: 'table', rows: 0, sizeBytes: 0,
       lastModified: '', healthy: false, error: 'Table inventory unavailable',
     }];
   }
-}
-
-function scanDbFiles(): DbFile[] {
-  const KNOWN: Array<{ name: string; path: string; type: 'jsonl' | 'json' }> = [
-    { name: 'Users',           path: privateSubdirectory('users/users.jsonl'),                 type: 'jsonl' },
-    { name: 'Transactions',    path: privateSubdirectory('transactions/transactions.jsonl'),   type: 'jsonl' },
-    { name: 'Balance Txns',    path: privateSubdirectory('balance/transactions.jsonl'),        type: 'jsonl' },
-    { name: 'Cards',           path: privateSubdirectory('cards/cards.jsonl'),                 type: 'jsonl' },
-    { name: 'Wallets',         path: privateSubdirectory('wallets/wallets.json'),              type: 'json'  },
-    { name: 'Support Convs',   path: privateSubdirectory('support/conversations.jsonl'),       type: 'jsonl' },
-    { name: 'Notifications',   path: privateSubdirectory('notifications/notifications.jsonl'), type: 'jsonl' },
-    { name: 'Newsletter Subs', path: privateSubdirectory('newsletter/subscribers.jsonl'),      type: 'jsonl' },
-    { name: 'Newsletter Log',  path: privateSubdirectory('newsletter/sent-log.jsonl'),         type: 'jsonl' },
-    { name: 'Security Flags',  path: privateSubdirectory('security/flags.jsonl'),              type: 'jsonl' },
-    { name: 'Email Queue',     path: privateSubdirectory('email/queue.jsonl'),                 type: 'jsonl' },
-    { name: 'Email Logs',      path: privateSubdirectory('email/logs.jsonl'),                  type: 'jsonl' },
-    { name: 'Audit Log',       path: privateSubdirectory('admin/audit.jsonl'),                 type: 'jsonl' },
-    { name: 'Audit (legacy)',  path: privateSubdirectory('audit/log.jsonl'),                   type: 'jsonl' },
-    { name: 'Analytics Events',path: privateSubdirectory('analytics/events.jsonl'),            type: 'jsonl' },
-    { name: 'Access Log',      path: privateSubdirectory('logs/access.jsonl'),                 type: 'jsonl' },
-    { name: 'Login Log',       path: privateSubdirectory('logs/login.jsonl'),                  type: 'jsonl' },
-    { name: 'Threats Log',     path: privateSubdirectory('logs/threats.jsonl'),                type: 'jsonl' },
-    { name: 'Fee History',     path: privateSubdirectory('cms/fee-history.jsonl'),             type: 'jsonl' },
-    { name: 'App Config',      path: privateSubdirectory('app_config.json'),                   type: 'json'  },
-    { name: 'KYC Settings',    path: privateSubdirectory('kyc/settings.json'),                 type: 'json'  },
-    { name: 'SMTP Config',     path: privateSubdirectory('smtp/config.json'),                  type: 'json'  },
-    { name: 'Security IP Lists',path: privateSubdirectory('security/ip-lists.json'),           type: 'json'  },
-    { name: 'Security 2FA',    path: privateSubdirectory('security/2fa-policy.json'),          type: 'json'  },
-    { name: 'Security Flags Config', path: privateSubdirectory('security/flag-rules.json'),    type: 'json'  },
-  ];
-
-  return KNOWN.map(f => {
-    try {
-      if (!fs.existsSync(f.path)) return { ...f, rows: 0, sizeBytes: 0, lastModified: '', healthy: false, error: 'File not found' };
-      const stat = fs.statSync(f.path);
-      let rows = 0;
-      let healthy = true;
-      let error: string | undefined;
-      if (f.type === 'jsonl') {
-        const content = fs.readFileSync(f.path, 'utf8');
-        const lines   = content.split('\n').filter(Boolean);
-        rows = lines.length;
-        // Validate last line is valid JSON
-        if (lines.length > 0) {
-          try { JSON.parse(lines[lines.length - 1]); } catch { healthy = false; error = 'Last line is invalid JSON'; }
-        }
-      } else {
-        try { JSON.parse(fs.readFileSync(f.path, 'utf8')); rows = 1; } catch { healthy = false; error = 'Invalid JSON'; }
-      }
-      return { ...f, rows, sizeBytes: stat.size, lastModified: stat.mtime.toISOString(), healthy, error };
-    } catch (e) {
-      return { ...f, rows: 0, sizeBytes: 0, lastModified: '', healthy: false, error: String(e) };
-    }
-  });
 }
 
 // ─── Performance metrics ──────────────────────────────────────────────────────
@@ -430,50 +389,62 @@ function getDependencyHealth() {
 
 // ─── Error monitor ────────────────────────────────────────────────────────────
 
-function getErrorMonitor() {
-  // Read recent threat/error entries from logs
-  const THREATS_FILE = privateSubdirectory('logs/threats.jsonl');
-  const ACCESS_FILE  = privateSubdirectory('logs/access.jsonl');
-
-  let recentErrors: Array<{ ts: string; type: string; detail: string; ip?: string }> = [];
-  let http5xx = 0;
-  let http4xx = 0;
-  let totalRequests = 0;
-
-  try {
-    if (fs.existsSync(THREATS_FILE)) {
-      const lines = fs.readFileSync(THREATS_FILE, 'utf8').split('\n').filter(Boolean);
-      recentErrors = lines.slice(-50).map(l => {
-        try {
-          const e = JSON.parse(l);
-          return { ts: e.ts ?? e.timestamp ?? '', type: e.type ?? 'threat', detail: e.detail ?? e.message ?? '', ip: e.ip };
-        } catch { return { ts: '', type: 'parse_error', detail: l.slice(0, 100) }; }
-      }).reverse();
-    }
-  } catch { /* silent */ }
-
-  try {
-    if (fs.existsSync(ACCESS_FILE)) {
-      const lines = fs.readFileSync(ACCESS_FILE, 'utf8').split('\n').filter(Boolean);
-      totalRequests = lines.length;
-      for (const l of lines.slice(-5000)) {
-        try {
-          const e = JSON.parse(l);
-          const status = Number(e.status ?? e.statusCode ?? 200);
-          if (status >= 500) http5xx++;
-          else if (status >= 400) http4xx++;
-        } catch { /* skip */ }
-      }
-    }
-  } catch { /* silent */ }
-
-  return {
-    recentErrors: recentErrors.slice(0, 20),
-    http5xx,
-    http4xx,
-    totalRequests,
-    errorRate: totalRequests > 0 ? +((http5xx / Math.min(totalRequests, 5000)) * 100).toFixed(2) : 0,
+export async function getErrorMonitor() {
+  const empty = {
+    source: 'unavailable' as const,
+    windowHours: 24,
+    recentErrors: [] as Array<{ ts: string; type: string; detail: string; ip?: string }>,
+    http5xx: 0, http4xx: 0, totalRequests: 0, errorRate: 0,
   };
+  if (!isDatabaseConfigured()) return empty;
+
+  try {
+    const sql = getQueryClient();
+    const [summaryRows, recentRows] = await Promise.all([
+      sql<Array<{ total_requests: number | string; http_4xx: number | string; http_5xx: number | string }>>`
+        SELECT
+          COUNT(*) AS total_requests,
+          COUNT(*) FILTER (WHERE status >= 400 AND status < 500) AS http_4xx,
+          COUNT(*) FILTER (WHERE status >= 500) AS http_5xx
+        FROM access_log
+        WHERE ts >= NOW() - INTERVAL '24 hours'
+      `,
+      sql<Array<{ ts: Date | string; status: number; method: string; url: string; ip: string; threat: string }>>`
+        SELECT ts, status, method, url, ip, threat
+        FROM access_log
+        WHERE ts >= NOW() - INTERVAL '24 hours'
+          AND (status >= 500 OR threat <> 'none')
+        ORDER BY ts DESC
+        LIMIT 20
+      `,
+    ]);
+    const summary = summaryRows[0] ?? { total_requests: 0, http_4xx: 0, http_5xx: 0 };
+    const totalRequests = Number(summary.total_requests) || 0;
+    const http4xx = Number(summary.http_4xx) || 0;
+    const http5xx = Number(summary.http_5xx) || 0;
+    return {
+      source: 'postgresql' as const,
+      windowHours: 24,
+      recentErrors: recentRows.map(row => {
+        const route = row.url.split('?')[0];
+        const isThreat = row.threat !== 'none';
+        return {
+          ts: new Date(row.ts).toISOString(),
+          type: isThreat ? row.threat : 'http_5xx',
+          detail: isThreat
+            ? `${row.threat} detected on ${row.method} ${route}`
+            : `${row.method} ${route} returned ${row.status}`,
+          ip: row.ip,
+        };
+      }),
+      http5xx,
+      http4xx,
+      totalRequests,
+      errorRate: totalRequests > 0 ? +((http5xx / totalRequests) * 100).toFixed(2) : 0,
+    };
+  } catch {
+    return empty;
+  }
 }
 
 // ─── Build information ────────────────────────────────────────────────────────
@@ -569,7 +540,7 @@ export default async function handler(req: Request, res: Response) {
     const [perf, deps, errors, build, deploy, dbFiles, envReport] = await Promise.all([
       Promise.resolve(getPerformanceMetrics()),
       Promise.resolve(getDependencyHealth()),
-      Promise.resolve(getErrorMonitor()),
+      getErrorMonitor(),
       Promise.resolve(getBuildInfo(routeCatalogue.length)),
       Promise.resolve(getDeploymentInfo()),
       scanPostgresTables(),
@@ -593,7 +564,7 @@ export default async function handler(req: Request, res: Response) {
         catalogue:  routeCatalogue,
       },
       db: {
-        backend:    isDatabaseConfigured() ? 'PostgreSQL' : 'Legacy local storage',
+        backend:    isDatabaseConfigured() ? 'PostgreSQL' : 'PostgreSQL unavailable',
         files:      dbFiles,
         totalFiles: dbFiles.length,
         healthy:    dbFiles.filter(f => f.healthy).length,
