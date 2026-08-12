@@ -45,7 +45,7 @@ if (!npmExecPath) throw new Error('npm_execpath is required to run the isolated 
 
 let result;
 try {
-  result = spawnSync(process.execPath, [npmExecPath, 'run', 'verify'], {
+  result = spawnSync(process.execPath, [npmExecPath, 'run', 'verify:checks'], {
     env: isolatedEnv,
     stdio: 'inherit',
     shell: false,
