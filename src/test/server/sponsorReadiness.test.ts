@@ -86,6 +86,8 @@ describe('sponsor provider pack', () => {
       '11-incident-breach-response-procedure.md', '12-disaster-recovery-exercise-procedure.md',
       '13-provider-failure-and-exit-procedure.md', '14-returns-reversals-and-remediation-procedure.md',
       '15-vulnerable-customer-support-procedure.md',
+      '16-double-entry-ledger-integration-procedure.md', '17-cross-border-data-transfer-mapping-procedure.md',
+      '18-business-kyb-and-ownership-procedure.md',
       'README.md', 'evidence-manifest.json',
     ]);
     const allText = Object.values(archive).map(value => strFromU8(value)).join('\n');
@@ -98,6 +100,9 @@ describe('sponsor provider pack', () => {
     expect(allText).toContain('A draft playbook or synthetic rehearsal is not provider operating evidence');
     expect(allText).toContain('No administrator may directly edit a customer balance');
     expect(allText).toContain('Never weaken authentication, fraud, sanctions or safeguarding controls');
+    expect(allText).toContain('Existing application balances and transactions are demonstration projections');
+    expect(allText).toContain('This procedure is a mapping method, not a completed transfer assessment');
+    expect(allText).toContain('KYB approval does not create a live account or enable payments');
     expect(allText).not.toMatch(/RESEND_API_KEY|DATABASE_URL|BEGIN PRIVATE KEY/);
   });
 

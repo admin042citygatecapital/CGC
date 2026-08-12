@@ -19,7 +19,10 @@ export interface InternalSponsorDraft {
     | 'retention_schedule'
     | 'provider_failure'
     | 'returns_reversals'
-    | 'vulnerable_customers';
+    | 'vulnerable_customers'
+    | 'double_entry_design'
+    | 'cross_border_map'
+    | 'business_kyb_policy';
   title: string;
   owner: string;
   sourceFile: string;
@@ -43,6 +46,9 @@ const INCIDENT_PROCEDURE = '11-incident-breach-response-procedure.md';
 const PROVIDER_FAILURE_PROCEDURE = '13-provider-failure-and-exit-procedure.md';
 const REVERSALS_PROCEDURE = '14-returns-reversals-and-remediation-procedure.md';
 const VULNERABLE_CUSTOMER_PROCEDURE = '15-vulnerable-customer-support-procedure.md';
+const DOUBLE_ENTRY_PROCEDURE = '16-double-entry-ledger-integration-procedure.md';
+const CROSS_BORDER_PROCEDURE = '17-cross-border-data-transfer-mapping-procedure.md';
+const BUSINESS_KYB_PROCEDURE = '18-business-kyb-and-ownership-procedure.md';
 
 const SOURCES: DraftSource[] = [
   {
@@ -152,6 +158,30 @@ const SOURCES: DraftSource[] = [
     sourceFile: `sponsor-pack/${VULNERABLE_CUSTOMER_PROCEDURE}`,
     sourceContent: OPERATIONAL_PROCEDURES[VULNERABLE_CUSTOMER_PROCEDURE],
     notes: 'Draft customer-support design only. Sponsor/counsel approval, named owners, staff training, referral routes, accessibility testing and operating-outcomes evidence remain outstanding.',
+  },
+  {
+    controlKey: 'double_entry_design',
+    title: 'Draft sponsor-led double-entry ledger integration design',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${DOUBLE_ENTRY_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[DOUBLE_ENTRY_PROCEDURE],
+    notes: 'Draft integration design only. Sponsor approval, a contracted sponsor/core ledger, approved chart of accounts, provider identifier mapping, certification and reconciled operating evidence remain outstanding.',
+  },
+  {
+    controlKey: 'cross_border_map',
+    title: 'Draft cross-border data-transfer mapping procedure',
+    owner: 'Security',
+    sourceFile: `sponsor-pack/${CROSS_BORDER_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[CROSS_BORDER_PROCEDURE],
+    notes: 'Draft mapping method only. Sponsor and DPO/counsel approval, a complete production data inventory, named processors and subprocessors, confirmed hosting/access locations, transfer assessments and safeguards remain outstanding.',
+  },
+  {
+    controlKey: 'business_kyb_policy',
+    title: 'Draft business KYB, ownership and authorised-user procedure',
+    owner: 'Compliance',
+    sourceFile: `sponsor-pack/${BUSINESS_KYB_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[BUSINESS_KYB_PROCEDURE],
+    notes: 'Draft onboarding design only. Sponsor approval of risk appetite, jurisdiction, entity scope and ownership thresholds, contracted verification providers, named compliance ownership and operating evidence remain outstanding.',
   },
 ];
 

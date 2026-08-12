@@ -9,8 +9,11 @@ describe('progressive internal sponsor evidence', () => {
       'authoritative_ledger',
       'complaints_resolution',
       'consumer_kyc_policy',
+      'business_kyb_policy',
+      'cross_border_map',
       'daily_reconciliation',
       'breaks_escalation',
+      'double_entry_design',
       'incident_response',
       'privacy_impact',
       'privileged_access',
@@ -35,5 +38,8 @@ describe('progressive internal sponsor evidence', () => {
     expect(drafts.find(item => item.controlKey === 'privacy_impact')?.notes).toMatch(/provider-specific DPIA.*outstanding/i);
     expect(drafts.find(item => item.controlKey === 'returns_reversals')?.notes).toMatch(/provider certification.*outstanding/i);
     expect(drafts.find(item => item.controlKey === 'vulnerable_customers')?.notes).toMatch(/staff training.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'double_entry_design')?.notes).toMatch(/contracted sponsor\/core ledger.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'cross_border_map')?.notes).toMatch(/named processors.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'business_kyb_policy')?.notes).toMatch(/contracted verification providers.*outstanding/i);
   });
 });
