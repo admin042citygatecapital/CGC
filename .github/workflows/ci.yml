@@ -18,9 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      PRIVATE_DATA_ROOT: ${{ runner.temp }}/cgc-private
-      MEDIA_ASSET_ROOT: ${{ runner.temp }}/cgc-private/public-assets
-      BACKUP_DIRECTORY: ${{ runner.temp }}/cgc-private/backups
+      PRIVATE_DATA_ROOT: /tmp/cgc-private-${{ github.run_id }}
+      MEDIA_ASSET_ROOT: /tmp/cgc-private-${{ github.run_id }}/public-assets
+      BACKUP_DIRECTORY: /tmp/cgc-private-${{ github.run_id }}/backups
 
     steps:
       - name: Check out repository
