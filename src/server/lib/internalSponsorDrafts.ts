@@ -16,7 +16,10 @@ export interface InternalSponsorDraft {
     | 'breaks_escalation'
     | 'incident_response'
     | 'privacy_impact'
-    | 'retention_schedule';
+    | 'retention_schedule'
+    | 'provider_failure'
+    | 'returns_reversals'
+    | 'vulnerable_customers';
   title: string;
   owner: string;
   sourceFile: string;
@@ -37,6 +40,9 @@ interface DraftSource {
 const RECONCILIATION_PROCEDURE = '09-safeguarding-reconciliation-procedure.md';
 const PRIVACY_PROCEDURE = '10-privacy-and-data-rights-procedure.md';
 const INCIDENT_PROCEDURE = '11-incident-breach-response-procedure.md';
+const PROVIDER_FAILURE_PROCEDURE = '13-provider-failure-and-exit-procedure.md';
+const REVERSALS_PROCEDURE = '14-returns-reversals-and-remediation-procedure.md';
+const VULNERABLE_CUSTOMER_PROCEDURE = '15-vulnerable-customer-support-procedure.md';
 
 const SOURCES: DraftSource[] = [
   {
@@ -122,6 +128,30 @@ const SOURCES: DraftSource[] = [
     sourceFile: `sponsor-pack/${PRIVACY_PROCEDURE}`,
     sourceContent: OPERATIONAL_PROCEDURES[PRIVACY_PROCEDURE],
     notes: 'Draft procedure only. Sponsor/counsel approval, a system-specific retention schedule, deletion-job evidence and legal-hold governance remain outstanding.',
+  },
+  {
+    controlKey: 'provider_failure',
+    title: 'Draft provider failure, exit and orderly wind-down procedure',
+    owner: 'Security',
+    sourceFile: `sponsor-pack/${PROVIDER_FAILURE_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[PROVIDER_FAILURE_PROCEDURE],
+    notes: 'Draft supplier resilience design only. Sponsor approval, contracted provider exit terms, named owners, portability evidence and completed outage/exit exercises remain outstanding.',
+  },
+  {
+    controlKey: 'returns_reversals',
+    title: 'Draft returns, reversals and customer-remediation procedure',
+    owner: 'Finance',
+    sourceFile: `sponsor-pack/${REVERSALS_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[REVERSALS_PROCEDURE],
+    notes: 'Draft lifecycle design only. Sponsor approval, contracted provider state mapping, authoritative ledger integration, corridor rules and provider certification remain outstanding.',
+  },
+  {
+    controlKey: 'vulnerable_customers',
+    title: 'Draft vulnerable-customer support and outcomes procedure',
+    owner: 'Compliance',
+    sourceFile: `sponsor-pack/${VULNERABLE_CUSTOMER_PROCEDURE}`,
+    sourceContent: OPERATIONAL_PROCEDURES[VULNERABLE_CUSTOMER_PROCEDURE],
+    notes: 'Draft customer-support design only. Sponsor/counsel approval, named owners, staff training, referral routes, accessibility testing and operating-outcomes evidence remain outstanding.',
   },
 ];
 

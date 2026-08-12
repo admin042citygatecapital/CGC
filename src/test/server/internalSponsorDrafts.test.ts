@@ -14,10 +14,13 @@ describe('progressive internal sponsor evidence', () => {
       'incident_response',
       'privacy_impact',
       'privileged_access',
+      'provider_failure',
       'retention_schedule',
       'restore_test',
+      'returns_reversals',
       'safeguarding_reconciliation',
       'signed_webhooks',
+      'vulnerable_customers',
     ].sort());
     for (const draft of drafts) {
       expect(findSponsorControl(draft.controlKey)).toBeDefined();
@@ -30,5 +33,7 @@ describe('progressive internal sponsor evidence', () => {
     expect(drafts.find(item => item.controlKey === 'restore_test')?.notes).toMatch(/completed isolated restore.*outstanding/i);
     expect(drafts.find(item => item.controlKey === 'daily_reconciliation')?.notes).toMatch(/provider statement feeds.*outstanding/i);
     expect(drafts.find(item => item.controlKey === 'privacy_impact')?.notes).toMatch(/provider-specific DPIA.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'returns_reversals')?.notes).toMatch(/provider certification.*outstanding/i);
+    expect(drafts.find(item => item.controlKey === 'vulnerable_customers')?.notes).toMatch(/staff training.*outstanding/i);
   });
 });

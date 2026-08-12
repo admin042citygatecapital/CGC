@@ -84,6 +84,8 @@ describe('sponsor provider pack', () => {
       '06-provider-integration-spec.md', '07-sponsor-rfp.md', '08-gaps-and-dependencies.md',
       '09-safeguarding-reconciliation-procedure.md', '10-privacy-and-data-rights-procedure.md',
       '11-incident-breach-response-procedure.md', '12-disaster-recovery-exercise-procedure.md',
+      '13-provider-failure-and-exit-procedure.md', '14-returns-reversals-and-remediation-procedure.md',
+      '15-vulnerable-customer-support-procedure.md',
       'README.md', 'evidence-manifest.json',
     ]);
     const allText = Object.values(archive).map(value => strFromU8(value)).join('\n');
@@ -93,6 +95,9 @@ describe('sponsor provider pack', () => {
     expect(allText).toContain('A different authorised checker');
     expect(allText).toContain('Incident Commander');
     expect(allText).toContain('real-funds lock');
+    expect(allText).toContain('A draft playbook or synthetic rehearsal is not provider operating evidence');
+    expect(allText).toContain('No administrator may directly edit a customer balance');
+    expect(allText).toContain('Never weaken authentication, fraud, sanctions or safeguarding controls');
     expect(allText).not.toMatch(/RESEND_API_KEY|DATABASE_URL|BEGIN PRIVATE KEY/);
   });
 
