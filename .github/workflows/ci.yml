@@ -17,6 +17,10 @@ jobs:
     name: Verify release
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      PRIVATE_DATA_ROOT: ${{ runner.temp }}/cgc-private
+      MEDIA_ASSET_ROOT: ${{ runner.temp }}/cgc-private/public-assets
+      BACKUP_DIRECTORY: ${{ runner.temp }}/cgc-private/backups
 
     steps:
       - name: Check out repository
