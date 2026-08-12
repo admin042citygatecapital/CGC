@@ -117,10 +117,46 @@ export async function getKycNotesForUser(userId: string): Promise<KycNote[]> {
 
 export async function getKycQueue(): Promise<UserRecord[]> {
   const users = await loadAllUsers();
-  return users.filter(u => u.kycStatus === 'submitted');
+  return users.filter(u => isOperationalKycUser(u) && u.kycStatus === 'submitted');
 }
 
-export async function getKycStats(): Promise<{
+export type EffectiveKycStatus = UserRecord['kycStatus'] | 'expired';
+
+/** Add calendar months without overflowing short months (for example Jan 31). */
+export function addUtcMonths(value: Date, months: number): Date {
+  const result = new Date(value.getTime());
+  const originalDay = result.getUTCDate();
+  result.setUTCDate(1);
+  result.setUTCMonth(result.getUTCMonth() + months);
+  const lastDay = new Date(Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0)).getUTCDate();
+  result.setUTCDate(Math.min(originalDay, lastDay));
+  return result;
+}
+
+/** Quarantined test identities never contribute to operational KYC reporting. */
+export function isOperationalKycUser(user: UserRecord): boolean {
+  return user.dataClassification !== 'quarantined_test' && !user.quarantineBatchId;
+}
+
+export function getKycExpiryAt(user: UserRecord, settings: KycSettings): Date | null {
+  const explicit = user.kycExpiresAt ? new Date(user.kycExpiresAt) : null;
+  if (explicit && Number.isFinite(explicit.getTime())) return explicit;
+  if (!user.kycApprovedAt) return null;
+  const approved = new Date(user.kycApprovedAt);
+  return Number.isFinite(approved.getTime()) ? addUtcMonths(approved, settings.expiryMonths) : null;
+}
+
+export function getEffectiveKycStatus(
+  user: UserRecord,
+  settings: KycSettings,
+  now = Date.now(),
+): EffectiveKycStatus {
+  if (user.kycStatus !== 'approved') return user.kycStatus;
+  const expiry = getKycExpiryAt(user, settings);
+  return expiry && expiry.getTime() <= now ? 'expired' : 'approved';
+}
+
+export interface KycStats {
   pending: number;
   approvedThisWeek: number;
   rejectedThisWeek: number;
@@ -129,36 +165,47 @@ export async function getKycStats(): Promise<{
   avgReviewHours: number;
   totalApproved: number;
   totalRejected: number;
-}> {
-  const users = await loadAllUsers();
-  const settings = await readKycSettings();
-  const now = Date.now();
+}
+
+export function calculateKycStats(
+  allUsers: UserRecord[],
+  settings: KycSettings,
+  now = Date.now(),
+): KycStats {
+  const users = allUsers.filter(isOperationalKycUser);
   const weekAgo = now - 7 * 86_400_000;
   const reminderDeadline = now + settings.renewalReminderDays * 86_400_000;
-  const expiryMs = (user: UserRecord) => user.kycApprovedAt
-    ? new Date(user.kycApprovedAt).getTime() + settings.expiryMonths * 30 * 86_400_000
-    : 0;
   const completedReviewHours = users.flatMap(user => {
-    const decidedAt = user.kycApprovedAt ?? user.kycRejectedAt;
+    const decidedAt = user.kycStatus === 'approved'
+      ? user.kycApprovedAt
+      : user.kycStatus === 'rejected' ? user.kycRejectedAt : undefined;
     if (!user.kycSubmittedAt || !decidedAt) return [];
     const duration = new Date(decidedAt).getTime() - new Date(user.kycSubmittedAt).getTime();
     return Number.isFinite(duration) && duration >= 0 ? [duration / 3_600_000] : [];
   });
   return {
     pending: users.filter(user => user.kycStatus === 'submitted').length,
-    approvedThisWeek: users.filter(user => user.kycApprovedAt && new Date(user.kycApprovedAt).getTime() >= weekAgo).length,
-    rejectedThisWeek: users.filter(user => user.kycRejectedAt && new Date(user.kycRejectedAt).getTime() >= weekAgo).length,
-    expired: users.filter(user => user.kycStatus === 'approved' && expiryMs(user) > 0 && expiryMs(user) <= now).length,
+    approvedThisWeek: users.filter(user => getEffectiveKycStatus(user, settings, now) === 'approved'
+      && user.kycApprovedAt && new Date(user.kycApprovedAt).getTime() >= weekAgo).length,
+    rejectedThisWeek: users.filter(user => user.kycStatus === 'rejected'
+      && user.kycRejectedAt && new Date(user.kycRejectedAt).getTime() >= weekAgo).length,
+    expired: users.filter(user => getEffectiveKycStatus(user, settings, now) === 'expired').length,
     approachingExpiry: users.filter(user => {
-      const expiry = expiryMs(user);
-      return user.kycStatus === 'approved' && expiry > now && expiry <= reminderDeadline;
+      const expiry = getKycExpiryAt(user, settings)?.getTime() ?? 0;
+      return getEffectiveKycStatus(user, settings, now) === 'approved'
+        && expiry > now && expiry <= reminderDeadline;
     }).length,
     avgReviewHours: completedReviewHours.length
       ? Number((completedReviewHours.reduce((sum, hours) => sum + hours, 0) / completedReviewHours.length).toFixed(1))
       : 0,
-    totalApproved: users.filter(user => user.kycStatus === 'approved').length,
+    totalApproved: users.filter(user => getEffectiveKycStatus(user, settings, now) === 'approved').length,
     totalRejected: users.filter(user => user.kycStatus === 'rejected').length,
   };
+}
+
+export async function getKycStats(): Promise<KycStats> {
+  const [users, settings] = await Promise.all([loadAllUsers(), readKycSettings()]);
+  return calculateKycStats(users, settings);
 }
 
 // ── Risk scoring ──────────────────────────────────────────────────────────────
@@ -183,9 +230,8 @@ export async function getExpiringKycUsers(daysAhead: number): Promise<UserRecord
   const deadline = now + daysAhead * 86_400_000;
 
   return users.filter(u => {
-    if (u.kycStatus !== 'approved' || !u.kycApprovedAt) return false;
-    const approvedMs = new Date(u.kycApprovedAt).getTime();
-    const expiryMs   = approvedMs + settings.expiryMonths * 30 * 86_400_000;
+    if (!isOperationalKycUser(u) || getEffectiveKycStatus(u, settings, now) !== 'approved') return false;
+    const expiryMs = getKycExpiryAt(u, settings)?.getTime() ?? 0;
     return expiryMs > now && expiryMs <= deadline;
   });
 }
@@ -193,16 +239,20 @@ export async function getExpiringKycUsers(daysAhead: number): Promise<UserRecord
 // ── KYC lifecycle helpers ─────────────────────────────────────────────────────
 
 /**
- * Extend a user's KYC approval by N months from today.
+ * Extend a user's KYC approval by N calendar months from its current expiry,
+ * or from today when the stored approval is already expired.
  */
 export async function extendKyc(userId: string, months: number, _adminId?: string): Promise<void> {
-  const now      = new Date();
-  const extended = new Date(now.getTime() + months * 30 * 86_400_000);
+  const user = (await loadAllUsers()).find(candidate => candidate.id === userId);
+  if (!user || user.kycStatus !== 'approved') throw new Error('Only an approved KYC record can be extended.');
+  const settings = await readKycSettings();
+  const now = new Date();
+  const currentExpiry = getKycExpiryAt(user, settings);
+  const baseline = currentExpiry && currentExpiry.getTime() > now.getTime() ? currentExpiry : now;
+  const extended = addUtcMonths(baseline, months);
   await updateUser(userId, {
-    kycStatus:     'approved',
-    kycApprovedAt: now.toISOString(),
+    kycExpiresAt: extended.toISOString(),
   });
-  void extended;
 }
 
 /**
@@ -212,29 +262,32 @@ export async function extendKyc(userId: string, months: number, _adminId?: strin
 export async function revokeKyc(userId: string, reason: string, _adminId?: string): Promise<void> {
   await updateUser(userId, {
     kycStatus:          'rejected',
+    kycApprovedAt:      '',
+    kycExpiresAt:       '',
+    kycRejectedAt:      new Date().toISOString(),
     kycRejectionReason: reason,
   });
 }
 
 /** Check if a user's KYC approval has expired based on current settings. */
 export function kycIsExpired(user: UserRecord, settings: KycSettings): boolean {
-  if (!user.kycApprovedAt) return false;
-  const approvedMs = new Date(user.kycApprovedAt).getTime();
-  const expiryMs   = approvedMs + settings.expiryMonths * 30 * 86_400_000;
-  return Date.now() > expiryMs;
+  return getEffectiveKycStatus(user, settings) === 'expired';
 }
 
 
 /** Build an enriched KYC queue entry for a user. */
-export function buildKycQueueEntry(user: UserRecord) {
+export function buildKycQueueEntry(user: UserRecord, settings?: KycSettings) {
+  const effectiveStatus = settings ? getEffectiveKycStatus(user, settings) : user.kycStatus;
   return {
     id:              user.id,
     name:            user.name,
     email:           user.email,
     status:          user.status,
-    kycStatus:       user.kycStatus,
+    kycStatus:       effectiveStatus,
+    storedKycStatus: user.kycStatus,
     kycSubmittedAt:  user.kycSubmittedAt,
     kycApprovedAt:   user.kycApprovedAt,
+    kycExpiresAt:    settings ? getKycExpiryAt(user, settings)?.toISOString() : user.kycExpiresAt,
     kycRejectionReason: user.kycRejectionReason,
     createdAt:       user.createdAt,
     accountTier:     user.accountTier,

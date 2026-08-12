@@ -32,7 +32,20 @@ export default async function handler(req: Request, res: Response) {
     return res.status(409).json({ error: typed.message, code: typed.code });
   }
 
-  await updateUser(userId, { status: 'pending_kyc', kycStatus: 'submitted' });
+  await updateUser(userId, {
+    status: 'pending_kyc',
+    kycStatus: 'submitted',
+    kycApprovedAt: '',
+    kycExpiresAt: '',
+    kycRejectedAt: '',
+    kycRejectionReason: '',
+    amlStatus: 'not_screened',
+    amlRiskLevel: 'unrated',
+    amlReviewedAt: '',
+    amlReviewedBy: '',
+    amlReviewReason: '',
+    amlNextReviewAt: '',
+  });
 
   appendKycNote({ userId, adminId: session.adminId, note: `[INFO REQUEST] ${message}`, createdAt: new Date().toISOString() });
 

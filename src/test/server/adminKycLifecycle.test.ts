@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const dependencies = vi.hoisted(() => ({
   findUserById: vi.fn(), updateUser: vi.fn(), appendAudit: vi.fn(), appendCriticalAudit: vi.fn(), appendKycNote: vi.fn(),
+  readKycSettings: vi.fn(),
   sendMail: vi.fn().mockResolvedValue({ success: true }),
   sendApprovalEmail: vi.fn().mockResolvedValue(undefined),
   sendRejectionEmail: vi.fn().mockResolvedValue(undefined),
@@ -15,7 +16,15 @@ vi.mock('../../server/lib/userStore.js', () => ({
   findUserById: dependencies.findUserById, updateUser: dependencies.updateUser,
 }));
 vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit: dependencies.appendAudit, appendCriticalAudit: dependencies.appendCriticalAudit }));
-vi.mock('../../server/lib/kycStore.js', () => ({ appendKycNote: dependencies.appendKycNote }));
+vi.mock('../../server/lib/kycStore.js', () => ({
+  appendKycNote: dependencies.appendKycNote,
+  readKycSettings: dependencies.readKycSettings,
+  addUtcMonths: (value: Date, months: number) => {
+    const result = new Date(value);
+    result.setUTCMonth(result.getUTCMonth() + months);
+    return result;
+  },
+}));
 vi.mock('../../server/lib/emailService.js', () => ({
   sendMail: dependencies.sendMail,
   sendApprovalEmail: dependencies.sendApprovalEmail,
@@ -63,6 +72,7 @@ describe('super-administrator KYC lifecycle', () => {
     dependencies.submitOnboardingCase.mockResolvedValue({ ...onboardingCase, status: 'submitted' });
     dependencies.assertProviderVerificationComplete.mockResolvedValue(undefined);
     dependencies.appendCriticalAudit.mockResolvedValue(undefined);
+    dependencies.readKycSettings.mockResolvedValue({ expiryMonths: 12, renewalReminderDays: 30, autoRestrictExpired: true });
   });
 
   it('submits a customer case for review without activating financial services', async () => {
@@ -119,7 +129,9 @@ describe('super-administrator KYC lifecycle', () => {
     expect(dependencies.reviewOnboardingCase).toHaveBeenCalledWith(expect.objectContaining({
       caseId: onboardingCase.id, decision: 'needs_info', reviewerId: adminSession.adminId,
     }));
-    expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, { status: 'pending_kyc', kycStatus: 'submitted' });
+    expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, expect.objectContaining({
+      status: 'pending_kyc', kycStatus: 'submitted', kycExpiresAt: '', amlStatus: 'not_screened',
+    }));
     const email = dependencies.sendMail.mock.calls[0][0] as { html: string };
     expect(email.html).not.toContain('<script>');
     expect(email.html).not.toContain('<Customer>');

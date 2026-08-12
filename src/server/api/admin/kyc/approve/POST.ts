@@ -6,7 +6,7 @@ import type { Request, Response } from 'express';
 import { findUserById, updateUser } from '../../../../lib/userStore.js';
 import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { sendApprovalEmail } from '../../../../lib/emailService.js';
-import { appendKycNote } from '../../../../lib/kycStore.js';
+import { addUtcMonths, appendKycNote, readKycSettings } from '../../../../lib/kycStore.js';
 import { sanitizeNote } from '../../../../lib/inputValidator.js';
 import { getLatestOnboardingCaseForUser, reviewOnboardingCase } from '../../../../lib/onboardingStore.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
@@ -24,6 +24,8 @@ export default async function handler(req: Request, res: Response) {
 
   const onboardingCase = await getLatestOnboardingCaseForUser(userId);
   if (!onboardingCase) return res.status(409).json({ error: 'A submitted onboarding case is required.', code: 'ONBOARDING_CASE_REQUIRED' });
+  const approvedAt = new Date();
+  const settings = await readKycSettings();
   await appendCriticalAudit({ event: 'admin_kyc_approve_intent', adminId: session.adminId, userId, email: user.email, reason: note, ip: req.ip ?? 'unknown' });
   try {
     await assertProviderVerificationComplete(onboardingCase.id, onboardingCase.caseType);
@@ -36,9 +38,12 @@ export default async function handler(req: Request, res: Response) {
   await updateUser(userId, {
     status:       'pending_approval',
     kycStatus:    'approved',
-    kycApprovedAt: new Date().toISOString(),
+    kycApprovedAt: approvedAt.toISOString(),
+    kycExpiresAt: addUtcMonths(approvedAt, settings.expiryMonths).toISOString(),
     kycReviewedBy: session.adminId,
     kycReviewReason: note,
+    kycRejectedAt: '',
+    kycRejectionReason: '',
     amlStatus:    'pending',
     amlRiskLevel: 'unrated',
     amlReviewedAt: '',

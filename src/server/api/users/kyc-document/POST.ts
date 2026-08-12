@@ -65,6 +65,12 @@ export default async function handler(req: Request, res: Response) {
     ...(documentKind === 'id' ? { idDocumentUrl: documentUrl } : { selfieUrl: documentUrl }),
     kycStatus: 'submitted',
     kycSubmittedAt: new Date().toISOString(),
+    kycApprovedAt: '',
+    kycExpiresAt: '',
+    kycReviewedBy: '',
+    kycReviewReason: '',
+    kycRejectedAt: '',
+    kycRejectionReason: '',
   } as Parameters<typeof updateUser>[1]);
   return res.json({ ok: true, url: documentUrl });
 }

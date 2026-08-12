@@ -72,6 +72,7 @@ export interface UserRecord {
   idDocumentUrl?: string;
   kycSubmittedAt?: string;
   kycApprovedAt?: string;
+  kycExpiresAt?: string;
   kycReviewedBy?: string;
   kycReviewReason?: string;
   kycRejectedAt?: string;
@@ -145,6 +146,7 @@ function toRecord(u: User): UserRecord {
     idDocumentUrl:       u.idDocumentUrl ?? undefined,
     kycSubmittedAt:      u.kycSubmittedAt?.toISOString() ?? undefined,
     kycApprovedAt:       u.kycApprovedAt?.toISOString() ?? undefined,
+    kycExpiresAt:        u.kycExpiresAt?.toISOString() ?? undefined,
     kycReviewedBy:       u.kycReviewedBy ?? undefined,
     kycReviewReason:     u.kycReviewReason ?? undefined,
     kycRejectedAt:       u.kycRejectedAt?.toISOString() ?? undefined,
@@ -324,6 +326,7 @@ export async function updateUser(id: string, patch: Partial<UserRecord>): Promis
   if (safe.idDocumentUrl !== undefined)      dbPatch.idDocumentUrl      = safe.idDocumentUrl ?? null;
   if (safe.kycSubmittedAt !== undefined)     dbPatch.kycSubmittedAt     = safe.kycSubmittedAt ? new Date(safe.kycSubmittedAt) : null;
   if (safe.kycApprovedAt !== undefined)      dbPatch.kycApprovedAt      = safe.kycApprovedAt ? new Date(safe.kycApprovedAt) : null;
+  if (safe.kycExpiresAt !== undefined)       dbPatch.kycExpiresAt       = safe.kycExpiresAt ? new Date(safe.kycExpiresAt) : null;
   if (safe.kycReviewedBy !== undefined)      dbPatch.kycReviewedBy      = safe.kycReviewedBy ?? null;
   if (safe.kycReviewReason !== undefined)    dbPatch.kycReviewReason    = safe.kycReviewReason ?? null;
   if (safe.kycRejectedAt !== undefined)      dbPatch.kycRejectedAt      = safe.kycRejectedAt ? new Date(safe.kycRejectedAt) : null;

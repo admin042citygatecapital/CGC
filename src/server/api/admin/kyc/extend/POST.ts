@@ -7,6 +7,7 @@ import type { Request, Response } from 'express';
 import { findUserById } from '../../../../lib/userStore.js';
 import { extendKyc, revokeKyc } from '../../../../lib/kycStore.js';
 import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
+import { sanitizeNote } from '../../../../lib/inputValidator.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -21,14 +22,22 @@ export default async function handler(req: Request, res: Response) {
 
   if (action === 'extend') {
     const m = Number(months ?? 12);
-    await appendCriticalAudit({ event: 'admin_kyc_extend_intent', adminId: session.adminId, userId, email: user.email, meta: { months: m }, ip: req.ip ?? 'unknown' });
+    if (!Number.isInteger(m) || m < 1 || m > 60) {
+      return res.status(400).json({ error: 'months must be an integer between 1 and 60' });
+    }
+    if (user.kycStatus !== 'approved') {
+      return res.status(409).json({ error: 'Only an approved KYC record can be extended.', code: 'KYC_NOT_APPROVED' });
+    }
+    await appendCriticalAudit({ event: 'admin_kyc_extend_intent', adminId: session.adminId, userId, email: user.email,
+      reason: `Extend current KYC validity by ${m} calendar month(s).`, meta: { months: m, previousExpiry: user.kycExpiresAt ?? null }, ip: req.ip ?? 'unknown' });
     await extendKyc(userId, m, session.adminId);
     appendAudit({ event: 'admin_kyc_extend', adminId: session.adminId, userId, email: user.email, meta: { months: m }, ip: req.ip ?? 'unknown' });
     return res.json({ ok: true, message: `KYC extended by ${m} months.` });
   }
 
   if (action === 'revoke') {
-    const r = reason ?? 'KYC revoked by administrator.';
+    const r = sanitizeNote(reason ?? '');
+    if (r.length < 10) return res.status(400).json({ error: 'A revocation rationale of at least 10 characters is required.' });
     await appendCriticalAudit({ event: 'admin_kyc_revoke_intent', adminId: session.adminId, userId, email: user.email, reason: r, ip: req.ip ?? 'unknown' });
     await revokeKyc(userId, r, session.adminId);
     appendAudit({ event: 'admin_kyc_revoke', adminId: session.adminId, userId, email: user.email, reason: r, ip: req.ip ?? 'unknown' });

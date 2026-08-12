@@ -11,24 +11,39 @@
  */
 import type { Request, Response } from 'express';
 import { loadAllUsers } from '../../../../lib/userStore.js';
-import { buildKycQueueEntry, readKycSettings, kycIsExpired } from '../../../../lib/kycStore.js';
+import {
+  buildKycQueueEntry,
+  getEffectiveKycStatus,
+  isOperationalKycUser,
+  readKycSettings,
+  type EffectiveKycStatus,
+} from '../../../../lib/kycStore.js';
+
+const ALLOWED_STATUSES = new Set<EffectiveKycStatus>([
+  'submitted', 'approved', 'rejected', 'not_submitted', 'expired',
+]);
+const ALLOWED_SORTS = new Set(['newest', 'oldest', 'risk_high', 'risk_low']);
+
+function boundedInteger(value: unknown, fallback: number, min: number, max: number): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+}
 
 export default async function handler(req: Request, res: Response) {
-  const status  = String(req.query.status  ?? 'submitted');
+  const requestedStatus = String(req.query.status ?? 'submitted') as EffectiveKycStatus;
+  const status = ALLOWED_STATUSES.has(requestedStatus) ? requestedStatus : 'submitted';
   const search  = String(req.query.search  ?? '').toLowerCase().trim();
-  const sort    = String(req.query.sort    ?? 'newest');
-  const page    = Math.max(1, Number(req.query.page  ?? 1));
-  const limit   = Math.min(50, Number(req.query.limit ?? 15));
+  const requestedSort = String(req.query.sort ?? 'newest');
+  const sort = ALLOWED_SORTS.has(requestedSort) ? requestedSort : 'newest';
+  const page = boundedInteger(req.query.page, 1, 1, 100_000);
+  const limit = boundedInteger(req.query.limit, 15, 1, 50);
 
   const settings = await readKycSettings();
-  let users = await loadAllUsers();
+  let users = (await loadAllUsers()).filter(isOperationalKycUser);
 
-  // Filter by status
-  if (status === 'expired') {
-    users = users.filter(u => u.kycStatus === 'approved' && kycIsExpired(u, settings));
-  } else {
-    users = users.filter(u => u.kycStatus === status);
-  }
+  // Use one effective lifecycle status so expired approvals never appear in
+  // both the approved and expired queues.
+  users = users.filter(user => getEffectiveKycStatus(user, settings) === status);
 
   // Search
   if (search) {
@@ -39,7 +54,7 @@ export default async function handler(req: Request, res: Response) {
   }
 
   // Build enriched entries
-  const entries = users.map(u => buildKycQueueEntry(u));
+  const entries = users.map(u => buildKycQueueEntry(u, settings));
 
   // Sort
   switch (sort) {

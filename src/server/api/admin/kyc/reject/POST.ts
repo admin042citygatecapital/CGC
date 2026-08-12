@@ -33,6 +33,10 @@ export default async function handler(req: Request, res: Response) {
   await updateUser(userId, {
     status:             'rejected',
     kycStatus:          'rejected',
+    kycApprovedAt:      '',
+    kycExpiresAt:       '',
+    kycReviewedBy:      session.adminId,
+    kycReviewReason:    reason,
     kycRejectedAt:      new Date().toISOString(),
     kycRejectionReason: reason,
     rejectedAt:         new Date().toISOString(),
