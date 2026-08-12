@@ -69,7 +69,7 @@ const PLAN_COLORS = {
 
 const STEPS = [
   { label: 'Personal Info',  icon: User     },
-  { label: 'KYC Pre-deployment',    icon: Camera   },
+  { label: 'Identity verification', icon: Camera   },
   { label: 'Security',       icon: Shield   },
   { label: 'Confirm',        icon: FileText },
 ];
@@ -150,7 +150,7 @@ function StepPersonal({ data, onChange, errors }: {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>Pre-deployment Experience *</Label>
+          <Label>Product Experience *</Label>
           <Select value={data.accountType} onChange={e => onChange('accountType', e.target.value)}>
             <option value="">Select experience</option>
             <option>Personal</option>
@@ -170,7 +170,7 @@ function StepPersonal({ data, onChange, errors }: {
       </div>
 
       <p className="text-xs text-foreground/35 leading-relaxed">
-        This creates a pre-deployment profile only. Do not enter identity-document, tax, bank, or payment-card information.
+        This creates a platform profile only. Do not enter identity-document, tax, bank, or payment-card information.
       </p>
     </div>
   );
@@ -187,7 +187,7 @@ function StepIdentity() {
           <div>
             <p className="text-sm font-semibold text-foreground mb-1">Identity Verification Is Not Active</p>
             <p className="text-xs text-foreground/45 leading-relaxed">
-              This screen explains the proposed KYC journey. No KYC provider is connected and this website will not accept identity documents in production pre-deployment mode.
+              This screen explains the proposed KYC journey. No approved KYC provider is connected, so this website does not accept identity documents.
             </p>
           </div>
         </div>
@@ -294,7 +294,7 @@ function StepSecurity({ data, onChange, errors }: {
 
       {/* Security features */}
       <div className="rounded-2xl border border-primary/10 bg-white/[0.02] p-5 space-y-3">
-        <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest mb-3">Pre-deployment Access Controls</p>
+        <p className="text-xs font-semibold text-foreground/50 uppercase tracking-widest mb-3">Platform Access Controls</p>
         {[
           { icon: Shield,      label: 'Two-Factor Authentication',  desc: 'Optional authenticator setup' },
           { icon: CreditCard,  label: 'No Payment Card Required',   desc: 'Do not enter card or bank details' },
@@ -327,7 +327,7 @@ function StepConfirm({ data, onChange, errors }: {
     <div className="space-y-5">
       {/* Summary */}
       <div className="rounded-2xl border border-primary/15 bg-white/[0.02] p-5">
-        <p className="text-xs font-semibold text-foreground/40 uppercase tracking-widest mb-4">Pre-deployment Profile Summary</p>
+        <p className="text-xs font-semibold text-foreground/40 uppercase tracking-widest mb-4">Platform Profile Summary</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
           {[
             ['Name',    `${data.firstName} ${data.lastName}`],
@@ -355,7 +355,7 @@ function StepConfirm({ data, onChange, errors }: {
             <p className="text-xs text-foreground/50 leading-relaxed">
               After submitting, we'll send a verification link to{' '}
               <span className="text-primary font-medium">{data.email || 'your email'}</span>.
-              Click the link to activate your pre-deployment profile — no code needed.
+              Click the link to activate your platform profile — no code needed.
             </p>
           </div>
         </div>
@@ -408,9 +408,9 @@ function SuccessScreen({ plan, name }: { plan: string; name: string }) {
         <CheckCircle size={36} className="text-black" />
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <h3 className="text-2xl font-bold text-foreground mb-2">Pre-deployment Profile Created</h3>
+        <h3 className="text-2xl font-bold text-foreground mb-2">Platform Profile Created</h3>
         <p className="text-foreground/50 text-sm leading-relaxed max-w-xs mx-auto mb-6">
-          Welcome, {name}. Your <span className="text-primary font-semibold">{plan}</span> pre-deployment profile was created. This is not a bank or payment account and cannot hold or move funds.
+          Welcome, {name}. Your <span className="text-primary font-semibold">{plan}</span> platform profile was created. Financial account activation remains unavailable until verification and approved providers are in place.
         </p>
         <div className="grid grid-cols-3 gap-3 max-w-xs mx-auto mb-6">
           {[
@@ -424,7 +424,7 @@ function SuccessScreen({ plan, name }: { plan: string; name: string }) {
             </div>
           ))}
         </div>
-        <p className="text-xs text-foreground/30">Check your email for pre-deployment-profile verification and next steps.</p>
+        <p className="text-xs text-foreground/30">Check your email for profile verification and next steps.</p>
       </motion.div>
     </div>
   );
@@ -573,7 +573,7 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
                     <PlanIcon size={17} style={{ color: planColor }} />
                   </div>
                   <div>
-                    <p className="text-xs text-foreground/35 uppercase tracking-widest">Create Pre-deployment Profile</p>
+                    <p className="text-xs text-foreground/35 uppercase tracking-widest">Create Platform Profile</p>
                     <p className="text-sm font-bold text-foreground">{form.accountType || initialPlan} Experience</p>
                   </div>
                 </div>
@@ -678,7 +678,7 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
                       <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
                       <span className="relative flex items-center gap-1.5">
                         {submitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                        {submitting ? 'Submitting…' : 'Create Pre-deployment Profile'}
+                        {submitting ? 'Submitting…' : 'Create Platform Profile'}
                       </span>
                     </button>
                   )}

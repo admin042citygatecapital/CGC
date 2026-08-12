@@ -24,10 +24,10 @@ const corridors = [
 ];
 
 const transferTypes = [
-  { icon: Zap,        title: 'Transfer Simulation',  desc: 'Explore a proposed internal-transfer flow. No money is moved.',                                      color: '#C9A84C', time: 'Not live' },
-  { icon: Globe,      title: 'Wire Prototype',       desc: 'Explore proposed international-wire fields without sending an instruction to a bank.',                  color: '#627EEA', time: 'Not live' },
-  { icon: RefreshCw,  title: 'Schedule Prototype',   desc: 'Pre-deployment recurring-transfer controls using demonstration data.',                                        color: '#10B981', time: 'Demo' },
-  { icon: TrendingUp, title: 'Bulk Flow Prototype',  desc: 'Explore a proposed multi-recipient workflow without creating payments.',                                color: '#9945FF', time: 'Demo' },
+  { icon: Zap,        title: 'Internal Transfer',     desc: 'Review the internal-transfer workflow. Money movement is currently unavailable.',                       color: '#C9A84C', time: 'Pending provider' },
+  { icon: Globe,      title: 'International Wire',    desc: 'Review international-wire fields without sending an instruction to a bank.',                           color: '#627EEA', time: 'Pending provider' },
+  { icon: RefreshCw,  title: 'Scheduled Transfers',   desc: 'Review recurring-transfer controls using sample data.',                                                color: '#10B981', time: 'Interface ready' },
+  { icon: TrendingUp, title: 'Bulk Payments',         desc: 'Review a multi-recipient workflow without creating payments.',                                         color: '#9945FF', time: 'Interface ready' },
 ];
 
 const testimonials = [
@@ -173,10 +173,10 @@ export default function TransfersPage() {
       <Helmet>
         <title>Transfers — Send, Deposit & Withdraw | CGC</title>
         <meta name="robots" content="noindex, nofollow" />
-        <meta name="description" content="Explore proposed transfer, deposit, and withdrawal interfaces using demonstration data. Live money movement is unavailable." />
+        <meta name="description" content="Explore transfer, funding and withdrawal workflows using sample data. Money movement requires approved providers." />
         <link rel="canonical" href="https://citygate.capital/transfers" />
         <meta property="og:title" content="Transfers — Send, Deposit & Withdraw" />
-        <meta property="og:description" content="A demonstration of proposed transfer, deposit, and withdrawal interfaces. No live financial transactions are available." />
+        <meta property="og:description" content="City Gate Capital transfer, funding and withdrawal interfaces. Financial execution requires approved providers." />
         <meta property="og:url" content="https://citygate.capital/transfers" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -189,7 +189,7 @@ export default function TransfersPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Transfers — City Gate Capital" />
-        <meta name="twitter:description" content="Explore proposed transfer, deposit, and withdrawal experiences using demonstration data. No funds are moved." />
+        <meta name="twitter:description" content="Explore transfer, funding and withdrawal experiences using sample data. Provider activation is required for money movement." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -197,13 +197,13 @@ export default function TransfersPage() {
           '@id': 'https://citygate.capital/transfers#webpage',
           name: 'Transfers — Send, Deposit & Withdraw | City Gate Capital',
           url: 'https://citygate.capital/transfers',
-          description: 'Explore proposed transfer, deposit, and withdrawal experiences using demonstration data. No funds are moved.',
+          description: 'Explore transfer, funding and withdrawal experiences using sample data. Provider activation is required for money movement.',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
           mainEntity: {
             '@type': 'WebApplication',
-            name: 'City Gate Capital Transfer Experience Pre-deployment',
-            description: 'A non-transactional product demonstration of proposed money-transfer interfaces.',
+            name: 'City Gate Capital Transfer Experience',
+            description: 'A published product interface for proposed money-transfer services pending approved provider activation.',
             applicationCategory: 'FinanceApplication',
             operatingSystem: 'Web',
           },
@@ -232,7 +232,7 @@ export default function TransfersPage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C9A84C] to-[#E8C97A]">Explore the Journey</span>
             </h1>
             <p className="text-lg text-white/60 max-w-2xl mx-auto mb-10">
-              Explore proposed transfer, deposit, and withdrawal journeys using demonstration records. No real funds or assets can be moved.
+              Explore transfer, funding and withdrawal journeys using sample records. Money movement requires approved providers and verified account activation.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#C9A84C] text-black font-semibold hover:bg-[#E8C97A] transition-colors">
@@ -409,7 +409,7 @@ export default function TransfersPage() {
                       <Info size={16} className="text-[#C9A84C] mt-0.5 shrink-0" />
                       <p className="text-sm text-white/70">
                         <Link to="/login" className="text-[#C9A84C] hover:underline font-medium">Log in</Link> or{' '}
-                        <Link to="/register" className="text-[#C9A84C] hover:underline font-medium">create a demonstration profile</Link> to explore this interface.
+                        <Link to="/register" className="text-[#C9A84C] hover:underline font-medium">create a platform profile</Link> to explore this interface.
                       </p>
                     </div>
                   )}
@@ -419,7 +419,7 @@ export default function TransfersPage() {
                       <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-4">
                         <CheckCircle size={32} className="text-emerald-400" />
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">Demonstration Record Created</h3>
+                      <h3 className="text-lg font-semibold text-white mb-2">Sample Record Created</h3>
                       <p className="text-white/60 text-sm mb-2">No deposit was submitted and no money was received.</p>
                       <p className="text-white/40 text-xs mb-6">This record cannot be credited, withdrawn, or transferred.</p>
                       <button onClick={() => { setDepSuccess(false); setDepForm({ amount: '', method: 'bank_wire', note: '' }); }}
@@ -434,7 +434,7 @@ export default function TransfersPage() {
                         <div className="grid grid-cols-2 gap-3">
                           {[
                             { id: 'bank_wire', label: 'Bank Wire', desc: '1–3 business days' },
-                            { id: 'crypto',    label: 'Crypto',    desc: 'Pre-deployment only'       },
+                            { id: 'crypto',    label: 'Crypto',    desc: 'Provider activation required' },
                           ].map(m => (
                             <button
                               key={m.id}
@@ -544,7 +544,7 @@ export default function TransfersPage() {
                         <div className="grid grid-cols-2 gap-3">
                           {[
                             { id: 'bank',   label: 'Bank Account', desc: '1–3 business days' },
-                            { id: 'crypto', label: 'Crypto Wallet', desc: 'Pre-deployment only'      },
+                            { id: 'crypto', label: 'Crypto Wallet', desc: 'Provider activation required' },
                           ].map(m => (
                             <button
                               key={m.id}
@@ -648,7 +648,7 @@ export default function TransfersPage() {
       <section className="py-20 bg-[#0D0D0D]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Pre-deployment Proposed Transfer Flows</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Transfer Service Workflows</h2>
             <p className="text-white/50 max-w-xl mx-auto">Explore non-transactional prototypes for internal, international, scheduled, and bulk-payment experiences.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -700,14 +700,14 @@ export default function TransfersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Security Controls for the Transfer Pre-deployment</h2>
-              <p className="text-white/50 mb-8 leading-relaxed">Account access uses protective controls, but this pre-deployment platform does not accept money or execute transfers. Provider security and monitoring must be validated before launch.</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Security Controls for Transfers</h2>
+              <p className="text-white/50 mb-8 leading-relaxed">Account access uses protective controls. Funding and transfer execution remain unavailable until provider security, screening and monitoring are validated.</p>
               <div className="space-y-4">
                 {[
                   { icon: Shield, text: 'Protected account sessions and access controls' },
                   { icon: CheckCircle, text: 'Transaction monitoring required before launch' },
-                  { icon: Globe, text: 'Pre-deployment only — provider approval required' },
-                  { icon: DollarSign, text: 'Demonstration funds — not insured' },
+                  { icon: Globe, text: 'Provider and corridor approval required' },
+                  { icon: DollarSign, text: 'Sample balances are not customer funds' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[#C9A84C]/15 flex items-center justify-center shrink-0">
@@ -764,10 +764,10 @@ export default function TransfersPage() {
       <section className="py-20 bg-[#0D0D0D]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Explore the Transfer Experience</h2>
-          <p className="text-white/50 mb-10">Create a pre-deployment profile to explore the interface. Deposits, withdrawals, and live transfers are unavailable.</p>
+          <p className="text-white/50 mb-10">Create a platform profile to explore the interface. Funding, withdrawals and transfer execution require approved providers.</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/register" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#C9A84C] text-black font-semibold hover:bg-[#E8C97A] transition-colors">
-              Create Pre-deployment Profile <ArrowRight size={16} />
+              Create Platform Profile <ArrowRight size={16} />
             </Link>
             <Link to="/support" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border border-white/20 text-white hover:border-[#C9A84C]/50 transition-colors">
               Contact Support

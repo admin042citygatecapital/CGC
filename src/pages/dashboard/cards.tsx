@@ -98,7 +98,7 @@ export default function DashboardCardsPage() {
             <div>
               <p className="text-xs font-semibold text-amber-200">Read-only synthetic card records</p>
               <p className="text-[10px] text-amber-100/60 leading-relaxed mt-1">
-                These are demonstration records, not issued cards or processor records. Full card numbers and CVVs are not loaded. Requests and lifecycle controls require a contracted issuer integration.
+                These are sample records, not issued cards or processor records. Full card numbers and CVVs are not loaded. Requests and lifecycle controls require a contracted issuer integration.
               </p>
             </div>
           </div>

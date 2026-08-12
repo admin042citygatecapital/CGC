@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { FileText, Shield, AlertTriangle, CreditCard, Globe, Lock, ChevronRight, Scale, Ban, Mail } from 'lucide-react';
 
-const LAST_UPDATED = 'May 23, 2026';
+const LAST_UPDATED = 'August 12, 2026';
 const EFFECTIVE_DATE = 'May 23, 2026';
 const CANONICAL = 'https://citygate.capital/terms-of-service';
 
@@ -34,11 +34,11 @@ const sections = [
     content: [
       {
         subtitle: '2.1 Service Description',
-        body: `This website currently provides a pre-deployment platform of proposed account, card, transfer, wallet, analytics, and administration experiences. It does not accept deposits, issue payment instruments, provide custody, execute trades, or process live financial transactions.`,
+        body: `This published website currently provides platform-profile, account-interface, card-control, transfer-workflow, wallet, analytics and administration experiences. Deposit acceptance, payment-instrument issuance, custody, trade execution and financial transactions are not currently available.`,
       },
       {
         subtitle: '2.2 Service Availability',
-        body: `Pre-deployment access is provided on an as-available basis without an uptime guarantee. We may suspend it for maintenance, security updates, testing, or legal review.`,
+        body: `Platform access is provided on an as-available basis without an uptime guarantee. We may suspend it for maintenance, security updates, testing or legal review.`,
       },
       {
         subtitle: '2.3 Service Changes',
@@ -53,11 +53,11 @@ const sections = [
     content: [
       {
         subtitle: '3.1 Account Opening',
-        body: `You may create a pre-deployment profile to explore the software. Do not upload real identity documents or use the pre-deployment platform as a substitute for a bank, broker, wallet, payment account, or custodian.`,
+        body: `You may create a platform profile to use the available software. Do not upload real identity documents or use a platform profile as a substitute for an activated bank, brokerage, payment, wallet or custody account.`,
       },
       {
         subtitle: '3.2 Identity Verification',
-        body: `Identity-verification screens are demonstrations. A contracted KYC/AML provider, approved policies, consent notices, retention rules, and jurisdiction-specific legal review are required before real verification can be enabled.`,
+        body: `Identity-verification screens currently provide a workflow interface. A contracted KYC/AML provider, approved policies, consent notices, retention rules and jurisdiction-specific legal review are required before production verification can be enabled.`,
       },
       {
         subtitle: '3.3 Account Security',
@@ -76,19 +76,19 @@ const sections = [
     content: [
       {
         subtitle: '4.1 Transaction Authorisation',
-        body: `Actions labelled as payments, deposits, withdrawals, transfers, trades, or card transactions create demonstration records only. They do not instruct, authorise, or settle a real financial transaction.`,
+        body: `Actions labelled as payments, deposits, withdrawals, transfers, trades or card transactions currently create sample records only. They do not instruct, authorise or settle a financial transaction.`,
       },
       {
         subtitle: '4.2 Fees',
-        body: `Any fee, rate, yield, price, exchange rate, or return shown in the pre-deployment platform is illustrative and is not an offer or contractual term. Live commercial terms will require separate publication and approval.`,
+        body: `Any fee, rate, yield, price, exchange rate or return shown before a corresponding service is activated is illustrative and is not an offer or contractual term. Operational commercial terms require separate publication and approval.`,
       },
       {
         subtitle: '4.3 Transaction Limits',
-        body: `Pre-deployment limits are illustrative controls only. They do not create an entitlement or ability to move funds.`,
+        body: `Displayed limits are illustrative controls unless expressly identified as operational. They do not create an entitlement or ability to move funds.`,
       },
       {
         subtitle: '4.4 Declined Transactions',
-        body: `The pre-deployment does not submit or settle transactions. Demonstration actions may be rejected by software controls and should not be treated as a decision by a bank, payment provider, exchange, or custodian.`,
+        body: `The current platform does not submit or settle financial transactions. Sample actions may be rejected by software controls and are not decisions by a bank, payment provider, exchange or custodian.`,
       },
     ],
   },
@@ -99,15 +99,15 @@ const sections = [
     content: [
       {
         subtitle: '5.1 Prohibited Activities',
-        body: `You must not misuse the pre-deployment for unlawful activity, fraud, impersonation, unauthorised access, malware, interference with the service, sanctions evasion, or any activity that violates applicable law. The pre-deployment must not be used to solicit, receive, hold, transfer, or trade real funds or assets.`,
+        body: `You must not misuse the platform for unlawful activity, fraud, impersonation, unauthorised access, malware, interference with the service, sanctions evasion or any activity that violates applicable law. Unavailable financial interfaces must not be used to solicit, receive, hold, transfer or trade real funds or assets.`,
       },
       {
         subtitle: '5.2 Access Restrictions',
-        body: `We may restrict pre-deployment access where required for security, operational, sanctions, export-control, or other legal reasons. Any future financial service will require a documented, provider-supported country policy and jurisdiction-specific legal review before launch.`,
+        body: `We may restrict platform access where required for security, operational, sanctions, export-control or other legal reasons. Any activated financial service requires a documented, provider-supported country policy and jurisdiction-specific legal review.`,
       },
       {
         subtitle: '5.3 Consequences',
-        body: `We may suspend or terminate pre-deployment access when we reasonably believe these rules have been breached. We may preserve records or make a report where required by applicable law. There are no real balances or pending financial transactions to forfeit or settle in this environment.`,
+        body: `We may suspend or terminate platform access when we reasonably believe these rules have been breached. We may preserve records or make a report where required by applicable law. Sample balances are not customer funds and no unavailable financial transaction can be settled through the platform.`,
       },
     ],
   },
@@ -122,7 +122,7 @@ const sections = [
       },
       {
         subtitle: '6.2 Custody',
-        body: `City Gate Capital does not hold cryptocurrency or provide custody in this pre-deployment. Wallet addresses, balances, orders, and portfolio values are demonstrations. Do not send assets to any identifier displayed by the pre-deployment.`,
+        body: `City Gate Capital does not currently hold cryptocurrency or provide custody. Wallet addresses, balances, orders and portfolio values are sample records. Do not send assets to any identifier unless the platform expressly identifies it as provider-issued and active.`,
       },
       {
         subtitle: '6.3 Regulatory Status',
@@ -171,11 +171,11 @@ const sections = [
     content: [
       {
         subtitle: '9.1 Termination by You',
-        body: `You may request closure of your pre-deployment profile by contacting support@citygate.capital. Because the pre-deployment platform does not hold funds or process live transactions, closing a profile does not involve returning a balance or settling a transaction.`,
+        body: `You may request closure of your platform profile by contacting support@citygate.capital. Because platform profiles do not currently hold funds or process financial transactions, closing a profile does not involve returning a balance or settling a transaction.`,
       },
       {
         subtitle: '9.2 Termination by Us',
-        body: `We may suspend or terminate pre-deployment access if you breach these Terms, create a security risk, misuse the service, or if access must be restricted for legal or operational reasons. We will provide notice where reasonably practicable and legally permitted.`,
+        body: `We may suspend or terminate platform access if you breach these Terms, create a security risk, misuse the service or if access must be restricted for legal or operational reasons. We will provide notice where reasonably practicable and legally permitted.`,
       },
       {
         subtitle: '9.3 Effect of Termination',
@@ -190,11 +190,11 @@ const sections = [
     content: [
       {
         subtitle: '10.1 Governing Law',
-        body: `These Terms govern access to the pre-deployment website only. The responsible legal entity and governing-law clause must be confirmed and published before regulated financial services are offered. Nothing in these Terms limits mandatory rights that apply to you under applicable law.`,
+        body: `These Terms govern access to the current platform services only. The responsible legal entity and governing-law clause must be confirmed and published before regulated financial services are offered. Nothing in these Terms limits mandatory rights that apply to you under applicable law.`,
       },
       {
         subtitle: '10.2 Dispute Resolution',
-        body: `We encourage you to contact us first about a pre-deployment-related concern. Available court, regulator, ombudsman, or alternative-dispute-resolution routes depend on the confirmed entity, jurisdiction, service, and your mandatory legal rights; no specific financial redress scheme is represented as available in this pre-deployment.`,
+        body: `We encourage you to contact us first about a platform-related concern. Available court, regulator, ombudsman or alternative-dispute-resolution routes depend on the confirmed entity, jurisdiction, service and your mandatory legal rights; no specific financial redress scheme is represented as currently available.`,
       },
       {
         subtitle: '10.3 Contact',
@@ -212,7 +212,7 @@ export default function TermsOfServicePage() {
     '@type': 'WebPage',
     name: 'Terms of Service — City Gate Capital',
     url: CANONICAL,
-    description: 'The legal agreement governing access to the City Gate Capital financial-technology demonstration website.',
+    description: 'The legal agreement governing access to the City Gate Capital financial-technology platform.',
     dateModified: LAST_UPDATED,
     publisher: {
       '@type': 'Organization',
@@ -232,10 +232,10 @@ export default function TermsOfServicePage() {
     <>
       <Helmet>
         <title>Terms of Service — City Gate Capital</title>
-        <meta name="description" content="Read the Terms of Service governing access to City Gate Capital's financial-technology demonstration website." />
+        <meta name="description" content="Read the Terms of Service governing access to the City Gate Capital financial-technology platform." />
         <link rel="canonical" href={CANONICAL} />
         <meta property="og:title" content="Terms of Service — City Gate Capital" />
-        <meta property="og:description" content="The legal agreement governing access to the City Gate Capital financial-technology demonstration website." />
+        <meta property="og:description" content="The legal agreement governing access to the City Gate Capital financial-technology platform." />
         <meta property="og:url" content={CANONICAL} />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -248,7 +248,7 @@ export default function TermsOfServicePage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:title" content="Terms of Service — City Gate Capital" />
-        <meta name="twitter:description" content="The legal agreement governing access to the City Gate Capital financial-technology demonstration website." />
+        <meta name="twitter:description" content="The legal agreement governing access to the City Gate Capital financial-technology platform." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </Helmet>

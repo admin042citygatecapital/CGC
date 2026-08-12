@@ -177,7 +177,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground/80">Biometric Interface Concept</p>
-                  <p className="text-xs text-foreground/30">Demonstration setting; native login is not active</p>
+                  <p className="text-xs text-foreground/30">Interface preference; native login is not currently active</p>
                 </div>
                 <Toggle checked={settings.biometric} onChange={v => update({ biometric: v })} />
               </div>

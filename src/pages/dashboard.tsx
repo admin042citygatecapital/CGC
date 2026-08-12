@@ -364,8 +364,8 @@ function SettingsPanel({
               {/* Biometric */}
               <SettingsRow
                 icon={Fingerprint}
-                label="Biometric Interface Pre-deployment"
-                sub="Demonstration setting; native login is not active"
+                label="Biometric Interface"
+                sub="Interface setting; native login is not currently active"
                 checked={settings.biometric}
                 onChange={v => onUpdate({ biometric: v })}
               />
@@ -1210,7 +1210,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-1.5 text-xs text-foreground/30">
                           <Shield size={11} className="text-emerald-400" />
-                          <span>{isPreview ? 'Demo funds — not insured' : 'Protection depends on the account provider and published terms'}</span>
+                          <span>{isPreview ? 'Sample balances — not customer funds' : 'Protection depends on the account provider and published terms'}</span>
                         </div>
                         <span className="text-foreground/15">·</span>
                         <span className="text-xs text-foreground/30 font-mono">
@@ -1437,12 +1437,12 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground/60">No cards yet</p>
-                      <p className="text-xs text-foreground/30 mt-1">Card issuance is unavailable in the pre-deployment</p>
+                      <p className="text-xs text-foreground/30 mt-1">Card issuance is not currently available</p>
                     </div>
                     <Link to="/dashboard/cards"
                       className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:brightness-110"
                       style={{ background: 'rgba(201,168,76,0.12)', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.22)' }}>
-                      <Plus size={12} /> View Card Pre-deployment
+                      <Plus size={12} /> View Card Interface
                     </Link>
                   </div>
                 ) : (

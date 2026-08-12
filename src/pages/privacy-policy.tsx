@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Shield, Lock, Eye, Database, Globe, Mail, ChevronRight, FileText } from 'lucide-react';
 
-const LAST_UPDATED = 'August 8, 2026';
+const LAST_UPDATED = 'August 12, 2026';
 const EFFECTIVE_DATE = 'August 8, 2026';
 const CANONICAL = 'https://citygate.capital/privacy-policy';
 
@@ -15,15 +15,15 @@ const sections = [
     content: [
       {
         subtitle: '1.1 Information You Provide',
-        body: `When you create a pre-deployment profile or contact us, we may collect information you provide such as your name, email address, telephone number, country, support messages, communication preferences, and demonstration profile information. This environment does not perform live identity verification. Do not upload real identity documents, payment-card information, bank credentials, or funds.`,
+        body: `When you create a platform profile or contact us, we may collect information you provide such as your name, email address, telephone number, country, support messages, communication preferences and profile information. Production identity verification is not currently active. Do not upload identity documents, payment-card information, bank credentials or funds.`,
       },
       {
         subtitle: '1.2 Information Collected Automatically',
-        body: `We may automatically collect IP address, browser and device information, referring URLs, pages visited, session activity, security events, and demonstration transaction metadata. The pre-deployment does not collect or process live transaction records or production biometric-verification results.`,
+        body: `We may automatically collect IP address, browser and device information, referring URLs, pages visited, session activity, security events and sample transaction metadata. The current platform does not collect or process financial transaction records or production biometric-verification results.`,
       },
       {
         subtitle: '1.3 Information from Third Parties',
-        body: `We may receive limited technical or delivery information from service providers that support hosting, email, customer support, analytics, and security. Live identity-verification, banking, payment, custody, credit-reference, and sanctions-screening providers are not connected in this pre-deployment.`,
+        body: `We may receive limited technical or delivery information from service providers that support hosting, email, customer support, analytics and security. Production identity-verification, banking, payment, custody, credit-reference and sanctions-screening providers are not currently connected.`,
       },
     ],
   },
@@ -34,15 +34,15 @@ const sections = [
     content: [
       {
         subtitle: '2.1 Service Delivery',
-        body: `We use information to create and maintain pre-deployment profiles, authenticate users, provide demonstration features, respond to support requests, send requested communications, protect the website, and improve the product. We do not use pre-deployment information to accept deposits, move money, issue payment instruments, provide custody, or execute trades.`,
+        body: `We use information to create and maintain platform profiles, authenticate users, provide available features, respond to support requests, send requested communications, protect the website and improve the product. We do not use platform-profile information to accept deposits, move money, issue payment instruments, provide custody or execute trades.`,
       },
       {
         subtitle: '2.2 Legal and Regulatory Obligations',
-        body: `The pre-deployment is not performing regulated KYC, AML screening, transaction monitoring, or regulatory reporting. Before any regulated service is introduced, this policy and the related notices, retention schedules, consent flows, and provider disclosures will be reviewed and updated for the approved jurisdictions and operating entity.`,
+        body: `The current platform is not performing regulated KYC, AML screening, transaction monitoring or regulatory reporting. Before any regulated service is activated, this policy and the related notices, retention schedules, consent flows and provider disclosures will be reviewed and updated for the approved jurisdictions and operating entity.`,
       },
       {
         subtitle: '2.3 Security and Fraud Prevention',
-        body: `We use session, device, access, and security-event information to prevent abuse, investigate suspicious access, and protect pre-deployment profiles. Demonstration transaction data may be used to test product controls, but no live financial-crime monitoring service is represented as active.`,
+        body: `We use session, device, access and security-event information to prevent abuse, investigate suspicious access and protect platform profiles. Sample transaction data may be used to test product controls, but no production financial-crime monitoring service is represented as active.`,
       },
       {
         subtitle: '2.4 Product Improvement',
@@ -57,11 +57,11 @@ const sections = [
     content: [
       {
         subtitle: '3.1 Contractual Necessity',
-        body: `Where applicable, we process information needed to provide the pre-deployment features or communications you request and to administer our relationship with you.`,
+        body: `Where applicable, we process information needed to provide the platform features or communications you request and to administer our relationship with you.`,
       },
       {
         subtitle: '3.2 Legal Obligation',
-        body: `We process information when necessary to comply with laws that apply to the website operator, such as responding to valid legal process and maintaining required business records. This pre-deployment does not claim regulated financial operations in any jurisdiction.`,
+        body: `We process information when necessary to comply with laws that apply to the website operator, such as responding to valid legal process and maintaining required business records. The current platform does not claim regulated financial operations in any jurisdiction.`,
       },
       {
         subtitle: '3.3 Legitimate Interests',
@@ -80,7 +80,7 @@ const sections = [
     content: [
       {
         subtitle: '4.1 Service Providers',
-        body: `We may share data with service providers used for hosting, databases, email delivery, customer support, security, and other website operations. We do not share pre-deployment-profile data with live banking, payment, card, trading, or custody providers because those services are not active. Provider contracts and privacy terms must be reviewed before any such integration is enabled.`,
+        body: `We may share data with service providers used for hosting, databases, email delivery, customer support, security and other website operations. We do not share platform-profile data with banking, payment, card, trading or custody providers because those services are not currently active. Provider contracts and privacy terms must be reviewed before any such integration is enabled.`,
       },
       {
         subtitle: '4.2 Regulatory and Law Enforcement',
@@ -107,7 +107,7 @@ const sections = [
       },
       {
         subtitle: '5.2 Safeguards',
-        body: `We use access controls, transport encryption, contractual protections, and other measures appropriate to the pre-deployment. Specific transfer mechanisms and subprocessors must be confirmed in the final jurisdiction-specific privacy review.`,
+        body: `We use access controls, transport encryption, contractual protections and other measures appropriate to the current platform. Specific transfer mechanisms and subprocessors must be confirmed in the final jurisdiction-specific privacy review.`,
       },
     ],
   },
@@ -118,7 +118,7 @@ const sections = [
     content: [
       {
         subtitle: '6.1 Retention Periods',
-        body: `We retain pre-deployment-profile, support, communication, security, and operational records only for as long as reasonably necessary for the purposes described here, to resolve disputes, protect the service, and comply with applicable law. A jurisdiction-specific retention schedule will be adopted before regulated services begin.`,
+        body: `We retain platform-profile, support, communication, security and operational records only for as long as reasonably necessary for the purposes described here, to resolve disputes, protect the service and comply with applicable law. A jurisdiction-specific retention schedule will be adopted before regulated services begin.`,
       },
       {
         subtitle: '6.2 Deletion',
@@ -178,7 +178,7 @@ const sections = [
     content: [
       {
         subtitle: '10.1 Data Controller',
-        body: `City Gate Capital is responsible for personal data processed through this pre-deployment website. The final legal-entity name, registered address, regulatory status, and jurisdiction-specific representative details must be confirmed and published before regulated services begin.`,
+        body: `City Gate Capital is responsible for personal data processed through this website. The final legal-entity name, registered address, regulatory status and jurisdiction-specific representative details must be confirmed and published before regulated services begin.`,
       },
       {
         subtitle: '10.2 Privacy Contact',

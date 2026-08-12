@@ -1,6 +1,6 @@
 /**
  * /dashboard/trading/spot — Full-page Spot Trading Terminal
- * Market / Limit / Stop orders · SL/TP · Leverage · Order book pre-deployment
+ * Market / Limit / Stop orders · SL/TP · Leverage · Paper-trading order book
  * Live price feed · Position sizing · Risk calculator
  */
 import { useTicker } from '@/hooks/useMarketData';

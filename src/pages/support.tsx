@@ -18,22 +18,22 @@ const faqs = [
   {
     category: 'Getting Started',
     q: 'How do I open an account?',
-    a: 'Click "Open Account" to create a pre-deployment profile and explore the demonstration. Identity verification is not live; a contracted KYC provider and legal approval are required before launch.',
+    a: 'Click "Open Account" to create a platform profile and explore the available experience. Financial account activation requires a contracted KYC provider and applicable approval.',
   },
   {
     category: 'Account & KYC',
     q: 'Is my money safe with City Gate Capital?',
-    a: 'This pre-deployment platform does not accept or protect customer funds. Demonstration balances are not deposits and are not insured. The application uses security controls for pre-deployment access, but live financial operation requires approved providers and independent review.',
+    a: 'The current platform does not accept customer funds. Sample balances are not deposits or insured funds. Financial operation requires approved providers, safeguarding arrangements and independent review.',
   },
   {
     category: 'Transfers',
     q: 'What are the transfer fees?',
-    a: 'Transfer screens use demonstration values only. Live fees, exchange rates, availability, and settlement terms will be published only after payment providers and target jurisdictions are approved.',
+    a: 'Transfer screens currently use sample values. Operational fees, exchange rates, availability and settlement terms will be published after payment providers and target jurisdictions are approved.',
   },
   {
     category: 'Transfers',
     q: 'How long do international transfers take?',
-    a: 'No live transfers are processed in this pre-deployment. Future settlement estimates will depend on the contracted payment rail, currency, recipient bank, compliance review, and jurisdiction.',
+    a: 'Transfer execution is currently unavailable. Settlement estimates will depend on the contracted payment rail, currency, recipient bank, compliance review and jurisdiction.',
   },
   {
     category: 'Crypto & Wallet',
@@ -43,12 +43,12 @@ const faqs = [
   {
     category: 'Cards & Payments',
     q: 'How do I freeze my card?',
-    a: 'Card controls are demonstrations only. No payment card is issued in this environment, and the pre-deployment freeze control does not affect a real card.',
+    a: 'Card controls currently operate on sample records. No payment card is issued, and the freeze control does not affect a real card.',
   },
   {
     category: 'Account & KYC',
     q: 'What is the daily transfer limit?',
-    a: 'Pre-deployment limits are illustrative and do not authorize financial transactions. Live limits will be defined by risk policy, provider contracts, verification level, and applicable law.',
+    a: 'Displayed limits are illustrative and do not authorize financial transactions. Operational limits will be defined by risk policy, provider contracts, verification level and applicable law.',
   },
   {
     category: 'Getting Started',
@@ -58,12 +58,12 @@ const faqs = [
   {
     category: 'Security',
     q: 'What security features protect my account?',
-    a: 'The pre-deployment includes password controls, optional two-factor authentication, protected sessions, security headers, rate limits, and administrative audit events. Do not infer biometric, hardware-key, fraud-monitoring, or certification coverage unless it is specifically enabled and verified.',
+    a: 'The platform includes password controls, optional two-factor authentication, protected sessions, security headers, rate limits and administrative audit events. Biometric, hardware-key, fraud-monitoring or certification coverage applies only when specifically enabled and verified.',
   },
   {
     category: 'Cards & Payments',
     q: 'Can I use my card internationally?',
-    a: 'Cards in this environment are demonstrations and cannot be used for purchases. Issuing coverage, fees, exchange rates, and card controls require an approved issuing partner before launch.',
+    a: 'Cards in this environment are sample records and cannot be used for purchases. Issuing coverage, fees, exchange rates and card controls require an approved issuing partner before activation.',
   },
 ];
 
@@ -90,7 +90,7 @@ function FaqItem({ q, a, category }: { q: string; a: string; category: string })
 }
 
 const supportStats = [
-  { value: 'Web',      label: 'Pre-deployment Support',      icon: Zap,           color: '#C9A84C' },
+  { value: 'Web',      label: 'Platform Support',            icon: Zap,           color: '#C9A84C' },
   { value: 'Email',    label: 'Contact Channel',      icon: Clock,         color: '#627EEA' },
   { value: 'Tracked',  label: 'Support Requests',     icon: MessageCircle, color: '#10B981' },
   { value: 'Clear',    label: 'Launch Disclosures',   icon: Star,          color: '#9945FF' },
@@ -188,14 +188,14 @@ export default function SupportPage() {
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/png" />
-        <meta property="og:image:alt" content="City Gate Capital pre-deployment platform support" />
+        <meta property="og:image:alt" content="City Gate Capital platform support" />
         <meta property="og:site_name" content="City Gate Capital" />
         <meta property="og:locale" content="en_GB" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Customer Support — City Gate Capital" />
-        <meta name="twitter:description" content="Support channels and FAQs for the City Gate Capital pre-deployment platform. Response times vary." />
+        <meta name="twitter:description" content="Support channels and frequently asked questions for the City Gate Capital platform. Response times vary." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -233,7 +233,7 @@ export default function SupportPage() {
               How Can We <span className="text-gold-shimmer">Help?</span>
             </h1>
             <p className="text-xl text-foreground/50 mb-10 max-w-lg mx-auto">
-              Find pre-deployment-specific answers or contact the team through the available channels. Response times vary.
+              Find service-specific answers or contact the team through the available channels. Response times vary.
             </p>
             {/* Search */}
             <div className="relative max-w-xl mx-auto">

@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Cookie, Shield, BarChart2, Settings, ChevronRight, Mail, ToggleLeft, Globe } from 'lucide-react';
 
-const LAST_UPDATED = 'August 10, 2026';
+const LAST_UPDATED = 'August 12, 2026';
 const EFFECTIVE_DATE = 'August 10, 2026';
 const CANONICAL = 'https://citygate.capital/cookie-policy';
 
@@ -18,7 +18,7 @@ const cookieTable: CookieRow[] = [
   { name: 'cgc_admin_sid',                purpose: 'Secure administrator session cookie',                       duration: '8 hours by default', type: 'Essential'  },
   { name: 'csrf_token',                   purpose: 'Protects authenticated administrative changes from CSRF',   duration: '2 hours',            type: 'Security'   },
   { name: 'cgc_trusted_device',           purpose: 'Optional administrator trusted-device token',               duration: '30 days by default', type: 'Security'   },
-  { name: 'cgc_customer_sid',             purpose: 'Secure HttpOnly pre-deployment customer session cookie',           duration: '8 hours by default', type: 'Essential'  },
+  { name: 'cgc_customer_sid',             purpose: 'Secure HttpOnly platform-profile session cookie',                 duration: '8 hours by default', type: 'Essential'  },
   { name: 'cgc_analytics_consent_v1',     purpose: 'Records the visitor analytics choice in browser storage',   duration: '1 year',              type: 'Essential'  },
   { name: 'cgc_sid',                      purpose: 'Random analytics identifier scoped to one browser tab',      duration: 'Browser tab',         type: 'Analytics'  },
   { name: 'cgc_ab_*',                     purpose: 'Consented first-party experiment assignment',               duration: 'Until consent ends',  type: 'Analytics'  },

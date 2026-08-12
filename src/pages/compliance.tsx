@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Shield, Globe, FileText, Lock, AlertTriangle, CheckCircle, ChevronRight, Mail, Scale, Eye } from 'lucide-react';
 
-const LAST_UPDATED = 'August 9, 2026';
+const LAST_UPDATED = 'August 12, 2026';
 const CANONICAL = 'https://citygate.capital/compliance';
 
 const regulatoryBadges = [
@@ -20,7 +20,7 @@ const certifications = [
   { title: 'Access Control', desc: 'Role-based administration', icon: Shield },
   { title: 'Audit Trail', desc: 'Administrative mutation logging', icon: FileText },
   { title: 'Privacy Review', desc: 'Required before processing live data', icon: Eye },
-  { title: 'Data Minimisation', desc: 'Collect only what the pre-deployment needs', icon: Eye },
+  { title: 'Data Minimisation', desc: 'Collect only what the current service requires', icon: Eye },
   { title: 'Launch Guard', desc: 'Live money movement disabled by default', icon: AlertTriangle },
 ];
 
@@ -36,11 +36,11 @@ const verifiedSections = [
       },
       {
         subtitle: '1.2 Regulatory Oversight',
-        body: `No primary financial regulator or independent compliance-audit programme is identified for this pre-deployment. Any future oversight or audit claim requires documentary evidence and legal approval.`,
+        body: `No primary financial regulator or independent compliance-audit programme is currently identified for City Gate Capital financial services. Any oversight or audit claim requires documentary evidence and legal approval.`,
       },
       {
         subtitle: '1.3 Jurisdictional Coverage',
-        body: `This pre-deployment does not operate financial services in any jurisdiction. Geographic availability must remain disabled until each proposed market has documented legal analysis, permissions, provider coverage, and consumer disclosures.`,
+        body: `Financial services are not currently activated in any jurisdiction. Geographic availability remains disabled until each proposed market has documented legal analysis, permissions, provider coverage and consumer disclosures.`,
       },
     ],
   },
@@ -51,7 +51,7 @@ const verifiedSections = [
     content: [
       {
         subtitle: '2.1 AML Programme',
-        body: `A production AML/CFT programme has not been approved for this pre-deployment. Before launch, qualified specialists must establish risk assessments, policies, ownership, escalation, reporting, quality assurance, and jurisdiction-specific controls.`,
+        body: `A production AML/CFT programme has not yet been approved. Before financial-service activation, qualified specialists must establish risk assessments, policies, ownership, escalation, reporting, quality assurance and jurisdiction-specific controls.`,
       },
       {
         subtitle: '2.2 Know Your Customer (KYC)',
@@ -67,7 +67,7 @@ const verifiedSections = [
       },
       {
         subtitle: '2.5 Record Keeping',
-        body: `The pre-deployment does not collect production KYC documentation or execute transactions. A legally reviewed retention schedule and deletion process must be published before regulated data is collected.`,
+        body: `The current platform does not collect production KYC documentation or execute financial transactions. A legally reviewed retention schedule and deletion process must be approved before regulated data is collected.`,
       },
     ],
   },
@@ -78,11 +78,11 @@ const verifiedSections = [
     content: [
       {
         subtitle: '3.1 GDPR Compliance',
-        body: `The website processes limited pre-deployment-profile and operational data as described in the Privacy Policy. The applicable controller entity, privacy jurisdiction, representative or DPO requirements, data map, assessments, and rights procedures require final legal confirmation.`,
+        body: `The website processes limited platform-profile and operational data as described in the Privacy Policy. The applicable controller entity, privacy jurisdiction, representative or DPO requirements, data map, assessments and rights procedures require final legal confirmation.`,
       },
       {
         subtitle: '3.2 Data Minimisation',
-        body: `The pre-deployment is designed to minimise collection and does not request production identity documents, card details, bank credentials, or funds. Collection and retention must be reviewed whenever a new provider or live feature is proposed.`,
+        body: `The platform is designed to minimise collection and does not request production identity documents, card details, bank credentials or funds. Collection and retention must be reviewed whenever a new provider or financial feature is proposed.`,
       },
       {
         subtitle: '3.3 Cross-Border Transfers',
@@ -109,7 +109,7 @@ const verifiedSections = [
       },
       {
         subtitle: '4.4 Business Continuity',
-        body: `The pre-deployment uses managed hosting and health monitoring. Documented recovery objectives, backups, failover, incident ownership, continuity exercises, and any service-level commitment must be approved and tested before launch.`,
+        body: `The platform uses managed hosting and health monitoring. Documented recovery objectives, backups, failover, incident ownership, continuity exercises and any service-level commitment must be approved and tested before financial-service activation.`,
       },
     ],
   },
@@ -119,12 +119,12 @@ const verifiedSections = [
     icon: Shield,
     content: [
       {
-        subtitle: '5.1 Pre-deployment Funds and Deposit Protection',
-        body: `This pre-deployment platform does not accept deposits or customer funds. Demonstration balances are not money, are not safeguarded deposits, and are not insured. Any future live service must identify the licensed provider, account structure, applicable protection, exclusions, and jurisdiction-specific disclosures before accepting funds.`,
+        subtitle: '5.1 Current Funds and Deposit Protection',
+        body: `The current platform does not accept deposits or customer funds. Sample balances are not money, safeguarded deposits or insured funds. Any activated financial service must identify the licensed provider, account structure, applicable protection, exclusions and jurisdiction-specific disclosures before accepting funds.`,
       },
       {
         subtitle: '5.2 Complaints Handling',
-        body: `Pre-deployment-related concerns may be submitted to complaints@citygate.capital. No regulated complaints timetable or ombudsman relationship is claimed. A jurisdiction-specific complaints policy, response timetable, escalation route, recordkeeping process, and external-redress disclosure must be approved before launch.`,
+        body: `Platform-related concerns may be submitted to complaints@citygate.capital. No regulated complaints timetable or ombudsman relationship is currently claimed. A jurisdiction-specific complaints policy, response timetable, escalation route, recordkeeping process and external-redress disclosure must be approved before financial-service activation.`,
       },
       {
         subtitle: '5.3 Vulnerable Customers',
@@ -139,7 +139,7 @@ const verifiedSections = [
     content: [
       {
         subtitle: '6.1 FATCA & CRS',
-        body: `The pre-deployment does not collect tax identification information or make FATCA or CRS reports. Applicable classification, due-diligence, reporting, and recordkeeping duties must be determined for the final entity and account model.`,
+        body: `The current platform does not collect tax identification information or make FATCA or CRS reports. Applicable classification, due-diligence, reporting and recordkeeping duties must be determined for the final entity and account model.`,
       },
       {
         subtitle: '6.2 Crypto Tax Reporting',
@@ -177,7 +177,7 @@ const verifiedSections = [
     content: [
       {
         subtitle: '8.1 Compliance Team',
-        body: `Pre-deployment-related compliance, privacy, or legal enquiries may be sent to compliance@citygate.capital, privacy@citygate.capital, or legal@citygate.capital. These mailboxes do not by themselves establish appointed statutory officers or a regulated compliance function.`,
+        body: `Platform-related compliance, privacy or legal enquiries may be sent to compliance@citygate.capital, privacy@citygate.capital or legal@citygate.capital. These mailboxes do not by themselves establish appointed statutory officers or a regulated compliance function.`,
       },
       {
         subtitle: '8.2 Regulatory Correspondence',
@@ -193,8 +193,8 @@ const previewSections = [
     title: '1. Current Status',
     icon: Globe,
     content: [
-      { subtitle: '1.1 Pre-deployment Platform', body: 'This environment is a software demonstration. City Gate Capital is not operating a bank here, does not accept deposits, and does not execute live financial transactions.' },
-      { subtitle: '1.2 No Regulatory Claim', body: 'No licence, registration, certification, deposit-protection scheme, or partner relationship should be inferred from this pre-deployment. Any future claim will require legal verification and published evidence.' },
+      { subtitle: '1.1 Current Platform Availability', body: 'The published platform provides account-access and product-interface services. Regulated banking, deposits and financial-transaction execution are not currently activated.' },
+      { subtitle: '1.2 No Regulatory Claim', body: 'No licence, registration, certification, deposit-protection scheme or partner relationship should be inferred. Any such claim requires legal verification and published evidence.' },
     ],
   },
   {
@@ -209,12 +209,12 @@ const previewSections = [
   },
   {
     id: 'implemented-controls',
-    title: '3. Controls Implemented in the Pre-deployment',
+    title: '3. Controls Implemented in the Platform',
     icon: Lock,
     content: [
       { subtitle: '3.1 Identity and Administration', body: 'The application includes separate customer and administrator sessions, role-based administration, CSRF protection, secure-cookie support, rate limits, and administrative audit events.' },
-      { subtitle: '3.2 Safe Deployment Mode', body: 'Production starts in pre-deployment mode. Money-moving endpoints remain unavailable unless explicit live-readiness settings and provider attestations are present.' },
-      { subtitle: '3.3 Demonstration Data', body: 'Balances, transactions, market activity, cards, yields, and trading results shown in this environment are illustrative and do not represent customer funds or executed orders.' },
+      { subtitle: '3.2 Safe Service Mode', body: 'Money-moving endpoints remain unavailable unless explicit readiness settings and verified provider attestations are present.' },
+      { subtitle: '3.3 Sample Data', body: 'Balances, transactions, market activity, cards, yields and trading results shown in this environment are illustrative and do not represent customer funds or executed orders.' },
     ],
   },
   {
@@ -240,7 +240,7 @@ export default function CompliancePage() {
     '@type': 'WebPage',
     name: 'Compliance — City Gate Capital',
     url: CANONICAL,
-    description: 'City Gate Capital pre-deployment status, implemented safeguards, and requirements that remain before any regulated launch.',
+    description: 'City Gate Capital service availability, implemented safeguards and requirements that remain before regulated financial-service activation.',
     dateModified: LAST_UPDATED,
     publisher: {
       '@type': 'Organization',
@@ -260,10 +260,10 @@ export default function CompliancePage() {
     <>
       <Helmet>
         <title>Compliance — City Gate Capital</title>
-        <meta name="description" content="City Gate Capital pre-deployment status, implemented safeguards, and the regulatory and provider requirements that must be completed before a live launch." />
+        <meta name="description" content="City Gate Capital service availability, implemented safeguards and requirements for regulated financial-service activation." />
         <link rel="canonical" href={CANONICAL} />
         <meta property="og:title" content="Compliance — City Gate Capital" />
-        <meta property="og:description" content="Pre-deployment safeguards and requirements that must be completed before any live financial launch." />
+        <meta property="og:description" content="Platform safeguards and requirements that must be completed before regulated financial services are activated." />
         <meta property="og:url" content={CANONICAL} />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
@@ -276,7 +276,7 @@ export default function CompliancePage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:title" content="Compliance — City Gate Capital" />
-        <meta name="twitter:description" content="Pre-deployment safeguards and requirements before any live financial launch." />
+        <meta name="twitter:description" content="Platform safeguards and requirements for regulated financial-service activation." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </Helmet>
@@ -306,7 +306,7 @@ export default function CompliancePage() {
               Compliance
             </h1>
             <p className="text-foreground/55 text-lg leading-relaxed mb-6">
-              This is a pre-deployment environment. It documents implemented software safeguards and the legal, regulatory, provider, and operational work still required before any live financial service can launch.
+              This published platform documents implemented software safeguards and the legal, regulatory, provider and operational work still required before regulated financial services can be activated.
             </p>
             <div className="flex flex-wrap gap-4 text-xs text-foreground/55">
               <span>Last updated: <span className="text-foreground/60">{LAST_UPDATED}</span></span>
@@ -340,7 +340,7 @@ export default function CompliancePage() {
       {/* Certifications strip */}
       <section className="pb-12">
         <div className="container mx-auto px-4 md:px-6">
-          <p className="text-[10px] font-bold text-foreground/50 uppercase tracking-[0.18em] mb-5">Pre-deployment Safeguards & Launch Requirements</p>
+          <p className="text-[10px] font-bold text-foreground/50 uppercase tracking-[0.18em] mb-5">Platform Safeguards & Activation Requirements</p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 max-w-5xl">
             {certifications.map(cert => {
               const Icon = cert.icon;

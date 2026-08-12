@@ -72,8 +72,8 @@ export default function DepositsPage() {
   return (
     <>
       <Helmet>
-        <title>Deposit Interface Demonstration — City Gate Capital</title>
-        <meta name="description" content="Demonstration of proposed deposit interfaces. No bank details or crypto deposit addresses are issued, and no funds are accepted." />
+        <title>Funding Interface — City Gate Capital</title>
+        <meta name="description" content="Review proposed funding workflows. Bank details and crypto deposit addresses are not currently issued, and funds are not accepted." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/dashboard/deposits" />
       </Helmet>
@@ -86,7 +86,7 @@ export default function DepositsPage() {
             </Link>
             <div className="flex items-center gap-2.5">
               <ArrowDownLeft size={16} className="text-emerald-400" />
-              <h1 className="text-sm font-semibold text-foreground">Deposit Interface Demo</h1>
+              <h1 className="text-sm font-semibold text-foreground">Funding Interface</h1>
             </div>
             <div className="ml-auto">
               <button
@@ -128,7 +128,7 @@ export default function DepositsPage() {
               style={{ background: 'rgba(255,255,255,0.01)' }}>
               <div className="px-5 py-4 border-b border-white/5">
                 <p className="text-sm font-semibold text-foreground">
-                  {tab === 'wire' ? 'Wire Transfer Demonstration' : 'Crypto Deposit Demonstration'}
+                  {tab === 'wire' ? 'Wire Funding Workflow' : 'Digital-Asset Funding Workflow'}
                 </p>
                 <p className="text-xs text-foreground/35 mt-0.5">
                   {tab === 'wire'
@@ -176,15 +176,15 @@ export default function DepositsPage() {
               className="rounded-2xl border border-white/6 overflow-hidden"
               style={{ background: 'rgba(255,255,255,0.01)' }}>
               <div className="px-5 py-4 border-b border-white/5">
-                <p className="text-sm font-semibold text-foreground">Demonstration History</p>
-                <p className="text-xs text-foreground/35 mt-0.5">{deposits.length} demonstration records</p>
+                <p className="text-sm font-semibold text-foreground">Sample Activity</p>
+                <p className="text-xs text-foreground/35 mt-0.5">{deposits.length} sample records</p>
               </div>
               {txLoading ? (
                 <div className="flex items-center justify-center py-12"><Loader2 size={18} className="animate-spin text-foreground/25" /></div>
               ) : deposits.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-2 text-foreground/20">
                   <Activity size={22} />
-                  <p className="text-xs">No demonstration records yet</p>
+                  <p className="text-xs">No sample records yet</p>
                 </div>
               ) : deposits.slice(0, 15).map((tx, i) => (
                 <div key={tx.id}

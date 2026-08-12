@@ -54,11 +54,37 @@ const prohibited = [
   /go to dashboard[\s\S]{0,100}cards[\s\S]{0,100}(?:tap|select)[\s\S]{0,40}freeze/i,
 ];
 
+const publishedPlatformCopyFiles = [
+  'src/pages/about.tsx',
+  'src/pages/accounts.tsx',
+  'src/pages/support.tsx',
+  'src/pages/digital-banking.tsx',
+  'src/pages/wallet.tsx',
+  'src/pages/transfers.tsx',
+  'src/pages/compliance.tsx',
+  'src/pages/privacy-policy.tsx',
+  'src/pages/terms-of-service.tsx',
+  'src/pages/kyc.tsx',
+  'src/pages/chatbot/ChatbotPage.tsx',
+  'src/pages/dashboard/deposits.tsx',
+  'src/pages/dashboard/rates.tsx',
+  'src/components/AccountOpeningModal.tsx',
+  'src/lib/chatbot/chat-config.ts',
+  'src/lib/site-meta.ts',
+];
+
 const violations = [];
 for (const file of publicCopyFiles) {
   const source = await readFile(file, 'utf8');
   for (const pattern of prohibited) {
     if (pattern.test(source)) violations.push(`${file}: ${pattern}`);
+  }
+}
+
+for (const file of publishedPlatformCopyFiles) {
+  const source = await readFile(file, 'utf8');
+  if (/\bpre-deployment\b/i.test(source)) {
+    violations.push(`${file}: customer-facing stage label "pre-deployment"`);
   }
 }
 

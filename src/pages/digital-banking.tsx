@@ -51,26 +51,26 @@ interface DbCms {
 }
 
 const DB_CMS_DEFAULTS: DbCms = {
-  dbHeroTitle:        'Pre-deployment Digital Finance Controls',
-  dbHeroSubtitle:     'Pre-deployment smart cards, analytics, payment journeys, and automated insights in one beautifully designed demonstration platform.',
-  dbHeroCTA:          'Create Pre-deployment Profile',
-  dbHeroSecondaryCTA: 'Book a Demo',
+  dbHeroTitle:        'Digital Finance, Designed Around You',
+  dbHeroSubtitle:     'Explore card controls, analytics, payment journeys and automated insights in one premium platform experience.',
+  dbHeroCTA:          'Create Platform Profile',
+  dbHeroSecondaryCTA: 'Talk to Our Team',
   dbCtaTitle:         'Explore the Platform',
-  dbCtaSubtitle:      'Create a pre-deployment profile to explore the interface. Live cards and payments are not available.',
-  dbCtaPrimary:       'Create Pre-deployment Profile',
-  dbCtaSecondary:     'Book a Demo',
+  dbCtaSubtitle:      'Create a platform profile to explore the experience. Card issuance and payment execution require approved providers.',
+  dbCtaPrimary:       'Create Platform Profile',
+  dbCtaSecondary:     'Talk to Our Team',
   // Feature card defaults (match hardcoded cardFeatures order)
-  dbFeature1Title: 'Virtual Cards',     dbFeature1Desc: 'Pre-deployment virtual-card controls and custom demonstration spend limits.',
+  dbFeature1Title: 'Virtual Cards',     dbFeature1Desc: 'Review virtual-card controls and configurable sample spend limits.',
   dbFeature2Title: 'Freeze & Unfreeze', dbFeature2Desc: 'Explore proposed card-status controls. No payment instrument is issued or connected to a card network.',
-  dbFeature3Title: 'Instant Alerts',    dbFeature3Desc: 'Pre-deployment notification behaviour for demonstration transactions.',
-  dbFeature4Title: 'Top-up Simulation', dbFeature4Desc: 'Explore proposed top-up rules without linking a bank or moving funds.',
-  dbFeature5Title: 'Spend Analytics Pre-deployment', dbFeature5Desc: 'Explore illustrative purchase categorisation and charts.',
+  dbFeature3Title: 'Instant Alerts',    dbFeature3Desc: 'Review notification behaviour for sample transaction activity.',
+  dbFeature4Title: 'Funding Controls',  dbFeature4Desc: 'Explore proposed funding rules without linking a bank or moving funds.',
+  dbFeature5Title: 'Spend Analytics',   dbFeature5Desc: 'Explore illustrative purchase categorisation and charts.',
   dbFeature6Title: 'Contactless Pay',   dbFeature6Desc: 'Proposed wallet integrations shown for design purposes; no cards are issued.',
-  dbFeature7Title: 'FX Pre-deployment',        dbFeature7Desc: 'Explore currency-conversion screens with illustrative rates and fees.',
+  dbFeature7Title: 'Foreign Exchange',         dbFeature7Desc: 'Explore currency-conversion screens with indicative rates and fees.',
   dbFeature8Title: 'Payment Security Design', dbFeature8Desc: 'Provider authentication and fraud controls must be validated before launch.',
-  dbFeature9Title: 'Insights Prototype', dbFeature9Desc: 'Explore proposed insights generated from demonstration activity.',
+  dbFeature9Title: 'Smart Insights',      dbFeature9Desc: 'Explore proposed insights generated from sample activity.',
   // Stats defaults
-  dbStat1Value: '1',      dbStat1Label: 'Unified Pre-deployment',
+  dbStat1Value: '1',      dbStat1Label: 'Unified Platform',
   dbStat2Value: '$0',     dbStat2Label: 'Live Funds Processed',
   dbStat3Value: '50+',    dbStat3Label: 'Prototype Currencies',
   dbStat4Value: '2FA',    dbStat4Label: 'Account Protection',
@@ -113,7 +113,7 @@ const spendCategories = [
 const plans = [
   {
     name: 'Standard',
-    price: 'Pre-deployment',
+    price: 'Platform access',
     period: '',
     tagline: 'Illustrative product concept',
     features: [
@@ -128,7 +128,7 @@ const plans = [
   },
   {
     name: 'Premium',
-    price: 'Pre-deployment',
+    price: 'Platform access',
     period: '',
     tagline: 'Illustrative product concept',
     highlight: true,
@@ -144,7 +144,7 @@ const plans = [
   },
   {
     name: 'Elite',
-    price: 'Pre-deployment',
+    price: 'Platform access',
     period: '',
     tagline: 'Illustrative product concept',
     features: [
@@ -160,7 +160,7 @@ const plans = [
 ];
 
 const testimonials = [
-  { name: 'Illustrative scenario', role: 'Subscription controls', text: 'A future user could organise demonstration cards by subscription and review proposed card controls in one place.', rating: 5 },
+  { name: 'Illustrative scenario', role: 'Subscription controls', text: 'A future user could organise sample cards by subscription and review proposed card controls in one place.', rating: 5 },
   { name: 'Illustrative scenario', role: 'Travel planning', text: 'A future user could compare clearly disclosed foreign-exchange options once licensed providers and commercial terms are approved.', rating: 5 },
   { name: 'Illustrative scenario', role: 'Spending insights', text: 'A future user could use categorisation and charts to understand activity supplied by a contracted account provider.', rating: 5 },
 ];
@@ -276,7 +276,7 @@ export default function DigitalBankingPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Digital Banking — City Gate Capital" />
-        <meta name="twitter:description" content="A non-transactional pre-deployment of proposed card, analytics, and payment experiences." />
+        <meta name="twitter:description" content="Explore City Gate Capital card controls, analytics and payment workflows. Provider activation is required for live financial services." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -284,13 +284,13 @@ export default function DigitalBankingPage() {
           '@id': 'https://citygate.capital/digital-banking#webpage',
           name: 'Digital Banking — City Gate Capital',
           url: 'https://citygate.capital/digital-banking',
-          description: 'A non-transactional pre-deployment of proposed card, analytics, and payment experiences.',
+          description: 'A published platform experience for card controls, analytics and proposed payment workflows.',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
           mainEntity: {
             '@type': 'WebApplication',
-            name: 'City Gate Capital Digital Finance Pre-deployment',
-            description: 'A demonstration interface that does not issue cards or move customer funds.',
+            name: 'City Gate Capital Digital Finance',
+            description: 'A digital-finance interface; card issuance and money movement require approved providers.',
             applicationCategory: 'FinanceApplication',
             operatingSystem: 'Web',
           },
@@ -324,7 +324,7 @@ export default function DigitalBankingPage() {
                 {cms.dbHeroSubtitle}
               </p>
               <div className="flex flex-wrap gap-3 mb-10">
-                {['FX pre-deployment', 'Card controls', 'Analytics prototype', 'Card design', 'Rewards concept'].map(tag => (
+                {['Indicative FX', 'Card controls', 'Spending analytics', 'Card design', 'Rewards concept'].map(tag => (
                   <span key={tag} className="px-3 py-1.5 rounded-full text-xs font-medium text-primary bg-primary/10 border border-primary/20">{tag}</span>
                 ))}
               </div>
@@ -360,7 +360,7 @@ export default function DigitalBankingPage() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-2xl font-bold text-white">My Virtual Cards</h2>
-                <p className="text-white/50 text-sm mt-1">Create and manage demonstration card records. No card is issued.</p>
+                <p className="text-white/50 text-sm mt-1">Create and manage sample card records. Card issuance requires an approved provider.</p>
               </div>
               <button
                 onClick={generateCard}
@@ -368,7 +368,7 @@ export default function DigitalBankingPage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C9A84C] text-black font-semibold text-sm hover:bg-[#E8C97A] transition-colors disabled:opacity-50"
               >
                 {generating ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-                {generating ? 'Creating…' : 'New Demo Card'}
+                {generating ? 'Creating…' : 'New Sample Card'}
               </button>
             </div>
 
@@ -388,7 +388,7 @@ export default function DigitalBankingPage() {
                 <p className="text-white/50 text-sm mb-4">No virtual cards yet.</p>
                 <button onClick={generateCard} disabled={generating}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C9A84C] text-black font-semibold text-sm hover:bg-[#E8C97A] transition-colors">
-                  <Plus size={15} /> Create Your First Demo Card
+                  <Plus size={15} /> Create Your First Sample Card
                 </button>
               </div>
             ) : (
@@ -422,7 +422,7 @@ export default function DigitalBankingPage() {
         </section>
       )}
 
-      {/* Analytics pre-deployment */}
+      {/* Analytics experience */}
       <section className="py-24 bg-[#060606]">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -672,7 +672,7 @@ export default function DigitalBankingPage() {
                 <Link to="/accounts" className={`block text-center py-3 rounded-xl text-sm font-bold transition-all ${plan.highlight
                   ? 'bg-gradient-to-r from-primary to-[#F0D080] text-black'
                   : 'glass border border-primary/20 text-foreground hover:border-primary/40'}`}>
-                  Explore Pre-deployment
+                  Explore the Platform
                 </Link>
               </motion.div>
             ))}

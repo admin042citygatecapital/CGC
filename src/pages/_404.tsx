@@ -6,7 +6,7 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 const quickLinks = [
   { label: 'Digital Banking', href: '/digital-banking' },
   { label: 'Crypto Wallet',   href: '/wallet'          },
-  { label: 'Pre-deployment Accounts', href: '/accounts'       },
+  { label: 'Account Experiences', href: '/accounts'           },
   { label: 'Transfers',       href: '/transfers'       },
   { label: 'Support',         href: '/support'         },
   { label: 'Contact',         href: '/contact'         },

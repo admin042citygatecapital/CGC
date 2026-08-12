@@ -227,7 +227,7 @@ function PendingState({ submittedAt, onRefresh, refreshing }: {
           <div>
             <p className="text-sm font-semibold text-blue-400 mb-1">Taking longer than expected?</p>
             <p className="text-xs text-white/50 mb-3">
-              This is a demonstration status shown for {elapsed} minutes. Production review and response times are not available.
+              This is a sample workflow status shown for {elapsed} minutes. Production review and response times are not currently available.
             </p>
             <a href="/support" className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors">
               <Phone size={11} /> Contact Support
@@ -263,14 +263,14 @@ function ApprovedState({ name, onDashboard }: { name: string; onDashboard: () =>
         className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
         <BadgeCheck size={40} className="text-emerald-400" />
       </motion.div>
-      <h2 className="text-2xl font-bold text-foreground mb-2">Pre-deployment review completed, {name.split(' ')[0]}</h2>
+      <h2 className="text-2xl font-bold text-foreground mb-2">Profile review completed, {name.split(' ')[0]}</h2>
       <p className="text-sm text-foreground/50 max-w-sm mx-auto mb-6">
-        An administrator reviewed this demonstration profile. This is not regulated identity verification and does not open or unlock a bank, payment, card, trading, or custody service.
+        An administrator reviewed this platform profile. This is not regulated identity verification and does not activate a bank, payment, card, trading or custody service.
       </p>
       <div className="grid grid-cols-3 gap-3 mb-8 text-left">
         {[
           { icon: CheckCircle, label: 'Transfers', desc: 'Explore a proposed transfer journey' },
-          { icon: CheckCircle, label: 'Withdrawals', desc: 'Pre-deployment bank and crypto withdrawal screens' },
+          { icon: CheckCircle, label: 'Withdrawals', desc: 'Bank and digital-asset withdrawal workflows' },
           { icon: CheckCircle, label: 'Virtual Cards', desc: 'Explore the proposed card experience' },
         ].map(item => (
           <div key={item.label} className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-3">
@@ -425,7 +425,7 @@ function StepIdentity({ form, onChange, errors }: {
           {form.idDocumentBase64 ? (
             <div className="flex flex-col items-center gap-2">
               {preview && preview.startsWith('data:image') ? (
-                <img src={preview} alt="ID pre-deployment" className="h-24 object-contain rounded-lg mb-1" />
+                <img src={preview} alt="Identity document interface" className="h-24 object-contain rounded-lg mb-1" />
               ) : (
                 <FileText size={28} className="text-primary mx-auto mb-1" />
               )}
@@ -446,7 +446,7 @@ function StepIdentity({ form, onChange, errors }: {
       </div>
       <div className="flex items-center gap-3 text-xs text-foreground/35 rounded-xl border border-white/5 bg-white/2 p-3">
         <Lock size={12} className="text-primary shrink-0" />
-        <span>Pre-deployment workflow only · Do not upload real identity documents · Live KYC is not enabled</span>
+        <span>Interface workflow only · Do not upload identity documents · Approved KYC verification is not currently enabled</span>
       </div>
     </div>
   );
@@ -508,7 +508,7 @@ function StepSelfie({ form, onChange, errors }: {
           }`}>
           {form.selfieBase64 ? (
             <div className="flex flex-col items-center gap-2">
-              <img src={form.selfieBase64} alt="Selfie pre-deployment" className="h-32 object-contain rounded-xl mb-1" />
+              <img src={form.selfieBase64} alt="Selfie verification interface" className="h-32 object-contain rounded-xl mb-1" />
               <span className="text-sm font-medium text-primary">{form.selfieName}</span>
               <span className="text-xs text-foreground/40">Click to replace</span>
             </div>
@@ -715,8 +715,8 @@ function KycPageInner() {
   return (
     <>
       <Helmet>
-        <title>KYC Journey Demonstration — City Gate Capital</title>
-        <meta name="description" content="Explore a demonstration KYC workflow. Real identity verification and financial-account approval are unavailable." />
+        <title>Identity Verification Journey — City Gate Capital</title>
+        <meta name="description" content="Review the City Gate Capital identity-verification workflow. Approved provider verification and financial-account activation are not currently available." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/kyc" />
       </Helmet>

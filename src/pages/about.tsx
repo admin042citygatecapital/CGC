@@ -17,14 +17,14 @@ const values = [
   { icon: Globe,    title: 'Global Product Vision',  desc: 'Explore how multi-currency experiences could work after geographic approvals and provider coverage are confirmed.',   color: '#627EEA' },
   { icon: TrendingUp, title: 'Measured Improvement', desc: 'Validate product decisions while keeping financial operations locked until every launch dependency is approved.',       color: '#10B981' },
   { icon: Users,    title: 'User-Centred Design',    desc: 'Design clear account, support, and administration workflows around user needs and accessibility.',                      color: '#9945FF' },
-  { icon: Heart,    title: 'Truthful Communication', desc: 'Clearly distinguish demonstrations, proposed terms, and verified live capabilities.',                                 color: '#EC4899' },
+  { icon: Heart,    title: 'Truthful Communication', desc: 'Clearly distinguish current availability, proposed terms and verified provider capabilities.',                       color: '#EC4899' },
   { icon: Zap,      title: 'Simple Experiences',     desc: 'Turn complex operational workflows into understandable, accessible interfaces.',                                      color: '#F7931A' },
 ];
 
 const milestones = [
   { year: '01', event: 'Defined the City Gate Capital product vision and premium global-finance experience.' },
   { year: '02', event: 'Built the responsive public website, authentication flows, and customer dashboard.' },
-  { year: '03', event: 'Added account, transfer, card, wallet, analytics, and paper-trading demonstrations.' },
+  { year: '03', event: 'Added account, transfer, card, wallet, analytics and paper-trading interfaces.' },
   { year: '04', event: 'Built the administration workspace with role-based access and audit logging.' },
   { year: '05', event: 'Hardened sessions, CSRF controls, production configuration, and deployment checks.' },
   { year: 'Next', event: 'Complete legal approvals and contracted KYC, AML, payment, banking, and custody integrations before any live financial launch.' },

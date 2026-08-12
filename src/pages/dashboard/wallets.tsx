@@ -547,7 +547,7 @@ function QuickActionModal({ action, onClose }: {
     withdraw: { title: 'Withdraw Funds', icon: ArrowUpRight,  color: RED,      desc: 'Withdraw to your linked bank account or external wallet.',    route: '/dashboard/transfers'        },
     buy:      { title: 'Buy Crypto',     icon: ShoppingCart,  color: GOLD,     desc: 'Purchase crypto assets directly from your banking balance.',  route: '/dashboard/trading/markets'  },
     sell:     { title: 'Sell Crypto',    icon: DollarSign,    color: BLUE,     desc: 'Sell positions and receive USD to your banking wallet.',      route: '/dashboard/trading/orders'   },
-    exchange: { title: 'Exchange',       icon: RefreshCw,     color: PURPLE,   desc: 'Pre-deployment conversions between supported currencies.',           route: '/dashboard/exchange'         },
+    exchange: { title: 'Exchange',       icon: RefreshCw,     color: PURPLE,   desc: 'Indicative conversions between supported currencies.',              route: '/dashboard/exchange'         },
   };
   const m    = META[action];
   const Icon = m.icon;
