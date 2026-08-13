@@ -24,7 +24,6 @@ import {
   StatsBar,
   FeaturesGrid,
   DashboardPreview,
-  SecuritySection,
   MobileAppSection,
   PricingSection,
   TestimonialsSection,
@@ -216,7 +215,6 @@ function HomePageContent() {
       <InvestmentsSection />
 
       {/* ── BANKING MODULE (continued) ──────────────────────── */}
-      <SecuritySection />
       <MobileAppSection />
 
       {/* ── Pricing ─────────────────────────────────────────── */}

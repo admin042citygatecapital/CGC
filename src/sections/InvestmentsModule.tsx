@@ -2,10 +2,9 @@
 import { motion } from 'motion/react';
 import {
   ArrowRight, BarChart3, Bitcoin, BriefcaseBusiness, Building2, FileText,
-  Globe2, PiggyBank, ShieldCheck, Users, Wallet,
+  Globe2, PiggyBank, Users, Wallet,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { GlassCard } from '@/lib/homeShared';
 import type { ProductSlug } from '@/lib/productCatalogue';
 
 interface ProductCardItem {
@@ -128,21 +127,6 @@ export function InvestmentsSection() {
           <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">{wealthServices.map((product, i) => <ProductCard key={product.label} product={product} index={i + accountProducts.length} />)}</div>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-10">
-          <GlassCard className="rounded-2xl p-6 md:p-7">
-            <div className="flex flex-col md:flex-row md:items-center gap-5">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><ShieldCheck size={22} className="text-primary"/></div>
-              <div className="flex-1">
-                <h3 className="text-base font-semibold text-foreground mb-1.5">Provider-connected by design</h3>
-                <p className="text-sm text-foreground/45 leading-relaxed">Account issuance, investing, custody, retirement products, tax reporting, and financial execution require the appropriate authorised institution for each customer and jurisdiction. Features activate only after provider, compliance, and operational approval.</p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Link to="/accounts" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-black text-xs font-semibold">Explore Accounts <ArrowRight size={14}/></Link>
-                <Link to="/digital-banking" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-primary/20 text-primary text-xs font-semibold hover:bg-primary/5">Platform Overview</Link>
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
       </div>
     </section>
   );
