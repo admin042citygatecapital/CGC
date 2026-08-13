@@ -5,11 +5,12 @@ import { motion } from 'motion/react';
 import {
   Save, CheckCircle, Palette, Navigation, Image, Type,
   Layout, Code, Eye, Smartphone, Monitor, Tablet, AlertCircle,
-  MapPin, ExternalLink, FileText, Upload, Download, History,
+  MapPin, ExternalLink, FileText, Upload, Download, History, BadgeDollarSign, Plus, Trash2,
 } from 'lucide-react';
 import AdminLayout from '@/layouts/AdminLayout';
 import { useAdminAuth, authHeaders } from '@/lib/adminAuth';
 import { DEFAULT_BUSINESS_ADDRESS, resolveBusinessLocation } from '@/lib/businessLocation';
+import { DEFAULT_ACCOUNT_PLANS, normalizeAccountPlans, type AccountPlanConfig } from '@/lib/accountPlans';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,6 +61,7 @@ interface WebsiteSettings {
   darkMode: boolean;
   borderRadius: 'sharp' | 'rounded' | 'pill';
   animationsEnabled: boolean;
+  accountPlans: AccountPlanConfig[];
 }
 
 const DEFAULT: WebsiteSettings = {
@@ -109,6 +111,7 @@ const DEFAULT: WebsiteSettings = {
   darkMode: true,
   borderRadius: 'rounded',
   animationsEnabled: true,
+  accountPlans: DEFAULT_ACCOUNT_PLANS,
 };
 
 const TABS = [
@@ -118,6 +121,7 @@ const TABS = [
   { id: 'footer',    label: 'Footer',      icon: Layout },
   { id: 'announce',  label: 'Announcement', icon: Type },
   { id: 'copy',      label: 'Page Write-up', icon: FileText },
+  { id: 'plans',     label: 'Account Plans', icon: BadgeDollarSign },
   { id: 'theme',     label: 'Theme',       icon: Code },
 ];
 
@@ -145,7 +149,7 @@ export default function AdminWebsite() {
       .then(d => {
         if (d?.settings) {
           const location = resolveBusinessLocation(d.settings);
-          setCfg(prev => ({ ...prev, ...d.settings, footerAddress: location.address }));
+          setCfg(prev => ({ ...prev, ...d.settings, footerAddress: location.address, accountPlans: normalizeAccountPlans(d.settings.accountPlans) }));
         }
       })
       .catch(() => {});
@@ -214,6 +218,10 @@ export default function AdminWebsite() {
 
   function set<K extends keyof WebsiteSettings>(key: K, value: WebsiteSettings[K]) {
     setCfg(prev => ({ ...prev, [key]: value }));
+  }
+
+  function updatePlan(id: AccountPlanConfig['id'], patch: Partial<AccountPlanConfig>) {
+    setCfg(prev => ({ ...prev, accountPlans: normalizeAccountPlans(prev.accountPlans.map(plan => plan.id === id ? { ...plan, ...patch } : plan)) }));
   }
 
   async function handleSave() {
@@ -639,6 +647,58 @@ export default function AdminWebsite() {
             )}
 
             {/* Theme */}
+            {tab === 'plans' && (
+              <>
+                <div>
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><BadgeDollarSign size={15} className="text-primary" /> Account Plan Management</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-white/40">Changes saved here update the public Digital Banking comparison automatically. Availability still remains subject to eligibility and approved providers.</p>
+                </div>
+                <div className="space-y-5">
+                  {cfg.accountPlans.map(plan => (
+                    <article key={plan.id} className="rounded-2xl border border-white/8 bg-black/25 p-5">
+                      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">{plan.id}</p>
+                          <h4 className="mt-1 text-lg font-bold text-white">{plan.name}</h4>
+                        </div>
+                        <button type="button" onClick={() => updatePlan(plan.id, { visible: !plan.visible })} className={`rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${plan.visible ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : 'border-white/10 text-white/35'}`}>
+                          {plan.visible ? 'Visible' : 'Hidden'}
+                        </button>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <PlanField label="Plan name" value={plan.name} onChange={value => updatePlan(plan.id, { name: value })} />
+                        <PlanField label="Monthly price" value={plan.monthlyPrice} onChange={value => updatePlan(plan.id, { monthlyPrice: value })} />
+                        <PlanField label="Annual price" value={plan.annualPrice} onChange={value => updatePlan(plan.id, { annualPrice: value })} />
+                        <PlanField label="CTA label" value={plan.ctaLabel} onChange={value => updatePlan(plan.id, { ctaLabel: value })} />
+                        <PlanField label="CTA link" value={plan.ctaLink} onChange={value => updatePlan(plan.id, { ctaLink: value })} />
+                        <PlanField label="Limits" value={plan.limits} onChange={value => updatePlan(plan.id, { limits: value })} />
+                      </div>
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <PlanArea label="Description" value={plan.description} onChange={value => updatePlan(plan.id, { description: value })} />
+                        <PlanArea label="Eligibility" value={plan.eligibility} onChange={value => updatePlan(plan.id, { eligibility: value })} />
+                      </div>
+                      <div className="mt-5">
+                        <div className="mb-2 flex items-center justify-between">
+                          <label className="text-[10px] uppercase tracking-wide text-white/30">Feature list</label>
+                          <button type="button" onClick={() => updatePlan(plan.id, { features: [...plan.features, 'New feature'] })} className="inline-flex items-center gap-1 text-xs text-primary"><Plus size={12} /> Add feature</button>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {plan.features.map((feature, index) => (
+                            <div key={`${plan.id}-${index}`} className="flex gap-2">
+                              <input value={feature} onChange={event => updatePlan(plan.id, { features: plan.features.map((item, itemIndex) => itemIndex === index ? event.target.value : item) })} className="min-w-0 flex-1 rounded-xl border border-white/8 bg-white/[0.04] px-3 py-2 text-xs text-white focus:border-primary/40 focus:outline-none" />
+                              <button type="button" aria-label={`Remove ${feature}`} onClick={() => updatePlan(plan.id, { features: plan.features.filter((_, itemIndex) => itemIndex !== index) })} className="rounded-xl border border-red-400/15 px-2.5 text-red-300/60 hover:text-red-300"><Trash2 size={13} /></button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                <a href="/digital-banking" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-primary/25 px-4 py-2.5 text-xs font-semibold text-primary"><Eye size={13} /> Open public plan comparison</a>
+              </>
+            )}
+
+            {/* Theme */}
             {tab === 'theme' && (
               <>
                 <h3 className="text-white font-semibold text-sm flex items-center gap-2"><Code size={14} className="text-primary" /> Theme & Display</h3>
@@ -676,4 +736,12 @@ export default function AdminWebsite() {
       </AdminLayout>
     </>
   );
+}
+
+function PlanField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return <div><label className="mb-1.5 block text-[10px] uppercase tracking-wide text-white/30">{label}</label><input value={value} onChange={event => onChange(event.target.value)} className="w-full rounded-xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white focus:border-primary/40 focus:outline-none" /></div>;
+}
+
+function PlanArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return <div><label className="mb-1.5 block text-[10px] uppercase tracking-wide text-white/30">{label}</label><textarea rows={3} value={value} onChange={event => onChange(event.target.value)} className="w-full resize-none rounded-xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm leading-6 text-white focus:border-primary/40 focus:outline-none" /></div>;
 }

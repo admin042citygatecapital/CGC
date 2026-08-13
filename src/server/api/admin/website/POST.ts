@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { normalizeBusinessAddress } from '../../../../lib/businessLocation.js';
 import { writeWebsiteSettings } from '../../../lib/websiteStore.js';
 import { appendAudit } from '../../../lib/auditLog.js';
+import { normalizeAccountPlans } from '../../../../lib/accountPlans.js';
 
 export default function handler(req: Request, res: Response) {
   const { settings } = req.body;
@@ -47,6 +48,16 @@ export default function handler(req: Request, res: Response) {
       || (link !== '' && !link.startsWith('/') && !link.startsWith('https://citygate.capital'))
     ) {
       return res.status(400).json({ error: 'Announcement link must be blank or point to City Gate Capital.' });
+    }
+  }
+
+  if (settings.accountPlans !== undefined) {
+    if (!Array.isArray(settings.accountPlans) || settings.accountPlans.length !== 3) {
+      return res.status(400).json({ error: 'Standard, Premium and Elite plan configurations are required.' });
+    }
+    settings.accountPlans = normalizeAccountPlans(settings.accountPlans);
+    if (!settings.accountPlans.some((plan: { visible: boolean }) => plan.visible)) {
+      return res.status(400).json({ error: 'At least one account plan must remain visible.' });
     }
   }
 

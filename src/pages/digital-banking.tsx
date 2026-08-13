@@ -1,6 +1,7 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import {
   ArrowRight,
   BarChart3,
@@ -20,6 +21,7 @@ import {
   UserRound,
   WalletCards,
 } from 'lucide-react';
+import { DEFAULT_ACCOUNT_PLANS, normalizeAccountPlans, type AccountPlanConfig } from '@/lib/accountPlans';
 
 type PlanKey = 'standard' | 'premium' | 'elite';
 
@@ -44,7 +46,7 @@ interface ComparisonFeature {
   plans: Record<PlanKey, string | boolean>;
 }
 
-const plans: Plan[] = [
+const PLAN_PRESENTATION: Plan[] = [
   {
     key: 'standard',
     name: 'Standard',
@@ -190,6 +192,35 @@ function Availability({ value }: { value: string | boolean }) {
 }
 
 export default function DigitalBankingPage() {
+  const [planConfig, setPlanConfig] = useState<AccountPlanConfig[]>(DEFAULT_ACCOUNT_PLANS);
+  useEffect(() => {
+    fetch('/api/settings/website')
+      .then(response => response.ok ? response.json() : null)
+      .then(payload => {
+        if (payload?.data?.accountPlans) setPlanConfig(normalizeAccountPlans(payload.data.accountPlans));
+      })
+      .catch(() => {});
+  }, []);
+
+  const plans = PLAN_PRESENTATION.map(presentation => {
+    const configured = planConfig.find(plan => plan.id === presentation.key);
+    return configured ? {
+      ...presentation,
+      name: configured.name,
+      price: configured.monthlyPrice,
+      period: configured.monthlyPrice.toLowerCase() === 'free' ? undefined : '/ month',
+      summary: configured.description,
+      builtFor: configured.eligibility,
+      cta: configured.ctaLabel,
+      href: configured.ctaLink,
+    } : presentation;
+  }).filter(plan => planConfig.find(configured => configured.id === plan.key)?.visible !== false);
+
+  const isIncluded = (feature: ComparisonFeature, plan: Plan) => {
+    const configured = planConfig.find(item => item.id === plan.key);
+    return configured ? configured.features.includes(feature.name) : Boolean(feature.plans[plan.key]);
+  };
+
   return (
     <>
       <Helmet>
@@ -243,7 +274,7 @@ export default function DigitalBankingPage() {
             </div>
 
             <div className="hidden overflow-hidden rounded-[30px] border border-primary/25 bg-[#0b0b0a] shadow-[0_24px_90px_rgba(0,0,0,.45)] lg:block">
-              <div className="grid grid-cols-[1.3fr_repeat(3,minmax(0,1fr))] border-b border-white/10">
+              <div className="grid border-b border-white/10" style={{ gridTemplateColumns: `1.3fr repeat(${plans.length}, minmax(0, 1fr))` }}>
                 <div className="flex items-end p-7">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Features</p>
@@ -265,7 +296,7 @@ export default function DigitalBankingPage() {
               </div>
 
               {comparisonFeatures.map((feature, index) => (
-                <div key={feature.name} className={`grid grid-cols-[1.3fr_repeat(3,minmax(0,1fr))] ${index < comparisonFeatures.length - 1 ? 'border-b border-white/[0.075]' : ''}`}>
+                <div key={feature.name} className={`grid ${index < comparisonFeatures.length - 1 ? 'border-b border-white/[0.075]' : ''}`} style={{ gridTemplateColumns: `1.3fr repeat(${plans.length}, minmax(0, 1fr))` }}>
                   <div className="flex items-center gap-4 p-5">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <feature.icon size={19} />
@@ -277,13 +308,13 @@ export default function DigitalBankingPage() {
                   </div>
                   {plans.map(plan => (
                     <div key={plan.key} className={`flex min-h-[86px] items-center justify-center border-l border-white/[0.075] px-5 text-center ${plan.highlight ? 'bg-primary/[0.035]' : ''}`}>
-                      <Availability value={feature.plans[plan.key]} />
+                      <Availability value={isIncluded(feature, plan) ? feature.plans[plan.key] || true : false} />
                     </div>
                   ))}
                 </div>
               ))}
 
-              <div className="grid grid-cols-[1.3fr_repeat(3,minmax(0,1fr))] border-t border-white/10">
+              <div className="grid border-t border-white/10" style={{ gridTemplateColumns: `1.3fr repeat(${plans.length}, minmax(0, 1fr))` }}>
                 <div className="p-7">
                   <p className="text-sm font-semibold text-white/75">Banking that grows with you.</p>
                   <p className="mt-1 text-xs leading-5 text-white/38">Move between experiences as your needs evolve.</p>
@@ -323,7 +354,7 @@ export default function DigitalBankingPage() {
                     <p className="mt-4 text-sm leading-6 text-white/52">{plan.summary}</p>
                   </div>
                   <div className="space-y-4 p-6 sm:p-8">
-                    {comparisonFeatures.filter(feature => Boolean(feature.plans[plan.key])).map(feature => (
+                    {comparisonFeatures.filter(feature => isIncluded(feature, plan)).map(feature => (
                       <div key={feature.name} className="flex items-start gap-3">
                         <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary"><Check size={13} strokeWidth={3} /></span>
                         <div>
