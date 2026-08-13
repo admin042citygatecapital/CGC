@@ -1,10 +1,16 @@
 # Production test-data quarantine manifest
 
-Status: **PLANNED — NOT APPLIED**
+Status: **APPLIED AND VERIFIED**
 
 Inventory observed: 2026-08-12
 
 Provider backup reference: `render:dpg-d9r3o0qjobas73bh68s0-a:logical-export:2:2026-08-12`
+
+Applied batch: `dqb_aed01e98621f8f1a497aa6e4`
+
+Applied at: `2026-08-12T14:58:01.725112Z`
+
+Recovery assurance: Neon production is protected; automated snapshots are enabled, and an isolated snapshot restore was queried successfully on `2026-08-13T00:16:16Z` before the temporary restore branch was removed.
 
 ## Inventory
 
@@ -33,7 +39,8 @@ f067802e286310ae71854b4441bd5b1cdb558b92590b905c83e5f1535df241cc
 4e3cc7c487a7cad7edf96f10eac280847d2d10d10943987057c431e3f18e3255
 ```
 
-## Apply gate
+## Verification result
 
-Do not apply until migrations `0017_data_quarantine.sql` and `0018_kyc_reviewer_identity.sql` are deployed, the live preview reproduces this manifest, and the provider backup is still available. Any candidate-count, transaction-count, or confirmation-hash difference requires a new manifest and approval.
+Production verification confirms one applied batch containing exactly 11 suspended `quarantined_test` profiles and 8 linked `synthetic_quarantined` transaction records. Every record retains the applied batch reference. No customer or transaction row was deleted.
 
+Any future candidate-count, transaction-count, confirmation-hash, restore, or reclassification change requires a new manifest and separate approval.

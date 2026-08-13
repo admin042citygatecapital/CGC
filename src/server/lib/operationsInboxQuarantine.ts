@@ -41,6 +41,10 @@ function canonicalSnapshot(value: Record<string, unknown>): string {
   return JSON.stringify(Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right))));
 }
 
+function jsonb(value: unknown): string {
+  return JSON.stringify(value);
+}
+
 function assertReference(value: string, label: string): string {
   const normalized = value.trim();
   if (!SAFE_REFERENCE.test(normalized)) throw new Error(`${label} is missing or invalid.`);
@@ -149,13 +153,13 @@ export async function quarantineOperationsItems(options: {
           (id, batch_id, operations_item_id, previous_state, snapshot_sha256)
         VALUES
           (${`oqr_${crypto.randomBytes(12).toString('hex')}`}, ${batchId}, ${row.id},
-           ${transaction.json(previousState)}, ${sha256(canonicalSnapshot(previousState))})
+           ${jsonb(previousState)}::jsonb, ${sha256(canonicalSnapshot(previousState))})
       `;
       await transaction`
         UPDATE operations_items
         SET status = 'archived',
-            metadata = metadata || ${transaction.json({ quarantineBatchId: batchId, quarantinedAt, dataClassification: 'synthetic_quarantined' })},
-            history = history || ${transaction.json([{ at: quarantinedAt, actor, action: 'synthetic_record_quarantined', detail: batchId }])}::jsonb,
+            metadata = metadata || ${jsonb({ quarantineBatchId: batchId, quarantinedAt, dataClassification: 'synthetic_quarantined' })}::jsonb,
+            history = history || ${jsonb([{ at: quarantinedAt, actor, action: 'synthetic_record_quarantined', detail: batchId }])}::jsonb,
             updated_at = NOW()
         WHERE id = ${row.id}
       `;
@@ -165,7 +169,7 @@ export async function quarantineOperationsItems(options: {
       INSERT INTO audit_log (id, admin_id, admin_email, action, target, target_id, details, ts)
       VALUES (${`al_${crypto.randomBytes(8).toString('hex')}`}, ${actor}, ${actor},
         'operations_test_records_quarantined', 'operations_quarantine_batch', ${batchId},
-        ${transaction.json({ reason, itemIds: ids, backupFilename, backupSha256: backup.checksum })}, NOW())
+        ${jsonb({ reason, itemIds: ids, backupFilename, backupSha256: backup.checksum })}::jsonb, NOW())
     `;
     return { batchId, itemCount: rows.length, backupFilename, backupSha256: backup.checksum };
   });
@@ -206,8 +210,8 @@ export async function restoreOperationsQuarantine(options: {
       const updated = await transaction<Array<{ id: string }>>`
         UPDATE operations_items
         SET status = ${String(record.previous_state.status)},
-            metadata = metadata || ${transaction.json({ quarantineRestoredAt: restoredAt, quarantineRestoreApprovalReference: approvalReference })},
-            history = history || ${transaction.json([{ at: restoredAt, actor, action: 'synthetic_record_quarantine_restored', detail: batchId }])}::jsonb,
+            metadata = metadata || ${jsonb({ quarantineRestoredAt: restoredAt, quarantineRestoreApprovalReference: approvalReference })}::jsonb,
+            history = history || ${jsonb([{ at: restoredAt, actor, action: 'synthetic_record_quarantine_restored', detail: batchId }])}::jsonb,
             updated_at = NOW()
         WHERE id = ${record.operations_item_id}
           AND status = 'archived'
@@ -225,7 +229,7 @@ export async function restoreOperationsQuarantine(options: {
       INSERT INTO audit_log (id, admin_id, admin_email, action, target, target_id, details, ts)
       VALUES (${`al_${crypto.randomBytes(8).toString('hex')}`}, ${actor}, ${actor},
         'operations_test_records_restored', 'operations_quarantine_batch', ${batchId},
-        ${transaction.json({ approvalReference, itemCount: records.length })}, NOW())
+        ${jsonb({ approvalReference, itemCount: records.length })}::jsonb, NOW())
     `;
     return { batchId, itemCount: records.length };
   });

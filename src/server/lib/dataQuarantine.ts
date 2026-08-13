@@ -31,6 +31,10 @@ function canonicalSnapshot(value: Record<string, unknown>): string {
   return JSON.stringify(Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right))));
 }
 
+function jsonb(value: unknown): string {
+  return JSON.stringify(value);
+}
+
 export function normalizeTestEmails(input: string[]): string[] {
   const emails = [...new Set(input.map(value => value.trim().toLowerCase()).filter(Boolean))].sort();
   if (!emails.length) throw new Error('At least one exact test-customer email is required.');
@@ -169,7 +173,7 @@ export async function quarantineTestData(options: {
           (id, batch_id, resource_type, resource_id, previous_state, snapshot_sha256)
         VALUES
           (${`dqr_${crypto.randomBytes(12).toString('hex')}`}, ${batchId}, 'user', ${row.id},
-           ${transaction.json(previousState)}, ${sha256(canonical)})
+           ${jsonb(previousState)}::jsonb, ${sha256(canonical)})
       `;
     }
     for (const row of transactionRows) {
@@ -183,7 +187,7 @@ export async function quarantineTestData(options: {
           (id, batch_id, resource_type, resource_id, previous_state, snapshot_sha256)
         VALUES
           (${`dqr_${crypto.randomBytes(12).toString('hex')}`}, ${batchId}, 'transaction', ${row.id},
-           ${transaction.json(previousState)}, ${sha256(canonical)})
+           ${jsonb(previousState)}::jsonb, ${sha256(canonical)})
       `;
     }
 
@@ -212,7 +216,7 @@ export async function quarantineTestData(options: {
       VALUES
         (${`al_${crypto.randomBytes(8).toString('hex')}`}, ${actor}, ${actor}, 'production_test_data_quarantined',
          'data_quarantine_batch', ${batchId},
-         ${transaction.json({ providerBackupReference, providerBackupVerifiedAt: providerBackupVerifiedAt.toISOString(), reason, customerCount: candidates.length, transactionCount: transactionRows.length, candidateEmailHashes: candidates.map(row => sha256(row.email)) })}, NOW())
+         ${jsonb({ providerBackupReference, providerBackupVerifiedAt: providerBackupVerifiedAt.toISOString(), reason, customerCount: candidates.length, transactionCount: transactionRows.length, candidateEmailHashes: candidates.map(row => sha256(row.email)) })}::jsonb, NOW())
     `;
     return { batchId, customerCount: candidates.length, transactionCount: transactionRows.length, revokedSessions: revoked.length };
   });
@@ -276,7 +280,7 @@ export async function restoreQuarantineBatch(options: {
       VALUES
         (${`al_${crypto.randomBytes(8).toString('hex')}`}, ${actor}, ${actor}, 'production_test_data_restored',
          'data_quarantine_batch', ${batchId},
-         ${transaction.json({ approvalReference, customerCount, transactionCount })}, NOW())
+         ${jsonb({ approvalReference, customerCount, transactionCount })}::jsonb, NOW())
     `;
     return { batchId, customerCount, transactionCount };
   });

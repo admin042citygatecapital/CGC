@@ -41,5 +41,7 @@ describe('Operations Inbox quarantine controls', () => {
     expect(implementation).not.toMatch(/DELETE\s+FROM\s+operations_items/i);
     expect(implementation).toContain('appendCriticalAudit');
     expect(implementation).toContain('createOperationalBackup');
+    expect(implementation).not.toContain('transaction.json(');
+    expect(implementation).toContain('::jsonb');
   });
 });
