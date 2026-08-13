@@ -9,7 +9,7 @@ import { SPONSOR_CONTROLS, canManageCategory } from '../../server/lib/sponsorRea
 import { buildSponsorPackFiles, buildSponsorPackZip } from '../../server/lib/sponsorReadinessExport.js';
 import {
   SponsorReadinessError, assertMakerChecker, buildSponsorReadinessSnapshot,
-  assertSponsorCategoryOwnership, assertSponsorReviewOwnership, deriveLegalEntityState, effectiveEvidenceStatus, validateEvidenceInput,
+  assertSponsorCategoryOwnership, assertSponsorReviewOwnership, deriveLegalEntityState, effectiveEvidenceStatus, reviewSponsorPackage, validateEvidenceInput,
 } from '../../server/lib/sponsorReadinessStore.js';
 
 describe('legal entity state', () => {
@@ -73,7 +73,15 @@ describe('sponsor readiness lifecycle and validation', () => {
     const checker = { id: 'external_checker_1234567890abcdef', role: 'COMPLIANCE_ADMIN' } as const;
     expect(() => assertSponsorCategoryOwnership('authoritative_ledger', checker)).toThrow(/does not own/);
     expect(() => assertSponsorReviewOwnership('authoritative_ledger', checker)).not.toThrow();
-    expect(() => assertSponsorReviewOwnership('authoritative_ledger', { ...checker, role: 'SUPPORT_ADMIN' })).toThrow(/does not own/);
+    expect(() => assertSponsorReviewOwnership('authoritative_ledger', { id: 'super-admin', role: 'SUPER_ADMIN' })).toThrow(/independent checker/);
+    expect(() => assertSponsorReviewOwnership('consumer_kyc_policy', { id: 'compliance-admin', role: 'COMPLIANCE_ADMIN' })).toThrow(/independent checker/);
+    expect(() => assertSponsorReviewOwnership('authoritative_ledger', { ...checker, role: 'SUPPORT_ADMIN' })).toThrow(/independent checker/);
+  });
+
+  it('prevents the super-administrator from performing final sponsor review', async () => {
+    await expect(reviewSponsorPackage('approved', 'Attempted administration approval.', {
+      id: 'super-admin', email: 'admin@example.test', role: 'SUPER_ADMIN',
+    })).rejects.toMatchObject({ code: 'INDEPENDENT_CHECKER_REQUIRED', status: 403 });
   });
 });
 

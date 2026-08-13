@@ -98,8 +98,10 @@ export function assertSponsorCategoryOwnership(controlKey: string, actor: Pick<S
 }
 
 export function assertSponsorReviewOwnership(controlKey: string, actor: Pick<SponsorActor, 'id' | 'role'>): void {
-  if (isIndependentSponsorReviewer(actor)) return;
-  assertSponsorCategoryOwnership(controlKey, actor);
+  if (!findSponsorControl(controlKey)) throw new SponsorReadinessError('Unknown sponsor control.', 'UNKNOWN_CONTROL');
+  if (!isIndependentSponsorReviewer(actor)) {
+    throw new SponsorReadinessError('Sponsor evidence review requires the separately authenticated independent checker.', 'INDEPENDENT_CHECKER_REQUIRED', 403);
+  }
 }
 
 async function ensurePackage(): Promise<void> {
@@ -322,8 +324,7 @@ export async function submitSponsorPackage(actor: SponsorActor): Promise<void> {
 }
 
 export async function reviewSponsorPackage(decision: 'approved' | 'rejected', note: string, actor: SponsorActor): Promise<void> {
-  const independentChecker = isIndependentSponsorReviewer(actor);
-  if (actor.role !== 'SUPER_ADMIN' && !independentChecker) throw new SponsorReadinessError('An authorised independent checker is required.', 'INDEPENDENT_CHECKER_REQUIRED', 403);
+  if (!isIndependentSponsorReviewer(actor)) throw new SponsorReadinessError('An authorised independent checker is required.', 'INDEPENDENT_CHECKER_REQUIRED', 403);
   const snapshot = await getSponsorReadiness();
   if (snapshot.package.status !== 'submitted') throw new SponsorReadinessError('Only a submitted package may be reviewed.', 'INVALID_STATE', 409);
   if (snapshot.package.submittedBy === actor.id) throw new SponsorReadinessError('Maker-checker prevents the package submitter from approving it.', 'MAKER_CHECKER_VIOLATION', 409);
