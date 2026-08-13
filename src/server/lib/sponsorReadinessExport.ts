@@ -24,6 +24,7 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
     id: item.id, controlKey: item.controlKey, title: item.title,
     status: item.effectiveStatus, referenceType: item.referenceType,
     reference: item.reference, sha256: item.sha256, owner: item.owner,
+    revision: item.revision, submittedRevision: item.submittedRevision, reviewedRevision: item.reviewedRevision,
     issuedAt: item.issuedAt?.toISOString() ?? null, expiresAt: item.expiresAt?.toISOString() ?? null,
   }));
   const externalEvidenceRows = snapshot.externalEvidenceRequirements.map(item => [
@@ -69,8 +70,8 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
       ['Ledger and reconciliation', 'Authoritative record', 'Sub-ledger/reconciliation operations', 'Provide immutable identifiers'],
     ]),
     '05-control-evidence-register.csv': csv([
-      ['Control key', 'Category', 'Phase', 'Required', 'Owner role', 'Status', 'Evidence IDs'],
-      ...snapshot.controls.map(control => [control.key, control.category, control.phase, control.required, control.ownerRole, control.status, control.evidence.map(item => item.id).join(';')]),
+      ['Control key', 'Category', 'Phase', 'Required', 'Owner role', 'Status', 'Evidence ID revisions'],
+      ...snapshot.controls.map(control => [control.key, control.category, control.phase, control.required, control.ownerRole, control.status, control.evidence.map(item => `${item.id}@v${item.revision}`).join(';')]),
     ]),
     '06-provider-integration-spec.md': heading(snapshot, 'Provider Integration Specification') +
       `All provider commands require idempotency and correlation identifiers. All state-changing webhooks require signature, timestamp and event-ID verification with replay protection. Payment states include pending, accepted, rejected, failed and reversed. Provider payment, posting-batch and reconciliation identifiers must remain traceable end-to-end. Daily reconciliation must compare provider statements, safeguarded accounts and the City Gate sub-ledger, with breaks escalated under approved thresholds. Live adapters are not implemented in this package.\n`,

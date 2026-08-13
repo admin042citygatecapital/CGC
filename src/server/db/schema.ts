@@ -770,6 +770,9 @@ export const sponsorEvidence = pgTable('sponsor_evidence', {
   issuedAt:      timestamp('issued_at', { withTimezone: true }),
   expiresAt:     timestamp('expires_at', { withTimezone: true }),
   notes:         text('notes'),
+  revision:      integer('revision').notNull().default(1),
+  submittedRevision: integer('submitted_revision'),
+  reviewedRevision:  integer('reviewed_revision'),
   createdBy:     text('created_by').notNull(),
   lastEditedBy:  text('last_edited_by').notNull(),
   submittedBy:   text('submitted_by'),
@@ -783,6 +786,31 @@ export const sponsorEvidence = pgTable('sponsor_evidence', {
   index('sponsor_evidence_package_control_idx').on(t.packageId, t.controlKey),
   index('sponsor_evidence_status_idx').on(t.status),
   index('sponsor_evidence_expiry_idx').on(t.expiresAt),
+]);
+
+// Each edit creates a complete metadata-only snapshot. Database triggers make
+// these rows append-only, so a reviewer decision can always be tied to the
+// exact revision that was submitted without retaining source documents.
+export const sponsorEvidenceRevisions = pgTable('sponsor_evidence_revisions', {
+  id:            text('id').primaryKey(),
+  packageId:     text('package_id').notNull(),
+  evidenceId:    text('evidence_id').notNull(),
+  revision:      integer('revision').notNull(),
+  controlKey:    text('control_key').notNull(),
+  title:         text('title').notNull(),
+  referenceType: text('reference_type').$type<'url' | 'internal'>().notNull(),
+  reference:     text('reference').notNull(),
+  sha256:        text('sha256'),
+  owner:         text('owner').notNull(),
+  issuedAt:      timestamp('issued_at', { withTimezone: true }),
+  expiresAt:     timestamp('expires_at', { withTimezone: true }),
+  notes:         text('notes'),
+  actorId:       text('actor_id').notNull(),
+  actorRole:     adminRoleEnum('actor_role').notNull(),
+  createdAt:     timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('sponsor_evidence_revisions_evidence_revision_idx').on(t.evidenceId, t.revision),
+  index('sponsor_evidence_revisions_package_idx').on(t.packageId, t.createdAt),
 ]);
 
 export const sponsorEvidenceEvents = pgTable('sponsor_evidence_events', {
@@ -1115,6 +1143,7 @@ export type SocialShareEventRow  = typeof socialShareEvents.$inferSelect;
 export type SponsorPackageRow    = typeof sponsorPackages.$inferSelect;
 export type SponsorEvidenceRow   = typeof sponsorEvidence.$inferSelect;
 export type SponsorEvidenceEventRow = typeof sponsorEvidenceEvents.$inferSelect;
+export type SponsorEvidenceRevisionRow = typeof sponsorEvidenceRevisions.$inferSelect;
 export type OnboardingCaseRow     = typeof onboardingCases.$inferSelect;
 export type OnboardingEvidenceRow = typeof onboardingEvidence.$inferSelect;
 export type OnboardingEventRow    = typeof onboardingEvents.$inferSelect;

@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { and, asc, eq, inArray, lt } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
-import { beneficialOwnerRecords, legalEntityProfiles, sponsorEvidence, sponsorEvidenceEvents, sponsorPackages } from '../db/schema.js';
+import { beneficialOwnerRecords, legalEntityProfiles, sponsorEvidence, sponsorEvidenceEvents, sponsorEvidenceRevisions, sponsorPackages } from '../db/schema.js';
 import type { SponsorEvidenceRow } from '../db/schema.js';
 import { appendAuditEntry, appendCriticalAudit } from './auditLog.js';
 import { EXTERNAL_SPONSOR_EVIDENCE } from './externalSponsorEvidence.js';
@@ -87,6 +87,34 @@ export function assertMakerChecker(evidence: Pick<SponsorEvidenceRow, 'submitted
   if (evidence.submittedBy === reviewerId || evidence.lastEditedBy === reviewerId) {
     throw new SponsorReadinessError('Maker-checker prevents the submitter or last editor from reviewing this evidence.', 'MAKER_CHECKER_VIOLATION', 409);
   }
+}
+
+export function isEvidenceRevisionApproved(evidence: Pick<SponsorEvidenceRow, 'status' | 'revision' | 'submittedRevision' | 'reviewedRevision'>): boolean {
+  return evidence.status === 'approved' && evidence.submittedRevision === evidence.revision && evidence.reviewedRevision === evidence.revision;
+}
+
+export function isEvidenceRevisionSubmitted(evidence: Pick<SponsorEvidenceRow, 'revision' | 'submittedRevision'>): boolean {
+  return evidence.submittedRevision === evidence.revision;
+}
+
+function revisionValues(evidenceId: string, revision: number, value: ReturnType<typeof validateEvidenceInput>, actor: SponsorActor) {
+  return {
+    id: `ser_${crypto.randomUUID()}`,
+    packageId: SPONSOR_PACKAGE_ID,
+    evidenceId,
+    revision,
+    controlKey: value.controlKey,
+    title: value.title,
+    referenceType: value.referenceType,
+    reference: value.reference,
+    sha256: value.sha256,
+    owner: value.owner,
+    issuedAt: value.issuedAt,
+    expiresAt: value.expiresAt,
+    notes: value.notes,
+    actorId: actor.id,
+    actorRole: actor.role,
+  };
 }
 
 export function assertSponsorCategoryOwnership(controlKey: string, actor: Pick<SponsorActor, 'id' | 'role'>): void {
@@ -180,7 +208,13 @@ export async function getSponsorReadiness(actor?: SponsorActor): Promise<ReturnT
 
 export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages.$inferSelect, evidence: SponsorEvidenceRow[], events: Array<typeof sponsorEvidenceEvents.$inferSelect>, entity: typeof legalEntityProfiles.$inferSelect|null = null, owners: Array<typeof beneficialOwnerRecords.$inferSelect> = []) {
   const now = new Date();
-  const enrichedEvidence = evidence.map(item => ({ ...item, effectiveStatus: effectiveEvidenceStatus(item, now) }));
+  const enrichedEvidence = evidence.map(item => {
+    const lifecycleStatus = effectiveEvidenceStatus(item, now);
+    const revisionMismatch = lifecycleStatus === 'submitted' && !isEvidenceRevisionSubmitted(item);
+    const approvalMismatch = lifecycleStatus === 'approved' && !isEvidenceRevisionApproved(item);
+    const effectiveStatus = revisionMismatch || approvalMismatch ? 'draft' as const : lifecycleStatus;
+    return { ...item, effectiveStatus };
+  });
   const controlRows = SPONSOR_CONTROLS.map(control => {
     const records = enrichedEvidence.filter(item => item.controlKey === control.key);
     const approved = records.some(item => item.effectiveStatus === 'approved');
@@ -250,25 +284,28 @@ export async function saveSponsorEvidence(input: EvidenceInput, actor: SponsorAc
     if (!existing[0]) throw new SponsorReadinessError('Evidence not found.', 'NOT_FOUND', 404);
     assertSponsorCategoryOwnership(existing[0].controlKey, actor);
     await auditIntent(actor, 'sponsor_evidence_edit_intent', evidenceId, { controlKey: value.controlKey, priorStatus: existing[0].status });
+    const nextRevision = existing[0].revision + 1;
     saved = await db.transaction(async tx => {
-      const rows = await tx.update(sponsorEvidence).set({ ...value, status: 'draft', lastEditedBy: actor.id, submittedBy: null, submittedAt: null, reviewedBy: null, reviewedAt: null, reviewNote: null, updatedAt: now }).where(and(eq(sponsorEvidence.id, evidenceId), eq(sponsorEvidence.updatedAt, existing[0].updatedAt))).returning();
+      const rows = await tx.update(sponsorEvidence).set({ ...value, revision: nextRevision, status: 'draft', lastEditedBy: actor.id, submittedBy: null, submittedAt: null, submittedRevision: null, reviewedBy: null, reviewedAt: null, reviewedRevision: null, reviewNote: null, updatedAt: now }).where(and(eq(sponsorEvidence.id, evidenceId), eq(sponsorEvidence.updatedAt, existing[0].updatedAt))).returning();
       if (!rows[0]) throw new SponsorReadinessError('Evidence changed while it was being edited. Reload and try again.', 'CONCURRENT_MODIFICATION', 409);
       const result = rows[0];
-      await tx.insert(sponsorEvidenceEvents).values({ id: `sev_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: result.id, action: 'edited', actorId: actor.id, actorRole: actor.role, fromStatus: existing[0].status, toStatus: 'draft', details: { controlKey: result.controlKey } });
+      await tx.insert(sponsorEvidenceRevisions).values(revisionValues(result.id, nextRevision, value, actor));
+      await tx.insert(sponsorEvidenceEvents).values({ id: `sev_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: result.id, action: 'edited', actorId: actor.id, actorRole: actor.role, fromStatus: existing[0].status, toStatus: 'draft', details: { controlKey: result.controlKey, fromRevision: existing[0].revision, revision: nextRevision } });
       await tx.update(sponsorPackages).set({ status: 'draft', submittedBy: null, submittedAt: null, reviewedBy: null, reviewedAt: null, reviewNote: null, updatedAt: now }).where(eq(sponsorPackages.id, SPONSOR_PACKAGE_ID));
       return result;
     });
-    await auditCompletion(actor, 'sponsor_evidence_edited', saved.id, { controlKey: saved.controlKey });
+    await auditCompletion(actor, 'sponsor_evidence_edited', saved.id, { controlKey: saved.controlKey, revision: saved.revision });
   } else {
     const id = `sev_${crypto.randomUUID()}`;
     await auditIntent(actor, 'sponsor_evidence_create_intent', id, { controlKey: value.controlKey });
     saved = await db.transaction(async tx => {
-      const rows = await tx.insert(sponsorEvidence).values({ id, packageId: SPONSOR_PACKAGE_ID, ...value, status: 'draft', createdBy: actor.id, lastEditedBy: actor.id, createdAt: now, updatedAt: now }).returning();
+      const rows = await tx.insert(sponsorEvidence).values({ id, packageId: SPONSOR_PACKAGE_ID, ...value, revision: 1, status: 'draft', createdBy: actor.id, lastEditedBy: actor.id, createdAt: now, updatedAt: now }).returning();
       const result = rows[0];
-      await tx.insert(sponsorEvidenceEvents).values({ id: `see_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: result.id, action: 'created', actorId: actor.id, actorRole: actor.role, toStatus: 'draft', details: { controlKey: result.controlKey } });
+      await tx.insert(sponsorEvidenceRevisions).values(revisionValues(result.id, 1, value, actor));
+      await tx.insert(sponsorEvidenceEvents).values({ id: `see_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: result.id, action: 'created', actorId: actor.id, actorRole: actor.role, toStatus: 'draft', details: { controlKey: result.controlKey, revision: 1 } });
       return result;
     });
-    await auditCompletion(actor, 'sponsor_evidence_created', saved.id, { controlKey: saved.controlKey });
+    await auditCompletion(actor, 'sponsor_evidence_created', saved.id, { controlKey: saved.controlKey, revision: saved.revision });
   }
   return saved;
 }
@@ -285,12 +322,12 @@ export async function submitSponsorEvidence(id: string, actor: SponsorActor): Pr
   const now = new Date();
   await auditIntent(actor, 'sponsor_evidence_submit_intent', id, { controlKey: current.controlKey, priorStatus: status });
   const updated = await db.transaction(async tx => {
-    const result = await tx.update(sponsorEvidence).set({ status: 'submitted', submittedBy: actor.id, submittedAt: now, reviewedBy: null, reviewedAt: null, reviewNote: null, updatedAt: now }).where(and(eq(sponsorEvidence.id, id), eq(sponsorEvidence.status, current.status), eq(sponsorEvidence.updatedAt, current.updatedAt))).returning();
+    const result = await tx.update(sponsorEvidence).set({ status: 'submitted', submittedBy: actor.id, submittedAt: now, submittedRevision: current.revision, reviewedBy: null, reviewedAt: null, reviewedRevision: null, reviewNote: null, updatedAt: now }).where(and(eq(sponsorEvidence.id, id), eq(sponsorEvidence.status, current.status), eq(sponsorEvidence.updatedAt, current.updatedAt))).returning();
     if (!result[0]) throw new SponsorReadinessError('Evidence changed before submission. Reload and try again.', 'CONCURRENT_MODIFICATION', 409);
-    await tx.insert(sponsorEvidenceEvents).values({ id: `see_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: id, action: 'submitted', actorId: actor.id, actorRole: actor.role, fromStatus: status, toStatus: 'submitted', details: {} });
+    await tx.insert(sponsorEvidenceEvents).values({ id: `see_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: id, action: 'submitted', actorId: actor.id, actorRole: actor.role, fromStatus: status, toStatus: 'submitted', details: { revision: current.revision } });
     return result;
   });
-  await auditCompletion(actor, 'sponsor_evidence_submitted', id, { controlKey: current.controlKey });
+  await auditCompletion(actor, 'sponsor_evidence_submitted', id, { controlKey: current.controlKey, revision: current.revision });
   return updated[0];
 }
 
@@ -302,15 +339,16 @@ export async function reviewSponsorEvidence(id: string, decision: 'approved' | '
   const status = effectiveEvidenceStatus(current);
   if (status === 'expired') throw new SponsorReadinessError('Expired evidence cannot be reviewed; the submitter must update and resubmit it.', 'EVIDENCE_EXPIRED', 409);
   if (status !== 'submitted') throw new SponsorReadinessError('Only submitted evidence may be reviewed.', 'INVALID_STATE', 409);
+  if (current.submittedRevision !== current.revision) throw new SponsorReadinessError('The submitted revision no longer matches the current evidence. It must be resubmitted.', 'REVISION_MISMATCH', 409);
   const reviewNote = cleanText(note, 'review note', 10, 1000); const now = new Date();
   await auditIntent(actor, `sponsor_evidence_${decision}_intent`, id, { controlKey: current.controlKey, priorStatus: current.status });
   const updated = await db.transaction(async tx => {
-    const result = await tx.update(sponsorEvidence).set({ status: decision, reviewedBy: actor.id, reviewedAt: now, reviewNote, updatedAt: now }).where(and(eq(sponsorEvidence.id, id), eq(sponsorEvidence.status, 'submitted'), eq(sponsorEvidence.updatedAt, current.updatedAt))).returning();
+    const result = await tx.update(sponsorEvidence).set({ status: decision, reviewedBy: actor.id, reviewedAt: now, reviewedRevision: current.revision, reviewNote, updatedAt: now }).where(and(eq(sponsorEvidence.id, id), eq(sponsorEvidence.status, 'submitted'), eq(sponsorEvidence.updatedAt, current.updatedAt))).returning();
     if (!result[0]) throw new SponsorReadinessError('Evidence changed before review. Reload and try again.', 'CONCURRENT_MODIFICATION', 409);
-    await tx.insert(sponsorEvidenceEvents).values({ id: `see_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: id, action: 'reviewed', actorId: actor.id, actorRole: actor.role, fromStatus: 'submitted', toStatus: decision, details: { decision, reviewNote } });
+    await tx.insert(sponsorEvidenceEvents).values({ id: `see_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: id, action: 'reviewed', actorId: actor.id, actorRole: actor.role, fromStatus: 'submitted', toStatus: decision, details: { decision, reviewNote, revision: current.revision } });
     return result;
   });
-  await auditCompletion(actor, `sponsor_evidence_${decision}`, id, { controlKey: current.controlKey });
+  await auditCompletion(actor, `sponsor_evidence_${decision}`, id, { controlKey: current.controlKey, revision: current.revision });
   return updated[0];
 }
 

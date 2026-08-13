@@ -57,7 +57,7 @@ describe('independent sponsor reviewer', () => {
     dependencies.getSponsorReadiness.mockResolvedValue({
       package: { id: 'uk-multicurrency-v1', version: '1.0', status: 'draft', label: 'DRAFT — NOT APPROVED FOR LAUNCH', submittedAt: null },
       evidence: [
-        { id: 'sev_12345678', controlKey: 'authoritative_ledger', title: 'Ledger evidence', effectiveStatus: 'submitted', referenceType: 'internal', reference: 'CGC-LEDGER-001', sha256: 'a'.repeat(64), owner: 'Finance owner', issuedAt: new Date('2026-01-01'), expiresAt: null, notes: 'Controlled metadata', submittedAt: new Date('2026-01-02'), createdBy: 'admin-secret-id', lastEditedBy: 'admin-secret-id' },
+        { id: 'sev_12345678', controlKey: 'authoritative_ledger', title: 'Ledger evidence', effectiveStatus: 'submitted', referenceType: 'internal', reference: 'CGC-LEDGER-001', sha256: 'a'.repeat(64), owner: 'Finance owner', issuedAt: new Date('2026-01-01'), expiresAt: null, notes: 'Controlled metadata', revision: 3, submittedRevision: 3, submittedAt: new Date('2026-01-02'), createdBy: 'admin-secret-id', lastEditedBy: 'admin-secret-id' },
         { id: 'sev_87654321', controlKey: 'consumer_kyc_policy', title: 'Draft KYC', effectiveStatus: 'draft', referenceType: 'internal', reference: 'CGC-KYC-001', sha256: 'b'.repeat(64), owner: 'Compliance owner', issuedAt: null, expiresAt: null, notes: null, submittedAt: null, createdBy: 'admin-secret-id', lastEditedBy: 'admin-secret-id' },
       ],
       summary: { approved: 0, total: 37, outstanding: 38 },
@@ -83,6 +83,8 @@ describe('independent sponsor reviewer', () => {
     expect(serialized).toContain('le_12345678');
     expect(serialized).toContain('bor_12345678');
     expect(serialized).toContain('AUTH-2026-001');
+    expect(serialized).toContain('"revision":3');
+    expect(serialized).toContain('"submittedRevision":3');
     expect(serialized).not.toContain('sev_87654321');
     expect(serialized).not.toContain('admin-secret-id');
     expect(serialized).not.toContain('reviewer@example.test');

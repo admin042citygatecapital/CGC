@@ -9,7 +9,7 @@ import { SPONSOR_CONTROLS, canManageCategory } from '../../server/lib/sponsorRea
 import { buildSponsorPackFiles, buildSponsorPackZip } from '../../server/lib/sponsorReadinessExport.js';
 import {
   SponsorReadinessError, assertMakerChecker, buildSponsorReadinessSnapshot,
-  assertSponsorCategoryOwnership, assertSponsorReviewOwnership, deriveLegalEntityState, effectiveEvidenceStatus, reviewSponsorPackage, validateEvidenceInput,
+  assertSponsorCategoryOwnership, assertSponsorReviewOwnership, deriveLegalEntityState, effectiveEvidenceStatus, isEvidenceRevisionApproved, isEvidenceRevisionSubmitted, reviewSponsorPackage, validateEvidenceInput,
 } from '../../server/lib/sponsorReadinessStore.js';
 
 describe('legal entity state', () => {
@@ -36,6 +36,7 @@ function evidence(controlKey: string, overrides: Partial<SponsorEvidenceRow> = {
     id: `e_${controlKey}`, packageId: packageRow.id, controlKey, title: controlKey,
     status: 'approved', referenceType: 'internal', reference: `CGC-${controlKey}`,
     sha256: 'a'.repeat(64), owner: 'Control owner', issuedAt: null, expiresAt: null,
+    revision: 1, submittedRevision: 1, reviewedRevision: 1,
     notes: null, createdBy: 'maker', lastEditedBy: 'maker', submittedBy: 'maker',
     submittedAt: new Date('2026-01-01T00:00:00Z'), reviewedBy: 'checker',
     reviewedAt: new Date('2026-01-02T00:00:00Z'), reviewNote: 'Independently reviewed',
@@ -59,6 +60,19 @@ describe('sponsor readiness lifecycle and validation', () => {
     expect(effectiveEvidenceStatus(evidence('legal_entity_verified', { status: 'draft', expiresAt: new Date('2025-01-01') }), new Date('2026-01-01'))).toBe('expired');
     expect(effectiveEvidenceStatus(evidence('legal_entity_verified', { status: 'submitted', expiresAt: new Date('2025-01-01') }), new Date('2026-01-01'))).toBe('expired');
     expect(effectiveEvidenceStatus(evidence('legal_entity_verified', { status: 'rejected', expiresAt: new Date('2025-01-01') }), new Date('2026-01-01'))).toBe('rejected');
+  });
+
+  it('fails closed when approval is not bound to the current immutable revision', () => {
+    const mismatched = evidence('consumer_kyc_policy', { revision: 2, submittedRevision: 1, reviewedRevision: 1 });
+    expect(isEvidenceRevisionApproved(mismatched)).toBe(false);
+    expect(isEvidenceRevisionApproved(evidence('consumer_kyc_policy'))).toBe(true);
+    const snapshot = buildSponsorReadinessSnapshot(packageRow, [mismatched], []);
+    expect(snapshot.controls.find(control => control.key === 'consumer_kyc_policy')?.status).toBe('draft');
+    expect(snapshot.summary.approved).toBe(0);
+    expect(snapshot.summary.sponsorSubmissionReady).toBe(false);
+    const staleSubmission = evidence('authoritative_ledger', { status: 'submitted', revision: 2, submittedRevision: 1, reviewedRevision: null });
+    expect(isEvidenceRevisionSubmitted(staleSubmission)).toBe(false);
+    expect(buildSponsorReadinessSnapshot(packageRow, [staleSubmission], []).controls.find(control => control.key === 'authoritative_ledger')?.status).toBe('draft');
   });
 
   it('keeps role ownership narrow while allowing all three control-plane roles to enter the workspace', () => {
@@ -222,9 +236,14 @@ describe('provider-neutral integration contract safeguards', () => {
 
   it('has schema checks and database-level append-only history protection', () => {
     const migration = readFileSync('src/server/db/migrations/0006_sponsor_readiness.sql', 'utf8');
+    const revisions = readFileSync('src/server/db/migrations/0025_sponsor_evidence_revisions.sql', 'utf8');
     expect(migration).toContain('sponsor_evidence_sha256_check');
     expect(migration).toContain('sponsor_evidence_dates_check');
     expect(migration).toContain('append-only');
     expect(migration).toContain('BEFORE UPDATE OR DELETE');
+    expect(revisions).toContain('sponsor_evidence_revisions is append-only');
+    expect(revisions).toContain('sponsor_evidence_revision_binding_check');
+    expect(revisions).toContain('BEFORE UPDATE OR DELETE ON sponsor_evidence_revisions');
+    expect(revisions).not.toMatch(/\b(document_base64|private_key|password|credential)\s+(text|bytea|jsonb)\b/i);
   });
 });

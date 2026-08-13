@@ -36,6 +36,8 @@ export default async function handler(req: Request, res: Response) {
           issuedAt: iso(item.issuedAt),
           expiresAt: iso(item.expiresAt),
           notes: item.notes,
+          revision: item.revision,
+          submittedRevision: item.submittedRevision,
           submittedAt: iso(item.submittedAt),
         };
       });

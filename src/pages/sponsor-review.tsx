@@ -21,6 +21,8 @@ interface ReviewEvidence {
   issuedAt: string | null;
   expiresAt: string | null;
   notes: string | null;
+  revision: number;
+  submittedRevision: number;
   submittedAt: string | null;
 }
 interface ReviewLegalEntity { id: string; legalName: string; jurisdiction: string; registrationNumber: string; legalForm: string; registryUrl: string; registrySha256: string | null; authorityType: string | null; authorityReference: string | null; authoritySha256: string | null; authorizedOfficerRef: string | null; authorityIssuedAt: string | null; authorityExpiresAt: string | null; expiresAt: string | null; submittedAt: string | null; status: 'submitted'; }
@@ -171,6 +173,7 @@ export default function SponsorReviewPage() {
               <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
                 <div><dt className="text-white/30">Controlled reference</dt><dd className="mt-1 break-all text-white/65">{item.reference}</dd></div>
                 <div><dt className="text-white/30">SHA-256</dt><dd className="mt-1 break-all font-mono text-white/65">{item.sha256 ?? 'Missing'}</dd></div>
+                <div><dt className="text-white/30">Immutable revision</dt><dd className="mt-1 text-white/65">v{item.revision} · submitted v{item.submittedRevision}</dd></div>
                 <div><dt className="text-white/30">Evidence owner</dt><dd className="mt-1 text-white/65">{item.owner}</dd></div>
                 <div><dt className="text-white/30">Submitted</dt><dd className="mt-1 text-white/65">{readableDate(item.submittedAt)}</dd></div>
                 <div><dt className="text-white/30">Issued</dt><dd className="mt-1 text-white/65">{readableDate(item.issuedAt)}</dd></div>
