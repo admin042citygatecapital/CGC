@@ -58,6 +58,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
+.codex-local-data/
 
 # TypeScript cache
 *.tsbuildinfo

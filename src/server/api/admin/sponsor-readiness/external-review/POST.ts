@@ -1,8 +1,11 @@
+import crypto from 'node:crypto';
 import type { Request, Response } from 'express';
 import { reviewSponsorEvidence, reviewSponsorPackage } from '../../../../lib/sponsorReadinessStore.js';
 import { sponsorError } from '../../../../lib/sponsorReadinessHttp.js';
 import { authenticateIndependentSponsorReviewer } from '../../../../lib/independentSponsorReviewer.js';
 import { reviewBeneficialOwner, reviewLegalEntity } from '../../../../lib/legalEntityVerificationStore.js';
+import { syntheticTransactionMonitoring } from '../../../../lib/syntheticTransactionMonitoring.js';
+import { syntheticReconciliation } from '../../../../lib/syntheticReconciliation.js';
 
 export default async function handler(req: Request, res: Response) {
   try {
@@ -13,10 +16,26 @@ export default async function handler(req: Request, res: Response) {
     }
     const reviewerId = actor.id;
     const requestedTarget = req.body?.target ?? 'package';
-    if (!['evidence', 'package', 'legal_entity', 'beneficial_owner'].includes(requestedTarget)) {
-      return res.status(400).json({ error: 'target must be evidence, legal_entity, beneficial_owner or package', code: 'VALIDATION_ERROR' });
+    if (!['evidence', 'package', 'legal_entity', 'beneficial_owner', 'monitoring_alert', 'reconciliation_exception'].includes(requestedTarget)) {
+      return res.status(400).json({ error: 'target is not supported', code: 'VALIDATION_ERROR' });
     }
     const target = requestedTarget;
+    if (target === 'reconciliation_exception') {
+      const exceptionId = String(req.body?.exceptionId ?? '').trim();
+      if (!/^syn_recon_exception_[A-Za-z0-9-]{8,100}$/.test(exceptionId)) return res.status(400).json({ error: 'A valid exceptionId is required.', code: 'VALIDATION_ERROR' });
+      const reconciliationDecision = String(req.body?.reconciliationDecision ?? '');
+      if (reconciliationDecision !== 'resolved' && reconciliationDecision !== 'accepted_risk') return res.status(400).json({ error: 'reconciliationDecision must be resolved or accepted_risk.', code: 'VALIDATION_ERROR' });
+      await syntheticReconciliation.resolve(exceptionId, reconciliationDecision, String(req.body?.note ?? ''), { ...actor, correlationId: String(req.get('X-Request-ID') ?? crypto.randomUUID()), actorType: 'independent_checker' });
+      return res.json({ ok: true, reviewerId, target, exceptionId, decision: reconciliationDecision });
+    }
+    if (target === 'monitoring_alert') {
+      const alertId = String(req.body?.alertId ?? '').trim();
+      if (!/^syn_alert_[A-Za-z0-9-]{8,100}$/.test(alertId)) return res.status(400).json({ error: 'A valid alertId is required.', code: 'VALIDATION_ERROR' });
+      const monitoringDecision = decision === 'approved' ? String(req.body?.monitoringDecision ?? '') : 'case';
+      if (monitoringDecision !== 'false_positive' && monitoringDecision !== 'case') return res.status(400).json({ error: 'monitoringDecision must be false_positive or case.', code: 'VALIDATION_ERROR' });
+      await syntheticTransactionMonitoring.resolve(alertId, monitoringDecision, String(req.body?.note ?? ''), { ...actor, correlationId: String(req.get('X-Request-ID') ?? crypto.randomUUID()), actorType: 'independent_checker' });
+      return res.json({ ok: true, reviewerId, target, alertId, decision: monitoringDecision });
+    }
     if (target === 'evidence') {
       const evidenceId = String(req.body?.evidenceId ?? '').trim();
       if (!/^sev_[A-Za-z0-9-]{8,100}$/.test(evidenceId)) {

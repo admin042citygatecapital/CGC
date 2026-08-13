@@ -4,6 +4,8 @@ import { getSponsorReadiness } from '../../../../lib/sponsorReadinessStore.js';
 import { sponsorError } from '../../../../lib/sponsorReadinessHttp.js';
 import { authenticateIndependentSponsorReviewer } from '../../../../lib/independentSponsorReviewer.js';
 import { getLegalEntityVerification } from '../../../../lib/legalEntityVerificationStore.js';
+import { syntheticTransactionMonitoring } from '../../../../lib/syntheticTransactionMonitoring.js';
+import { syntheticReconciliation } from '../../../../lib/syntheticReconciliation.js';
 
 function iso(value: Date | null): string | null {
   return value ? value.toISOString() : null;
@@ -15,7 +17,7 @@ export default async function handler(req: Request, res: Response) {
     // A reviewer opening the queue must also persist any newly expired
     // evidence and invalidate a previously submitted package before it can be
     // acted on. The reviewer's isolated identity is retained in that audit.
-    const [readiness, legal] = await Promise.all([getSponsorReadiness(actor), getLegalEntityVerification(actor)]);
+    const [readiness, legal, monitoringAlerts, reconciliation] = await Promise.all([getSponsorReadiness(actor), getLegalEntityVerification(actor), syntheticTransactionMonitoring.list(), syntheticReconciliation.list()]);
     const controls = new Map(SPONSOR_CONTROLS.map(control => [control.key, control]));
     const evidence = readiness.evidence
       .filter(item => item.effectiveStatus === 'submitted')
@@ -51,6 +53,20 @@ export default async function handler(req: Request, res: Response) {
       ok: true,
       reviewer: { id: actor.id },
       queue: {
+        reconciliationExceptions: reconciliation.exceptions.filter(item => item.status === 'resolution_pending').map(item => ({
+          id: item.id, status: item.status, owner: item.owner, proposedResolution: item.proposedResolution,
+          submittedBy: item.submittedBy, submittedAt: item.submittedAt, ageingDays: item.ageingDays,
+          outcome: item.item.outcome, severity: item.item.severity, transactionReference: item.item.transactionReference,
+          providerInstructionId: item.item.providerInstructionId, asset: item.item.asset,
+          amountMinor: item.item.amountMinor?.toString(), snapshotSha256: item.item.snapshotSha256,
+        })),
+        monitoringAlerts: monitoringAlerts.filter(item => item.status === 'resolution_pending').map(item => ({
+          id: item.id, reference: item.reference, ruleKey: item.ruleKey, riskLevel: item.riskLevel,
+          subjectReference: item.subjectReference, summary: item.summary, transactionCount: item.transactionCount,
+          aggregateAmountMinor: item.aggregateAmountMinor.toString(), asset: item.asset, caseId: item.caseId ?? null,
+          proposedResolution: item.proposedResolution, submittedBy: item.submittedBy, submittedAt: item.submittedAt,
+          linkedTransactions: item.links.map(link => ({ transactionId: link.transactionId, transactionReference: link.transactionReference, amountMinor: link.amountMinor.toString(), asset: link.asset, occurredAt: link.occurredAt, snapshotSha256: link.snapshotSha256 })),
+        })),
         evidence,
         legalEntity: legal.entity?.effectiveStatus === 'submitted' ? {
           id: legal.entity.id,

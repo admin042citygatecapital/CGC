@@ -6,7 +6,6 @@ const financialRoutes = [
   'src/server/api/users/deposit/POST.ts',
   'src/server/api/users/withdraw/POST.ts',
   'src/server/api/users/transfer/POST.ts',
-  'src/server/api/users/transfers/POST.ts',
   'src/server/api/users/swap/POST.ts',
 ];
 
@@ -27,6 +26,17 @@ describe('financial launch-gate coverage', () => {
     const source = fs.readFileSync(path.resolve(process.cwd(), file), 'utf8');
     expect(source).toContain('requireFinancialOperations');
     expect(source).toMatch(/if \(!requireFinancialOperations\(res\)\) return;/);
+  });
+
+  it('keeps the internal-transfer route isolated to the customer simulation ledger', () => {
+    const source = fs.readFileSync(
+      path.resolve(process.cwd(), 'src/server/api/users/transfers/POST.ts'),
+      'utf8',
+    );
+    expect(source).toContain('postCustomerInternalTransfer');
+    expect(source).toContain('executionSource: "SIMULATION"');
+    expect(source).toContain('syntheticOnly: true');
+    expect(source).not.toMatch(/executeDebitOperation|createTransaction|requireFinancialOperations/);
   });
 
   it('keeps order placement behind the paper-trading gate', () => {

@@ -62,4 +62,22 @@ describe('customer onboarding controls', () => {
     expect(override).not.toContain("'manual_verify'");
     expect(override).toContain('Activation cannot bypass compliance');
   });
+
+  it('publishes a jurisdiction-labelled programme register with no activation effect', () => {
+    const map = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/onboardingComplianceMap.ts'), 'utf8');
+    const route = fs.readFileSync(path.join(process.cwd(), 'src/server/api/admin/onboarding/GET.ts'), 'utf8');
+    const page = fs.readFileSync(path.join(process.cwd(), 'src/pages/admin/onboarding.tsx'), 'utf8');
+    for (const key of [
+      'identity_case_lifecycle', 'identity_provider', 'verification_tiers', 'beneficial_ownership',
+      'sanctions_pep_screening', 'transaction_monitoring', 'admin_audit_maker_checker',
+      'daily_reconciliation', 'customer_notifications', 'disputes_error_resolution',
+      'us_cip_bsa_programme', 'us_sar_ctr_workflows', 'statements_tax_documents',
+    ]) expect(map).toContain(`key: '${key}'`);
+    expect(map).toContain("activationEffect: 'NONE'");
+    expect(route).toContain("launchJurisdiction: 'UNDECIDED'");
+    expect(route).toContain('filingsEnabled: false');
+    expect(route).toContain('ONBOARDING_COMPLIANCE_MAP');
+    expect(page).toContain('Onboarding and compliance programme register');
+    expect(page).toContain('ACTIVATION NONE');
+  });
 });

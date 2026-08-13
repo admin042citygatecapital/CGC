@@ -11,6 +11,11 @@ type CustomerDecision = { id: string; name: string; email: string; status: strin
 type Bundle = { case: CaseRow; evidence: Array<{ id: string; kind: string; referenceType: string; reference: string; sha256?: string }>; events: Array<{ id: string; action: string; actorId: string; createdAt: string; fromStatus?: string; toStatus?: string }>; providerVerifications: { events: ProviderEvent[]; checks: { identityAccepted: boolean; kybAccepted: boolean; screeningClear: boolean } }; customer: CustomerDecision | null };
 type ComplianceCase = { id: string; kind: 'aml' | 'sanctions'; status: string; riskLevel: string; summary: string; openedBy: string; lastEditedBy: string };
 type ScreeningQueueItem = { caseId: string; userId: string; caseType: string; screeningStatus: string; lastScreenedAt?: string; nextScreeningAt?: string; due: boolean };
+type ProgrammeControl = { key: string; label: string; domain: string; status: 'implemented'|'provider_required'|'governance_required'|'jurisdiction_decision_required'; jurisdiction: 'global'|'US'|'UK'; description: string; activationEffect: 'NONE' };
+type ProgrammeState = { launchJurisdiction: 'UNDECIDED'; liveIdentityProviderConnected: false; liveScreeningProviderConnected: false; filingsEnabled: false; financialActivationEffect: 'NONE' };
+type MonitoringLink = { id:string; transactionId:string; transactionReference:string; amountMinor:string; asset:string; occurredAt:string; snapshotSha256:string };
+type MonitoringEvent = { id:string; action:string; actorId:string; actorType:string; fromStatus?:string; toStatus:string; rationale:string; createdAt:string };
+type MonitoringAlert = { id:string; reference:string; ruleKey:string; status:string; riskLevel:string; subjectReference:string; summary:string; transactionCount:number; aggregateAmountMinor:string; asset:string; caseId?:string; proposedResolution?:string; submittedBy?:string; submittedAt?:string; links:MonitoringLink[]; events:MonitoringEvent[] };
 
 export default function AdminOnboardingPage() {
   const { admin } = useAdminAuth();
@@ -24,16 +29,21 @@ export default function AdminOnboardingPage() {
   const [caseSummary, setCaseSummary] = useState('');
   const [caseKind, setCaseKind] = useState<'aml' | 'sanctions'>('aml');
   const [screeningQueue, setScreeningQueue] = useState<ScreeningQueueItem[]>([]);
+  const [controls, setControls] = useState<ProgrammeControl[]>([]);
+  const [programme, setProgramme] = useState<ProgrammeState | null>(null);
+  const [monitoringAlerts, setMonitoringAlerts] = useState<MonitoringAlert[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [response, screeningResponse] = await Promise.all([
+    const [response, screeningResponse, monitoringResponse] = await Promise.all([
       fetch('/api/admin/onboarding', { headers: authHeaders() }),
       fetch('/api/admin/onboarding/screening', { headers: authHeaders() }),
+      fetch('/api/admin/onboarding/monitoring', { headers: authHeaders() }),
     ]);
     const body = await response.json();
     const screeningBody = await screeningResponse.json();
-    setCases(body.data ?? []); setScreeningQueue(screeningBody.data ?? []); setLoading(false);
+    const monitoringBody = await monitoringResponse.json();
+    setCases(body.data ?? []); setControls(body.controls ?? []); setProgramme(body.programme ?? null); setScreeningQueue(screeningBody.data ?? []); setMonitoringAlerts(monitoringBody.data ?? []); setLoading(false);
   }, []);
   useEffect(() => { if (admin) void load(); }, [admin, load]);
 
@@ -76,14 +86,35 @@ export default function AdminOnboardingPage() {
     else { await load(); await openCase(selected.case.id); }
     setBusy(false);
   }
+  async function monitoringAction(action:'scan_velocity'|'start_review'|'escalate'|'submit_resolution', alertId?:string) {
+    const rationale = action === 'scan_velocity' ? '' : window.prompt(action === 'submit_resolution' ? 'Enter the proposed resolution for independent review:' : 'Enter the required monitoring rationale:')?.trim() ?? '';
+    if (action !== 'scan_velocity' && rationale.length < 10) { setError('A monitoring rationale of at least 10 characters is required.'); return; }
+    setBusy(true); setError('');
+    const response = await fetch('/api/admin/onboarding/monitoring', { method:'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify({action,alertId,rationale}) });
+    const body=await response.json(); if(!response.ok)setError(body.error??'Monitoring action failed.'); await load(); setBusy(false);
+  }
 
   return <AdminLayout>
     <Helmet><title>Customer Onboarding | City Gate Capital Admin</title></Helmet>
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">Customer Onboarding</h1><p className="text-sm text-foreground/50">KYC/KYB evidence, maker-checker review and immutable case history.</p></div><button onClick={() => void load()} className="p-2 rounded-lg border border-white/10"><RefreshCw size={16}/></button></div>
+      <section className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div><h2 className="font-semibold text-amber-100">Onboarding and compliance programme register</h2><p className="mt-1 max-w-3xl text-xs leading-5 text-amber-100/55">Global controls and jurisdiction-specific obligations are separated deliberately. This register cannot approve identity, clear screening, file a regulatory report or enable financial operations.</p></div>
+          <div className="flex flex-wrap gap-2 text-[10px] font-bold tracking-wider"><span className="rounded-full border border-amber-400/20 px-3 py-1.5 text-amber-300">JURISDICTION {programme?.launchJurisdiction ?? 'UNDECIDED'}</span><span className="rounded-full border border-red-400/20 px-3 py-1.5 text-red-300">PROVIDERS DISCONNECTED</span><span className="rounded-full border border-white/10 px-3 py-1.5 text-white/40">ACTIVATION NONE</span></div>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{controls.map(control => {
+          const style = control.status === 'implemented' ? 'border-emerald-400/15 bg-emerald-400/[0.035] text-emerald-300' : control.status === 'jurisdiction_decision_required' ? 'border-red-400/15 bg-red-400/[0.035] text-red-300' : 'border-sky-400/15 bg-sky-400/[0.035] text-sky-300';
+          return <article key={control.key} className={`rounded-xl border p-4 ${style}`}><div className="flex items-start justify-between gap-3"><h3 className="text-sm font-semibold text-white/80">{control.label}</h3><span className="shrink-0 rounded-full border border-current/20 px-2 py-1 text-[9px] font-bold uppercase">{control.jurisdiction}</span></div><p className="mt-2 text-[11px] leading-5 text-white/40">{control.description}</p><p className="mt-3 text-[9px] font-bold uppercase tracking-wider">{control.status.replaceAll('_',' ')}</p></article>;
+        })}</div>
+      </section>
       <section className="rounded-2xl border border-white/10 p-4">
         <div className="flex items-center justify-between gap-4"><div><h2 className="font-semibold">Ongoing sanctions, PEP and adverse-media screening</h2><p className="text-xs text-foreground/45 mt-1">Signed approved-provider results only. Matches automatically open a compliance case; administrators cannot manufacture a clear result.</p></div><span className="rounded-full bg-amber-400/10 px-3 py-1 text-xs text-amber-300">{screeningQueue.filter(item => item.due).length} due</span></div>
         {screeningQueue.length > 0 && <div className="mt-3 grid md:grid-cols-2 xl:grid-cols-3 gap-2">{screeningQueue.slice(0, 6).map(item => <button key={item.caseId} onClick={() => void openCase(item.caseId)} className="rounded-xl bg-white/5 p-3 text-left text-xs"><div className="flex justify-between"><span className="font-semibold">{item.userId}</span><span className={item.screeningStatus === 'clear' ? 'text-emerald-300' : 'text-amber-300'}>{item.screeningStatus}</span></div><p className="mt-1 text-foreground/40">Next: {item.nextScreeningAt ? new Date(item.nextScreeningAt).toLocaleDateString() : 'not scheduled'}</p></button>)}</div>}
+      </section>
+      <section className="rounded-2xl border border-violet-400/15 bg-violet-400/[0.025] p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="font-semibold">Synthetic transaction-monitoring queue</h2><p className="mt-1 text-xs leading-5 text-foreground/45">Deterministic velocity rules inspect only simulation transactions. Linked snapshots are hashed and immutable; this queue cannot change balances or file SAR/CTR reports.</p></div><button disabled={busy} onClick={()=>void monitoringAction('scan_velocity')} className="rounded-lg border border-violet-300/20 bg-violet-300/10 px-3 py-2 text-xs font-semibold text-violet-200 disabled:opacity-40">Run synthetic velocity scan</button></div>
+        {monitoringAlerts.length===0?<p className="py-8 text-center text-sm text-foreground/35">No synthetic monitoring alerts. Create at least three same-source sandbox transactions, then run the scan.</p>:<div className="mt-4 space-y-3">{monitoringAlerts.map(alert=><article key={alert.id} className="rounded-xl border border-white/[0.07] bg-black/20 p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-sm font-semibold text-white/80">{alert.reference}</span><span className="rounded-full bg-white/5 px-2 py-1 text-[9px] font-bold uppercase text-white/45">{alert.status.replaceAll('_',' ')}</span><span className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase ${['high','critical'].includes(alert.riskLevel)?'bg-red-400/10 text-red-300':'bg-amber-400/10 text-amber-300'}`}>{alert.riskLevel}</span></div><p className="mt-2 text-xs text-white/45">{alert.summary}</p><p className="mt-1 font-mono text-[10px] text-white/25">{alert.subjectReference} · {alert.ruleKey} {alert.caseId?`· ${alert.caseId}`:''}</p></div><div className="text-left lg:text-right"><p className="font-semibold text-white/70">{alert.transactionCount} linked · {alert.aggregateAmountMinor} {alert.asset} minor units</p><p className="mt-1 text-[10px] text-white/30">SIMULATION ONLY</p></div></div><details className="mt-3"><summary className="cursor-pointer text-xs text-violet-200/70">Linked transactions and immutable history</summary><div className="mt-3 grid gap-3 lg:grid-cols-2"><div className="space-y-2">{alert.links.map(link=><div key={link.id} className="rounded-lg bg-white/[0.035] p-2 text-[10px]"><div className="flex justify-between gap-2"><span className="font-mono text-white/60">{link.transactionReference}</span><span>{link.amountMinor} {link.asset}</span></div><p className="mt-1 break-all font-mono text-white/25">SHA-256 {link.snapshotSha256}</p></div>)}</div><div className="space-y-2">{alert.events.map(event=><div key={event.id} className="rounded-lg bg-white/[0.035] p-2 text-[10px]"><p className="text-white/60">{event.action} · {event.fromStatus??'created'} → {event.toStatus}</p><p className="mt-1 text-white/35">{event.rationale}</p><p className="mt-1 font-mono text-white/20">{event.actorType}:{event.actorId}</p></div>)}</div></div></details><div className="mt-3 flex flex-wrap gap-2">{alert.status==='new'&&<button disabled={busy} onClick={()=>void monitoringAction('start_review',alert.id)} className="rounded-lg bg-sky-400/10 px-3 py-2 text-xs text-sky-300">Start review</button>}{['new','reviewing'].includes(alert.status)&&<button disabled={busy} onClick={()=>void monitoringAction('escalate',alert.id)} className="rounded-lg bg-amber-400/10 px-3 py-2 text-xs text-amber-300">Escalate case</button>}{['reviewing','escalated'].includes(alert.status)&&<button disabled={busy} onClick={()=>void monitoringAction('submit_resolution',alert.id)} className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs text-emerald-300">Submit resolution to checker</button>}{alert.status==='resolution_pending'&&<span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/40">Awaiting isolated independent checker</span>}</div></article>)}</div>}
       </section>
       <div className="grid lg:grid-cols-[1fr_1.4fr] gap-5">
         <div className="rounded-2xl border border-white/10 overflow-hidden">

@@ -56,10 +56,38 @@ describe('card issuer boundary', () => {
       path.resolve(process.cwd(), 'src/pages/dashboard/cards.tsx'),
       'utf8',
     );
+    const digitalBankingPage = fs.readFileSync(
+      path.resolve(process.cwd(), 'src/pages/digital-banking.tsx'),
+      'utf8',
+    );
 
     expect(adminPage).toContain('Read-only synthetic records');
     expect(adminPage).toContain('CARD_OPERATIONS_AVAILABLE = false');
     expect(customerPage).toContain('Read-only synthetic card records');
     expect(customerPage).not.toMatch(/numberFull|revealedCvv|handleFreezeToggle|handleRequestCard/);
+    expect(digitalBankingPage).toContain('ISSUER DISCONNECTED');
+    expect(digitalBankingPage).toContain('Read-only masked metadata');
+    expect(digitalBankingPage).not.toMatch(/generateCard|freezeCard|deleteCard|\/api\/users\/cards\/generate/);
+  });
+
+  it('maps every issuer-controlled capability without pretending an adapter exists', () => {
+    const map = fs.readFileSync(
+      path.resolve(process.cwd(), 'src/server/lib/financialCapabilityMap.ts'),
+      'utf8',
+    );
+    for (const key of [
+      'card_issuer_processor',
+      'card_controls',
+      'card_authentication_tokenisation',
+      'card_disputes',
+      'crypto_custody',
+      'crypto_execution',
+      'blockchain_screening',
+      'strong_authentication',
+      'fraud_monitoring',
+      'security_assurance',
+    ]) expect(map).toContain(`key: "${key}"`);
+    expect(map).toContain('does not generate PAN, CVV or PIN values');
+    expect(map).toContain('does not create or retain private keys');
   });
 });

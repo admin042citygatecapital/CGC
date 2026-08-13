@@ -50,6 +50,25 @@ export class FinancialSandbox {
   listAccounts(): SandboxAccount[] { return [...this.accounts.values()]; }
   getTransaction(id: string): SandboxTransaction | undefined { return this.transactions.get(id); }
 
+  getOverview() {
+    const items = [...this.transactions.values()];
+    const integrityBreaks = items.filter(item => {
+      const debit = item.lines.reduce((sum, line) => sum + line.debitMinor, 0n);
+      const credit = item.lines.reduce((sum, line) => sum + line.creditMinor, 0n);
+      return debit !== credit;
+    }).length;
+    return {
+      accounts: this.accounts.size,
+      transactions: items.length,
+      pending: items.filter(item => ['pending', 'processing'].includes(item.status)).length,
+      completed: items.filter(item => item.status === 'completed').length,
+      reversed: items.filter(item => item.status === 'reversed').length,
+      cancelled: items.filter(item => item.status === 'cancelled').length,
+      journalEntries: items.filter(item => item.lines.length > 0).length,
+      integrityBreaks,
+    };
+  }
+
   listTransactions(input: { search?: string; status?: string; asset?: string; page?: number; pageSize?: number } = {}) {
     const search = input.search?.toLowerCase().trim() ?? '';
     const pageSize = Math.min(100, Math.max(1, input.pageSize ?? 20));
@@ -112,6 +131,46 @@ export class FinancialSandbox {
     if (!input.confirmed || !input.reason.trim() || !input.reference.trim()) throw new FinancialSandboxError('Confirmed adjustment, reason and reference are required.', 'ADJUSTMENT_CONFIRMATION_REQUIRED');
     const account = this.account(input.accountId);
     return this.post({ idempotencyKey: input.idempotencyKey, kind: 'adjustment', asset: account.asset, amountMinor: amountToMinor(input.amount), source: input.direction === 'debit' ? account : undefined, destination: input.direction === 'credit' ? account : undefined, reason: `${input.reference.trim().slice(0, 80)}: ${input.reason.trim().slice(0, 240)}` }, actor);
+  }
+
+  async mock(input: { sourceAccountId: string; destinationAccountId: string; amount: string | number; reason: string; idempotencyKey: string }, actor: SandboxActor): Promise<SandboxTransaction> {
+    const source = this.account(input.sourceAccountId);
+    const destination = this.account(input.destinationAccountId);
+    if (source.id === destination.id) throw new FinancialSandboxError('Source and destination must be different.', 'SAME_ACCOUNT');
+    if (source.asset !== destination.asset) throw new FinancialSandboxError('Source and destination assets must match.', 'ASSET_MISMATCH');
+    if (!input.idempotencyKey.trim()) throw new FinancialSandboxError('Idempotency key is required.', 'IDEMPOTENCY_REQUIRED');
+    const amountMinor = amountToMinor(input.amount);
+    const reason = input.reason.trim().slice(0, 240);
+    if (!reason) throw new FinancialSandboxError('A reason is required.', 'REASON_REQUIRED');
+    const fingerprint = JSON.stringify({ kind: 'mock', asset: source.asset, amount: amountMinor.toString(), source: source.id, destination: destination.id, reason });
+    const prior = this.idempotency.get(input.idempotencyKey);
+    if (prior) {
+      if (prior.fingerprint !== fingerprint) throw new FinancialSandboxError('Idempotency key was reused with different input.', 'IDEMPOTENCY_CONFLICT');
+      return this.transactions.get(prior.transactionId)!;
+    }
+    const now = new Date().toISOString();
+    const id = `syn_tx_${crypto.randomUUID()}`;
+    const transaction: SandboxTransaction = {
+      id,
+      reference: `SYN-${crypto.randomBytes(6).toString('hex').toUpperCase()}`,
+      idempotencyKey: input.idempotencyKey,
+      kind: 'mock',
+      status: 'pending',
+      asset: source.asset,
+      amountMinor,
+      sourceAccountId: source.id,
+      destinationAccountId: destination.id,
+      reason,
+      executionSource: 'SIMULATION',
+      synthetic: true,
+      lines: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.transactions.set(id, transaction);
+    this.idempotency.set(input.idempotencyKey, { fingerprint, transactionId: id });
+    await this.audit({ actor, action: 'financial_sandbox_mock', targetId: id, details: { reference: transaction.reference, asset: source.asset, amountMinor: amountMinor.toString(), status: transaction.status, correlationId: actor.correlationId, synthetic: true } });
+    return transaction;
   }
 
   async reverse(id: string, reason: string, idempotencyKey: string, actor: SandboxActor) {

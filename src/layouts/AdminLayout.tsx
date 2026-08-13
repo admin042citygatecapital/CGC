@@ -14,7 +14,7 @@ import { authHeaders,useAdminAuth } from '@/lib/adminAuth';
 import { prefetchRoute } from '@/lib/prefetchRoute';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
-Activity,
+  Activity,
 AlertCircle,
 AlertTriangle,
 ArrowRight,
@@ -53,8 +53,8 @@ Shield,
 ShieldCheck,
 SlidersHorizontal,
 Terminal,
-TrendingUp,
 Users,
+WalletCards,
 Wifi,
 X
 } from 'lucide-react';
@@ -84,7 +84,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Onboarding Cases', href: '/admin/onboarding', icon: FileText,       badge: null, desc: 'KYC/KYB evidence and maker-checker decisions' },
       { label: 'Legal Entity', href: '/admin/legal-entity', icon: Scale, badge: null, desc: 'Entity and beneficial ownership verification' },
       { label: 'Transactions', href: '/admin/transactions', icon: CreditCard,      badge: null, desc: 'All platform transactions' },
-      { label: 'Banking',      href: '/admin/banking',      icon: TrendingUp,      badge: null, desc: 'Accounts, balances & wires' },
+      { label: 'Accounts',     href: '/admin/accounts',     icon: WalletCards,     badge: null, desc: 'Structured customer account controls' },
       { label: 'Crypto',       href: '/admin/crypto',       icon: Bitcoin,         badge: null, desc: 'Crypto holdings & wallets' },
       { label: 'Trading',      href: '/admin/trading',      icon: BarChart2,       badge: null, desc: 'Positions, orders & risk' },
     ],
@@ -130,6 +130,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Sponsor Readiness', href: '/admin/sponsor-readiness', icon: ShieldCheck, badge: null, desc: 'UK sponsor controls and provider pack' },
       { label: 'Provider Sandbox', href: '/admin/provider-sandbox', icon: Beaker, badge: null, desc: 'Synthetic KYC, FX, payments & reconciliation' },
       { label: 'Financial Sandbox', href: '/admin/financial-sandbox', icon: Activity, badge: null, desc: 'Synthetic accounts, transfers, crypto & ledger adjustments' },
+      { label: 'Reconciliation', href: '/admin/reconciliation', icon: Scale, badge: null, desc: 'Three-way matching, exceptions and evidence' },
       { label: 'Assurance Exercises', href: '/admin/assurance-exercises', icon: ClipboardList, badge: null, desc: 'Pentest, recovery and compliance acceptance' },
       { label: 'Developer',        href: '/admin/developer',     icon: Terminal,           badge: null, desc: 'Routes, DB, perf & build info' },
     ],

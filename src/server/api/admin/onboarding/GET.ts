@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { getOnboardingCaseBundle, listOnboardingCases, type OnboardingStatus } from '../../../lib/onboardingStore.js';
 import { findUserById } from '../../../lib/userStore.js';
+import { ONBOARDING_COMPLIANCE_MAP } from '../../../lib/onboardingComplianceMap.js';
 
 const STATUSES = new Set(['draft', 'submitted', 'under_review', 'needs_info', 'approved', 'rejected', 'expired']);
 export default async function handler(req: Request, res: Response) {
@@ -24,5 +25,15 @@ export default async function handler(req: Request, res: Response) {
   }
   const raw = String(req.query.status ?? '');
   if (raw && !STATUSES.has(raw)) return res.status(400).json({ error: 'Invalid onboarding status.' });
-  return res.json({ data: await listOnboardingCases(raw as OnboardingStatus || undefined) });
+  return res.json({
+    data: await listOnboardingCases(raw as OnboardingStatus || undefined),
+    controls: ONBOARDING_COMPLIANCE_MAP,
+    programme: {
+      launchJurisdiction: 'UNDECIDED',
+      liveIdentityProviderConnected: false,
+      liveScreeningProviderConnected: false,
+      filingsEnabled: false,
+      financialActivationEffect: 'NONE',
+    },
+  });
 }

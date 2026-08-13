@@ -1,11 +1,11 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import {
   CreditCard, Zap, Bell, RefreshCw, Shield, ArrowRight, CheckCircle,
   PieChart, BarChart2, Smartphone, Lock, Globe, TrendingUp, Star, Sparkles,
-  Loader2, Plus, AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import PremiumCard from '@/components/PremiumCard';
 import { useCustomerAuth } from '@/lib/customerAuth';
@@ -191,10 +191,6 @@ export default function DigitalBankingPage() {
   // Virtual cards state
   const [cards, setCards]           = useState<VirtualCard[]>([]);
   const [cardsLoading, setCardsLoading] = useState(false);
-  const [cardsError, setCardsError]   = useState('');
-  const [generating, setGenerating]   = useState(false);
-  const [freezingId, setFreezingId]   = useState<string | null>(null);
-  const [deletingId, setDeletingId]   = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -205,55 +201,6 @@ export default function DigitalBankingPage() {
       .catch(() => {})
       .finally(() => setCardsLoading(false));
   }, [token]);
-
-  async function generateCard() {
-    if (!token) return;
-    setGenerating(true);
-    setCardsError('');
-    try {
-      const res = await fetch('/api/users/cards/generate', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) { setCardsError(data.error ?? 'Failed to generate card.'); return; }
-      setCards(prev => [data.card, ...prev]);
-    } catch { setCardsError('Network error.'); }
-    finally { setGenerating(false); }
-  }
-
-  async function freezeCard(cardId: string) {
-    if (!token) return;
-    setFreezingId(cardId);
-    try {
-      const res = await fetch('/api/users/cards/freeze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ cardId }),
-      });
-      const data = await res.json();
-      if (res.ok) setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: data.status } : c));
-    } catch {
-      // The card keeps its current state; the user can retry the action.
-    }
-    finally { setFreezingId(null); }
-  }
-
-  async function deleteCard(cardId: string) {
-    if (!token || !confirm('Delete this virtual card? This cannot be undone.')) return;
-    setDeletingId(cardId);
-    try {
-      const res = await fetch('/api/users/cards/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ cardId }),
-      });
-      if (res.ok) setCards(prev => prev.filter(c => c.id !== cardId));
-    } catch {
-      // The card remains visible; the user can retry the deletion.
-    }
-    finally { setDeletingId(null); }
-  }
 
   return (
     <>
@@ -357,26 +304,13 @@ export default function DigitalBankingPage() {
       {customer && (
         <section className="py-16 bg-[#0A0A0A]">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8 gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-white">My Virtual Cards</h2>
-                <p className="text-white/50 text-sm mt-1">Create and manage sample card records. Card issuance requires an approved provider.</p>
+                <h2 className="text-2xl font-bold text-white">Card programme status</h2>
+                <p className="text-white/50 text-sm mt-1">Read-only masked metadata. Issuance, PIN, tokenisation and network controls require an approved issuer-processor.</p>
               </div>
-              <button
-                onClick={generateCard}
-                disabled={generating}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C9A84C] text-black font-semibold text-sm hover:bg-[#E8C97A] transition-colors disabled:opacity-50"
-              >
-                {generating ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-                {generating ? 'Creating…' : 'New Sample Card'}
-              </button>
+              <span className="shrink-0 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-[10px] font-bold tracking-wider text-amber-300">ISSUER DISCONNECTED</span>
             </div>
-
-            {cardsError && (
-              <div className="mb-4 flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                <AlertCircle size={14} /> {cardsError}
-              </div>
-            )}
 
             {cardsLoading ? (
               <div className="flex items-center justify-center py-16">
@@ -385,15 +319,10 @@ export default function DigitalBankingPage() {
             ) : cards.length === 0 ? (
               <div className="text-center py-16 bg-white/3 border border-white/8 rounded-2xl">
                 <CreditCard size={40} className="text-white/20 mx-auto mb-4" />
-                <p className="text-white/50 text-sm mb-4">No virtual cards yet.</p>
-                <button onClick={generateCard} disabled={generating}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C9A84C] text-black font-semibold text-sm hover:bg-[#E8C97A] transition-colors">
-                  <Plus size={15} /> Create Your First Sample Card
-                </button>
+                <p className="text-white/50 text-sm">No provider-issued card metadata is available.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <AnimatePresence>
                   {cards.map(card => (
                     <motion.div
                       key={card.id}
@@ -408,14 +337,9 @@ export default function DigitalBankingPage() {
                         cardholderName={card.cardholderName}
                         expiry={card.expiry}
                         status={card.status}
-                        onFreeze={() => freezeCard(card.id)}
-                        onDelete={() => deleteCard(card.id)}
-                        freezing={freezingId === card.id}
-                        deleting={deletingId === card.id}
                       />
                     </motion.div>
                   ))}
-                </AnimatePresence>
               </div>
             )}
           </div>

@@ -31,10 +31,14 @@ interface ReviewEvidence {
 }
 interface ReviewLegalEntity { id: string; legalName: string; jurisdiction: string; registrationNumber: string; legalForm: string; registryUrl: string; registrySha256: string | null; authorityType: string | null; authorityReference: string | null; authoritySha256: string | null; authorizedOfficerRef: string | null; authorityIssuedAt: string | null; authorityExpiresAt: string | null; expiresAt: string | null; submittedAt: string | null; status: 'submitted'; }
 interface ReviewOwner { id: string; controllerRef: string; ownershipBand: string; controlNature: string; providerCode: string; providerRef: string; evidenceSha256: string | null; expiresAt: string | null; submittedAt: string | null; status: 'submitted'; }
+interface MonitoringReview { id:string; reference:string; ruleKey:string; riskLevel:string; subjectReference:string; summary:string; transactionCount:number; aggregateAmountMinor:string; asset:string; caseId:string|null; proposedResolution:string; submittedBy:string; submittedAt:string; linkedTransactions:Array<{transactionId:string;transactionReference:string;amountMinor:string;asset:string;occurredAt:string;snapshotSha256:string}> }
+interface ReconciliationReview { id:string; status:string; owner?:string; proposedResolution?:string; submittedBy?:string; submittedAt?:string; ageingDays:number; outcome:string; severity:string; transactionReference?:string; providerInstructionId?:string; asset?:string; amountMinor?:string; snapshotSha256:string }
 
 interface ReviewQueue {
   reviewer: { id: string };
   queue: {
+    reconciliationExceptions: ReconciliationReview[];
+    monitoringAlerts: MonitoringReview[];
     evidence: ReviewEvidence[];
     legalEntity: ReviewLegalEntity | null;
     beneficialOwners: ReviewOwner[];
@@ -82,7 +86,7 @@ export default function SponsorReviewPage() {
     }
   }, [credential]);
 
-  async function decide(target: 'evidence' | 'legal_entity' | 'beneficial_owner' | 'package', decision: 'approved' | 'rejected', recordId?: string) {
+  async function decide(target: 'evidence' | 'legal_entity' | 'beneficial_owner' | 'monitoring_alert' | 'reconciliation_exception' | 'package', decision: 'approved' | 'rejected', recordId?: string, monitoringDecision?:'false_positive'|'case', reconciliationDecision?:'resolved'|'accepted_risk') {
     const note = target === 'package' ? packageNote : notes[recordId ?? target] ?? '';
     if (note.trim().length < 10) {
       setError('Enter a review note of at least 10 characters before recording a decision.');
@@ -94,11 +98,11 @@ export default function SponsorReviewPage() {
         method: 'POST',
         credentials: 'omit',
         headers: { 'Content-Type': 'application/json', 'x-sponsor-reviewer-key': credential },
-        body: JSON.stringify({ target, decision, evidenceId: target === 'evidence' ? recordId : undefined, recordId: target === 'beneficial_owner' ? recordId : undefined, note: note.trim() }),
+        body: JSON.stringify({ target, decision, evidenceId: target === 'evidence' ? recordId : undefined, recordId: target === 'beneficial_owner' ? recordId : undefined, alertId: target === 'monitoring_alert' ? recordId : undefined, exceptionId: target === 'reconciliation_exception' ? recordId : undefined, monitoringDecision, reconciliationDecision, note: note.trim() }),
       });
       const body = await response.json() as { error?: string };
       if (!response.ok) throw new Error(body.error || 'The review decision could not be recorded.');
-      setNotice(`${target === 'package' ? 'Package' : target === 'legal_entity' ? 'Legal entity' : target === 'beneficial_owner' ? 'Controller record' : 'Evidence'} ${decision}. The immutable review history has been updated.`);
+      setNotice(`${target === 'package' ? 'Package' : target === 'legal_entity' ? 'Legal entity' : target === 'beneficial_owner' ? 'Controller record' : target === 'monitoring_alert' ? 'Monitoring alert' : target === 'reconciliation_exception' ? 'Reconciliation exception' : 'Evidence'} ${target === 'monitoring_alert' ? monitoringDecision : target === 'reconciliation_exception' ? reconciliationDecision : decision}. The immutable review history has been updated.`);
       if (recordId || target === 'legal_entity') setNotes(current => ({ ...current, [recordId ?? target]: '' }));
       else setPackageNote('');
       await load(credential);
@@ -161,6 +165,16 @@ export default function SponsorReviewPage() {
           </section>
 
           <div className="flex justify-end"><button disabled={busy} onClick={() => void load(credential)} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55"><RefreshCw className={`h-4 w-4 ${busy ? 'animate-spin' : ''}`} />Refresh queue</button></div>
+
+          <section>
+            <div className="mb-3 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-[#D8B85A]" /><h2 className="text-lg font-semibold">Reconciliation exception approvals</h2></div>
+            {queue.queue.reconciliationExceptions.length===0?<div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 text-center text-sm text-white/35">No reconciliation exceptions are awaiting checker approval.</div>:<div className="space-y-4">{queue.queue.reconciliationExceptions.map(item=><article key={item.id} className="rounded-2xl border border-[#C9A84C]/15 bg-[#C9A84C]/[0.025] p-5"><div className="flex flex-col justify-between gap-3 sm:flex-row"><div><p className="font-semibold capitalize">{item.outcome.replaceAll('_',' ')}</p><p className="mt-1 text-xs text-white/35">{item.severity} · {item.transactionReference??item.providerInstructionId??item.id} · ageing {item.ageingDays} day(s)</p></div><span className="h-fit rounded-full border border-blue-300/20 px-2.5 py-1 text-[10px] uppercase text-blue-200">resolution pending</span></div><div className="mt-3 rounded-xl bg-black/25 p-3 text-xs"><p className="text-white/30">Maker proposal</p><p className="mt-1 text-white/65">{item.proposedResolution}</p><p className="mt-2 font-mono text-white/25">Submitted by {item.submittedBy} · {readableDate(item.submittedAt??null)}</p></div><p className="mt-3 break-all font-mono text-[10px] text-white/25">SHA-256 {item.snapshotSha256}</p><label className="mt-4 block text-xs text-white/40">Independent checker rationale<textarea rows={3} value={notes[item.id]??''} onChange={event=>setNotes(current=>({...current,[item.id]:event.target.value}))} maxLength={1000} className="mt-2 w-full rounded-xl border border-white/10 bg-black/35 p-3 text-sm text-white"/></label><div className="mt-3 flex gap-2"><button disabled={busy} onClick={()=>void decide('reconciliation_exception','approved',item.id,undefined,'resolved')} className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-300">Approve resolution</button><button disabled={busy} onClick={()=>void decide('reconciliation_exception','approved',item.id,undefined,'accepted_risk')} className="rounded-lg bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-300">Accept documented risk</button></div></article>)}</div>}
+          </section>
+
+          <section>
+            <div className="mb-3 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-violet-300" /><h2 className="text-lg font-semibold">Synthetic monitoring resolutions</h2></div>
+            {queue.queue.monitoringAlerts.length===0?<div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 text-center text-sm text-white/35">No synthetic alerts are awaiting independent resolution.</div>:<div className="space-y-4">{queue.queue.monitoringAlerts.map(item=><article key={item.id} className="rounded-2xl border border-violet-300/15 bg-violet-300/[0.025] p-5"><div className="flex flex-col justify-between gap-3 sm:flex-row"><div><p className="font-mono font-semibold">{item.reference}</p><p className="mt-1 text-xs text-white/35">{item.ruleKey} · {item.riskLevel} · {item.subjectReference}</p></div><span className="h-fit rounded-full border border-violet-300/20 px-2.5 py-1 text-[10px] uppercase text-violet-200">resolution pending</span></div><p className="mt-3 text-sm text-white/55">{item.summary}</p><div className="mt-3 rounded-xl bg-black/25 p-3 text-xs"><p className="text-white/30">Maker proposal</p><p className="mt-1 text-white/65">{item.proposedResolution}</p><p className="mt-2 font-mono text-white/25">Submitted by {item.submittedBy} · {readableDate(item.submittedAt)}</p></div><div className="mt-3 space-y-2">{item.linkedTransactions.map(link=><div key={link.transactionId} className="rounded-lg border border-white/[0.06] p-2 text-[10px]"><div className="flex justify-between gap-2"><span className="font-mono text-white/60">{link.transactionReference}</span><span>{link.amountMinor} {link.asset}</span></div><p className="mt-1 break-all font-mono text-white/25">SHA-256 {link.snapshotSha256}</p></div>)}</div><label className="mt-4 block text-xs text-white/40">Independent resolution rationale<textarea rows={3} value={notes[item.id]??''} onChange={event=>setNotes(current=>({...current,[item.id]:event.target.value}))} maxLength={1000} className="mt-2 w-full rounded-xl border border-white/10 bg-black/35 p-3 text-sm text-white"/></label><div className="mt-3 flex gap-2"><button disabled={busy} onClick={()=>void decide('monitoring_alert','approved',item.id,'false_positive')} className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-300">Close false positive</button><button disabled={busy} onClick={()=>void decide('monitoring_alert','approved',item.id,'case')} className="rounded-lg bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-300">Confirm case</button></div></article>)}</div>}
+          </section>
 
           <section>
             <div className="mb-3 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-amber-300" /><h2 className="text-lg font-semibold">Submitted legal authority records</h2></div>

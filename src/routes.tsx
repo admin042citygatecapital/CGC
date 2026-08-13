@@ -58,6 +58,7 @@ const DashboardCards    = lazy(() => import('./pages/dashboard/cards'));
 const DashboardAnalytics = lazy(() => import('./pages/dashboard/analytics'));
 const DashboardSecurity  = lazy(() => import('./pages/dashboard/security'));
 const DashboardWallets   = lazy(() => import('./pages/dashboard/wallets'));
+const DashboardAccounts  = lazy(() => import('./pages/dashboard/accounts'));
 const DashboardTransfers = lazy(() => import('./pages/dashboard/transfers'));
 const DashboardDeposits  = lazy(() => import('./pages/dashboard/deposits'));
 const DashboardNotifications = lazy(() => import('./pages/dashboard/notifications'));
@@ -87,7 +88,7 @@ const AdminCustomerRelationships = lazy(() => import('./pages/admin/customer-rel
 const AdminCards           = lazy(() => import('./pages/admin/cards'));
 const AdminTransactions    = lazy(() => import('./pages/admin/transactions'));
 const AdminCrypto          = lazy(() => import('./pages/admin/crypto'));
-const AdminBanking         = lazy(() => import('./pages/admin/banking'));
+const AdminCustomerAccounts = lazy(() => import('./pages/admin/customer-accounts'));
 const AdminSupport         = lazy(() => import('./pages/admin/support'));
 const AdminCMS             = lazy(() => import('./pages/admin/cms'));
 const AdminSecurity        = lazy(() => import('./pages/admin/security'));
@@ -108,6 +109,7 @@ const AdminReadiness       = lazy(() => import('./pages/admin/readiness'));
 const AdminSponsorReadiness = lazy(() => import('./pages/admin/sponsor-readiness'));
 const AdminProviderSandbox  = lazy(() => import('./pages/admin/provider-sandbox'));
 const AdminFinancialSandbox = lazy(() => import('./pages/admin/financial-sandbox'));
+const AdminReconciliation = lazy(() => import('./pages/admin/reconciliation'));
 const AdminAssuranceExercises = lazy(() => import('./pages/admin/assurance-exercises'));
 const AdminLegalEntity = lazy(() => import('./pages/admin/legal-entity'));
 const AdminDeveloper       = lazy(() => import('./pages/admin/developer'));
@@ -157,7 +159,7 @@ export const routes: RouteObject[] = [
   { path: '/dashboard/analytics',     element: <CustomerOnly><DashboardAnalytics /></CustomerOnly> },
   { path: '/dashboard/security',      element: <CustomerOnly><DashboardSecurity /></CustomerOnly> },
   { path: '/dashboard/wallets',       element: <CustomerOnly><DashboardWallets /></CustomerOnly> },
-  { path: '/dashboard/accounts',      element: <CustomerOnly><DashboardWallets /></CustomerOnly> },
+  { path: '/dashboard/accounts',      element: <CustomerOnly><DashboardAccounts /></CustomerOnly> },
   { path: '/dashboard/transfers',     element: <CustomerOnly><DashboardTransfers /></CustomerOnly> },
   { path: '/dashboard/deposits',      element: <CustomerOnly><DashboardDeposits /></CustomerOnly> },
   { path: '/dashboard/notifications', element: <CustomerOnly><DashboardNotifications /></CustomerOnly> },
@@ -193,9 +195,9 @@ export const routes: RouteObject[] = [
   { path: '/admin/transactions', element: <AdminOnly><AdminTransactions /></AdminOnly> },
   { path: '/admin/transfers',    element: <AdminOnly><AdminTransactions /></AdminOnly> },
   { path: '/admin/crypto',       element: <AdminOnly><AdminCrypto /></AdminOnly> },
-  { path: '/admin/banking',      element: <AdminOnly><AdminBanking /></AdminOnly> },
-  { path: '/admin/accounts',     element: <AdminOnly><AdminBanking /></AdminOnly> },
-  { path: '/admin/wallets',      element: <AdminOnly><AdminBanking /></AdminOnly> },
+  { path: '/admin/banking',      element: <AdminOnly><AdminCustomerAccounts /></AdminOnly> },
+  { path: '/admin/accounts',     element: <AdminOnly><AdminCustomerAccounts /></AdminOnly> },
+  { path: '/admin/wallets',      element: <AdminOnly><AdminFinancialSandbox /></AdminOnly> },
   { path: '/admin/support',      element: <AdminOnly><AdminSupport /></AdminOnly> },
   { path: '/admin/cms',          element: <AdminOnly><AdminCMS /></AdminOnly> },
   { path: '/admin/security',     element: <AdminOnly><AdminSecurity /></AdminOnly> },
@@ -217,6 +219,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/sponsor-readiness', element: <AdminOnly><AdminSponsorReadiness /></AdminOnly> },
   { path: '/admin/provider-sandbox', element: <AdminOnly><AdminProviderSandbox /></AdminOnly> },
   { path: '/admin/financial-sandbox', element: <AdminOnly><AdminFinancialSandbox /></AdminOnly> },
+  { path: '/admin/reconciliation', element: <AdminOnly><AdminReconciliation /></AdminOnly> },
   { path: '/admin/assurance-exercises', element: <AdminOnly><AdminAssuranceExercises /></AdminOnly> },
   { path: '/admin/legal-entity', element: <AdminOnly><AdminLegalEntity /></AdminOnly> },
   { path: '/admin/developer',       element: <AdminOnly><AdminDeveloper /></AdminOnly> },
