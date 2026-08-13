@@ -65,8 +65,8 @@ describe('card issuer boundary', () => {
     expect(adminPage).toContain('CARD_OPERATIONS_AVAILABLE = false');
     expect(customerPage).toContain('Read-only synthetic card records');
     expect(customerPage).not.toMatch(/numberFull|revealedCvv|handleFreezeToggle|handleRequestCard/);
-    expect(digitalBankingPage).toContain('ISSUER DISCONNECTED');
-    expect(digitalBankingPage).toContain('Read-only masked metadata');
+    expect(digitalBankingPage).toContain('Smart Card Experience');
+    expect(digitalBankingPage).toContain('appropriately licensed or regulated entities and approved partners');
     expect(digitalBankingPage).not.toMatch(/generateCard|freezeCard|deleteCard|\/api\/users\/cards\/generate/);
   });
 
