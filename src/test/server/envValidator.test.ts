@@ -5,6 +5,9 @@ const original = {
   JWT_SECRET: process.env.JWT_SECRET,
   DATABASE_URL: process.env.DATABASE_URL,
   CARD_ENCRYPTION_KEY: process.env.CARD_ENCRYPTION_KEY,
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+  SPONSOR_REVIEWER_EMAIL: process.env.SPONSOR_REVIEWER_EMAIL,
+  SPONSOR_REVIEWER_KEY_HASH: process.env.SPONSOR_REVIEWER_KEY_HASH,
 };
 
 afterEach(() => {
@@ -45,5 +48,19 @@ describe('environment validation', () => {
     for (const name of ['SESSION_SECRET', 'JWT_SECRET', 'DATABASE_URL', 'CARD_ENCRYPTION_KEY']) {
       expect(report.variables.find(item => item.name === name)?.status).toBe('PRESENT');
     }
+  });
+
+  it('rejects a sponsor reviewer identity that matches the super-administrator', async () => {
+    process.env.ADMIN_EMAIL = 'admin@citygate.capital';
+    process.env.SPONSOR_REVIEWER_EMAIL = 'ADMIN@citygate.capital';
+    process.env.SPONSOR_REVIEWER_KEY_HASH = 'a'.repeat(64);
+    vi.resetModules();
+
+    const { buildEnvReport } = await import('../../server/lib/envValidator.js');
+    const report = buildEnvReport();
+    const reviewer = report.variables.find(item => item.name === 'SPONSOR_REVIEWER_EMAIL');
+    expect(reviewer?.status).toBe('INVALID');
+    expect(reviewer?.validationError).toMatch(/different from the super-administrator/i);
+    expect(reviewer?.maskedValue).not.toContain('admin@citygate.capital');
   });
 });

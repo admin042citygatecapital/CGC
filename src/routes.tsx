@@ -45,6 +45,7 @@ const TermsOfServicePage = lazy(() => import('./pages/terms-of-service'));
 const CookiePolicyPage = lazy(() => import('./pages/cookie-policy'));
 const CompliancePage = lazy(() => import('./pages/compliance'));
 const NotFoundPage = lazy(() => import('./pages/_404'));
+const SponsorReviewPage = lazy(() => import('./pages/sponsor-review'));
 
 // Customer auth pages
 const LoginPage         = lazy(() => import('./pages/login'));
@@ -140,6 +141,7 @@ export const routes: RouteObject[] = [
   { path: '/legal/terms', element: <TermsOfServicePage /> },
   { path: '/legal/cookies', element: <CookiePolicyPage /> },
   { path: '/compliance', element: <CompliancePage /> },
+  { path: '/sponsor-review', element: <SponsorReviewPage /> },
   { path: '/analytics', element: <AdminOnly><AnalyticsPage /></AdminOnly> },
   { path: '/newsletter', element: <AdminOnly><NewsletterPage /></AdminOnly> },
   // Customer auth routes (no RootLayout — these pages manage their own chrome)

@@ -5,6 +5,7 @@ import { beneficialOwnerRecords, legalEntityProfiles, sponsorEvidence, sponsorEv
 import type { SponsorEvidenceRow } from '../db/schema.js';
 import { appendAuditEntry, appendCriticalAudit } from './auditLog.js';
 import { EXTERNAL_SPONSOR_EVIDENCE } from './externalSponsorEvidence.js';
+import { isIndependentSponsorReviewer } from './independentSponsorReviewer.js';
 import {
   PRODUCT_PROFILE, SPONSOR_CONTROLS, SPONSOR_PACKAGE_ID, SPONSOR_PACKAGE_VERSION,
   canManageCategory, findSponsorControl,
@@ -90,10 +91,14 @@ export function assertMakerChecker(evidence: Pick<SponsorEvidenceRow, 'submitted
 export function assertSponsorCategoryOwnership(controlKey: string, actor: Pick<SponsorActor, 'id' | 'role'>): void {
   const control = findSponsorControl(controlKey);
   if (!control) throw new SponsorReadinessError('Unknown sponsor control.', 'UNKNOWN_CONTROL');
-  const independentChecker = actor.id.startsWith('external_checker_');
-  if (!independentChecker && !canManageCategory(actor.role, control.category)) {
+  if (!canManageCategory(actor.role, control.category)) {
     throw new SponsorReadinessError('Your role does not own this control category.', 'CATEGORY_FORBIDDEN', 403);
   }
+}
+
+export function assertSponsorReviewOwnership(controlKey: string, actor: Pick<SponsorActor, 'id' | 'role'>): void {
+  if (isIndependentSponsorReviewer(actor)) return;
+  assertSponsorCategoryOwnership(controlKey, actor);
 }
 
 async function ensurePackage(): Promise<void> {
@@ -279,7 +284,7 @@ export async function reviewSponsorEvidence(id: string, decision: 'approved' | '
   requireDatabase(); const db = getDb();
   const rows = await db.select().from(sponsorEvidence).where(and(eq(sponsorEvidence.id, id), eq(sponsorEvidence.packageId, SPONSOR_PACKAGE_ID))).limit(1);
   const current = rows[0]; if (!current) throw new SponsorReadinessError('Evidence not found.', 'NOT_FOUND', 404);
-  assertSponsorCategoryOwnership(current.controlKey, actor); assertMakerChecker(current, actor.id);
+  assertSponsorReviewOwnership(current.controlKey, actor); assertMakerChecker(current, actor.id);
   if (current.status !== 'submitted') throw new SponsorReadinessError('Only submitted evidence may be reviewed.', 'INVALID_STATE', 409);
   const reviewNote = cleanText(note, 'review note', 10, 1000); const now = new Date();
   await auditIntent(actor, `sponsor_evidence_${decision}_intent`, id, { controlKey: current.controlKey, priorStatus: current.status });
@@ -309,7 +314,7 @@ export async function submitSponsorPackage(actor: SponsorActor): Promise<void> {
 }
 
 export async function reviewSponsorPackage(decision: 'approved' | 'rejected', note: string, actor: SponsorActor): Promise<void> {
-  const independentChecker = actor.role === 'COMPLIANCE_ADMIN' && actor.id.startsWith('external_checker_');
+  const independentChecker = isIndependentSponsorReviewer(actor);
   if (actor.role !== 'SUPER_ADMIN' && !independentChecker) throw new SponsorReadinessError('An authorised independent checker is required.', 'INDEPENDENT_CHECKER_REQUIRED', 403);
   const snapshot = await getSponsorReadiness();
   if (snapshot.package.status !== 'submitted') throw new SponsorReadinessError('Only a submitted package may be reviewed.', 'INVALID_STATE', 409);

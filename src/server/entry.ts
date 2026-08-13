@@ -138,6 +138,7 @@ import admin_sponsor_readiness_export_get from "./api/admin/sponsor-readiness/ex
 import admin_sponsor_readiness_package_submit_post from "./api/admin/sponsor-readiness/package/submit/POST";
 import admin_sponsor_readiness_package_review_post from "./api/admin/sponsor-readiness/package/review/POST";
 import admin_sponsor_readiness_external_review_post from "./api/admin/sponsor-readiness/external-review/POST";
+import admin_sponsor_readiness_external_review_get from "./api/admin/sponsor-readiness/external-review/GET";
 import admin_provider_sandbox_get from "./api/admin/provider-sandbox/GET";
 import admin_provider_sandbox_post from "./api/admin/provider-sandbox/POST";
 import admin_assurance_exercises_get from "./api/admin/assurance-exercises/GET";
@@ -685,6 +686,7 @@ app.post("/api/admin/sponsor-readiness/evidence/:id/review", admin_sponsor_readi
 app.get("/api/admin/sponsor-readiness/export", admin_sponsor_readiness_export_get);
 app.post("/api/admin/sponsor-readiness/package/submit", admin_sponsor_readiness_package_submit_post);
 app.post("/api/admin/sponsor-readiness/package/review", admin_sponsor_readiness_package_review_post);
+app.get("/api/admin/sponsor-readiness/external-review", admin_sponsor_readiness_external_review_get);
 app.post("/api/admin/sponsor-readiness/external-review", admin_sponsor_readiness_external_review_post);
 app.get("/api/admin/provider-sandbox", admin_provider_sandbox_get);
 app.post("/api/admin/provider-sandbox", admin_provider_sandbox_post);
@@ -956,6 +958,7 @@ app.get("/robots.txt", (req, res) => {
 		"Disallow: /register",
 		"Disallow: /forgot-password",
 		"Disallow: /reset-password",
+		"Disallow: /sponsor-review",
 		"Disallow: /api/users/",
 		"",
 		`Sitemap: ${base}/sitemap.xml`,
@@ -975,6 +978,7 @@ app.get("/sitemap.xml", (req, res) => {
 		'/admin', '/dashboard', '/kyc',
 		'/wallet', '/transfers',
 		'/login', '/register', '/forgot-password', '/reset-password',
+		'/sponsor-review',
 		'/analytics', '/newsletter',
 	];
 

@@ -26,7 +26,7 @@ const CookieBanner = lazy(() =>
 );
 
 // Routes that manage their own full-page layout (no shared header/footer)
-const STANDALONE_PREFIXES = ['/admin', '/login', '/register', '/dashboard', '/plaid'];
+const STANDALONE_PREFIXES = ['/admin', '/login', '/register', '/dashboard', '/plaid', '/sponsor-review'];
 
 /**
  * LayoutWrapper is the persistent root element of the route tree.

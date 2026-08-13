@@ -1,7 +1,9 @@
 export type TawkAvailability = 'online' | 'away' | 'offline';
 
 export function shouldOfferBankingSupport(pathname: string): boolean {
-  return pathname !== '/admin' && !pathname.startsWith('/admin/');
+  return pathname !== '/admin'
+    && !pathname.startsWith('/admin/')
+    && pathname !== '/sponsor-review';
 }
 
 export function getSupportSection(pathname: string): string {

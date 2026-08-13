@@ -31,7 +31,7 @@ describe('sponsor readiness reviewer status', () => {
     const res = response();
     await handler({} as never, res as never);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      independentReviewer: { configured: false, emailConfigured: false, credentialHashConfigured: false },
+      independentReviewer: { configured: false, emailConfigured: false, identityIndependent: false, credentialHashConfigured: false },
       financialOperationsLocked: true,
     }));
   });
@@ -41,9 +41,18 @@ describe('sponsor readiness reviewer status', () => {
     const res = response();
     await handler({} as never, res as never);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-      independentReviewer: { configured: true, emailConfigured: true, credentialHashConfigured: true },
+      independentReviewer: { configured: true, emailConfigured: true, identityIndependent: true, credentialHashConfigured: true },
     }));
     expect(JSON.stringify(res.json.mock.calls[0][0])).not.toContain('checker@example.test');
     expect(JSON.stringify(res.json.mock.calls[0][0])).not.toContain('a'.repeat(64));
+  });
+
+  it('does not report the super-administrator as an independent reviewer', async () => {
+    dependencies.getSecret.mockImplementation((name: string) => name === 'SPONSOR_REVIEWER_EMAIL' || name === 'ADMIN_EMAIL' ? 'admin@citygate.capital' : name === 'SPONSOR_REVIEWER_KEY_HASH' ? 'a'.repeat(64) : null);
+    const res = response();
+    await handler({} as never, res as never);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      independentReviewer: { configured: false, emailConfigured: true, identityIndependent: false, credentialHashConfigured: true },
+    }));
   });
 });

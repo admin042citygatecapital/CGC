@@ -92,6 +92,12 @@ const REGISTRY: EnvVarSpec[] = [
     name:        'SPONSOR_REVIEWER_EMAIL',
     level:       'WARNING',
     service:     'Independent Sponsor Review',
+    validate:     value => {
+      const adminEmail = String(process.env.ADMIN_EMAIL ?? 'admin@citygate.capital').trim().toLowerCase();
+      return value.trim().toLowerCase() === adminEmail
+        ? 'Must identify a checker different from the super-administrator.'
+        : null;
+    },
     description: 'Identity of the independent sponsor-package checker; it does not grant administration access.',
     isPublic:    true,
   },
@@ -100,7 +106,7 @@ const REGISTRY: EnvVarSpec[] = [
     level:       'WARNING',
     service:     'Independent Sponsor Review',
     validate:    value => /^[0-9a-f]{64}$/i.test(value) ? null : 'Must be exactly 64 hexadecimal SHA-256 characters.',
-    description: 'SHA-256 hash of the independent sponsor reviewer credential.',
+    description: 'SHA-256 hash of an independent sponsor reviewer credential containing at least 32 characters.',
   },
 
   // ── Session security ───────────────────────────────────────────────────────

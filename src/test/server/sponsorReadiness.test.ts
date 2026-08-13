@@ -9,7 +9,7 @@ import { SPONSOR_CONTROLS, canManageCategory } from '../../server/lib/sponsorRea
 import { buildSponsorPackFiles, buildSponsorPackZip } from '../../server/lib/sponsorReadinessExport.js';
 import {
   SponsorReadinessError, assertMakerChecker, buildSponsorReadinessSnapshot,
-  assertSponsorCategoryOwnership, deriveLegalEntityState, effectiveEvidenceStatus, validateEvidenceInput,
+  assertSponsorCategoryOwnership, assertSponsorReviewOwnership, deriveLegalEntityState, effectiveEvidenceStatus, validateEvidenceInput,
 } from '../../server/lib/sponsorReadinessStore.js';
 
 describe('legal entity state', () => {
@@ -67,7 +67,10 @@ describe('sponsor readiness lifecycle and validation', () => {
     expect(canManageCategory('SECURITY_ADMIN', 'privacy')).toBe(true);
     expect(canManageCategory('SUPPORT_ADMIN', 'privacy')).toBe(false);
     expect(() => assertSponsorCategoryOwnership('authoritative_ledger', { id: 'compliance-admin', role: 'COMPLIANCE_ADMIN' })).toThrow(/does not own/);
-    expect(() => assertSponsorCategoryOwnership('authoritative_ledger', { id: 'external_checker_12345678', role: 'COMPLIANCE_ADMIN' })).not.toThrow();
+    const checker = { id: 'external_checker_1234567890abcdef', role: 'COMPLIANCE_ADMIN' } as const;
+    expect(() => assertSponsorCategoryOwnership('authoritative_ledger', checker)).toThrow(/does not own/);
+    expect(() => assertSponsorReviewOwnership('authoritative_ledger', checker)).not.toThrow();
+    expect(() => assertSponsorReviewOwnership('authoritative_ledger', { ...checker, role: 'SUPPORT_ADMIN' })).toThrow(/does not own/);
   });
 });
 
