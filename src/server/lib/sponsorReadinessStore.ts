@@ -170,6 +170,11 @@ export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages
     return { ...control, status: approved ? 'approved' as const : records[records.length - 1]?.effectiveStatus ?? 'missing' as const, evidence: records };
   });
   const approvedCount = controlRows.filter(control => control.status === 'approved').length;
+  const lifecycle = controlRows.reduce((counts, control) => {
+    counts[control.status] += 1;
+    return counts;
+  }, { draft: 0, submitted: 0, approved: 0, rejected: 0, expired: 0, missing: 0 } as Record<EvidenceStatus | 'missing', number>);
+  const preparedCount = controlRows.length - lifecycle.missing;
   const legalEntityState = deriveStructuredLegalEntityState(entity, owners, now);
   const gaps: Array<{ key: string; title: string; status: string; ownerRole: string }> = controlRows.filter(control => control.required && control.status !== 'approved').map(control => ({ key: control.key, title: control.title, status: control.status, ownerRole: control.ownerRole }));
   if (legalEntityState !== 'verified') gaps.push({ key: 'structured_legal_entity_registry', title: 'Structured legal entity and ownership verification', status: legalEntityState, ownerRole: 'COMPLIANCE_ADMIN' });
@@ -181,7 +186,17 @@ export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages
     controls: controlRows,
     evidence: enrichedEvidence,
     events,
-    summary: { total: controlRows.length, approved: approvedCount, outstanding: gaps.length, percent: Math.round((approvedCount / controlRows.length) * 100), fullyReviewed, sponsorSubmissionReady },
+    summary: {
+      total: controlRows.length,
+      prepared: preparedCount,
+      preparedPercent: Math.round((preparedCount / controlRows.length) * 100),
+      approved: approvedCount,
+      outstanding: gaps.length,
+      percent: Math.round((approvedCount / controlRows.length) * 100),
+      lifecycle,
+      fullyReviewed,
+      sponsorSubmissionReady,
+    },
     gaps,
     structuredLegalEntity: { entity, owners, verified: legalEntityState === 'verified' },
     externalEvidenceRequirements: EXTERNAL_SPONSOR_EVIDENCE.map(requirement => ({

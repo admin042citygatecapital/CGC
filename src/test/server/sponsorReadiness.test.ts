@@ -72,6 +72,24 @@ describe('sponsor readiness lifecycle and validation', () => {
 });
 
 describe('sponsor provider pack', () => {
+  it('reports preparation separately from independent approval', () => {
+    const draft = evidence('consumer_kyc_policy', {
+      status: 'draft', submittedBy: null, submittedAt: null,
+      reviewedBy: null, reviewedAt: null, reviewNote: null,
+    });
+    const snapshot = buildSponsorReadinessSnapshot(packageRow, [draft], []);
+    expect(snapshot.summary).toMatchObject({
+      total: SPONSOR_CONTROLS.length,
+      prepared: 1,
+      preparedPercent: Math.round(100 / SPONSOR_CONTROLS.length),
+      approved: 0,
+      percent: 0,
+      lifecycle: { draft: 1, submitted: 0, approved: 0, rejected: 0, expired: 0, missing: SPONSOR_CONTROLS.length - 1 },
+      fullyReviewed: false,
+      sponsorSubmissionReady: false,
+    });
+  });
+
   it('exposes the five external acquisition requirements without treating them as evidence', () => {
     const snapshot = buildSponsorReadinessSnapshot(packageRow, [], []);
     expect(snapshot.externalEvidenceRequirements.map(item => item.controlKey)).toEqual([
