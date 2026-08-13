@@ -3,7 +3,8 @@ import { and, asc, eq } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { beneficialOwnerRecords, legalEntityProfiles, legalEntityVerificationEvents } from '../db/schema.js';
 import type { BeneficialOwnerRecordRow, LegalEntityProfileRow } from '../db/schema.js';
-import { appendAuditEntry } from './auditLog.js';
+import { appendAuditEntry, appendCriticalAudit } from './auditLog.js';
+import { isIndependentSponsorReviewer } from './independentSponsorReviewer.js';
 import { assertApprovedProvider } from './onboardingProviderWebhook.js';
 import { SPONSOR_PACKAGE_ID } from './sponsorReadinessCatalogue.js';
 import type { AdminRole } from './sessionStore.js';
@@ -58,7 +59,17 @@ export function assertLegalEntityMakerChecker(record: { submittedBy: string|null
 }
 async function event(entityId: string, actor: EntityActor, action: string, ownerRecordId?: string, fromStatus?: string|null, toStatus?: string|null, details: Record<string, unknown> = {}) {
   await getDb().insert(legalEntityVerificationEvents).values({ id: `lev_${crypto.randomUUID()}`, entityId, ownerRecordId: ownerRecordId ?? null, action, actorId: actor.id, actorRole: actor.role, fromStatus: fromStatus ?? null, toStatus: toStatus ?? null, details });
-  await appendAuditEntry({ adminId: actor.id, adminEmail: actor.email, action: `legal_entity_${action}`, target: ownerRecordId ? 'beneficial-owner' : 'legal-entity', targetId: ownerRecordId ?? entityId, details, ip: actor.ip });
+  try {
+    await appendAuditEntry({ adminId: actor.id, adminEmail: actor.email, action: `legal_entity_${action}`, target: ownerRecordId ? 'beneficial-owner' : 'legal-entity', targetId: ownerRecordId ?? entityId, details, ip: actor.ip });
+  } catch (error) {
+    console.error('legal_entity.audit_completion_failed', { entityId, ownerRecordId, action, actorId: actor.id, error: error instanceof Error ? error.message : String(error) });
+  }
+}
+async function intent(entityId: string, actor: EntityActor, action: string, ownerRecordId?: string, details: Record<string, unknown> = {}) {
+  await appendCriticalAudit({ event: `legal_entity_${action}_intent`, adminId: actor.id, email: actor.email, ip: actor.ip, meta: { target: ownerRecordId ? 'beneficial-owner' : 'legal-entity', targetId: ownerRecordId ?? entityId, ...details } });
+}
+export function assertLegalEntityReviewOwnership(actor: EntityActor) {
+  if (!isIndependentSponsorReviewer(actor)) throw new LegalEntityVerificationError('Legal-entity and controller review requires the separately authenticated independent checker.', 'INDEPENDENT_CHECKER_REQUIRED', 403);
 }
 
 export function assessLegalEntityVerification(entity: (LegalEntityProfileRow & { effectiveStatus?: VerificationStatus })|null, owners: Array<BeneficialOwnerRecordRow & { effectiveStatus?: VerificationStatus }>) {
@@ -85,10 +96,12 @@ export async function saveLegalEntity(input: EntityInput, actor: EntityActor) {
   const value = { legalName: clean(input.legalName, 'legalName', 2, 200), jurisdiction: clean(input.jurisdiction, 'jurisdiction', 2, 100), registrationNumber: opaque(input.registrationNumber, 'registrationNumber'), legalForm: clean(input.legalForm, 'legalForm', 2, 100), registryUrl: registryUrl(input.registryUrl), registrySha256: hash(input.registrySha256), expiresAt: date(input.expiresAt) };
   const existing = await getDb().select().from(legalEntityProfiles).where(eq(legalEntityProfiles.packageId, SPONSOR_PACKAGE_ID)).limit(1);
   if (existing[0]) {
+    await intent(existing[0].id, actor, 'profile_edit', undefined, { priorStatus: existing[0].status });
     const rows = await getDb().update(legalEntityProfiles).set({ ...value, version: existing[0].version + 1, status: 'draft', lastEditedBy: actor.id, submittedBy: null, submittedAt: null, reviewedBy: null, reviewedAt: null, reviewNote: null, updatedAt: now }).where(eq(legalEntityProfiles.id, existing[0].id)).returning();
     await event(rows[0].id, actor, 'profile_edited', undefined, existing[0].status, 'draft', { version: rows[0].version }); return rows[0];
   }
   const id = `le_${crypto.randomUUID()}`;
+  await intent(id, actor, 'profile_create');
   const rows = await getDb().insert(legalEntityProfiles).values({ id, packageId: SPONSOR_PACKAGE_ID, ...value, createdBy: actor.id, lastEditedBy: actor.id, createdAt: now, updatedAt: now }).returning();
   await event(id, actor, 'profile_created', undefined, null, 'draft'); return rows[0];
 }
@@ -103,10 +116,12 @@ export async function saveBeneficialOwner(input: OwnerInput, actor: EntityActor)
   if (input.id) {
     const existing = await getDb().select().from(beneficialOwnerRecords).where(and(eq(beneficialOwnerRecords.id, input.id), eq(beneficialOwnerRecords.entityId, entity.id))).limit(1);
     if (!existing[0]) throw new LegalEntityVerificationError('Owner record not found.', 'NOT_FOUND', 404);
+    await intent(entity.id, actor, 'owner_edit', existing[0].id, { priorStatus: existing[0].status });
     const rows = await getDb().update(beneficialOwnerRecords).set({ ...value, status: 'draft', active: true, lastEditedBy: actor.id, submittedBy: null, submittedAt: null, reviewedBy: null, reviewedAt: null, reviewNote: null, updatedAt: now }).where(eq(beneficialOwnerRecords.id, input.id)).returning();
     await event(entity.id, actor, 'owner_edited', rows[0].id, existing[0].status, 'draft'); return rows[0];
   }
   const id = `bor_${crypto.randomUUID()}`;
+  await intent(entity.id, actor, 'owner_create', id);
   const rows = await getDb().insert(beneficialOwnerRecords).values({ id, entityId: entity.id, ...value, createdBy: actor.id, lastEditedBy: actor.id, createdAt: now, updatedAt: now }).returning();
   await event(entity.id, actor, 'owner_created', id, null, 'draft'); return rows[0];
 }
@@ -115,15 +130,16 @@ export async function submitBeneficialOwner(id: string, actor: EntityActor) {
   requireAccess(actor); const rows = await getDb().select().from(beneficialOwnerRecords).where(eq(beneficialOwnerRecords.id, id)).limit(1); const current = rows[0];
   if (!current) throw new LegalEntityVerificationError('Owner record not found.', 'NOT_FOUND', 404);
   if (!['draft','rejected','expired'].includes(effective(current).effectiveStatus)) throw new LegalEntityVerificationError('Owner record cannot be submitted from its current state.', 'INVALID_STATE', 409);
+  await intent(current.entityId, actor, 'owner_submit', id, { priorStatus: current.status });
   const now = new Date(); const updated = await getDb().update(beneficialOwnerRecords).set({ status: 'submitted', submittedBy: actor.id, submittedAt: now, lastEditedBy: actor.id, updatedAt: now }).where(eq(beneficialOwnerRecords.id, id)).returning();
   await event(current.entityId, actor, 'owner_submitted', id, current.status, 'submitted'); return updated[0];
 }
 
 export async function reviewBeneficialOwner(id: string, decision: 'verified'|'rejected', note: string, actor: EntityActor) {
-  requireAccess(actor); const rows = await getDb().select().from(beneficialOwnerRecords).where(eq(beneficialOwnerRecords.id, id)).limit(1); const current = rows[0];
+  requireAccess(actor); assertLegalEntityReviewOwnership(actor); const rows = await getDb().select().from(beneficialOwnerRecords).where(eq(beneficialOwnerRecords.id, id)).limit(1); const current = rows[0];
   if (!current) throw new LegalEntityVerificationError('Owner record not found.', 'NOT_FOUND', 404);
   if (current.status !== 'submitted') throw new LegalEntityVerificationError('Only submitted owner records may be reviewed.', 'INVALID_STATE', 409); assertLegalEntityMakerChecker(current, actor.id);
-  const reviewNote = clean(note, 'reviewNote', 10, 1000); const now = new Date(); const updated = await getDb().update(beneficialOwnerRecords).set({ status: decision, reviewedBy: actor.id, reviewedAt: now, reviewNote, updatedAt: now }).where(eq(beneficialOwnerRecords.id, id)).returning();
+  const reviewNote = clean(note, 'reviewNote', 10, 1000); await intent(current.entityId, actor, 'owner_review', id, { decision }); const now = new Date(); const updated = await getDb().update(beneficialOwnerRecords).set({ status: decision, reviewedBy: actor.id, reviewedAt: now, reviewNote, updatedAt: now }).where(eq(beneficialOwnerRecords.id, id)).returning();
   await event(current.entityId, actor, 'owner_reviewed', id, 'submitted', decision, { reviewNote }); return updated[0];
 }
 
@@ -131,15 +147,16 @@ export async function submitLegalEntity(actor: EntityActor) {
   requireAccess(actor); const snapshot = await getLegalEntityVerification(actor); if (!snapshot.entity) throw new LegalEntityVerificationError('Legal entity profile not found.', 'NOT_FOUND', 404);
   if (!['draft','rejected','expired'].includes(snapshot.entity.effectiveStatus)) throw new LegalEntityVerificationError('Entity cannot be submitted from its current state.', 'INVALID_STATE', 409);
   if (!snapshot.assessment.ownersVerified) throw new LegalEntityVerificationError('All active beneficial owners/controllers must be independently verified first.', 'OWNERS_NOT_VERIFIED', 409);
+  await intent(snapshot.entity.id, actor, 'profile_submit', undefined, { priorStatus: snapshot.entity.status });
   const now = new Date(); const updated = await getDb().update(legalEntityProfiles).set({ status: 'submitted', submittedBy: actor.id, submittedAt: now, lastEditedBy: actor.id, updatedAt: now }).where(eq(legalEntityProfiles.id, snapshot.entity.id)).returning();
   await event(snapshot.entity.id, actor, 'profile_submitted', undefined, snapshot.entity.status, 'submitted'); return updated[0];
 }
 
 export async function reviewLegalEntity(decision: 'verified'|'rejected', note: string, actor: EntityActor) {
-  requireAccess(actor); const snapshot = await getLegalEntityVerification(actor); const current = snapshot.entity;
+  requireAccess(actor); assertLegalEntityReviewOwnership(actor); const snapshot = await getLegalEntityVerification(actor); const current = snapshot.entity;
   if (!current) throw new LegalEntityVerificationError('Legal entity profile not found.', 'NOT_FOUND', 404);
   if (current.status !== 'submitted') throw new LegalEntityVerificationError('Only a submitted entity may be reviewed.', 'INVALID_STATE', 409); assertLegalEntityMakerChecker(current, actor.id);
   if (decision === 'verified' && !snapshot.assessment.ownersVerified) throw new LegalEntityVerificationError('Current verified ownership evidence is required.', 'OWNERS_NOT_VERIFIED', 409);
-  const reviewNote = clean(note, 'reviewNote', 10, 1000); const now = new Date(); const updated = await getDb().update(legalEntityProfiles).set({ status: decision, reviewedBy: actor.id, reviewedAt: now, reviewNote, updatedAt: now }).where(eq(legalEntityProfiles.id, current.id)).returning();
+  const reviewNote = clean(note, 'reviewNote', 10, 1000); await intent(current.id, actor, 'profile_review', undefined, { decision }); const now = new Date(); const updated = await getDb().update(legalEntityProfiles).set({ status: decision, reviewedBy: actor.id, reviewedAt: now, reviewNote, updatedAt: now }).where(eq(legalEntityProfiles.id, current.id)).returning();
   await event(current.id, actor, 'profile_reviewed', undefined, 'submitted', decision, { reviewNote }); return updated[0];
 }

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { allowedRolesForAdminRequest } from '../../server/lib/adminAuthorizationMiddleware.js';
-import { assessLegalEntityVerification, assertLegalEntityMakerChecker } from '../../server/lib/legalEntityVerificationStore.js';
+import { assessLegalEntityVerification, assertLegalEntityMakerChecker, assertLegalEntityReviewOwnership } from '../../server/lib/legalEntityVerificationStore.js';
 import { deriveStructuredLegalEntityState } from '../../server/lib/sponsorReadinessStore.js';
 
 describe('legal entity and beneficial ownership verification', () => {
@@ -23,6 +23,8 @@ describe('legal entity and beneficial ownership verification', () => {
   it('enforces maker-checker for entity and controller reviews', () => {
     expect(() => assertLegalEntityMakerChecker({ submittedBy: 'admin-a', lastEditedBy: 'admin-a' }, 'admin-a')).toThrow(expect.objectContaining({ code: 'MAKER_CHECKER_VIOLATION' }));
     expect(() => assertLegalEntityMakerChecker({ submittedBy: 'admin-a', lastEditedBy: 'admin-a' }, 'admin-b')).not.toThrow();
+    expect(() => assertLegalEntityReviewOwnership({ id: 'super-admin', email: 'admin@example.test', role: 'SUPER_ADMIN' })).toThrow(expect.objectContaining({ code: 'INDEPENDENT_CHECKER_REQUIRED' }));
+    expect(() => assertLegalEntityReviewOwnership({ id: 'external_checker_1234567890abcdef', email: 'reviewer@example.test', role: 'COMPLIANCE_ADMIN' })).not.toThrow();
   });
 
   it('limits the register to Compliance administrators and Super Admin', () => {
@@ -47,5 +49,7 @@ describe('legal entity and beneficial ownership verification', () => {
     const register = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/legalEntityVerificationStore.ts'), 'utf8');
     expect(register).toContain('assertApprovedProvider');
     expect(register).toContain('APPROVED_ENTITY_REGISTRY_HOSTS');
+    expect(register).toContain('appendCriticalAudit');
+    expect(register).toContain('assertLegalEntityReviewOwnership');
   });
 });

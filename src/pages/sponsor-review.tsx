@@ -23,13 +23,17 @@ interface ReviewEvidence {
   notes: string | null;
   submittedAt: string | null;
 }
+interface ReviewLegalEntity { id: string; legalName: string; jurisdiction: string; registrationNumber: string; legalForm: string; registryUrl: string; registrySha256: string | null; expiresAt: string | null; submittedAt: string | null; status: 'submitted'; }
+interface ReviewOwner { id: string; controllerRef: string; ownershipBand: string; controlNature: string; providerCode: string; providerRef: string; evidenceSha256: string | null; expiresAt: string | null; submittedAt: string | null; status: 'submitted'; }
 
 interface ReviewQueue {
   reviewer: { id: string };
   queue: {
     evidence: ReviewEvidence[];
+    legalEntity: ReviewLegalEntity | null;
+    beneficialOwners: ReviewOwner[];
     package: { id: string; version: string; status: string; label: string; submittedAt: string | null; reviewable: boolean };
-    summary: { submittedEvidence: number; approvedControls: number; totalControls: number; outstandingControls: number };
+    summary: { submittedEvidence: number; submittedStructuredRecords: number; approvedControls: number; totalControls: number; outstandingControls: number };
     gaps: Array<{ key: string; title: string; status: string }>;
   };
   financialOperationsLocked: true;
@@ -72,8 +76,8 @@ export default function SponsorReviewPage() {
     }
   }, [credential]);
 
-  async function decide(target: 'evidence' | 'package', decision: 'approved' | 'rejected', evidenceId?: string) {
-    const note = target === 'evidence' ? notes[evidenceId ?? ''] ?? '' : packageNote;
+  async function decide(target: 'evidence' | 'legal_entity' | 'beneficial_owner' | 'package', decision: 'approved' | 'rejected', recordId?: string) {
+    const note = target === 'package' ? packageNote : notes[recordId ?? target] ?? '';
     if (note.trim().length < 10) {
       setError('Enter a review note of at least 10 characters before recording a decision.');
       return;
@@ -84,12 +88,12 @@ export default function SponsorReviewPage() {
         method: 'POST',
         credentials: 'omit',
         headers: { 'Content-Type': 'application/json', 'x-sponsor-reviewer-key': credential },
-        body: JSON.stringify({ target, decision, evidenceId, note: note.trim() }),
+        body: JSON.stringify({ target, decision, evidenceId: target === 'evidence' ? recordId : undefined, recordId: target === 'beneficial_owner' ? recordId : undefined, note: note.trim() }),
       });
       const body = await response.json() as { error?: string };
       if (!response.ok) throw new Error(body.error || 'The review decision could not be recorded.');
-      setNotice(`${target === 'package' ? 'Package' : 'Evidence'} ${decision}. The immutable review history has been updated.`);
-      if (evidenceId) setNotes(current => ({ ...current, [evidenceId]: '' }));
+      setNotice(`${target === 'package' ? 'Package' : target === 'legal_entity' ? 'Legal entity' : target === 'beneficial_owner' ? 'Controller record' : 'Evidence'} ${decision}. The immutable review history has been updated.`);
+      if (recordId || target === 'legal_entity') setNotes(current => ({ ...current, [recordId ?? target]: '' }));
       else setPackageNote('');
       await load(credential);
     } catch (cause) {
@@ -143,6 +147,7 @@ export default function SponsorReviewPage() {
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ['Submitted queue', queue.queue.summary.submittedEvidence],
+              ['Entity/owner queue', queue.queue.summary.submittedStructuredRecords],
               ['Approved controls', `${queue.queue.summary.approvedControls}/${queue.queue.summary.totalControls}`],
               ['Outstanding gates', queue.queue.summary.outstandingControls],
               ['Package', queue.queue.package.status],
@@ -150,6 +155,14 @@ export default function SponsorReviewPage() {
           </section>
 
           <div className="flex justify-end"><button disabled={busy} onClick={() => void load(credential)} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55"><RefreshCw className={`h-4 w-4 ${busy ? 'animate-spin' : ''}`} />Refresh queue</button></div>
+
+          <section>
+            <div className="mb-3 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-amber-300" /><h2 className="text-lg font-semibold">Submitted legal authority records</h2></div>
+            {!queue.queue.legalEntity && queue.queue.beneficialOwners.length === 0 ? <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 text-center text-sm text-white/35">No legal-entity or controller records are awaiting independent review.</div> : <div className="space-y-4">
+              {queue.queue.legalEntity && <article className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5"><div className="flex justify-between gap-3"><div><p className="font-semibold">{queue.queue.legalEntity.legalName}</p><p className="mt-1 text-xs text-white/35">{queue.queue.legalEntity.registrationNumber} · {queue.queue.legalEntity.jurisdiction} · {queue.queue.legalEntity.legalForm}</p></div><span className="h-fit rounded-full border border-sky-300/20 bg-sky-300/10 px-2.5 py-1 text-[10px] uppercase text-sky-200">submitted</span></div><dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2"><div><dt className="text-white/30">Official registry</dt><dd className="mt-1 break-all text-white/65">{queue.queue.legalEntity.registryUrl}</dd></div><div><dt className="text-white/30">Registry SHA-256</dt><dd className="mt-1 break-all font-mono text-white/65">{queue.queue.legalEntity.registrySha256 ?? 'Missing'}</dd></div></dl><label className="mt-4 block text-xs text-white/40">Independent review note<textarea rows={3} value={notes.legal_entity ?? ''} onChange={event => setNotes(current => ({ ...current, legal_entity: event.target.value }))} maxLength={1000} className="mt-2 w-full rounded-xl border border-white/10 bg-black/35 p-3 text-sm text-white" /></label><div className="mt-3 flex gap-2"><button disabled={busy} onClick={() => void decide('legal_entity','approved')} className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-300">Verify entity</button><button disabled={busy} onClick={() => void decide('legal_entity','rejected')} className="rounded-lg bg-red-400/10 px-3 py-2 text-xs font-semibold text-red-300">Reject entity</button></div></article>}
+              {queue.queue.beneficialOwners.map(item => <article key={item.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5"><div className="flex justify-between gap-3"><div><p className="font-mono font-semibold">{item.controllerRef}</p><p className="mt-1 text-xs text-white/35">{item.ownershipBand}% · {item.controlNature} · {item.providerCode}:{item.providerRef}</p></div><span className="h-fit rounded-full border border-sky-300/20 bg-sky-300/10 px-2.5 py-1 text-[10px] uppercase text-sky-200">submitted</span></div><p className="mt-3 break-all font-mono text-xs text-white/45">SHA-256: {item.evidenceSha256 ?? 'Missing'}</p><label className="mt-4 block text-xs text-white/40">Independent review note<textarea rows={3} value={notes[item.id] ?? ''} onChange={event => setNotes(current => ({ ...current, [item.id]: event.target.value }))} maxLength={1000} className="mt-2 w-full rounded-xl border border-white/10 bg-black/35 p-3 text-sm text-white" /></label><div className="mt-3 flex gap-2"><button disabled={busy} onClick={() => void decide('beneficial_owner','approved',item.id)} className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-300">Verify controller</button><button disabled={busy} onClick={() => void decide('beneficial_owner','rejected',item.id)} className="rounded-lg bg-red-400/10 px-3 py-2 text-xs font-semibold text-red-300">Reject controller</button></div></article>)}
+            </div>}
+          </section>
 
           <section>
             <div className="mb-3 flex items-center gap-2"><FileCheck2 className="h-5 w-5 text-amber-300" /><h2 className="text-lg font-semibold">Submitted evidence</h2></div>

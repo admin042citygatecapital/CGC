@@ -3,6 +3,7 @@ import { SPONSOR_CONTROLS } from '../../../../lib/sponsorReadinessCatalogue.js';
 import { getSponsorReadiness } from '../../../../lib/sponsorReadinessStore.js';
 import { sponsorError } from '../../../../lib/sponsorReadinessHttp.js';
 import { authenticateIndependentSponsorReviewer } from '../../../../lib/independentSponsorReviewer.js';
+import { getLegalEntityVerification } from '../../../../lib/legalEntityVerificationStore.js';
 
 function iso(value: Date | null): string | null {
   return value ? value.toISOString() : null;
@@ -14,7 +15,7 @@ export default async function handler(req: Request, res: Response) {
     // A reviewer opening the queue must also persist any newly expired
     // evidence and invalidate a previously submitted package before it can be
     // acted on. The reviewer's isolated identity is retained in that audit.
-    const readiness = await getSponsorReadiness(actor);
+    const [readiness, legal] = await Promise.all([getSponsorReadiness(actor), getLegalEntityVerification(actor)]);
     const controls = new Map(SPONSOR_CONTROLS.map(control => [control.key, control]));
     const evidence = readiness.evidence
       .filter(item => item.effectiveStatus === 'submitted')
@@ -45,6 +46,30 @@ export default async function handler(req: Request, res: Response) {
       reviewer: { id: actor.id },
       queue: {
         evidence,
+        legalEntity: legal.entity?.effectiveStatus === 'submitted' ? {
+          id: legal.entity.id,
+          legalName: legal.entity.legalName,
+          jurisdiction: legal.entity.jurisdiction,
+          registrationNumber: legal.entity.registrationNumber,
+          legalForm: legal.entity.legalForm,
+          registryUrl: legal.entity.registryUrl,
+          registrySha256: legal.entity.registrySha256,
+          expiresAt: iso(legal.entity.expiresAt),
+          submittedAt: iso(legal.entity.submittedAt),
+          status: 'submitted',
+        } : null,
+        beneficialOwners: legal.owners.filter(item => item.effectiveStatus === 'submitted').map(item => ({
+          id: item.id,
+          controllerRef: item.controllerRef,
+          ownershipBand: item.ownershipBand,
+          controlNature: item.controlNature,
+          providerCode: item.providerCode,
+          providerRef: item.providerRef,
+          evidenceSha256: item.evidenceSha256,
+          expiresAt: iso(item.expiresAt),
+          submittedAt: iso(item.submittedAt),
+          status: 'submitted',
+        })),
         package: {
           id: readiness.package.id,
           version: readiness.package.version,
@@ -55,6 +80,7 @@ export default async function handler(req: Request, res: Response) {
         },
         summary: {
           submittedEvidence: evidence.length,
+          submittedStructuredRecords: (legal.entity?.effectiveStatus === 'submitted' ? 1 : 0) + legal.owners.filter(item => item.effectiveStatus === 'submitted').length,
           approvedControls: readiness.summary.approved,
           totalControls: readiness.summary.total,
           outstandingControls: readiness.summary.outstanding,

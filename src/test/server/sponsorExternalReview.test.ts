@@ -6,12 +6,20 @@ const dependencies = vi.hoisted(() => ({
   reviewSponsorEvidence: vi.fn(),
   reviewSponsorPackage: vi.fn(),
   getSponsorReadiness: vi.fn(),
+  getLegalEntityVerification: vi.fn(),
+  reviewLegalEntity: vi.fn(),
+  reviewBeneficialOwner: vi.fn(),
 }));
 vi.mock('#runtime/secrets', () => ({ getSecret: dependencies.getSecret }));
 vi.mock('../../server/lib/sponsorReadinessStore.js', () => ({
   reviewSponsorEvidence: dependencies.reviewSponsorEvidence,
   reviewSponsorPackage: dependencies.reviewSponsorPackage,
   getSponsorReadiness: dependencies.getSponsorReadiness,
+}));
+vi.mock('../../server/lib/legalEntityVerificationStore.js', () => ({
+  getLegalEntityVerification: dependencies.getLegalEntityVerification,
+  reviewLegalEntity: dependencies.reviewLegalEntity,
+  reviewBeneficialOwner: dependencies.reviewBeneficialOwner,
 }));
 vi.mock('../../server/lib/sponsorReadinessHttp.js', () => ({
   sponsorError: (res: { status: (code: number) => { json: (body: unknown) => unknown } }, error: Error & { status?: number; code?: string }) => res.status(error.status ?? 400).json({ error: error.message, code: error.code }),
@@ -38,6 +46,14 @@ describe('independent sponsor reviewer', () => {
     dependencies.getSecret.mockImplementation((name: string) => name === 'SPONSOR_REVIEWER_KEY_HASH' ? keyHash : name === 'SPONSOR_REVIEWER_EMAIL' ? 'reviewer@example.test' : undefined);
     dependencies.reviewSponsorEvidence.mockResolvedValue(undefined);
     dependencies.reviewSponsorPackage.mockResolvedValue(undefined);
+    dependencies.reviewLegalEntity.mockResolvedValue(undefined);
+    dependencies.reviewBeneficialOwner.mockResolvedValue(undefined);
+    dependencies.getLegalEntityVerification.mockResolvedValue({
+      entity: { id: 'le_12345678', legalName: 'Candidate Entity Limited', jurisdiction: 'United Kingdom', registrationNumber: '12345678', legalForm: 'Private limited company', registryUrl: 'https://find-and-update.company-information.service.gov.uk/company/12345678', registrySha256: 'c'.repeat(64), expiresAt: null, submittedAt: new Date('2026-01-03'), effectiveStatus: 'submitted' },
+      owners: [{ id: 'bor_12345678', controllerRef: 'controller-01', ownershipBand: '75-100', controlNature: 'Ownership of shares', providerCode: 'sumsub', providerRef: 'provider-ref-01', evidenceSha256: 'd'.repeat(64), expiresAt: null, submittedAt: new Date('2026-01-03'), effectiveStatus: 'submitted' }],
+      assessment: { entityVerified: false, ownersVerified: false, verified: false, activeOwnerCount: 1 },
+      events: [], financialOperationsLocked: true,
+    });
     dependencies.getSponsorReadiness.mockResolvedValue({
       package: { id: 'uk-multicurrency-v1', version: '1.0', status: 'draft', label: 'DRAFT — NOT APPROVED FOR LAUNCH', submittedAt: null },
       evidence: [
@@ -60,10 +76,12 @@ describe('independent sponsor reviewer', () => {
       ok: true,
       reviewer: { id: expect.stringMatching(/^external_checker_[a-f0-9]{16}$/) },
       financialOperationsLocked: true,
-      queue: { summary: { submittedEvidence: 1, approvedControls: 0, totalControls: 37 } },
+      queue: { summary: { submittedEvidence: 1, submittedStructuredRecords: 2, approvedControls: 0, totalControls: 37 } },
     });
     const serialized = JSON.stringify(payload);
     expect(serialized).toContain('sev_12345678');
+    expect(serialized).toContain('le_12345678');
+    expect(serialized).toContain('bor_12345678');
     expect(serialized).not.toContain('sev_87654321');
     expect(serialized).not.toContain('admin-secret-id');
     expect(serialized).not.toContain('reviewer@example.test');
@@ -85,6 +103,16 @@ describe('independent sponsor reviewer', () => {
     const res = response();
     await postHandler(request({ target: 'package', decision: 'rejected', note: 'Outstanding external approval evidence remains.' }) as never, res as never);
     expect(dependencies.reviewSponsorPackage).toHaveBeenCalledWith('rejected', expect.any(String), expect.objectContaining({ id: expect.stringMatching(/^external_checker_/) }));
+  });
+
+  it('reviews structured entity and controller records only through the isolated checker', async () => {
+    const entity = response();
+    await postHandler(request({ target: 'legal_entity', decision: 'approved', note: 'Registry and authority evidence independently verified.' }) as never, entity as never);
+    expect(dependencies.reviewLegalEntity).toHaveBeenCalledWith('verified', expect.any(String), expect.objectContaining({ id: expect.stringMatching(/^external_checker_/) }));
+
+    const owner = response();
+    await postHandler(request({ target: 'beneficial_owner', recordId: 'bor_12345678', decision: 'rejected', note: 'Provider verification scope is incomplete.' }) as never, owner as never);
+    expect(dependencies.reviewBeneficialOwner).toHaveBeenCalledWith('bor_12345678', 'rejected', expect.any(String), expect.objectContaining({ id: expect.stringMatching(/^external_checker_/) }));
   });
 
   it('rejects an invalid credential and malformed evidence identifier', async () => {
