@@ -347,6 +347,8 @@ import users_trading_summary_get_271 from "./api/users/trading/summary/GET";
 import users_trading_watchlist_get_272 from "./api/users/trading/watchlist/GET";
 import users_trading_watchlist_post_273 from "./api/users/trading/watchlist/POST";
 import users_transactions_get_274 from "./api/users/transactions/GET";
+import users_disputes_get from "./api/users/disputes/GET";
+import users_disputes_post from "./api/users/disputes/POST";
 import users_transfer_post_275 from "./api/users/transfer/POST";
 import users_transfers_get_276 from "./api/users/transfers/GET";
 import users_transfers_post_277 from "./api/users/transfers/POST";
@@ -919,6 +921,12 @@ app.get("/api/users/trading/summary", users_trading_summary_get_271);
 app.get("/api/users/trading/watchlist", users_trading_watchlist_get_272);
 app.post("/api/users/trading/watchlist", users_trading_watchlist_post_273);
 app.get("/api/users/transactions", users_transactions_get_274);
+app.get("/api/users/disputes", users_disputes_get);
+app.post("/api/users/disputes", rateLimitMiddleware(
+  (req) => `customer-dispute:${req.customerUser?.id ?? req.ip ?? 'unknown'}`,
+  { windowMs: 60 * 60_000, max: 10 },
+  'Too many dispute submissions. Please try again later.',
+), users_disputes_post);
 app.post("/api/users/transfer", users_transfer_post_275);
 app.get("/api/users/transfers", users_transfers_get_276);
 app.post("/api/users/transfers", users_transfers_post_277);

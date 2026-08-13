@@ -10,7 +10,7 @@ import {
   Zap, Plus, ChevronLeft, BarChart2, Activity,
   Lock, Fingerprint, Moon, Sun, Languages, Key, X,
   TrendingUp as TrendUp, Info, CreditCard as CardIcon,
-  History, FileText, User, Users, Smartphone, MessageCircle,
+  History, FileText, FileWarning, User, Users, Smartphone, MessageCircle,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
@@ -901,6 +901,7 @@ export default function DashboardPage() {
                 { label: 'Cards',         href: '/dashboard/cards' },
                 { label: 'Analytics',     href: '/dashboard/analytics' },
                 { label: 'Exchange',      href: '/dashboard/exchange' },
+                { label: 'Disputes',      href: '/dashboard/disputes' },
               ].map(({ label, href }) => (
                 <Link key={label} to={href}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium text-foreground/50 hover:text-foreground hover:bg-white/5 transition-all">
@@ -1838,6 +1839,7 @@ export default function DashboardPage() {
                   { icon: Smartphone, label: 'Devices',            href: '/dashboard/devices',       sub: 'Trusted devices' },
                   { icon: User,       label: 'My Profile',         href: '/dashboard/profile',       sub: 'Personal info' },
                   { icon: MessageCircle, label: 'Customer Support', href: '/dashboard/support',       sub: 'Tickets & messages' },
+                  { icon: FileWarning, label: 'Transaction Disputes', href: '/dashboard/disputes', sub: 'Report & track claims' },
                 ].map(({ icon: Icon, label, href, sub }, i, arr) => (
                   <Link key={label} to={href}
                     className={`flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors ${i < arr.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>

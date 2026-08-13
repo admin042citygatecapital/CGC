@@ -1,0 +1,21 @@
+import type { Request, Response } from 'express';
+import { syntheticDisputes } from '../../../lib/syntheticDisputes.js';
+
+export default async function handler(req: Request, res: Response) {
+  const customer = req.customerUser;
+  if (!customer) return res.status(401).json({ error: 'Authentication required' });
+
+  try {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({
+      cases: await syntheticDisputes.listForCustomer(customer.id),
+      financialOperationsLocked: true,
+    });
+  } catch (error) {
+    console.error('customer.dispute.read.error', {
+      customerId: customer.id,
+      errorType: error instanceof Error ? error.name : 'UnknownError',
+    });
+    return res.status(500).json({ error: 'Your disputes could not be loaded.', code: 'INTERNAL_ERROR' });
+  }
+}

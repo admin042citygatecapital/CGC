@@ -16,6 +16,7 @@ describe('canonical platform surfaces', () => {
       '/dashboard/beneficiaries', '/dashboard/cards', '/dashboard/wallets',
       '/dashboard/trading', '/dashboard/portfolio', '/dashboard/support',
       '/dashboard/security', '/dashboard/settings', '/dashboard/profile',
+      '/dashboard/disputes',
     ]) {
       const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       expect(routes).toMatch(new RegExp(`path: '${escaped}'[^\\n]*<CustomerOnly>`));
