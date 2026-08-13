@@ -180,9 +180,23 @@ export function HeroSection() {
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.9, delay: 0.2, ease: 'easeOut' }}
-            className="hidden lg:block min-h-[520px] invisible"
+            className="hidden lg:flex min-h-[520px] items-center justify-end"
           >
-            <div className="relative flex items-center justify-center">
+            <div className="w-[260px] space-y-3 mr-1 xl:mr-6">
+              <div className="rounded-2xl border border-primary/25 bg-[#07101e]/90 p-5 shadow-2xl backdrop-blur-md">
+                <div className="flex items-center justify-between text-xs text-foreground/55"><span>Total balance</span><span>USD</span></div>
+                <p className="mt-2 text-2xl font-bold text-foreground">$28,650.75</p>
+              </div>
+              <div className="rounded-2xl border border-primary/20 bg-black/75 p-5 shadow-2xl backdrop-blur-md">
+                <div className="flex items-center justify-between"><p className="text-xs font-semibold">Spending overview</p><TrendingUp size={15} className="text-primary" /></div>
+                <p className="mt-3 text-sm font-semibold text-primary">−8.3%</p>
+                <div className="mt-4 flex h-12 items-end gap-1">{[28,42,35,54,47,68,58,74,65,86,73,96].map((height, index) => <span key={index} className="flex-1 rounded-t bg-primary/60" style={{ height: `${height}%` }} />)}</div>
+              </div>
+              <div className="rounded-2xl border border-primary/20 bg-black/75 p-5 shadow-2xl backdrop-blur-md">
+                <p className="text-xs font-semibold mb-4">Recent activity</p>
+                <div className="space-y-3 text-xs"><div className="flex justify-between"><span className="text-foreground/60">Coffee shop</span><span>−$4.75</span></div><div className="flex justify-between"><span className="text-foreground/60">Salary deposit</span><span className="text-emerald-400">+$2,450.00</span></div><div className="flex justify-between"><span className="text-foreground/60">Travel booking</span><span>−$320.00</span></div></div>
+              </div>
+              <div className="hidden">
               {/* Ambient glow ring */}
               <motion.div
                 animate={{ opacity: [0.18, 0.32, 0.18], scale: [1, 1.06, 1] }}
@@ -206,6 +220,7 @@ export function HeroSection() {
                   filter: 'drop-shadow(0 0 32px rgba(212,175,55,0.55)) drop-shadow(0 0 8px rgba(212,175,55,0.3))',
                 }}
               />
+              </div>
             </div>
           </motion.div>
         </div>
@@ -292,6 +307,51 @@ export function FeaturesGrid() {
           })}
         </div>
       </div>
+    </section>
+  );
+}
+
+export function GlobalBankingSection() {
+  const advantages = [
+    [Globe, 'Multiple currencies', 'Organise supported currencies through one connected experience.'],
+    [Shield, 'Secure and protected', 'Layered account security, authentication and administrative controls.'],
+    [User, 'Global access', 'Designed for increasingly international financial needs.'],
+    [Bell, 'Here for you', 'Support, notifications and account information when you need them.'],
+  ] as const;
+
+  return (
+    <section className="relative overflow-hidden border-y border-primary/10 bg-[#060606]">
+      <div className="grid min-h-[650px] lg:grid-cols-2">
+        <div className="relative min-h-[360px] lg:min-h-full">
+          <img src="/assets/media/city-gate-global-banking-city-v1.png" alt="International financial district representing City Gate Capital global banking" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#060606]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#060606]/60 to-transparent" />
+        </div>
+        <div className="flex items-center px-6 py-16 md:px-12 lg:px-16">
+          <motion.div initial={{ opacity: 0, x: 28 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="max-w-2xl">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-primary">Global financial access</p>
+            <h2 className="text-4xl font-bold leading-tight md:text-5xl">Your financial partner <span className="text-gold-gradient">around the world.</span></h2>
+            <p className="mt-6 text-foreground/55 leading-8">City Gate Capital connects modern account experiences, international financial needs and customer-first technology through one secure platform.</p>
+            <div className="mt-10 grid gap-6 sm:grid-cols-2">
+              {advantages.map(([Icon, title, text]) => <div key={title} className="flex gap-4"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10"><Icon size={19} className="text-primary" /></div><div><h3 className="text-sm font-semibold">{title}</h3><p className="mt-2 text-xs leading-6 text-foreground/45">{text}</p></div></div>)}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function BankingFitsLifeBanner() {
+  return (
+    <section className="px-4 py-16 md:px-6 md:py-24">
+      <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="container mx-auto overflow-hidden rounded-[2rem] border border-primary/25 bg-gradient-to-r from-[#090806] via-[#11100c] to-[#060606] shadow-2xl">
+        <div className="grid items-center gap-10 px-7 py-10 md:px-12 lg:grid-cols-[0.8fr_1fr_1fr]">
+          <div className="relative flex justify-center"><div className="w-40 rounded-[2rem] border-2 border-primary/30 bg-black p-3 shadow-[0_20px_60px_rgba(201,168,76,0.18)]"><div className="rounded-[1.35rem] bg-[#0d0d0c] p-4"><p className="text-[9px] text-foreground/45">Good morning</p><p className="mt-4 text-[9px] text-foreground/40">Total balance</p><p className="text-xl font-bold">$28,650</p><div className="mt-5 space-y-2">{['Accounts','Transfers','Cards','Analytics'].map(item => <div key={item} className="rounded-lg border border-primary/10 px-3 py-2 text-[9px] text-foreground/60">{item}</div>)}</div></div></div></div>
+          <div><p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Banking that moves with you</p><h2 className="mt-4 text-4xl font-bold md:text-5xl">Banking that fits <span className="text-gold-gradient">your life.</span></h2></div>
+          <div><p className="text-foreground/55 leading-8">Manage your accounts, follow transfers, review spending and control important security settings from one responsive digital experience.</p><div className="mt-6 flex flex-wrap gap-3"><Link to="/accounts" className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-black">Explore banking <ArrowRight size={17}/></Link><Link to="/register" className="inline-flex items-center gap-2 rounded-xl border border-primary/25 px-6 py-3 font-semibold">Create profile</Link></div></div>
+        </div>
+      </motion.div>
     </section>
   );
 }
