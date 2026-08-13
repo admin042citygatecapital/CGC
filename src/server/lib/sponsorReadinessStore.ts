@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { and, asc, eq, lt } from 'drizzle-orm';
+import { and, asc, eq, inArray, lt } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { beneficialOwnerRecords, legalEntityProfiles, sponsorEvidence, sponsorEvidenceEvents, sponsorPackages } from '../db/schema.js';
 import type { SponsorEvidenceRow } from '../db/schema.js';
@@ -79,7 +79,8 @@ export function validateEvidenceInput(input: EvidenceInput): Omit<EvidenceInput,
 }
 
 export function effectiveEvidenceStatus(evidence: Pick<SponsorEvidenceRow, 'status' | 'expiresAt'>, now = new Date()): EvidenceStatus {
-  return evidence.status === 'approved' && evidence.expiresAt && evidence.expiresAt <= now ? 'expired' : evidence.status;
+  const expirable = evidence.status === 'draft' || evidence.status === 'submitted' || evidence.status === 'approved';
+  return expirable && evidence.expiresAt && evidence.expiresAt <= now ? 'expired' : evidence.status;
 }
 
 export function assertMakerChecker(evidence: Pick<SponsorEvidenceRow, 'submittedBy' | 'lastEditedBy'>, reviewerId: string): void {
@@ -142,15 +143,19 @@ export async function getSponsorReadiness(actor?: SponsorActor): Promise<ReturnT
   if (actor) {
     const expired = await db.select().from(sponsorEvidence).where(and(
       eq(sponsorEvidence.packageId, SPONSOR_PACKAGE_ID),
-      eq(sponsorEvidence.status, 'approved'),
+      inArray(sponsorEvidence.status, ['draft', 'submitted', 'approved']),
       lt(sponsorEvidence.expiresAt, new Date()),
     ));
     for (const item of expired) {
       await auditIntent(actor, 'sponsor_evidence_expire_intent', item.id, { controlKey: item.controlKey, expiresAt: item.expiresAt?.toISOString() });
       const changed = await db.transaction(async tx => {
-        const updated = await tx.update(sponsorEvidence).set({ status: 'expired', updatedAt: new Date() }).where(and(eq(sponsorEvidence.id, item.id), eq(sponsorEvidence.status, 'approved'))).returning({ id: sponsorEvidence.id });
+        const updated = await tx.update(sponsorEvidence).set({ status: 'expired', updatedAt: new Date() }).where(and(
+          eq(sponsorEvidence.id, item.id),
+          eq(sponsorEvidence.status, item.status),
+          eq(sponsorEvidence.updatedAt, item.updatedAt),
+        )).returning({ id: sponsorEvidence.id });
         if (!updated[0]) return false;
-        await tx.insert(sponsorEvidenceEvents).values({ id: `see_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: item.id, action: 'expired', actorId: actor.id, actorRole: actor.role, fromStatus: 'approved', toStatus: 'expired', details: { expiresAt: item.expiresAt?.toISOString() } });
+        await tx.insert(sponsorEvidenceEvents).values({ id: `see_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: item.id, action: 'expired', actorId: actor.id, actorRole: actor.role, fromStatus: item.status, toStatus: 'expired', details: { expiresAt: item.expiresAt?.toISOString() } });
         return true;
       });
       if (changed) await auditCompletion(actor, 'sponsor_evidence_expired', item.id, { controlKey: item.controlKey, expiresAt: item.expiresAt?.toISOString() });
@@ -266,7 +271,8 @@ export async function submitSponsorEvidence(id: string, actor: SponsorActor): Pr
   const current = rows[0]; if (!current) throw new SponsorReadinessError('Evidence not found.', 'NOT_FOUND', 404);
   assertSponsorCategoryOwnership(current.controlKey, actor);
   const status = effectiveEvidenceStatus(current);
-  if (status !== 'draft' && status !== 'rejected' && status !== 'expired') throw new SponsorReadinessError('Only draft, rejected or expired evidence can be submitted.', 'INVALID_STATE', 409);
+  if (status === 'expired') throw new SponsorReadinessError('Expired evidence must be updated before submission.', 'EVIDENCE_EXPIRED', 409);
+  if (status !== 'draft' && status !== 'rejected') throw new SponsorReadinessError('Only draft or rejected evidence can be submitted.', 'INVALID_STATE', 409);
   if (!current.sha256) throw new SponsorReadinessError('A SHA-256 digest is required before submission.', 'HASH_REQUIRED');
   const now = new Date();
   await auditIntent(actor, 'sponsor_evidence_submit_intent', id, { controlKey: current.controlKey, priorStatus: status });
@@ -285,7 +291,9 @@ export async function reviewSponsorEvidence(id: string, decision: 'approved' | '
   const rows = await db.select().from(sponsorEvidence).where(and(eq(sponsorEvidence.id, id), eq(sponsorEvidence.packageId, SPONSOR_PACKAGE_ID))).limit(1);
   const current = rows[0]; if (!current) throw new SponsorReadinessError('Evidence not found.', 'NOT_FOUND', 404);
   assertSponsorReviewOwnership(current.controlKey, actor); assertMakerChecker(current, actor.id);
-  if (current.status !== 'submitted') throw new SponsorReadinessError('Only submitted evidence may be reviewed.', 'INVALID_STATE', 409);
+  const status = effectiveEvidenceStatus(current);
+  if (status === 'expired') throw new SponsorReadinessError('Expired evidence cannot be reviewed; the submitter must update and resubmit it.', 'EVIDENCE_EXPIRED', 409);
+  if (status !== 'submitted') throw new SponsorReadinessError('Only submitted evidence may be reviewed.', 'INVALID_STATE', 409);
   const reviewNote = cleanText(note, 'review note', 10, 1000); const now = new Date();
   await auditIntent(actor, `sponsor_evidence_${decision}_intent`, id, { controlKey: current.controlKey, priorStatus: current.status });
   const updated = await db.transaction(async tx => {

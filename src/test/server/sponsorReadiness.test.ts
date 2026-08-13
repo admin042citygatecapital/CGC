@@ -56,6 +56,9 @@ describe('sponsor readiness lifecycle and validation', () => {
     expect(() => assertMakerChecker({ submittedBy: 'admin-a', lastEditedBy: 'admin-b' }, 'admin-a')).toThrow(/Maker-checker/);
     expect(() => assertMakerChecker({ submittedBy: 'admin-a', lastEditedBy: 'admin-b' }, 'admin-c')).not.toThrow();
     expect(effectiveEvidenceStatus(evidence('legal_entity_verified', { expiresAt: new Date('2025-01-01') }), new Date('2026-01-01'))).toBe('expired');
+    expect(effectiveEvidenceStatus(evidence('legal_entity_verified', { status: 'draft', expiresAt: new Date('2025-01-01') }), new Date('2026-01-01'))).toBe('expired');
+    expect(effectiveEvidenceStatus(evidence('legal_entity_verified', { status: 'submitted', expiresAt: new Date('2025-01-01') }), new Date('2026-01-01'))).toBe('expired');
+    expect(effectiveEvidenceStatus(evidence('legal_entity_verified', { status: 'rejected', expiresAt: new Date('2025-01-01') }), new Date('2026-01-01'))).toBe('rejected');
   });
 
   it('keeps role ownership narrow while allowing all three control-plane roles to enter the workspace', () => {
