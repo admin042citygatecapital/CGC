@@ -33,6 +33,7 @@ import {
   text,
   boolean,
   integer,
+  bigint,
   numeric,
   doublePrecision,
   timestamp,
@@ -951,6 +952,27 @@ export const providerSandboxEvents = pgTable('provider_sandbox_events', {
   index('provider_sandbox_events_run_idx').on(t.runId),
 ]);
 
+// Administration-managed links between existing customer profiles. These
+// records express relationship metadata only and never confer account access,
+// ownership, signing authority or permission to move funds by themselves.
+export const customerRelationships = pgTable('customer_relationships', {
+  id:               text('id').primaryKey(),
+  customerId:       text('customer_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  relatedCustomerId:text('related_customer_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  relationshipType:text('relationship_type').$type<'joint_holder' | 'beneficial_owner' | 'director' | 'authorised_user' | 'beneficiary' | 'guarantor' | 'household' | 'business_contact'>().notNull(),
+  status:           text('status').$type<'pending' | 'active' | 'inactive'>().notNull().default('pending'),
+  label:            text('label').notNull().default(''),
+  notes:            text('notes').notNull().default(''),
+  createdBy:        text('created_by').notNull(),
+  lastEditedBy:     text('last_edited_by').notNull(),
+  createdAt:        timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:        timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('customer_relationships_unique_idx').on(t.customerId, t.relatedCustomerId, t.relationshipType),
+  index('customer_relationships_customer_idx').on(t.customerId, t.updatedAt),
+  index('customer_relationships_related_idx').on(t.relatedCustomerId, t.updatedAt),
+]);
+
 export const onboardingProviderEvents = pgTable('onboarding_provider_events', {
   id:            text('id').primaryKey(),
   eventId:       text('event_id').notNull(),
@@ -1077,6 +1099,87 @@ export const dataQuarantineBatches = pgTable('data_quarantine_batches', {
   appliedAt: timestamp('applied_at', { withTimezone: true }),
   restoredAt: timestamp('restored_at', { withTimezone: true }),
   restoreApprovalReference: text('restore_approval_reference'),
+});
+
+/**
+ * Financial simulation tables are deliberately separate from customer money
+ * tables. Every identifier is synthetic and no foreign key reaches users,
+ * customer accounts, provider accounts, cards, wallets, or live transactions.
+ */
+export const financialSandboxAccounts = pgTable('financial_sandbox_accounts', {
+  id:                    text('id').primaryKey(),
+  name:                  text('name').notNull(),
+  accountType:           text('account_type').$type<'personal' | 'savings' | 'business' | 'fiat_wallet' | 'crypto_wallet' | 'treasury'>().notNull(),
+  asset:                 text('asset').notNull(),
+  balanceMinor:          bigint('balance_minor', { mode: 'bigint' }).notNull().default(0n),
+  synthetic:             boolean('synthetic').notNull().default(true),
+  creationIdempotencyKey:text('creation_idempotency_key').notNull(),
+  creationFingerprint:   text('creation_fingerprint').notNull(),
+  createdBy:             text('created_by').notNull(),
+  createdAt:             timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:             timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('financial_sandbox_accounts_creation_key_idx').on(t.creationIdempotencyKey),
+  index('financial_sandbox_accounts_asset_idx').on(t.asset, t.updatedAt),
+]);
+
+export const financialSandboxTransactions = pgTable('financial_sandbox_transactions', {
+  id:                    text('id').primaryKey(),
+  reference:             text('reference').notNull(),
+  idempotencyKey:        text('idempotency_key').notNull(),
+  idempotencyFingerprint:text('idempotency_fingerprint').notNull(),
+  kind:                  text('kind').$type<'mock' | 'internal_transfer' | 'crypto_transfer' | 'adjustment' | 'reversal'>().notNull(),
+  status:                text('status').$type<'pending' | 'processing' | 'completed' | 'failed' | 'reversed' | 'cancelled'>().notNull(),
+  asset:                 text('asset').notNull(),
+  amountMinor:           bigint('amount_minor', { mode: 'bigint' }).notNull(),
+  sourceAccountId:       text('source_account_id').references(() => financialSandboxAccounts.id, { onDelete: 'restrict' }),
+  destinationAccountId:  text('destination_account_id').references(() => financialSandboxAccounts.id, { onDelete: 'restrict' }),
+  reason:                text('reason').notNull(),
+  executionSource:       text('execution_source').notNull().default('SIMULATION'),
+  synthetic:             boolean('synthetic').notNull().default(true),
+  reversesId:            text('reverses_id'),
+  cancellationReason:    text('cancellation_reason'),
+  createdBy:             text('created_by').notNull(),
+  createdAt:             timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:             timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('financial_sandbox_transactions_reference_idx').on(t.reference),
+  uniqueIndex('financial_sandbox_transactions_idempotency_idx').on(t.idempotencyKey),
+  index('financial_sandbox_transactions_status_idx').on(t.status, t.createdAt),
+]);
+
+export const financialSandboxJournalEntries = pgTable('financial_sandbox_journal_entries', {
+  id:           text('id').primaryKey(),
+  transactionId:text('transaction_id').notNull().references(() => financialSandboxTransactions.id, { onDelete: 'restrict' }),
+  reference:    text('reference').notNull(),
+  asset:        text('asset').notNull(),
+  synthetic:    boolean('synthetic').notNull().default(true),
+  postedBy:     text('posted_by').notNull(),
+  postedAt:     timestamp('posted_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('financial_sandbox_journal_transaction_idx').on(t.transactionId),
+  uniqueIndex('financial_sandbox_journal_reference_idx').on(t.reference),
+]);
+
+export const financialSandboxJournalLines = pgTable('financial_sandbox_journal_lines', {
+  id:            text('id').primaryKey(),
+  journalEntryId:text('journal_entry_id').notNull().references(() => financialSandboxJournalEntries.id, { onDelete: 'restrict' }),
+  accountId:     text('account_id').notNull().references(() => financialSandboxAccounts.id, { onDelete: 'restrict' }),
+  asset:         text('asset').notNull(),
+  debitMinor:    bigint('debit_minor', { mode: 'bigint' }).notNull().default(0n),
+  creditMinor:   bigint('credit_minor', { mode: 'bigint' }).notNull().default(0n),
+  synthetic:     boolean('synthetic').notNull().default(true),
+  createdAt:     timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('financial_sandbox_journal_lines_entry_idx').on(t.journalEntryId)]);
+
+export const financialSandboxCommands = pgTable('financial_sandbox_commands', {
+  idempotencyKey:text('idempotency_key').primaryKey(),
+  fingerprint:   text('fingerprint').notNull(),
+  action:        text('action').notNull(),
+  resultType:    text('result_type').notNull(),
+  resultId:      text('result_id').notNull(),
+  createdBy:     text('created_by').notNull(),
+  createdAt:     timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const dataQuarantineRecords = pgTable('data_quarantine_records', {

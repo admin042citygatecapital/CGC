@@ -83,6 +83,7 @@ const AdminForgotPasswordPage   = lazy(() => import('./pages/admin/forgot-passwo
 const AdminResetPasswordPage    = lazy(() => import('./pages/admin/reset-password'));
 const AdminDashboard       = lazy(() => import('./pages/admin/index'));
 const AdminUsers           = lazy(() => import('./pages/admin/users'));
+const AdminCustomerRelationships = lazy(() => import('./pages/admin/customer-relationships'));
 const AdminCards           = lazy(() => import('./pages/admin/cards'));
 const AdminTransactions    = lazy(() => import('./pages/admin/transactions'));
 const AdminCrypto          = lazy(() => import('./pages/admin/crypto'));
@@ -106,6 +107,7 @@ const AdminDocumentation   = lazy(() => import('./pages/admin/documentation'));
 const AdminReadiness       = lazy(() => import('./pages/admin/readiness'));
 const AdminSponsorReadiness = lazy(() => import('./pages/admin/sponsor-readiness'));
 const AdminProviderSandbox  = lazy(() => import('./pages/admin/provider-sandbox'));
+const AdminFinancialSandbox = lazy(() => import('./pages/admin/financial-sandbox'));
 const AdminAssuranceExercises = lazy(() => import('./pages/admin/assurance-exercises'));
 const AdminLegalEntity = lazy(() => import('./pages/admin/legal-entity'));
 const AdminDeveloper       = lazy(() => import('./pages/admin/developer'));
@@ -186,6 +188,7 @@ export const routes: RouteObject[] = [
   { path: '/admin',              element: <AdminOnly><AdminDashboard /></AdminOnly> },
   { path: '/admin/users',        element: <AdminOnly><AdminUsers /></AdminOnly> },
   { path: '/admin/customers',    element: <AdminOnly><AdminUsers /></AdminOnly> },
+  { path: '/admin/customer-relationships', element: <AdminOnly><AdminCustomerRelationships /></AdminOnly> },
   { path: '/admin/cards',        element: <AdminOnly><AdminCards /></AdminOnly> },
   { path: '/admin/transactions', element: <AdminOnly><AdminTransactions /></AdminOnly> },
   { path: '/admin/transfers',    element: <AdminOnly><AdminTransactions /></AdminOnly> },
@@ -213,6 +216,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/readiness',       element: <AdminOnly><AdminReadiness /></AdminOnly> },
   { path: '/admin/sponsor-readiness', element: <AdminOnly><AdminSponsorReadiness /></AdminOnly> },
   { path: '/admin/provider-sandbox', element: <AdminOnly><AdminProviderSandbox /></AdminOnly> },
+  { path: '/admin/financial-sandbox', element: <AdminOnly><AdminFinancialSandbox /></AdminOnly> },
   { path: '/admin/assurance-exercises', element: <AdminOnly><AdminAssuranceExercises /></AdminOnly> },
   { path: '/admin/legal-entity', element: <AdminOnly><AdminLegalEntity /></AdminOnly> },
   { path: '/admin/developer',       element: <AdminOnly><AdminDeveloper /></AdminOnly> },

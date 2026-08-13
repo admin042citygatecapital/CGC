@@ -34,6 +34,7 @@ Eye,
 FileText,
 History,
 KeyRound,
+Link2,
 Loader2,
 Lock,
 Minus,
@@ -1001,6 +1002,10 @@ export default function AdminUsers() {
             <p className="text-white/30 text-sm">{total.toLocaleString()} total customers</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link to="/admin/customer-relationships"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/8 text-white/60 text-sm hover:text-white hover:border-primary/30 transition-colors">
+              <Link2 size={14} /> Customer Relations
+            </Link>
             <button onClick={fetchUsers}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/8 text-white/50 text-sm hover:text-white transition-colors">
               <RefreshCw size={13} />

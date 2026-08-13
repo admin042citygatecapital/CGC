@@ -141,6 +141,10 @@ import admin_sponsor_readiness_external_review_post from "./api/admin/sponsor-re
 import admin_sponsor_readiness_external_review_get from "./api/admin/sponsor-readiness/external-review/GET";
 import admin_provider_sandbox_get from "./api/admin/provider-sandbox/GET";
 import admin_provider_sandbox_post from "./api/admin/provider-sandbox/POST";
+import admin_financial_sandbox_get from "./api/admin/financial-sandbox/GET";
+import admin_financial_sandbox_post from "./api/admin/financial-sandbox/POST";
+import admin_customer_relationships_get from "./api/admin/customer-relationships/GET";
+import admin_customer_relationships_post from "./api/admin/customer-relationships/POST";
 import admin_assurance_exercises_get from "./api/admin/assurance-exercises/GET";
 import admin_assurance_exercises_post from "./api/admin/assurance-exercises/POST";
 import admin_reports_get_89 from "./api/admin/reports/GET";
@@ -690,6 +694,10 @@ app.get("/api/admin/sponsor-readiness/external-review", admin_sponsor_readiness_
 app.post("/api/admin/sponsor-readiness/external-review", admin_sponsor_readiness_external_review_post);
 app.get("/api/admin/provider-sandbox", admin_provider_sandbox_get);
 app.post("/api/admin/provider-sandbox", admin_provider_sandbox_post);
+app.get("/api/admin/financial-sandbox", admin_financial_sandbox_get);
+app.post("/api/admin/financial-sandbox", admin_financial_sandbox_post);
+app.get("/api/admin/customer-relationships", admin_customer_relationships_get);
+app.post("/api/admin/customer-relationships", admin_customer_relationships_post);
 app.get("/api/admin/assurance-exercises", admin_assurance_exercises_get);
 app.post("/api/admin/assurance-exercises", admin_assurance_exercises_post);
 app.get("/api/admin/reports", admin_reports_get_89);
