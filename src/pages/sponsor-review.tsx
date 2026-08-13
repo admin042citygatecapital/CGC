@@ -33,11 +33,13 @@ interface ReviewLegalEntity { id: string; legalName: string; jurisdiction: strin
 interface ReviewOwner { id: string; controllerRef: string; ownershipBand: string; controlNature: string; providerCode: string; providerRef: string; evidenceSha256: string | null; expiresAt: string | null; submittedAt: string | null; status: 'submitted'; }
 interface MonitoringReview { id:string; reference:string; ruleKey:string; riskLevel:string; subjectReference:string; summary:string; transactionCount:number; aggregateAmountMinor:string; asset:string; caseId:string|null; proposedResolution:string; submittedBy:string; submittedAt:string; linkedTransactions:Array<{transactionId:string;transactionReference:string;amountMinor:string;asset:string;occurredAt:string;snapshotSha256:string}> }
 interface ReconciliationReview { id:string; status:string; owner?:string; proposedResolution?:string; submittedBy?:string; submittedAt?:string; ageingDays:number; outcome:string; severity:string; transactionReference?:string; providerInstructionId?:string; asset?:string; amountMinor?:string; snapshotSha256:string }
+interface DisputeReview { id:string;reference:string;caseType:string;category:string;priority:string;customerReference:string;transactionId?:string;summary:string;owner?:string;dueAt:string;overdue:boolean;ageingDays:number;remediationType?:string;remediationReason?:string;submittedBy?:string;submittedAt?:string;caseSha256:string;evidence:Array<{id:string;label:string;evidenceSha256:string}> }
 
 interface ReviewQueue {
   reviewer: { id: string };
   queue: {
     reconciliationExceptions: ReconciliationReview[];
+    disputeCases: DisputeReview[];
     monitoringAlerts: MonitoringReview[];
     evidence: ReviewEvidence[];
     legalEntity: ReviewLegalEntity | null;
@@ -86,7 +88,7 @@ export default function SponsorReviewPage() {
     }
   }, [credential]);
 
-  async function decide(target: 'evidence' | 'legal_entity' | 'beneficial_owner' | 'monitoring_alert' | 'reconciliation_exception' | 'package', decision: 'approved' | 'rejected', recordId?: string, monitoringDecision?:'false_positive'|'case', reconciliationDecision?:'resolved'|'accepted_risk') {
+  async function decide(target: 'evidence' | 'legal_entity' | 'beneficial_owner' | 'monitoring_alert' | 'reconciliation_exception' | 'dispute_case' | 'package', decision: 'approved' | 'rejected', recordId?: string, monitoringDecision?:'false_positive'|'case', reconciliationDecision?:'resolved'|'accepted_risk') {
     const note = target === 'package' ? packageNote : notes[recordId ?? target] ?? '';
     if (note.trim().length < 10) {
       setError('Enter a review note of at least 10 characters before recording a decision.');
@@ -98,7 +100,7 @@ export default function SponsorReviewPage() {
         method: 'POST',
         credentials: 'omit',
         headers: { 'Content-Type': 'application/json', 'x-sponsor-reviewer-key': credential },
-        body: JSON.stringify({ target, decision, evidenceId: target === 'evidence' ? recordId : undefined, recordId: target === 'beneficial_owner' ? recordId : undefined, alertId: target === 'monitoring_alert' ? recordId : undefined, exceptionId: target === 'reconciliation_exception' ? recordId : undefined, monitoringDecision, reconciliationDecision, note: note.trim() }),
+        body: JSON.stringify({ target, decision, evidenceId: target === 'evidence' ? recordId : undefined, recordId: target === 'beneficial_owner' ? recordId : undefined, alertId: target === 'monitoring_alert' ? recordId : undefined, exceptionId: target === 'reconciliation_exception' ? recordId : undefined, caseId: target === 'dispute_case' ? recordId : undefined, monitoringDecision, reconciliationDecision, note: note.trim() }),
       });
       const body = await response.json() as { error?: string };
       if (!response.ok) throw new Error(body.error || 'The review decision could not be recorded.');
@@ -165,6 +167,11 @@ export default function SponsorReviewPage() {
           </section>
 
           <div className="flex justify-end"><button disabled={busy} onClick={() => void load(credential)} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55"><RefreshCw className={`h-4 w-4 ${busy ? 'animate-spin' : ''}`} />Refresh queue</button></div>
+
+          <section>
+            <div className="mb-3 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300"/><h2 className="text-lg font-semibold">Dispute remediation approvals</h2></div>
+            {queue.queue.disputeCases.length===0?<div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 text-center text-sm text-white/35">No dispute remediation is awaiting checker approval.</div>:<div className="space-y-4">{queue.queue.disputeCases.map(item=><article key={item.id} className="rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.025] p-5"><div className="flex justify-between gap-3"><div><p className="font-mono font-semibold">{item.reference}</p><p className="mt-1 text-xs text-white/35">{item.caseType.replaceAll('_',' ')} · {item.priority} · {item.overdue?'OVERDUE':`ageing ${item.ageingDays} day(s)`}</p></div><span className="h-fit rounded-full border border-blue-300/20 px-2.5 py-1 text-[10px] uppercase text-blue-200">remediation pending</span></div><p className="mt-3 text-sm text-white/55">{item.summary}</p><div className="mt-3 rounded-xl bg-black/25 p-3 text-xs"><p className="text-white/30">Maker proposal</p><p className="mt-1 text-white/65">{item.remediationType?.replaceAll('_',' ')} — {item.remediationReason}</p><p className="mt-2 font-mono text-white/25">Transaction {item.transactionId??'no financial action'} · Submitted by {item.submittedBy}</p></div><p className="mt-3 break-all font-mono text-[10px] text-white/25">Case SHA-256 {item.caseSha256}</p><label className="mt-4 block text-xs text-white/40">Independent checker rationale<textarea rows={3} value={notes[item.id]??''} onChange={event=>setNotes(current=>({...current,[item.id]:event.target.value}))} maxLength={1000} className="mt-2 w-full rounded-xl border border-white/10 bg-black/35 p-3 text-sm text-white"/></label><div className="mt-3 flex gap-2"><button disabled={busy} onClick={()=>void decide('dispute_case','approved',item.id)} className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-300">Approve controlled remediation</button><button disabled={busy} onClick={()=>void decide('dispute_case','rejected',item.id)} className="rounded-lg bg-red-400/10 px-3 py-2 text-xs font-semibold text-red-300">Reject remediation</button></div></article>)}</div>}
+          </section>
 
           <section>
             <div className="mb-3 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-[#D8B85A]" /><h2 className="text-lg font-semibold">Reconciliation exception approvals</h2></div>

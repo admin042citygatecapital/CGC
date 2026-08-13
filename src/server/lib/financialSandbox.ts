@@ -176,10 +176,14 @@ export class FinancialSandbox {
   async reverse(id: string, reason: string, idempotencyKey: string, actor: SandboxActor) {
     requireSyntheticId(id); const original = this.transactions.get(id);
     if (!original) throw new FinancialSandboxError('Synthetic transaction not found.', 'TRANSACTION_NOT_FOUND');
+    const cleanReason=reason.trim().slice(0,240);
+    const fingerprint=JSON.stringify({kind:'reversal',asset:original.asset,amount:original.amountMinor.toString(),source:original.destinationAccountId,destination:original.sourceAccountId,reason:cleanReason,reversesId:original.id});
+    const prior=this.idempotency.get(idempotencyKey);
+    if(prior){if(prior.fingerprint!==fingerprint)throw new FinancialSandboxError('Idempotency key was reused with different input.','IDEMPOTENCY_CONFLICT');return this.transactions.get(prior.transactionId)!;}
     if (original.status !== 'completed' || original.kind === 'reversal') throw new FinancialSandboxError('Transaction is not eligible for reversal.', 'REVERSAL_NOT_ALLOWED');
     const source = original.destinationAccountId ? this.account(original.destinationAccountId) : undefined;
     const destination = original.sourceAccountId ? this.account(original.sourceAccountId) : undefined;
-    const reversal = await this.post({ idempotencyKey, kind: 'reversal', asset: original.asset, amountMinor: original.amountMinor, source, destination, reason: reason.trim().slice(0, 240), reversesId: original.id }, actor);
+    const reversal = await this.post({ idempotencyKey, kind: 'reversal', asset: original.asset, amountMinor: original.amountMinor, source, destination, reason: cleanReason, reversesId: original.id }, actor);
     original.status = 'reversed'; original.updatedAt = new Date().toISOString();
     return reversal;
   }

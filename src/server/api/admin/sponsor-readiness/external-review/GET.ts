@@ -6,6 +6,7 @@ import { authenticateIndependentSponsorReviewer } from '../../../../lib/independ
 import { getLegalEntityVerification } from '../../../../lib/legalEntityVerificationStore.js';
 import { syntheticTransactionMonitoring } from '../../../../lib/syntheticTransactionMonitoring.js';
 import { syntheticReconciliation } from '../../../../lib/syntheticReconciliation.js';
+import { syntheticDisputes } from '../../../../lib/syntheticDisputes.js';
 
 function iso(value: Date | null): string | null {
   return value ? value.toISOString() : null;
@@ -17,7 +18,7 @@ export default async function handler(req: Request, res: Response) {
     // A reviewer opening the queue must also persist any newly expired
     // evidence and invalidate a previously submitted package before it can be
     // acted on. The reviewer's isolated identity is retained in that audit.
-    const [readiness, legal, monitoringAlerts, reconciliation] = await Promise.all([getSponsorReadiness(actor), getLegalEntityVerification(actor), syntheticTransactionMonitoring.list(), syntheticReconciliation.list()]);
+    const [readiness, legal, monitoringAlerts, reconciliation, disputes] = await Promise.all([getSponsorReadiness(actor), getLegalEntityVerification(actor), syntheticTransactionMonitoring.list(), syntheticReconciliation.list(), syntheticDisputes.list()]);
     const controls = new Map(SPONSOR_CONTROLS.map(control => [control.key, control]));
     const evidence = readiness.evidence
       .filter(item => item.effectiveStatus === 'submitted')
@@ -53,6 +54,14 @@ export default async function handler(req: Request, res: Response) {
       ok: true,
       reviewer: { id: actor.id },
       queue: {
+        disputeCases: disputes.cases.filter(item => item.status === 'remediation_pending').map(item => ({
+          id:item.id,reference:item.reference,caseType:item.caseType,category:item.category,priority:item.priority,
+          customerReference:item.customerReference,transactionId:item.transactionId,transferId:item.transferId,
+          monitoringAlertId:item.monitoringAlertId,reconciliationExceptionId:item.reconciliationExceptionId,
+          summary:item.summary,owner:item.owner,dueAt:item.dueAt,overdue:item.overdue,ageingDays:item.ageingDays,
+          remediationType:item.remediationType,remediationReason:item.remediationReason,submittedBy:item.submittedBy,
+          submittedAt:item.submittedAt,caseSha256:item.caseSha256,evidence:item.evidence,
+        })),
         reconciliationExceptions: reconciliation.exceptions.filter(item => item.status === 'resolution_pending').map(item => ({
           id: item.id, status: item.status, owner: item.owner, proposedResolution: item.proposedResolution,
           submittedBy: item.submittedBy, submittedAt: item.submittedAt, ageingDays: item.ageingDays,

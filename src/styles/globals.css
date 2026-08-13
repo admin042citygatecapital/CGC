@@ -4,6 +4,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .input-dark {
+    @apply rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#C9A84C]/40;
+  }
+  .button-dark {
+    @apply rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/5 hover:text-white;
+  }
+}
+
 /* ── Global touch optimisations ────────────────────────────────────────────── */
 /* Eliminate 300ms tap delay on all interactive elements on mobile */
 a, button, [role="button"], input, select, textarea, label {

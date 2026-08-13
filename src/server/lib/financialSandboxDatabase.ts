@@ -691,6 +691,9 @@ export class DatabaseFinancialSandbox {
     requireDatabase();
     const reason = requireReason(reasonInput);
     const sql = getQueryClient();
+    const key=requireKey(idempotencyKey);
+    const prior=await sql.begin(async tx=>{const candidate=await loadTransaction(tx,id,false);return command(tx,key,hash({action:'reversal',sourceId:candidate.destination_account_id,destinationId:candidate.source_account_id,amount:this.minorToAmount(BigInt(candidate.amount_minor),candidate.asset),reason,reversesId:id}));});
+    if(prior)return sql.begin(tx=>loadTransactionResult(tx,prior.result_id));
     const original = await sql.begin((tx) => loadTransaction(tx, id, true));
     if (original.status !== "completed" || original.kind === "reversal")
       throw new FinancialSandboxError(

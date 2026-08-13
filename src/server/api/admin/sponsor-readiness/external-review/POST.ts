@@ -6,6 +6,7 @@ import { authenticateIndependentSponsorReviewer } from '../../../../lib/independ
 import { reviewBeneficialOwner, reviewLegalEntity } from '../../../../lib/legalEntityVerificationStore.js';
 import { syntheticTransactionMonitoring } from '../../../../lib/syntheticTransactionMonitoring.js';
 import { syntheticReconciliation } from '../../../../lib/syntheticReconciliation.js';
+import { syntheticDisputes } from '../../../../lib/syntheticDisputes.js';
 
 export default async function handler(req: Request, res: Response) {
   try {
@@ -16,10 +17,16 @@ export default async function handler(req: Request, res: Response) {
     }
     const reviewerId = actor.id;
     const requestedTarget = req.body?.target ?? 'package';
-    if (!['evidence', 'package', 'legal_entity', 'beneficial_owner', 'monitoring_alert', 'reconciliation_exception'].includes(requestedTarget)) {
+    if (!['evidence', 'package', 'legal_entity', 'beneficial_owner', 'monitoring_alert', 'reconciliation_exception', 'dispute_case'].includes(requestedTarget)) {
       return res.status(400).json({ error: 'target is not supported', code: 'VALIDATION_ERROR' });
     }
     const target = requestedTarget;
+    if (target === 'dispute_case') {
+      const caseId=String(req.body?.caseId??'').trim();
+      if(!/^syn_dispute_[A-Za-z0-9-]{8,100}$/.test(caseId))return res.status(400).json({error:'A valid caseId is required.',code:'VALIDATION_ERROR'});
+      await syntheticDisputes.review(caseId,decision,String(req.body?.note??''),{...actor,correlationId:String(req.get('X-Request-ID')??crypto.randomUUID()),actorType:'independent_checker'});
+      return res.json({ok:true,reviewerId,target,caseId,decision});
+    }
     if (target === 'reconciliation_exception') {
       const exceptionId = String(req.body?.exceptionId ?? '').trim();
       if (!/^syn_recon_exception_[A-Za-z0-9-]{8,100}$/.test(exceptionId)) return res.status(400).json({ error: 'A valid exceptionId is required.', code: 'VALIDATION_ERROR' });
