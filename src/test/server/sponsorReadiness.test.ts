@@ -111,7 +111,10 @@ describe('sponsor provider pack', () => {
       'sponsor_term_sheet', 'programme_contract',
     ]);
     expect(snapshot.externalEvidenceRequirements.every(item => item.status === 'missing')).toBe(true);
-    expect(snapshot.externalEvidenceRequirements.every(item => item.authority.length > 40 && item.minimumAcceptance.length > 40 && item.insufficientEvidence.length > 30)).toBe(true);
+    expect(snapshot.externalEvidenceRequirements.every(item =>
+      item.authority.length > 40 && item.minimumAcceptance.length > 40 && item.insufficientEvidence.length > 30 &&
+      item.requestedFrom.length > 40 && item.nextAction.length > 40 && item.prerequisite.length > 40,
+    )).toBe(true);
     expect(snapshot.evidence).toHaveLength(0);
     expect(snapshot.financialOperationsLocked).toBe(true);
   });
@@ -140,6 +143,7 @@ describe('sponsor provider pack', () => {
       '28-customer-funds-wording-approval.md',
       '29-external-evidence-acquisition-register.md',
       '30-external-evidence-acquisition-register.csv',
+      '31-external-evidence-request-pack.md',
       'README.md', 'evidence-manifest.json',
     ]);
     const allText = Object.values(archive).map(value => strFromU8(value)).join('\n');
@@ -172,11 +176,18 @@ describe('sponsor provider pack', () => {
     expect(allText).toContain('sponsor_term_sheet');
     expect(allText).toContain('programme_contract');
     expect(allText).toContain('must never be used as a substitute for the evidence it describes');
+    expect(allText).toContain('Use this routing pack to obtain authoritative evidence; it is not evidence');
+    expect(allText).toContain('The project owner must identify the exact legal entity proposed to contract');
+    expect(allText).toContain('Suitably qualified UK financial-services counsel');
+    expect(allText).toContain('An authorised UK bank, EMI or programme sponsor');
+    expect(allText).toContain('Do not email credentials, identity documents or customer data');
     expect(allText).not.toMatch(/RESEND_API_KEY|DATABASE_URL|BEGIN PRIVATE KEY/);
     const externalRegister = strFromU8(archive['30-external-evidence-acquisition-register.csv']);
     expect(externalRegister).toContain('legal_entity_verified');
     expect(externalRegister).toContain('programme_contract');
     expect(externalRegister).toContain('missing');
+    expect(externalRegister).toContain('Responsible function');
+    expect(externalRegister).toContain('Next action');
     const manifest = JSON.parse(strFromU8(archive['evidence-manifest.json'])) as {
       externalEvidenceRequirements: Array<{ controlKey: string; status: string }>;
       financialOperationsLocked: boolean;

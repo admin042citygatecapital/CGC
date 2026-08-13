@@ -30,10 +30,25 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
     item.controlKey,
     snapshot.controls.find(control => control.key === item.controlKey)?.title ?? item.controlKey,
     item.status,
+    item.responsibleFunction,
+    item.requestedFrom,
+    item.nextAction,
+    item.prerequisite,
     item.authority,
     item.minimumAcceptance,
     item.insufficientEvidence,
   ]);
+  const externalRequestSections = snapshot.externalEvidenceRequirements.map((item, index) =>
+    `## ${index + 1}. ${snapshot.controls.find(control => control.key === item.controlKey)?.title ?? item.controlKey}\n\n` +
+    `- **Control key:** \`${item.controlKey}\`\n` +
+    `- **Current status:** ${item.status}\n` +
+    `- **Responsible function:** ${item.responsibleFunction}\n` +
+    `- **Request from:** ${item.requestedFrom}\n` +
+    `- **Prerequisite:** ${item.prerequisite}\n` +
+    `- **Next action:** ${item.nextAction}\n` +
+    `- **Minimum acceptance:** ${item.minimumAcceptance}\n` +
+    `- **Reject as insufficient:** ${item.insufficientEvidence}\n`,
+  ).join('\n');
   return {
     'README.md': heading(snapshot, 'City Gate Capital UK Sponsor Readiness Pack') +
       `Package: ${snapshot.package.id} v${snapshot.package.version}\n\nThis pack contains evidence metadata and hashes only. It contains no credentials, identity documents, customer data, source documents or live-provider adapters. Evidence approval cannot enable financial operations.\n`,
@@ -63,9 +78,12 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
       `1. Which permissions, agency model and customer disclosures apply?\n2. Which safeguarding structure and reconciliation timetable are required?\n3. Which UK, SEPA and international corridors are supported and individually approvable?\n4. Which KYC/KYB, sanctions, monitoring and case-management providers are mandated?\n5. What are the authoritative ledger, webhook, idempotency and reversal requirements?\n6. What reporting, audit, capital, complaints and wind-down obligations apply?\n7. What security testing, incident notification, resilience and recovery evidence is required?\n`,
     '08-gaps-and-dependencies.md': heading(snapshot, 'Current Gaps and Dependencies') + gaps + '\n',
     '30-external-evidence-acquisition-register.csv': csv([
-      ['Control key', 'Required evidence', 'Current status', 'Authoritative source', 'Minimum acceptance', 'Insufficient evidence'],
+      ['Control key', 'Required evidence', 'Current status', 'Responsible function', 'Request from', 'Next action', 'Prerequisite', 'Authoritative source', 'Minimum acceptance', 'Insufficient evidence'],
       ...externalEvidenceRows,
     ]),
+    '31-external-evidence-request-pack.md': heading(snapshot, 'External Evidence Request Pack') +
+      `Use this routing pack to obtain authoritative evidence; it is not evidence and cannot be approved in place of a source document. Send source documents only through an approved restricted repository. Do not email credentials, identity documents or customer data, and do not upload original documents to the sponsor-readiness workspace. After authenticity review, record only the controlled reference, SHA-256 hash, owner, dates and non-sensitive notes.\n\n` +
+      externalRequestSections,
     ...OPERATIONAL_PROCEDURES,
     'evidence-manifest.json': JSON.stringify({
       packageId: snapshot.package.id,
@@ -78,6 +96,10 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
       externalEvidenceRequirements: snapshot.externalEvidenceRequirements.map(item => ({
         controlKey: item.controlKey,
         status: item.status,
+        responsibleFunction: item.responsibleFunction,
+        requestedFrom: item.requestedFrom,
+        nextAction: item.nextAction,
+        prerequisite: item.prerequisite,
         authority: item.authority,
         minimumAcceptance: item.minimumAcceptance,
         insufficientEvidence: item.insufficientEvidence,
