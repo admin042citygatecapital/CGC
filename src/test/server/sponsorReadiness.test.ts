@@ -7,7 +7,7 @@ import { externalRequirementForControl } from '../../server/lib/externalSponsorE
 import { LIVE_PROVIDER_ADAPTERS_IMPLEMENTED } from '../../server/lib/platformMode.js';
 import { validateProviderCommand, validateProviderEnvelope } from '../../server/lib/providerContracts.js';
 import { SPONSOR_CONTROLS, canManageCategory } from '../../server/lib/sponsorReadinessCatalogue.js';
-import { buildSponsorPackFiles, buildSponsorPackZip } from '../../server/lib/sponsorReadinessExport.js';
+import { buildSponsorPackFiles, buildSponsorPackZip, SPONSOR_SUPPORTING_MATERIALS } from '../../server/lib/sponsorReadinessExport.js';
 import {
   SponsorReadinessError, assertMakerChecker, buildSponsorReadinessSnapshot,
   assertSponsorCategoryOwnership, assertSponsorReviewOwnership, deriveLegalEntityState, effectiveEvidenceStatus, isEvidenceRevisionApproved, isEvidenceRevisionSubmitted, isExternalAuthorityEvidenceSatisfied, reviewSponsorPackage, validateEvidenceInput,
@@ -170,6 +170,7 @@ describe('sponsor provider pack', () => {
     expect(first).toEqual(second);
     const archive = unzipSync(first);
     expect(Object.keys(archive).sort()).toEqual([
+      '00-organization-profile-supporting-material.md',
       '01-executive-proposition.md', '02-phased-product-scope.md', '03-flow-of-funds.md',
       '04-responsibility-matrix.csv', '05-control-evidence-register.csv',
       '06-provider-integration-spec.md', '07-sponsor-rfp.md', '08-gaps-and-dependencies.md',
@@ -188,6 +189,11 @@ describe('sponsor provider pack', () => {
       '29-external-evidence-acquisition-register.md',
       '30-external-evidence-acquisition-register.csv',
       '31-external-evidence-request-pack.md',
+      '32-request-legal-entity-authority.md',
+      '33-request-ownership-verification.md',
+      '34-request-uk-regulatory-opinion.md',
+      '35-request-sponsor-term-sheet.md',
+      '36-request-programme-contract.md',
       'README.md', 'evidence-manifest.json',
     ]);
     const allText = Object.values(archive).map(value => strFromU8(value)).join('\n');
@@ -225,6 +231,12 @@ describe('sponsor provider pack', () => {
     expect(allText).toContain('Suitably qualified UK financial-services counsel');
     expect(allText).toContain('An authorised UK bank, EMI or programme sponsor');
     expect(allText).toContain('Do not email credentials, identity documents or customer data');
+    expect(allText).toContain('This brief is a request document only. It is not evidence, approval, legal advice or authority to launch financial services.');
+    expect(allText).toContain('The evidence must be authenticated');
+    expect(allText).toContain('Receipt or approval does not enable transactions.');
+    expect(allText).toContain('Supporting Material Only');
+    expect(allText).toContain('Approval-gate effect:** none');
+    expect(allText).toContain(SPONSOR_SUPPORTING_MATERIALS[0].sha256);
     expect(allText).not.toMatch(/RESEND_API_KEY|DATABASE_URL|BEGIN PRIVATE KEY/);
     const externalRegister = strFromU8(archive['30-external-evidence-acquisition-register.csv']);
     expect(externalRegister).toContain('legal_entity_verified');
@@ -237,10 +249,20 @@ describe('sponsor provider pack', () => {
     const manifest = JSON.parse(strFromU8(archive['evidence-manifest.json'])) as {
       externalEvidenceRequirements: Array<{ controlKey: string; status: string }>;
       financialOperationsLocked: boolean;
+      supportingMaterialsAreGatingEvidence: boolean;
+      supportingMaterials: Array<{ id: string; sha256: string; gatingEvidence: boolean }>;
     };
     expect(manifest.externalEvidenceRequirements).toHaveLength(5);
     expect(manifest.externalEvidenceRequirements.every(item => item.status === 'missing')).toBe(true);
     expect(manifest.financialOperationsLocked).toBe(true);
+    expect(manifest.supportingMaterialsAreGatingEvidence).toBe(false);
+    expect(manifest.supportingMaterials).toEqual([expect.objectContaining({
+      id: 'organization-profile-2026-08-13',
+      sha256: SPONSOR_SUPPORTING_MATERIALS[0].sha256,
+      gatingEvidence: false,
+    })]);
+    expect(snapshot.evidence).toHaveLength(0);
+    expect(snapshot.summary.sponsorSubmissionReady).toBe(false);
   });
 
   it('only marks a fully evidenced and final-approved package submission ready', () => {
