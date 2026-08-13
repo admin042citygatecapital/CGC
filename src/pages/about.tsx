@@ -1,7 +1,7 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Shield, Globe, Users, TrendingUp, Award, Zap, Heart } from 'lucide-react';
+import { ArrowLeftRight, ArrowRight, Globe, Heart, Landmark, Shield, TrendingUp, Users, WalletCards, Zap } from 'lucide-react';
 
 const stats = [
   { value: 'Build', label: 'Current Stage', sub: 'Sponsor readiness' },
@@ -37,10 +37,10 @@ const leadership = [
   { name: 'Compliance', role: 'Launch Readiness', initials: 'CO', color: '#10B981', bg: 'from-emerald-500/20 to-emerald-500/5', bio: 'Coordinates legal review and required provider approvals before live operation.' },
 ];
 
-const awards = [
-  { title: 'Responsive Experience', org: 'Product engineering' },
-  { title: 'Secure Administration', org: 'Role-based controls' },
-  { title: 'Release Guardrails', org: 'Fail-closed deployment' },
+const bankingCapabilities = [
+  { icon: Landmark, title: 'Personal Banking', detail: 'Accounts designed around everyday financial needs' },
+  { icon: WalletCards, title: 'Business Banking', detail: 'Structured controls for growing organisations' },
+  { icon: ArrowLeftRight, title: 'Global Payments', detail: 'Multi-currency payment and beneficiary journeys' },
 ];
 
 export default function AboutPage() {
@@ -126,28 +126,55 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team image */}
+      {/* Banking platform showcase */}
       <section className="pb-20">
         <div className="container mx-auto px-4 md:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative rounded-3xl overflow-hidden h-80 md:h-[480px]"
+            className="relative overflow-hidden rounded-3xl border border-primary/20 bg-[#080806] p-7 md:p-12"
           >
-            <img src="/airo-assets/images/pages/about/team" alt="City Gate Capital team" width={1200} height={800} loading="lazy" className="w-full h-full object-cover opacity-60" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent" />
-            <div className="absolute inset-0 border border-primary/15 rounded-3xl" />
-            <div className="absolute bottom-8 left-8 right-8 flex flex-wrap gap-3">
-              {awards.map(a => (
-                <div key={a.title} className="flex items-center gap-2 glass px-3 py-2 rounded-xl border border-primary/20">
-                  <Award size={12} className="text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-foreground">{a.title}</p>
-                    <p className="text-[10px] text-foreground/55">{a.org}</p>
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgba(201,168,76,0.16),transparent_42%)]" />
+            <div className="relative grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                  <Landmark size={14} /> Banking Platform
+                </span>
+                <h2 className="max-w-xl text-3xl font-bold leading-tight text-foreground md:text-5xl">
+                  Connected banking for <span className="text-gold-gradient">modern financial life</span>
+                </h2>
+                <p className="mt-5 max-w-xl text-sm leading-7 text-foreground/55 md:text-base">
+                  One premium experience for personal accounts, business finances, multi-currency services, beneficiaries, statements, and secure account management.
+                </p>
+                <Link to="/accounts" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-black transition-transform hover:-translate-y-0.5">
+                  Explore Banking <ArrowRight size={16} />
+                </Link>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-8 rounded-full bg-primary/10 blur-3xl" />
+                <div className="relative rounded-3xl border border-primary/15 bg-black/35 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)] md:p-7">
+                  <div className="mb-6 flex items-center gap-4 border-b border-primary/10 pb-5">
+                    <img src="/assets/brand/city-gate-capital-seal.png" alt="City Gate Capital" width={72} height={72} className="h-14 w-14 object-contain md:h-16 md:w-16" />
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">City Gate Capital</p>
+                      <p className="mt-1 text-lg font-semibold text-foreground">Premium digital banking</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {bankingCapabilities.map(({ icon: CapabilityIcon, title, detail }) => (
+                      <div key={title} className="flex items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><CapabilityIcon size={20} /></div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{title}</p>
+                          <p className="mt-1 text-xs leading-5 text-foreground/45">{detail}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           </motion.div>
         </div>
