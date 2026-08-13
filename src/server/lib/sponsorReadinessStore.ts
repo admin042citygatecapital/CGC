@@ -158,6 +158,11 @@ export async function getSponsorReadiness(actor?: SponsorActor): Promise<ReturnT
         )).returning({ id: sponsorEvidence.id });
         if (!updated[0]) return false;
         await tx.insert(sponsorEvidenceEvents).values({ id: `see_${crypto.randomUUID()}`, packageId: SPONSOR_PACKAGE_ID, evidenceId: item.id, action: 'expired', actorId: actor.id, actorRole: actor.role, fromStatus: item.status, toStatus: 'expired', details: { expiresAt: item.expiresAt?.toISOString() } });
+        await tx.update(sponsorPackages).set({
+          status: 'draft', submittedBy: null, submittedAt: null,
+          reviewedBy: null, reviewedAt: null, reviewNote: null,
+          updatedAt: new Date(),
+        }).where(eq(sponsorPackages.id, SPONSOR_PACKAGE_ID));
         return true;
       });
       if (changed) await auditCompletion(actor, 'sponsor_evidence_expired', item.id, { controlKey: item.controlKey, expiresAt: item.expiresAt?.toISOString() });

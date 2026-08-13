@@ -11,7 +11,10 @@ function iso(value: Date | null): string | null {
 export default async function handler(req: Request, res: Response) {
   try {
     const actor = authenticateIndependentSponsorReviewer(req);
-    const readiness = await getSponsorReadiness();
+    // A reviewer opening the queue must also persist any newly expired
+    // evidence and invalidate a previously submitted package before it can be
+    // acted on. The reviewer's isolated identity is retained in that audit.
+    const readiness = await getSponsorReadiness(actor);
     const controls = new Map(SPONSOR_CONTROLS.map(control => [control.key, control]));
     const evidence = readiness.evidence
       .filter(item => item.effectiveStatus === 'submitted')
