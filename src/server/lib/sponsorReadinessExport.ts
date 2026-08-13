@@ -25,6 +25,8 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
     status: item.effectiveStatus, referenceType: item.referenceType,
     reference: item.reference, sha256: item.sha256, owner: item.owner,
     revision: item.revision, submittedRevision: item.submittedRevision, reviewedRevision: item.reviewedRevision,
+    evidenceClass: item.evidenceClass, externalIssuer: item.externalIssuer,
+    authorityType: item.authorityType, receivedAt: item.receivedAt?.toISOString() ?? null,
     issuedAt: item.issuedAt?.toISOString() ?? null, expiresAt: item.expiresAt?.toISOString() ?? null,
   }));
   const externalEvidenceRows = snapshot.externalEvidenceRequirements.map(item => [
@@ -36,6 +38,7 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
     item.nextAction,
     item.prerequisite,
     item.authority,
+    item.authorityType,
     item.minimumAcceptance,
     item.insufficientEvidence,
   ]);
@@ -47,6 +50,7 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
     `- **Request from:** ${item.requestedFrom}\n` +
     `- **Prerequisite:** ${item.prerequisite}\n` +
     `- **Next action:** ${item.nextAction}\n` +
+    `- **Required authority type:** \`${item.authorityType}\`\n` +
     `- **Minimum acceptance:** ${item.minimumAcceptance}\n` +
     `- **Reject as insufficient:** ${item.insufficientEvidence}\n`,
   ).join('\n');
@@ -79,7 +83,7 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
       `1. Which permissions, agency model and customer disclosures apply?\n2. Which safeguarding structure and reconciliation timetable are required?\n3. Which UK, SEPA and international corridors are supported and individually approvable?\n4. Which KYC/KYB, sanctions, monitoring and case-management providers are mandated?\n5. What are the authoritative ledger, webhook, idempotency and reversal requirements?\n6. What reporting, audit, capital, complaints and wind-down obligations apply?\n7. What security testing, incident notification, resilience and recovery evidence is required?\n`,
     '08-gaps-and-dependencies.md': heading(snapshot, 'Current Gaps and Dependencies') + gaps + '\n',
     '30-external-evidence-acquisition-register.csv': csv([
-      ['Control key', 'Required evidence', 'Current status', 'Responsible function', 'Request from', 'Next action', 'Prerequisite', 'Authoritative source', 'Minimum acceptance', 'Insufficient evidence'],
+      ['Control key', 'Required evidence', 'Current status', 'Responsible function', 'Request from', 'Next action', 'Prerequisite', 'Authoritative source', 'Required authority type', 'Minimum acceptance', 'Insufficient evidence'],
       ...externalEvidenceRows,
     ]),
     '31-external-evidence-request-pack.md': heading(snapshot, 'External Evidence Request Pack') +
@@ -102,6 +106,7 @@ export function buildSponsorPackFiles(snapshot: Snapshot): Record<string, string
         nextAction: item.nextAction,
         prerequisite: item.prerequisite,
         authority: item.authority,
+        authorityType: item.authorityType,
         minimumAcceptance: item.minimumAcceptance,
         insufficientEvidence: item.insufficientEvidence,
       })),

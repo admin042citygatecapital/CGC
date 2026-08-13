@@ -23,6 +23,10 @@ interface ReviewEvidence {
   notes: string | null;
   revision: number;
   submittedRevision: number;
+  evidenceClass: 'internal_design' | 'external_authority' | 'operating_evidence';
+  externalIssuer: string | null;
+  authorityType: string | null;
+  receivedAt: string | null;
   submittedAt: string | null;
 }
 interface ReviewLegalEntity { id: string; legalName: string; jurisdiction: string; registrationNumber: string; legalForm: string; registryUrl: string; registrySha256: string | null; authorityType: string | null; authorityReference: string | null; authoritySha256: string | null; authorizedOfficerRef: string | null; authorityIssuedAt: string | null; authorityExpiresAt: string | null; expiresAt: string | null; submittedAt: string | null; status: 'submitted'; }
@@ -174,6 +178,8 @@ export default function SponsorReviewPage() {
                 <div><dt className="text-white/30">Controlled reference</dt><dd className="mt-1 break-all text-white/65">{item.reference}</dd></div>
                 <div><dt className="text-white/30">SHA-256</dt><dd className="mt-1 break-all font-mono text-white/65">{item.sha256 ?? 'Missing'}</dd></div>
                 <div><dt className="text-white/30">Immutable revision</dt><dd className="mt-1 text-white/65">v{item.revision} · submitted v{item.submittedRevision}</dd></div>
+                <div><dt className="text-white/30">Evidence class</dt><dd className="mt-1 text-white/65">{item.evidenceClass.replaceAll('_', ' ')}</dd></div>
+                {item.evidenceClass === 'external_authority' && <><div><dt className="text-white/30">External issuer</dt><dd className="mt-1 text-white/65">{item.externalIssuer}</dd></div><div><dt className="text-white/30">Authority type</dt><dd className="mt-1 break-all font-mono text-white/65">{item.authorityType}</dd></div><div><dt className="text-white/30">Received</dt><dd className="mt-1 text-white/65">{readableDate(item.receivedAt)}</dd></div></>}
                 <div><dt className="text-white/30">Evidence owner</dt><dd className="mt-1 text-white/65">{item.owner}</dd></div>
                 <div><dt className="text-white/30">Submitted</dt><dd className="mt-1 text-white/65">{readableDate(item.submittedAt)}</dd></div>
                 <div><dt className="text-white/30">Issued</dt><dd className="mt-1 text-white/65">{readableDate(item.issuedAt)}</dd></div>

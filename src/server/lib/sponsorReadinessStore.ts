@@ -4,7 +4,8 @@ import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { beneficialOwnerRecords, legalEntityProfiles, sponsorEvidence, sponsorEvidenceEvents, sponsorEvidenceRevisions, sponsorPackages } from '../db/schema.js';
 import type { SponsorEvidenceRow } from '../db/schema.js';
 import { appendAuditEntry, appendCriticalAudit } from './auditLog.js';
-import { EXTERNAL_SPONSOR_EVIDENCE } from './externalSponsorEvidence.js';
+import { EXTERNAL_SPONSOR_EVIDENCE, externalRequirementForControl } from './externalSponsorEvidence.js';
+import type { ExternalAuthorityType } from './externalSponsorEvidence.js';
 import { isIndependentSponsorReviewer } from './independentSponsorReviewer.js';
 import {
   PRODUCT_PROFILE, SPONSOR_CONTROLS, SPONSOR_PACKAGE_ID, SPONSOR_PACKAGE_VERSION,
@@ -25,7 +26,26 @@ export interface EvidenceInput {
   issuedAt?: string | null;
   expiresAt?: string | null;
   notes?: string | null;
+  evidenceClass?: 'internal_design' | 'external_authority' | 'operating_evidence';
+  externalIssuer?: string | null;
+  authorityType?: ExternalAuthorityType | null;
+  receivedAt?: string | null;
 }
+type ValidatedEvidenceInput = {
+  controlKey: string;
+  title: string;
+  referenceType: 'url' | 'internal';
+  reference: string;
+  sha256: string | null;
+  owner: string;
+  issuedAt: Date | null;
+  expiresAt: Date | null;
+  notes: string | null;
+  evidenceClass: 'internal_design' | 'external_authority' | 'operating_evidence';
+  externalIssuer: string | null;
+  authorityType: ExternalAuthorityType | null;
+  receivedAt: Date | null;
+};
 
 export class SponsorReadinessError extends Error {
   constructor(message: string, public readonly code: string, public readonly status = 400) { super(message); }
@@ -48,7 +68,7 @@ function parseOptionalDate(value: string | null | undefined, name: string): Date
   return parsed;
 }
 
-export function validateEvidenceInput(input: EvidenceInput): Omit<EvidenceInput, 'id' | 'issuedAt' | 'expiresAt'> & { issuedAt: Date | null; expiresAt: Date | null } {
+export function validateEvidenceInput(input: EvidenceInput): ValidatedEvidenceInput {
   const control = findSponsorControl(cleanText(input.controlKey, 'controlKey', 3, 100));
   if (!control) throw new SponsorReadinessError('Unknown sponsor control.', 'UNKNOWN_CONTROL');
   if (input.referenceType !== 'url' && input.referenceType !== 'internal') throw new SponsorReadinessError('referenceType must be url or internal.', 'VALIDATION_ERROR');
@@ -64,7 +84,25 @@ export function validateEvidenceInput(input: EvidenceInput): Omit<EvidenceInput,
   if (sha256 && !/^[a-f0-9]{64}$/.test(sha256)) throw new SponsorReadinessError('sha256 must be a 64-character hexadecimal digest.', 'VALIDATION_ERROR');
   const issuedAt = parseOptionalDate(input.issuedAt, 'issuedAt');
   const expiresAt = parseOptionalDate(input.expiresAt, 'expiresAt');
+  const receivedAt = parseOptionalDate(input.receivedAt, 'receivedAt');
   if (issuedAt && expiresAt && expiresAt <= issuedAt) throw new SponsorReadinessError('expiresAt must be after issuedAt.', 'VALIDATION_ERROR');
+  if (receivedAt && receivedAt.getTime() > Date.now() + 300_000) throw new SponsorReadinessError('receivedAt cannot be in the future.', 'VALIDATION_ERROR');
+  const evidenceClass = input.evidenceClass ?? 'internal_design';
+  if (!['internal_design', 'external_authority', 'operating_evidence'].includes(evidenceClass)) throw new SponsorReadinessError('evidenceClass is invalid.', 'VALIDATION_ERROR');
+  const expectedExternal = externalRequirementForControl(control.key);
+  let externalIssuer: string | null = null;
+  let authorityType: ExternalAuthorityType | null = null;
+  if (evidenceClass === 'external_authority') {
+    if (!expectedExternal) {
+      throw new SponsorReadinessError('external_authority classification is reserved for controls with a defined authoritative source.', 'EXTERNAL_AUTHORITY_UNSUPPORTED');
+    }
+    externalIssuer = cleanText(input.externalIssuer, 'externalIssuer', 3, 200);
+    if (input.authorityType !== expectedExternal.authorityType) {
+      throw new SponsorReadinessError(`authorityType must be ${expectedExternal.authorityType} for this control.`, 'EXTERNAL_AUTHORITY_MISMATCH');
+    }
+    authorityType = input.authorityType;
+    if (!receivedAt) throw new SponsorReadinessError('receivedAt is required for external authority evidence.', 'EXTERNAL_AUTHORITY_REQUIRED');
+  }
   return {
     controlKey: control.key,
     title: cleanText(input.title || control.title, 'title', 3, 180),
@@ -75,6 +113,10 @@ export function validateEvidenceInput(input: EvidenceInput): Omit<EvidenceInput,
     issuedAt,
     expiresAt,
     notes: input.notes ? cleanText(input.notes, 'notes', 2, 2000) : null,
+    evidenceClass,
+    externalIssuer,
+    authorityType,
+    receivedAt: evidenceClass === 'external_authority' ? receivedAt : null,
   };
 }
 
@@ -97,6 +139,19 @@ export function isEvidenceRevisionSubmitted(evidence: Pick<SponsorEvidenceRow, '
   return evidence.submittedRevision === evidence.revision;
 }
 
+export function isExternalAuthorityEvidenceSatisfied(evidence: Pick<SponsorEvidenceRow, 'controlKey' | 'evidenceClass' | 'externalIssuer' | 'authorityType' | 'receivedAt'>): boolean {
+  const requirement = externalRequirementForControl(evidence.controlKey);
+  if (!requirement) return true;
+  return evidence.evidenceClass === 'external_authority' && evidence.authorityType === requirement.authorityType && Boolean(evidence.externalIssuer?.trim()) && Boolean(evidence.receivedAt);
+}
+
+function assertExternalAuthorityEvidence(evidence: Pick<SponsorEvidenceRow, 'controlKey' | 'evidenceClass' | 'externalIssuer' | 'authorityType' | 'receivedAt'>): void {
+  const requirement = externalRequirementForControl(evidence.controlKey);
+  if (requirement && !isExternalAuthorityEvidenceSatisfied(evidence)) {
+    throw new SponsorReadinessError(`This control requires evidence issued by an external authority and classified as ${requirement.authorityType}.`, 'EXTERNAL_AUTHORITY_REQUIRED', 409);
+  }
+}
+
 function revisionValues(evidenceId: string, revision: number, value: ReturnType<typeof validateEvidenceInput>, actor: SponsorActor) {
   return {
     id: `ser_${crypto.randomUUID()}`,
@@ -112,6 +167,10 @@ function revisionValues(evidenceId: string, revision: number, value: ReturnType<
     issuedAt: value.issuedAt,
     expiresAt: value.expiresAt,
     notes: value.notes,
+    evidenceClass: value.evidenceClass,
+    externalIssuer: value.externalIssuer,
+    authorityType: value.authorityType,
+    receivedAt: value.receivedAt,
     actorId: actor.id,
     actorRole: actor.role,
   };
@@ -212,7 +271,8 @@ export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages
     const lifecycleStatus = effectiveEvidenceStatus(item, now);
     const revisionMismatch = lifecycleStatus === 'submitted' && !isEvidenceRevisionSubmitted(item);
     const approvalMismatch = lifecycleStatus === 'approved' && !isEvidenceRevisionApproved(item);
-    const effectiveStatus = revisionMismatch || approvalMismatch ? 'draft' as const : lifecycleStatus;
+    const externalAuthorityMismatch = (lifecycleStatus === 'submitted' || lifecycleStatus === 'approved') && !isExternalAuthorityEvidenceSatisfied(item);
+    const effectiveStatus = revisionMismatch || approvalMismatch || externalAuthorityMismatch ? 'draft' as const : lifecycleStatus;
     return { ...item, effectiveStatus };
   });
   const controlRows = SPONSOR_CONTROLS.map(control => {
@@ -319,6 +379,7 @@ export async function submitSponsorEvidence(id: string, actor: SponsorActor): Pr
   if (status === 'expired') throw new SponsorReadinessError('Expired evidence must be updated before submission.', 'EVIDENCE_EXPIRED', 409);
   if (status !== 'draft' && status !== 'rejected') throw new SponsorReadinessError('Only draft or rejected evidence can be submitted.', 'INVALID_STATE', 409);
   if (!current.sha256) throw new SponsorReadinessError('A SHA-256 digest is required before submission.', 'HASH_REQUIRED');
+  assertExternalAuthorityEvidence(current);
   const now = new Date();
   await auditIntent(actor, 'sponsor_evidence_submit_intent', id, { controlKey: current.controlKey, priorStatus: status });
   const updated = await db.transaction(async tx => {
@@ -340,6 +401,7 @@ export async function reviewSponsorEvidence(id: string, decision: 'approved' | '
   if (status === 'expired') throw new SponsorReadinessError('Expired evidence cannot be reviewed; the submitter must update and resubmit it.', 'EVIDENCE_EXPIRED', 409);
   if (status !== 'submitted') throw new SponsorReadinessError('Only submitted evidence may be reviewed.', 'INVALID_STATE', 409);
   if (current.submittedRevision !== current.revision) throw new SponsorReadinessError('The submitted revision no longer matches the current evidence. It must be resubmitted.', 'REVISION_MISMATCH', 409);
+  assertExternalAuthorityEvidence(current);
   const reviewNote = cleanText(note, 'review note', 10, 1000); const now = new Date();
   await auditIntent(actor, `sponsor_evidence_${decision}_intent`, id, { controlKey: current.controlKey, priorStatus: current.status });
   const updated = await db.transaction(async tx => {

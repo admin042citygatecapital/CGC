@@ -38,6 +38,10 @@ export default async function handler(req: Request, res: Response) {
           notes: item.notes,
           revision: item.revision,
           submittedRevision: item.submittedRevision,
+          evidenceClass: item.evidenceClass,
+          externalIssuer: item.externalIssuer,
+          authorityType: item.authorityType,
+          receivedAt: iso(item.receivedAt),
           submittedAt: iso(item.submittedAt),
         };
       });

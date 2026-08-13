@@ -3,13 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
 import type { SponsorEvidenceRow, SponsorPackageRow } from '../../server/db/schema.js';
 import { allowedRolesForAdminRequest } from '../../server/lib/adminAuthorizationMiddleware.js';
+import { externalRequirementForControl } from '../../server/lib/externalSponsorEvidence.js';
 import { LIVE_PROVIDER_ADAPTERS_IMPLEMENTED } from '../../server/lib/platformMode.js';
 import { validateProviderCommand, validateProviderEnvelope } from '../../server/lib/providerContracts.js';
 import { SPONSOR_CONTROLS, canManageCategory } from '../../server/lib/sponsorReadinessCatalogue.js';
 import { buildSponsorPackFiles, buildSponsorPackZip } from '../../server/lib/sponsorReadinessExport.js';
 import {
   SponsorReadinessError, assertMakerChecker, buildSponsorReadinessSnapshot,
-  assertSponsorCategoryOwnership, assertSponsorReviewOwnership, deriveLegalEntityState, effectiveEvidenceStatus, isEvidenceRevisionApproved, isEvidenceRevisionSubmitted, reviewSponsorPackage, validateEvidenceInput,
+  assertSponsorCategoryOwnership, assertSponsorReviewOwnership, deriveLegalEntityState, effectiveEvidenceStatus, isEvidenceRevisionApproved, isEvidenceRevisionSubmitted, isExternalAuthorityEvidenceSatisfied, reviewSponsorPackage, validateEvidenceInput,
 } from '../../server/lib/sponsorReadinessStore.js';
 
 describe('legal entity state', () => {
@@ -32,10 +33,15 @@ const packageRow: SponsorPackageRow = {
 };
 
 function evidence(controlKey: string, overrides: Partial<SponsorEvidenceRow> = {}): SponsorEvidenceRow {
+  const externalRequirement = externalRequirementForControl(controlKey);
   return {
     id: `e_${controlKey}`, packageId: packageRow.id, controlKey, title: controlKey,
     status: 'approved', referenceType: 'internal', reference: `CGC-${controlKey}`,
     sha256: 'a'.repeat(64), owner: 'Control owner', issuedAt: null, expiresAt: null,
+    evidenceClass: externalRequirement ? 'external_authority' : 'internal_design',
+    externalIssuer: externalRequirement ? 'Authoritative external issuer' : null,
+    authorityType: externalRequirement?.authorityType ?? null,
+    receivedAt: externalRequirement ? new Date('2026-01-01T00:00:00Z') : null,
     revision: 1, submittedRevision: 1, reviewedRevision: 1,
     notes: null, createdBy: 'maker', lastEditedBy: 'maker', submittedBy: 'maker',
     submittedAt: new Date('2026-01-01T00:00:00Z'), reviewedBy: 'checker',
@@ -51,6 +57,25 @@ describe('sponsor readiness lifecycle and validation', () => {
     expect(valid.sha256).toBe('abcdef'.repeat(10) + 'abcd');
     expect(() => validateEvidenceInput({ controlKey: SPONSOR_CONTROLS[0].key, title: 'Bad URL', referenceType: 'url', reference: 'http://example.test/file', sha256: 'a'.repeat(64), owner: 'Owner' })).toThrow(SponsorReadinessError);
     expect(() => validateEvidenceInput({ controlKey: SPONSOR_CONTROLS[0].key, title: 'Bad hash', referenceType: 'internal', reference: 'CGC-LEGAL-1', sha256: '1234', owner: 'Owner' })).toThrow(/64-character/);
+  });
+
+  it('requires exact authoritative metadata before an external gate can be submitted', () => {
+    const requirement = externalRequirementForControl('sponsor_term_sheet')!;
+    const internalDraft = evidence('sponsor_term_sheet', {
+      status: 'draft', evidenceClass: 'internal_design', externalIssuer: null, authorityType: null, receivedAt: null,
+    });
+    expect(isExternalAuthorityEvidenceSatisfied(internalDraft)).toBe(false);
+    const valid = validateEvidenceInput({
+      controlKey: 'sponsor_term_sheet', title: 'Sponsor term sheet', referenceType: 'internal', reference: 'CGC-SPONSOR-TERM-001',
+      sha256: 'a'.repeat(64), owner: 'Finance owner', evidenceClass: 'external_authority',
+      externalIssuer: 'Authorised Sponsor Institution Limited', authorityType: requirement.authorityType, receivedAt: '2026-01-01',
+    });
+    expect(valid).toMatchObject({ evidenceClass: 'external_authority', authorityType: 'authorised_sponsor_institution' });
+    expect(() => validateEvidenceInput({
+      controlKey: 'sponsor_term_sheet', title: 'Sponsor term sheet', referenceType: 'internal', reference: 'CGC-SPONSOR-TERM-001',
+      sha256: 'a'.repeat(64), owner: 'Finance owner', evidenceClass: 'external_authority',
+      externalIssuer: 'Internal project team', authorityType: 'qualified_uk_legal_counsel', receivedAt: '2026-01-01',
+    })).toThrow(/authorityType/i);
   });
 
   it('enforces maker-checker and detects expiry', () => {
@@ -73,6 +98,10 @@ describe('sponsor readiness lifecycle and validation', () => {
     const staleSubmission = evidence('authoritative_ledger', { status: 'submitted', revision: 2, submittedRevision: 1, reviewedRevision: null });
     expect(isEvidenceRevisionSubmitted(staleSubmission)).toBe(false);
     expect(buildSponsorReadinessSnapshot(packageRow, [staleSubmission], []).controls.find(control => control.key === 'authoritative_ledger')?.status).toBe('draft');
+    const selfAttestedExternal = evidence('programme_contract', {
+      evidenceClass: 'internal_design', externalIssuer: null, authorityType: null, receivedAt: null,
+    });
+    expect(buildSponsorReadinessSnapshot(packageRow, [selfAttestedExternal], []).controls.find(control => control.key === 'programme_contract')?.status).toBe('draft');
   });
 
   it('keeps role ownership narrow while allowing all three control-plane roles to enter the workspace', () => {
@@ -125,6 +154,7 @@ describe('sponsor provider pack', () => {
       'sponsor_term_sheet', 'programme_contract',
     ]);
     expect(snapshot.externalEvidenceRequirements.every(item => item.status === 'missing')).toBe(true);
+    expect(new Set(snapshot.externalEvidenceRequirements.map(item => item.authorityType)).size).toBe(5);
     expect(snapshot.externalEvidenceRequirements.every(item =>
       item.authority.length > 40 && item.minimumAcceptance.length > 40 && item.insufficientEvidence.length > 30 &&
       item.requestedFrom.length > 40 && item.nextAction.length > 40 && item.prerequisite.length > 40,
@@ -202,6 +232,8 @@ describe('sponsor provider pack', () => {
     expect(externalRegister).toContain('missing');
     expect(externalRegister).toContain('Responsible function');
     expect(externalRegister).toContain('Next action');
+    expect(externalRegister).toContain('Required authority type');
+    expect(externalRegister).toContain('executed_counterparty_agreement');
     const manifest = JSON.parse(strFromU8(archive['evidence-manifest.json'])) as {
       externalEvidenceRequirements: Array<{ controlKey: string; status: string }>;
       financialOperationsLocked: boolean;
@@ -237,6 +269,7 @@ describe('provider-neutral integration contract safeguards', () => {
   it('has schema checks and database-level append-only history protection', () => {
     const migration = readFileSync('src/server/db/migrations/0006_sponsor_readiness.sql', 'utf8');
     const revisions = readFileSync('src/server/db/migrations/0025_sponsor_evidence_revisions.sql', 'utf8');
+    const authority = readFileSync('src/server/db/migrations/0026_external_sponsor_evidence_authority.sql', 'utf8');
     expect(migration).toContain('sponsor_evidence_sha256_check');
     expect(migration).toContain('sponsor_evidence_dates_check');
     expect(migration).toContain('append-only');
@@ -245,5 +278,11 @@ describe('provider-neutral integration contract safeguards', () => {
     expect(revisions).toContain('sponsor_evidence_revision_binding_check');
     expect(revisions).toContain('BEFORE UPDATE OR DELETE ON sponsor_evidence_revisions');
     expect(revisions).not.toMatch(/\b(document_base64|private_key|password|credential)\s+(text|bytea|jsonb)\b/i);
+    expect(authority).toContain('sponsor_evidence_external_gate_check');
+    expect(authority).toContain('external_authority_reclassification_required');
+    expect(authority).toContain('submitted_revision = NULL');
+    expect(authority).toContain('authorised_sponsor_institution');
+    expect(authority).toContain('executed_counterparty_agreement');
+    expect(authority).not.toMatch(/\b(document_base64|private_key|password|credential)\s+(text|bytea|jsonb)\b/i);
   });
 });
