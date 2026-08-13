@@ -24,7 +24,6 @@ import {
   StatsBar,
   FeaturesGrid,
   DashboardPreview,
-  TransfersSection,
   SecuritySection,
   MobileAppSection,
   PricingSection,
@@ -203,7 +202,6 @@ function HomePageContent() {
       {visibility.showStats && <StatsBar />}
       <FeaturesGrid />
       <DashboardPreview />
-      <TransfersSection />
 
       {/* ── TRADING MODULE ───────────────────────────────────── */}
       <TradingSection livePrices={tickers} />
