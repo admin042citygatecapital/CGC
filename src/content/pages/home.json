@@ -4,7 +4,7 @@
     "headline1": "The Future of",
     "headlineAccent": "Banking",
     "headline2": "is Here",
-    "subheadline": "Multi-currency account software, wallets, transfer workflows, smart cards, analytics, and administration in one premium platform.",
+    "subheadline": "One connected financial experience built for the way you live, move and manage money. Greater visibility, flexibility and control through one secure digital platform.",
     "ctaSecondary": "Explore Features",
     "trustBadges": [
       {
@@ -76,40 +76,35 @@
     }
   ],
   "features": {
-    "eyebrow": "Platform Features",
-    "headline1": "Everything You Need to",
-    "headlineAccent": "Bank Smarter",
-    "subheadline": "Explore proposed account, transfer, investment, and digital-asset experiences using demonstration data.",
+    "eyebrow": "One Connected Experience",
+    "headline1": "One Platform.",
+    "headlineAccent": "More Control.",
+    "subheadline": "From everyday money management to international financial needs, City Gate Capital brings modern financial tools together through one premium experience.",
     "items": [
       {
         "id": "f1",
-        "title": "Global Transfers",
-        "desc": "Explore a global-transfer workflow with illustrative rates, fees, tracking, and delivery states."
+        "title": "Multi-Currency Accounts",
+        "desc": "Manage supported currencies from one connected account experience. View balances, organise your finances and stay prepared for opportunities across borders."
       },
       {
         "id": "f2",
-        "title": "Crypto Exchange",
-        "desc": "Explore paper trading and portfolio views; live trading and custody are unavailable."
+        "title": "Digital Wallets",
+        "desc": "Keep supported wallets and digital financial activity organised through a unified dashboard designed for convenient access and greater visibility."
       },
       {
         "id": "f3",
-        "title": "Smart Cards",
-        "desc": "Pre-deployment virtual and physical card designs with demonstration spend controls."
+        "title": "Transfers",
+        "desc": "Send, receive and track eligible transfers through a streamlined experience with transaction histories, status updates and security notifications."
       },
       {
         "id": "f4",
-        "title": "AI Analytics",
-        "desc": "Explore demonstration spending categorisation and proposed financial-insight views."
+        "title": "Smart Cards",
+        "desc": "Manage eligible physical and virtual cards, card controls, spending information, transaction activity and security features from one place."
       },
       {
         "id": "f5",
-        "title": "Security Controls",
-        "desc": "Account security controls and a production launch gate that keeps financial operations disabled."
-      },
-      {
-        "id": "f6",
-        "title": "Investment Tools",
-        "desc": "Pre-deployment stocks, ETFs, crypto indices, and portfolio-allocation workflows using sample data."
+        "title": "Smart Analytics",
+        "desc": "Understand spending, income, account performance and transaction trends through intuitive dashboards and visual analytics."
       }
     ]
   },

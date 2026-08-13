@@ -84,9 +84,13 @@ function AnimatedCount({ target }: { target: number }) {
 const STAT_TARGETS = [2, 180, 50, 40] as const;
 
 const featureIconMap: Record<string, React.ElementType> = {
+  'Multi-Currency Accounts': Globe,
+  'Digital Wallets': Wallet,
+  'Transfers': Send,
   'Global Transfers': Globe,
   'Crypto Exchange': Bitcoin,
   'Smart Cards': CreditCard,
+  'Smart Analytics': BarChart3,
   'AI Analytics': BarChart3,
   'Bank-Grade Security': Shield,
   'Investment Tools': PieChart,
@@ -114,9 +118,16 @@ export function HeroSection() {
   return (
     <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden">
       <motion.div style={{ y: heroY }} className="absolute inset-0 scale-110">
-        <img src="/airo-assets/images/pages/home/hero" alt="" width={1920} height={1080} fetchPriority="high" className="w-full h-full object-cover opacity-25" />
+        <img
+          src="/assets/media/city-gate-banking-customer-hero-v2.png"
+          alt="Professional customer using the City Gate Capital digital banking experience"
+          width={1536}
+          height={1024}
+          fetchPriority="high"
+          className="w-full h-full object-cover object-[72%_center] opacity-80"
+        />
       </motion.div>
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-[#0A0A0A]/90 to-[#0A0A0A]/40" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A] via-[#0A0A0A]/90 to-[#0A0A0A]/15" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent" />
       <div className="absolute top-1/3 left-1/4 w-[600px] h-[600px] rounded-full opacity-10 blur-[120px]"
         style={{ background: 'radial-gradient(circle, #C9A84C 0%, transparent 70%)' }} />
@@ -169,7 +180,7 @@ export function HeroSection() {
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.9, delay: 0.2, ease: 'easeOut' }}
-            className="flex justify-center lg:justify-end items-center py-8 lg:py-0"
+            className="hidden lg:block min-h-[520px] invisible"
           >
             <div className="relative flex items-center justify-center">
               {/* Ambient glow ring */}
