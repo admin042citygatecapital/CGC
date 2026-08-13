@@ -226,7 +226,8 @@ export function buildSponsorReadinessSnapshot(packageRow: typeof sponsorPackages
 
 export function deriveStructuredLegalEntityState(entity: typeof legalEntityProfiles.$inferSelect|null, owners: Array<typeof beneficialOwnerRecords.$inferSelect>, now = new Date()): 'unverified'|'evidence_pending'|'verified' {
   if (!entity) return 'unverified';
-  const entityCurrent = entity.status === 'verified' && (!entity.expiresAt || entity.expiresAt > now);
+  const authorityComplete = Boolean(entity.registrySha256 && entity.authorityType && entity.authorityReference && entity.authoritySha256 && entity.authorizedOfficerRef && entity.authorityIssuedAt && entity.authorityIssuedAt <= now);
+  const entityCurrent = entity.status === 'verified' && authorityComplete && (!entity.expiresAt || entity.expiresAt > now) && (!entity.authorityExpiresAt || entity.authorityExpiresAt > now);
   const active = owners.filter(owner => owner.active);
   const ownersCurrent = active.length > 0 && active.every(owner => owner.status === 'verified' && (!owner.expiresAt || owner.expiresAt > now));
   return entityCurrent && ownersCurrent ? 'verified' : 'evidence_pending';

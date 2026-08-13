@@ -49,7 +49,7 @@ describe('independent sponsor reviewer', () => {
     dependencies.reviewLegalEntity.mockResolvedValue(undefined);
     dependencies.reviewBeneficialOwner.mockResolvedValue(undefined);
     dependencies.getLegalEntityVerification.mockResolvedValue({
-      entity: { id: 'le_12345678', legalName: 'Candidate Entity Limited', jurisdiction: 'United Kingdom', registrationNumber: '12345678', legalForm: 'Private limited company', registryUrl: 'https://find-and-update.company-information.service.gov.uk/company/12345678', registrySha256: 'c'.repeat(64), expiresAt: null, submittedAt: new Date('2026-01-03'), effectiveStatus: 'submitted' },
+      entity: { id: 'le_12345678', legalName: 'Candidate Entity Limited', jurisdiction: 'United Kingdom', registrationNumber: '12345678', legalForm: 'Private limited company', registryUrl: 'https://find-and-update.company-information.service.gov.uk/company/12345678', registrySha256: 'c'.repeat(64), authorityType: 'board_resolution', authorityReference: 'AUTH-2026-001', authoritySha256: 'e'.repeat(64), authorizedOfficerRef: 'officer-01', authorityIssuedAt: new Date('2026-01-02'), authorityExpiresAt: null, expiresAt: null, submittedAt: new Date('2026-01-03'), effectiveStatus: 'submitted' },
       owners: [{ id: 'bor_12345678', controllerRef: 'controller-01', ownershipBand: '75-100', controlNature: 'Ownership of shares', providerCode: 'sumsub', providerRef: 'provider-ref-01', evidenceSha256: 'd'.repeat(64), expiresAt: null, submittedAt: new Date('2026-01-03'), effectiveStatus: 'submitted' }],
       assessment: { entityVerified: false, ownersVerified: false, verified: false, activeOwnerCount: 1 },
       events: [], financialOperationsLocked: true,
@@ -82,6 +82,7 @@ describe('independent sponsor reviewer', () => {
     expect(serialized).toContain('sev_12345678');
     expect(serialized).toContain('le_12345678');
     expect(serialized).toContain('bor_12345678');
+    expect(serialized).toContain('AUTH-2026-001');
     expect(serialized).not.toContain('sev_87654321');
     expect(serialized).not.toContain('admin-secret-id');
     expect(serialized).not.toContain('reviewer@example.test');

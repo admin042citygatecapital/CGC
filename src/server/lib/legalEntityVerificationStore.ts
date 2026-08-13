@@ -11,7 +11,8 @@ import type { AdminRole } from './sessionStore.js';
 
 export type VerificationStatus = 'draft'|'submitted'|'verified'|'rejected'|'expired';
 export interface EntityActor { id: string; email: string; role: AdminRole; ip?: string }
-export interface EntityInput { legalName: string; jurisdiction: string; registrationNumber: string; legalForm: string; registryUrl: string; registrySha256?: string|null; expiresAt?: string|null }
+export type AuthorityType = 'board_resolution'|'officer_certificate'|'power_of_attorney'|'other';
+export interface EntityInput { legalName: string; jurisdiction: string; registrationNumber: string; legalForm: string; registryUrl: string; registrySha256?: string|null; authorityType?: AuthorityType|null; authorityReference?: string|null; authoritySha256?: string|null; authorizedOfficerRef?: string|null; authorityIssuedAt?: string|null; authorityExpiresAt?: string|null; expiresAt?: string|null }
 export interface OwnerInput { id?: string; controllerRef: string; ownershipBand: 'none'|'0-25'|'25-50'|'50-75'|'75-100'; controlNature: string; providerCode: string; providerRef: string; evidenceSha256?: string|null; expiresAt?: string|null }
 
 export class LegalEntityVerificationError extends Error {
@@ -43,6 +44,20 @@ function date(value?: string|null) {
   if (!Number.isFinite(result.getTime()) || result <= new Date()) throw new LegalEntityVerificationError('Expiry must be a valid future date.', 'VALIDATION_ERROR');
   return result;
 }
+function issuedDate(value?: string|null) {
+  if (!value) return null;
+  const result = new Date(value);
+  if (!Number.isFinite(result.getTime()) || result > new Date()) throw new LegalEntityVerificationError('Authority issue date must be a valid date that is not in the future.', 'VALIDATION_ERROR');
+  return result;
+}
+function optionalOpaque(value: unknown, label: string) {
+  return value == null || String(value).trim() === '' ? null : opaque(value, label);
+}
+function authorityType(value?: string|null): AuthorityType|null {
+  if (!value) return null;
+  if (!['board_resolution','officer_certificate','power_of_attorney','other'].includes(value)) throw new LegalEntityVerificationError('Authority type is invalid.', 'VALIDATION_ERROR');
+  return value as AuthorityType;
+}
 function registryUrl(value: unknown) {
   const result = clean(value, 'registryUrl', 10, 500); let parsed: URL;
   try { parsed = new URL(result); } catch { throw new LegalEntityVerificationError('Registry URL is invalid.', 'VALIDATION_ERROR'); }
@@ -51,8 +66,17 @@ function registryUrl(value: unknown) {
   if (!approvedHosts.includes(parsed.hostname.toLowerCase())) throw new LegalEntityVerificationError('Registry URL host is not approved.', 'REGISTRY_HOST_NOT_APPROVED', 403);
   return result;
 }
-function effective<T extends { status: string; expiresAt: Date|null }>(record: T, now = new Date()): T & { effectiveStatus: VerificationStatus } {
-  return { ...record, effectiveStatus: record.status === 'verified' && record.expiresAt && record.expiresAt <= now ? 'expired' : record.status as VerificationStatus };
+function effective<T extends { status: string; expiresAt: Date|null; authorityExpiresAt?: Date|null }>(record: T, now = new Date()): T & { effectiveStatus: VerificationStatus } {
+  const expired = record.status === 'verified' && [record.expiresAt, record.authorityExpiresAt].some(value => value && value <= now);
+  return { ...record, effectiveStatus: expired ? 'expired' : record.status as VerificationStatus };
+}
+export function assertEntityAuthorityComplete(entity: Pick<LegalEntityProfileRow, 'registrySha256'|'authorityType'|'authorityReference'|'authoritySha256'|'authorizedOfficerRef'|'authorityIssuedAt'|'authorityExpiresAt'>, now = new Date()) {
+  if (!entity.registrySha256 || !entity.authorityType || !entity.authorityReference || !entity.authoritySha256 || !entity.authorizedOfficerRef || !entity.authorityIssuedAt) {
+    throw new LegalEntityVerificationError('A registry hash and complete signing-authority metadata are required before submission.', 'AUTHORITY_EVIDENCE_REQUIRED', 409);
+  }
+  if (entity.authorityIssuedAt > now || (entity.authorityExpiresAt && entity.authorityExpiresAt <= now)) {
+    throw new LegalEntityVerificationError('Signing-authority evidence is not current.', 'AUTHORITY_EVIDENCE_EXPIRED', 409);
+  }
 }
 export function assertLegalEntityMakerChecker(record: { submittedBy: string|null; lastEditedBy: string }, reviewerId: string) {
   if (record.submittedBy === reviewerId || record.lastEditedBy === reviewerId) throw new LegalEntityVerificationError('Maker-checker prevents the submitter or last editor from reviewing this record.', 'MAKER_CHECKER_VIOLATION', 409);
@@ -93,7 +117,7 @@ export async function getLegalEntityVerification(actor: EntityActor) {
 
 export async function saveLegalEntity(input: EntityInput, actor: EntityActor) {
   requireAccess(actor); const now = new Date();
-  const value = { legalName: clean(input.legalName, 'legalName', 2, 200), jurisdiction: clean(input.jurisdiction, 'jurisdiction', 2, 100), registrationNumber: opaque(input.registrationNumber, 'registrationNumber'), legalForm: clean(input.legalForm, 'legalForm', 2, 100), registryUrl: registryUrl(input.registryUrl), registrySha256: hash(input.registrySha256), expiresAt: date(input.expiresAt) };
+  const value = { legalName: clean(input.legalName, 'legalName', 2, 200), jurisdiction: clean(input.jurisdiction, 'jurisdiction', 2, 100), registrationNumber: opaque(input.registrationNumber, 'registrationNumber'), legalForm: clean(input.legalForm, 'legalForm', 2, 100), registryUrl: registryUrl(input.registryUrl), registrySha256: hash(input.registrySha256), authorityType: authorityType(input.authorityType), authorityReference: optionalOpaque(input.authorityReference, 'authorityReference'), authoritySha256: hash(input.authoritySha256), authorizedOfficerRef: optionalOpaque(input.authorizedOfficerRef, 'authorizedOfficerRef'), authorityIssuedAt: issuedDate(input.authorityIssuedAt), authorityExpiresAt: date(input.authorityExpiresAt), expiresAt: date(input.expiresAt) };
   const existing = await getDb().select().from(legalEntityProfiles).where(eq(legalEntityProfiles.packageId, SPONSOR_PACKAGE_ID)).limit(1);
   if (existing[0]) {
     await intent(existing[0].id, actor, 'profile_edit', undefined, { priorStatus: existing[0].status });
@@ -146,6 +170,7 @@ export async function reviewBeneficialOwner(id: string, decision: 'verified'|'re
 export async function submitLegalEntity(actor: EntityActor) {
   requireAccess(actor); const snapshot = await getLegalEntityVerification(actor); if (!snapshot.entity) throw new LegalEntityVerificationError('Legal entity profile not found.', 'NOT_FOUND', 404);
   if (!['draft','rejected','expired'].includes(snapshot.entity.effectiveStatus)) throw new LegalEntityVerificationError('Entity cannot be submitted from its current state.', 'INVALID_STATE', 409);
+  assertEntityAuthorityComplete(snapshot.entity);
   if (!snapshot.assessment.ownersVerified) throw new LegalEntityVerificationError('All active beneficial owners/controllers must be independently verified first.', 'OWNERS_NOT_VERIFIED', 409);
   await intent(snapshot.entity.id, actor, 'profile_submit', undefined, { priorStatus: snapshot.entity.status });
   const now = new Date(); const updated = await getDb().update(legalEntityProfiles).set({ status: 'submitted', submittedBy: actor.id, submittedAt: now, lastEditedBy: actor.id, updatedAt: now }).where(eq(legalEntityProfiles.id, snapshot.entity.id)).returning();
@@ -156,6 +181,7 @@ export async function reviewLegalEntity(decision: 'verified'|'rejected', note: s
   requireAccess(actor); assertLegalEntityReviewOwnership(actor); const snapshot = await getLegalEntityVerification(actor); const current = snapshot.entity;
   if (!current) throw new LegalEntityVerificationError('Legal entity profile not found.', 'NOT_FOUND', 404);
   if (current.status !== 'submitted') throw new LegalEntityVerificationError('Only a submitted entity may be reviewed.', 'INVALID_STATE', 409); assertLegalEntityMakerChecker(current, actor.id);
+  if (decision === 'verified') assertEntityAuthorityComplete(current);
   if (decision === 'verified' && !snapshot.assessment.ownersVerified) throw new LegalEntityVerificationError('Current verified ownership evidence is required.', 'OWNERS_NOT_VERIFIED', 409);
   const reviewNote = clean(note, 'reviewNote', 10, 1000); await intent(current.id, actor, 'profile_review', undefined, { decision }); const now = new Date(); const updated = await getDb().update(legalEntityProfiles).set({ status: decision, reviewedBy: actor.id, reviewedAt: now, reviewNote, updatedAt: now }).where(eq(legalEntityProfiles.id, current.id)).returning();
   await event(current.id, actor, 'profile_reviewed', undefined, 'submitted', decision, { reviewNote }); return updated[0];

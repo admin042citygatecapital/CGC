@@ -201,7 +201,7 @@ describe('sponsor provider pack', () => {
     const allEvidence = SPONSOR_CONTROLS.map(control => evidence(control.key));
     const approvedPackage = { ...packageRow, status: 'approved' as const, submittedBy: 'super-a', reviewedBy: 'super-b' };
     expect(buildSponsorReadinessSnapshot(approvedPackage, allEvidence, []).summary.sponsorSubmissionReady).toBe(false);
-    const entity = { id: 'le_test', status: 'verified', expiresAt: new Date('2030-01-01') } as any;
+    const entity = { id: 'le_test', status: 'verified', expiresAt: new Date('2030-01-01'), registrySha256: 'a'.repeat(64), authorityType: 'board_resolution', authorityReference: 'AUTH-TEST-001', authoritySha256: 'b'.repeat(64), authorizedOfficerRef: 'officer-test', authorityIssuedAt: new Date('2026-01-01'), authorityExpiresAt: new Date('2030-01-01') } as any;
     const owner = { id: 'bor_test', entityId: 'le_test', active: true, status: 'verified', expiresAt: new Date('2030-01-01') } as any;
     const snapshot = buildSponsorReadinessSnapshot(approvedPackage, allEvidence, [], entity, [owner]);
     expect(snapshot.summary.sponsorSubmissionReady).toBe(true);
