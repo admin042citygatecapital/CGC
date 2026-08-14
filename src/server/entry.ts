@@ -354,6 +354,8 @@ import users_disputes_get from "./api/users/disputes/GET";
   import users_bills_get from "./api/users/bills/GET";
   import users_bills_post from "./api/users/bills/POST";
   import users_rewards_get from "./api/users/rewards/GET";
+  import users_search_get from "./api/users/search/GET";
+  import admin_search_get from "./api/admin/search/GET";
 import users_transfer_post_275 from "./api/users/transfer/POST";
 import users_transfers_get_276 from "./api/users/transfers/GET";
 import users_transfers_post_277 from "./api/users/transfers/POST";
@@ -945,6 +947,16 @@ app.get("/api/users/disputes", users_disputes_get);
     'Too many bill schedule changes. Please try again later.',
   ), users_bills_post);
   app.get("/api/users/rewards", users_rewards_get);
+  app.get("/api/users/search", rateLimitMiddleware(
+    (req) => `customer-search:${req.customerUser?.id ?? req.ip ?? 'unknown'}`,
+    { windowMs: 60_000, max: 90 },
+    'Too many searches. Please try again shortly.',
+  ), users_search_get);
+  app.get("/api/admin/search", rateLimitMiddleware(
+    (req) => `admin-search:${req.adminSession?.adminId ?? req.ip ?? 'unknown'}`,
+    { windowMs: 60_000, max: 120 },
+    'Too many searches. Please try again shortly.',
+  ), admin_search_get);
 app.post("/api/users/transfer", users_transfer_post_275);
 app.get("/api/users/transfers", users_transfers_get_276);
 app.post("/api/users/transfers", users_transfers_post_277);

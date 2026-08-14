@@ -259,6 +259,8 @@ function Sidebar({ mobile = false, collapsed = false, admin, navLive, location, 
 // ── Command Palette ───────────────────────────────────────────────────────────
 function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState('');
+  const [recordResults, setRecordResults] = useState<NavItem[]>([]);
+  const [searchingRecords, setSearchingRecords] = useState(false);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -266,12 +268,33 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
     if (open) { setQuery(''); setTimeout(() => inputRef.current?.focus(), 50); }
   }, [open]);
 
-  const results = query.trim()
+  useEffect(() => {
+    const value = query.trim();
+    if (!open || value.length < 2) { setRecordResults([]); setSearchingRecords(false); return; }
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setSearchingRecords(true);
+      try {
+        const response = await fetch(`/api/admin/search?q=${encodeURIComponent(value)}`, { headers: authHeaders(), signal: controller.signal });
+        if (!response.ok) return;
+        const payload = await response.json();
+        setRecordResults((payload.results ?? []).map((item: { label: string; description: string; href: string; type: string }) => ({
+          label: item.label, desc: `${item.type} · ${item.description}`, href: item.href, icon: Search, badge: null,
+        })));
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) setRecordResults([]);
+      } finally { if (!controller.signal.aborted) setSearchingRecords(false); }
+    }, 250);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [open, query]);
+
+  const navigationResults = query.trim()
     ? ALL_NAV.filter(n =>
         n.label.toLowerCase().includes(query.toLowerCase()) ||
         n.desc.toLowerCase().includes(query.toLowerCase())
       )
     : ALL_NAV.slice(0, 8);
+  const results = [...recordResults, ...navigationResults].slice(0, 20);
 
   function go(href: string) { navigate(href); onClose(); }
 
@@ -302,7 +325,9 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
             </div>
             {/* Results */}
             <div className="max-h-80 overflow-y-auto py-2">
-              {results.length === 0 ? (
+              {searchingRecords && results.length === 0 ? (
+                <p className="text-center text-white/25 text-sm py-8">Searching records…</p>
+              ) : results.length === 0 ? (
                 <p className="text-center text-white/25 text-sm py-8">No results for "{query}"</p>
               ) : results.map(item => (
                 <button key={item.href} onClick={() => go(item.href)}

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { BarChart3, CreditCard, FileText, Gift, HelpCircle, Home, Landmark, Menu, MessageCircle, ReceiptText, Send, Settings, Shield, Target, TrendingUp, User, Users, WalletCards, X } from 'lucide-react';
+import { BarChart3, CreditCard, FileText, Gift, HelpCircle, Home, Landmark, Menu, MessageCircle, ReceiptText, Search, Send, Settings, Shield, Target, TrendingUp, User, Users, WalletCards, X } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ const primary = [
   { label: 'Cards', href: '/dashboard/cards', icon: CreditCard },
 ];
 const more = [
+  { label: 'Search', href: '/dashboard/search', icon: Search },
   { label: 'Wallets', href: '/dashboard/wallets', icon: WalletCards },
   { label: 'Investments', href: '/dashboard/trading', icon: TrendingUp },
   { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
