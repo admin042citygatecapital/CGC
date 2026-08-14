@@ -37,4 +37,12 @@ describe('support configuration durability', () => {
     expect(store).toContain("const ROUTING_CONFIG_KEY = 'support_routing'");
     expect(store).toContain("const NOTIFICATION_CONFIG_KEY = 'support_notifications'");
   });
+
+  it('uses the PostgreSQL support source for administration reports', () => {
+    const reports = readFileSync('src/server/lib/reportsStore.ts', 'utf8');
+    const route = readFileSync('src/server/api/admin/reports/GET.ts', 'utf8');
+    expect(reports).toContain("from './supportDatabaseStore.js'");
+    expect(reports).not.toContain("from './supportStore.js'");
+    expect(route).toContain("data = await supportReport(q)");
+  });
 });

@@ -68,6 +68,10 @@ export interface SupportNotificationSettings {
   reopenedInPanel: boolean; reopenedEmail: boolean; notifyEmail: string; updatedAt: string;
 }
 
+export type SupportReportRecord = Pick<SupportConversation,
+  'id' | 'status' | 'priority' | 'category' | 'assignedTo' | 'createdAt' | 'updatedAt' | 'resolvedAt' | 'firstReplyAt'
+>;
+
 const ROUTING_CONFIG_KEY = 'support_routing';
 const NOTIFICATION_CONFIG_KEY = 'support_notifications';
 
@@ -349,6 +353,30 @@ export async function queryConversations(opts: {
   const limit = Math.min(100, Math.max(1, opts.limit ?? 20));
   const page = Math.max(1, opts.page ?? 1);
   return { data: rows.slice((page - 1) * limit, page * limit), total, pages: Math.max(1, Math.ceil(total / limit)) };
+}
+
+/** Lightweight complete dataset for administration reporting; excludes message and note bodies. */
+export async function listSupportConversationsForReport(): Promise<SupportReportRecord[]> {
+  await syncLegacySupportConversations();
+  const sql = getQueryClient();
+  const rows = await sql<Array<{
+    id: string; status: SupportConversation['status']; priority: SupportConversation['priority'];
+    category: string; assignedTo: string | null; createdAt: Date | string; updatedAt: Date | string;
+    resolvedAt: Date | string | null; firstReplyAt: Date | string | null;
+  }>>`
+    SELECT id,status,priority,category,assigned_to AS "assignedTo",
+      created_at AS "createdAt",updated_at AS "updatedAt",
+      resolved_at AS "resolvedAt",first_reply_at AS "firstReplyAt"
+    FROM support_conversations ORDER BY created_at DESC
+  `;
+  return rows.map(row => ({
+    ...row,
+    assignedTo: row.assignedTo ?? undefined,
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+    resolvedAt: row.resolvedAt ? iso(row.resolvedAt) : undefined,
+    firstReplyAt: row.firstReplyAt ? iso(row.firstReplyAt) : undefined,
+  }));
 }
 
 export async function updateConversationStatus(id: string, status: SupportConversation['status']): Promise<boolean> {

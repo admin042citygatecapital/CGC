@@ -18,7 +18,7 @@ import fs   from 'node:fs';
 import { loadAllUsers }        from './userStore.js';
 import { queryTransactions }   from './transactionStore.js';
 import { readRatesConfig }     from './ratesStore.js';
-import { queryConversations }  from './supportStore.js';
+import { listSupportConversationsForReport } from './supportDatabaseStore.js';
 import { loadAlerts }          from './securityCenterStore.js';
 import { privateSubdirectory } from './storagePaths.js';
 
@@ -580,14 +580,15 @@ export async function amlReport(q: ReportQuery) {
 
 // ─── 9. SUPPORT REPORT ───────────────────────────────────────────────────────
 
-export function supportReport(q: ReportQuery) {
+export async function supportReport(q: ReportQuery) {
   const start  = periodStart(q.period);
   const pStart = prevPeriodStart(q.period);
 
-  const { data: all,   total: totalAll }      = queryConversations({ limit: 10_000 });
-  const { total: openCount }                  = queryConversations({ status: 'open',     limit: 1 });
-  const { total: resolvedCount }              = queryConversations({ status: 'resolved', limit: 1 });
-  const { total: pendingCount }               = queryConversations({ status: 'pending',  limit: 1 });
+  const all = await listSupportConversationsForReport();
+  const totalAll = all.length;
+  const openCount = all.filter(c => c.status === 'open').length;
+  const resolvedCount = all.filter(c => c.status === 'resolved').length;
+  const pendingCount = all.filter(c => c.status === 'pending').length;
 
   const inPeriod = all.filter(c => c.createdAt >= start);
   const inPrev   = all.filter(c => c.createdAt >= pStart && c.createdAt < start);
