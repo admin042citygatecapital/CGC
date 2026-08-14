@@ -1,21 +1,43 @@
-/** POST /api/admin/security/two-fa — update 2FA policy */
+/** POST /api/admin/security/two-fa — update the durable 2FA policy. */
 import type { Request, Response } from 'express';
-import { read2FAPolicy, write2FAPolicy, type TwoFAPolicy } from '../../../../lib/securityStore.js';
+import { appendCriticalAudit } from '../../../../lib/auditLog.js';
+import {
+  readTwoFactorPolicy,
+  writeTwoFactorPolicy,
+  type TwoFAPolicy,
+} from '../../../../lib/securityConfigStore.js';
 
 export default async function handler(req: Request, res: Response) {
+  const session = req.adminSession!;
   try {
-    const patch = req.body as Partial<TwoFAPolicy>;
-    const adminEmail = (req as unknown as { admin?: { email: string } }).admin?.email ?? 'admin';
-    const current = read2FAPolicy();
-    const updated: TwoFAPolicy = {
-      ...current,
-      ...patch,
+    const body = req.body as Record<string, unknown>;
+    const current = await readTwoFactorPolicy();
+    const withdrawalThreshold = Number(body.withdrawalThreshold ?? current.withdrawalThreshold);
+    if (!Number.isFinite(withdrawalThreshold) || withdrawalThreshold < 0 || withdrawalThreshold > 10_000_000) {
+      return res.status(400).json({ error: 'Withdrawal threshold must be between 0 and 10,000,000' });
+    }
+    const booleanField = (key: keyof Pick<TwoFAPolicy, 'mandatoryForAll' | 'mandatoryForWithdrawals' | 'mandatoryForWires'>) =>
+      typeof body[key] === 'boolean' ? body[key] as boolean : current[key];
+    const proposed: TwoFAPolicy = {
+      mandatoryForAll: booleanField('mandatoryForAll'),
+      mandatoryForWithdrawals: booleanField('mandatoryForWithdrawals'),
+      withdrawalThreshold,
+      mandatoryForWires: booleanField('mandatoryForWires'),
       updatedAt: new Date().toISOString(),
-      updatedBy: adminEmail,
+      updatedBy: session.email,
     };
-    write2FAPolicy(updated);
-    res.json({ ok: true, policy: updated });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update 2FA policy', message: String(err) });
+
+    await appendCriticalAudit({
+      event: 'admin_security_two_factor_policy_change_authorized',
+      adminId: session.adminId,
+      email: session.email,
+      ip: req.ip ?? 'unknown',
+      reason: 'Administrator updated the two-factor authentication policy',
+      meta: { previous: current, resulting: proposed },
+    });
+    const policy = await writeTwoFactorPolicy(proposed, session.adminId);
+    return res.json({ ok: true, policy });
+  } catch {
+    return res.status(503).json({ error: 'Two-factor authentication policy could not be updated' });
   }
 }

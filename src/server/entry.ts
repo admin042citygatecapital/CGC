@@ -373,6 +373,7 @@ import zoho_status_get_283 from "./api/zoho/status/GET";
 import { startEmailQueueWorker } from "./lib/emailQueue";
 import { requireAdminAuth } from "./lib/adminAuthMiddleware";
 import { requireAdminAuthorization } from "./lib/adminAuthorizationMiddleware";
+import { enforceSecurityNetworkPolicy } from "./lib/securityNetworkPolicyMiddleware";
 import { csrfProtect } from "./api/csrf/GET";
 import { auditAdminMutation } from "./lib/adminMutationAuditMiddleware";
 import { requireCustomerAuth, requireCustomerSameOrigin } from "./lib/customerAuthMiddleware";
@@ -480,6 +481,10 @@ app.use('/api', rateLimitMiddleware(
 ));
 // ── API cache headers (no-store for all /api routes) ────────────────────────
 app.use('/api', apiCacheHeaders);
+
+// Apply durable administrator-managed network blocks before public login or
+// authenticated administration/customer handlers are reached.
+app.use(['/api/admin', '/api/users'], enforceSecurityNetworkPolicy);
 
 app.use('/api/providers/onboarding/webhook', rateLimitMiddleware(
   req => `provider-webhook:${req.ip}`,

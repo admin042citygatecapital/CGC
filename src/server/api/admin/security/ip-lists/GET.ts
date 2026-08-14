@@ -1,11 +1,11 @@
 /** GET /api/admin/security/ip-lists — return blacklist, whitelist, country blocks */
 import type { Request, Response } from 'express';
-import { readIpLists } from '../../../../lib/securityStore.js';
+import { readSecurityIpLists } from '../../../../lib/securityConfigStore.js';
 
 export default async function handler(_req: Request, res: Response) {
   try {
-    res.json(readIpLists());
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to load IP lists', message: String(err) });
+    res.json(await readSecurityIpLists());
+  } catch {
+    res.status(503).json({ error: 'Security configuration is temporarily unavailable' });
   }
 }
