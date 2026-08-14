@@ -1,6 +1,8 @@
 /**
  * POST /api/users/avatar
- * Accepts a base64-encoded image and stores it via Supabase Storage (or local fallback).
+ * Accepts a base64-encoded image and stores it via Supabase Storage.
+ * Local storage is restricted to development because release filesystems are
+ * ephemeral and must never be acknowledged as durable customer storage.
  * Body: { avatarBase64: "data:image/jpeg;base64,..." }
  */
 import type { Request, Response } from 'express';
@@ -14,6 +16,14 @@ export default async function handler(req: Request, res: Response) {
 
   const user = await findUserBySessionToken(token);
   if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
+
+  const managedStorageAvailable = isSupabaseStorageConfigured();
+  if (process.env.NODE_ENV === 'production' && !managedStorageAvailable) {
+    return res.status(503).json({
+      error: 'Profile image storage is temporarily unavailable.',
+      code: 'MANAGED_STORAGE_REQUIRED',
+    });
+  }
 
   const { avatarBase64 } = req.body ?? {};
   if (!avatarBase64) return res.status(400).json({ error: 'avatarBase64 is required' });
@@ -36,7 +46,7 @@ export default async function handler(req: Request, res: Response) {
     const filename = `${user.id}.${ext}`;
     let avatarUrl: string;
 
-    if (isSupabaseStorageConfigured()) {
+    if (managedStorageAvailable) {
       // Use dedicated 'avatars' bucket — public, 5 MB limit
       const { url } = await uploadToSupabase(`${user.id}.${ext}`, buffer, mimeType, 'avatars');
       avatarUrl = url;
@@ -50,6 +60,10 @@ export default async function handler(req: Request, res: Response) {
     await updateUser(user.id, { avatarUrl } as Parameters<typeof updateUser>[1]);
     return res.json({ ok: true, avatarUrl });
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to save avatar: ' + String(err) });
+    console.error('avatar.upload.failed', {
+      userId: user.id,
+      errorType: err instanceof Error ? err.name : 'UnknownError',
+    });
+    return res.status(500).json({ error: 'Failed to save profile image.' });
   }
 }
