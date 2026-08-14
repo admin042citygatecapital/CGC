@@ -34,6 +34,12 @@ let legacySyncComplete = false;
 let _ff: typeof import('./operationsInboxStore.flatfile.js') | null = null;
 async function ff() { if (!_ff) _ff = await import('./operationsInboxStore.flatfile.js'); return _ff; }
 
+function shouldUseDevelopmentFallback(): boolean {
+  if (isDatabaseConfigured()) return false;
+  if (process.env.NODE_ENV === 'production') throw new Error('OPERATIONS_DATABASE_UNAVAILABLE');
+  return true;
+}
+
 function toItem(row: OperationsItemRow): OperationsItem {
   return {
     id: row.id, source: row.source as OperationsSource, referenceId: row.referenceId,
@@ -48,7 +54,7 @@ function toItem(row: OperationsItemRow): OperationsItem {
 }
 
 export async function createOperationsItem(input: CreateOperationsInput, skipDeduplication = false): Promise<OperationsItem> {
-  if (!isDatabaseConfigured()) return (await ff()).createOperationsItem(input, skipDeduplication);
+  if (shouldUseDevelopmentFallback()) return (await ff()).createOperationsItem(input, skipDeduplication);
   const now = new Date();
   const values = {
     id: `op_${crypto.randomBytes(8).toString('hex')}`, source: input.source, referenceId: input.referenceId,
@@ -85,7 +91,7 @@ async function importOperationsItem(item: OperationsItem): Promise<void> {
 }
 
 export async function listOperationsItems(query: OperationsQuery = {}) {
-  if (!isDatabaseConfigured()) return (await ff()).listOperationsItems(query);
+  if (shouldUseDevelopmentFallback()) return (await ff()).listOperationsItems(query);
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.min(100, Math.max(1, query.limit ?? 25));
   const conditions: SQL[] = [];
@@ -112,7 +118,7 @@ export async function listOperationsItems(query: OperationsQuery = {}) {
 }
 
 export async function getOperationsStats() {
-  if (!isDatabaseConfigured()) return (await ff()).getOperationsStats();
+  if (shouldUseDevelopmentFallback()) return (await ff()).getOperationsStats();
   const rows = await getDb().select({
     total: sql<number>`count(*)::int`,
     new: sql<number>`count(*) filter (where ${operationsItems.status} = 'new')::int`,
@@ -124,7 +130,7 @@ export async function getOperationsStats() {
 }
 
 export async function updateOperationsItem(id: string, changes: OperationsUpdate, actor: string): Promise<OperationsItem | null> {
-  if (!isDatabaseConfigured()) return (await ff()).updateOperationsItem(id, changes, actor);
+  if (shouldUseDevelopmentFallback()) return (await ff()).updateOperationsItem(id, changes, actor);
   const now = new Date().toISOString();
   const status = changes.status && VALID_STATUS.has(changes.status as OperationsStatus) ? changes.status : null;
   const priority = changes.priority && VALID_PRIORITY.has(changes.priority as OperationsPriority) ? changes.priority : null;
@@ -162,7 +168,7 @@ export async function updateOperationsItem(id: string, changes: OperationsUpdate
 /** One-time, idempotent import of the append-only inbox and older intake files. */
 export async function syncLegacyOperationsItems(): Promise<void> {
   if (legacySyncComplete) return;
-  if (!isDatabaseConfigured()) {
+  if (shouldUseDevelopmentFallback()) {
     (await ff()).syncLegacyOperationsItems();
     legacySyncComplete = true;
     return;
