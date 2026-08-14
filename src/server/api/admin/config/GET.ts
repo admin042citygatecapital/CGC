@@ -22,7 +22,7 @@ export default async function handler(req: Request, res: Response) {
 
     // Homepage section reads from the actual content file (virtual:content source of truth)
     if (section === 'homepage') {
-      return res.json({ homepage: homepageAdminView(readHomepageDocument().content) });
+      return res.json({ homepage: homepageAdminView((await readHomepageDocument()).content) });
     }
 
     if (section) {
@@ -35,7 +35,7 @@ export default async function handler(req: Request, res: Response) {
     const cfg = getConfig();
     const safe = {
       ...cfg,
-      homepage:     homepageAdminView(readHomepageDocument().content),
+      homepage:     homepageAdminView((await readHomepageDocument()).content),
       exchangeRates: { ...cfg.exchangeRates, apiKey: cfg.exchangeRates.apiKey ? '••••••••' : '' },
     };
     res.json(safe);

@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
 import { normalizeBusinessAddress } from '../../../../lib/businessLocation.js';
 import { writeWebsiteSettings } from '../../../lib/websiteStore.js';
-import { appendAudit } from '../../../lib/auditLog.js';
+import { appendCriticalAudit } from '../../../lib/auditLog.js';
 import { normalizeAccountPlans } from '../../../../lib/accountPlans.js';
 
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   const { settings } = req.body;
   if (!settings || typeof settings !== 'object') return res.status(400).json({ error: 'settings required' });
 
@@ -61,11 +61,13 @@ export default function handler(req: Request, res: Response) {
     }
   }
 
-  writeWebsiteSettings(settings);
-  appendAudit({
+  const adminId = req.adminSession?.adminId ?? 'admin';
+  await appendCriticalAudit({
     event: 'admin_website_settings_updated',
+    adminId,
     ip: req.ip ?? 'unknown',
     meta: { fields: Object.keys(settings) },
   });
+  await writeWebsiteSettings(settings, adminId);
   res.json({ ok: true });
 }

@@ -1,9 +1,8 @@
 /**
  * linksStore.ts — Persistent external links configuration
  */
-import fs from 'node:fs';
-import path from 'node:path';
 import { privateSubdirectory } from './storagePaths.js';
+import { readConfigDocument, writeConfigDocument } from './durableConfigDocument.js';
 
 const STORE_PATH = privateSubdirectory('cms/links.json');
 
@@ -20,22 +19,10 @@ export interface ExternalLink {
   badge: string;
 }
 
-function ensureDir() {
-  const dir = path.dirname(STORE_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+export async function readLinks(): Promise<ExternalLink[]> {
+  return readConfigDocument<ExternalLink[]>('external_links', STORE_PATH, []);
 }
 
-export function readLinks(): ExternalLink[] {
-  try {
-    ensureDir();
-    if (!fs.existsSync(STORE_PATH)) return [];
-    return JSON.parse(fs.readFileSync(STORE_PATH, 'utf8'));
-  } catch {
-    return [];
-  }
-}
-
-export function writeLinks(links: ExternalLink[]): void {
-  ensureDir();
-  fs.writeFileSync(STORE_PATH, JSON.stringify(links, null, 2));
+export async function writeLinks(links: ExternalLink[], updatedBy = 'admin'): Promise<void> {
+  await writeConfigDocument('external_links', STORE_PATH, links, updatedBy);
 }

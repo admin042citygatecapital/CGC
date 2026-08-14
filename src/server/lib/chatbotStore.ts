@@ -1,9 +1,8 @@
 /**
  * chatbotStore.ts — Persistent chatbot configuration
  */
-import fs from 'node:fs';
-import path from 'node:path';
 import { privateSubdirectory } from './storagePaths.js';
+import { readConfigDocument, writeConfigDocument } from './durableConfigDocument.js';
 
 const STORE_PATH = privateSubdirectory('cms/chatbot.json');
 
@@ -33,22 +32,10 @@ export interface ChatbotConfig {
   escalationThreshold: string;
 }
 
-function ensureDir() {
-  const dir = path.dirname(STORE_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+export async function readChatbotConfig(): Promise<Partial<ChatbotConfig>> {
+  return readConfigDocument<Partial<ChatbotConfig>>('chatbot_settings', STORE_PATH, {});
 }
 
-export function readChatbotConfig(): Partial<ChatbotConfig> {
-  try {
-    ensureDir();
-    if (!fs.existsSync(STORE_PATH)) return {};
-    return JSON.parse(fs.readFileSync(STORE_PATH, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-export function writeChatbotConfig(config: Partial<ChatbotConfig>): void {
-  ensureDir();
-  fs.writeFileSync(STORE_PATH, JSON.stringify(config, null, 2));
+export async function writeChatbotConfig(config: Partial<ChatbotConfig>, updatedBy = 'admin'): Promise<void> {
+  await writeConfigDocument('chatbot_settings', STORE_PATH, config, updatedBy);
 }

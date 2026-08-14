@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { home as defaultHomepage } from 'virtual:content';
+import { getQueryClient, isDatabaseConfigured } from '../db/db.js';
 import { privateSubdirectory } from './storagePaths.js';
 
 export interface HomepageRuntimeControls {
@@ -46,6 +47,15 @@ export interface HomepageDocument {
   updatedBy: string | null;
   hash: string;
   content: HomepageContent;
+}
+
+interface HomepageDbRow {
+  version: number;
+  content: unknown;
+  content_hash: string;
+  updated_by: string;
+  reason: string;
+  updated_at: Date | string;
 }
 
 const DIRECTORY = privateSubdirectory('cms');
@@ -172,7 +182,7 @@ export function validateHomepageContent(value: unknown): { content?: HomepageCon
   return limitedErrors.length ? { errors: limitedErrors } : { content: value as HomepageContent, errors: [] };
 }
 
-export function readHomepageDocument(): HomepageDocument {
+function readLocalHomepageDocument(): HomepageDocument {
   try {
     const parsed = JSON.parse(fs.readFileSync(STORE_PATH, 'utf8')) as HomepageDocument;
     const validated = validateHomepageContent(parsed.content);
@@ -184,7 +194,7 @@ export function readHomepageDocument(): HomepageDocument {
   }
 }
 
-export function readHomepageHistory(): Array<Omit<HomepageDocument, 'content'> & { reason: string }> {
+function readLocalHomepageHistory(): Array<Omit<HomepageDocument, 'content'> & { reason: string }> {
   try {
     return fs.readFileSync(HISTORY_PATH, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line));
   } catch {
@@ -192,9 +202,9 @@ export function readHomepageHistory(): Array<Omit<HomepageDocument, 'content'> &
   }
 }
 
-export function publishHomepageContent(content: HomepageContent, actor: string, reason: string): HomepageDocument {
+function publishLocalHomepageContent(content: HomepageContent, actor: string, reason: string): HomepageDocument {
   fs.mkdirSync(DIRECTORY, { recursive: true });
-  const current = readHomepageDocument();
+  const current = readLocalHomepageDocument();
   const next: HomepageDocument = {
     version: current.version + 1,
     updatedAt: new Date().toISOString(),
@@ -213,4 +223,83 @@ export function publishHomepageContent(content: HomepageContent, actor: string, 
     reason,
   })}\n`, 'utf8');
   return next;
+}
+
+function requireDatabaseInProduction(): void {
+  if (process.env.NODE_ENV === 'production' && !isDatabaseConfigured()) throw new Error('HOMEPAGE_DATABASE_UNAVAILABLE');
+}
+
+function fromDbRow(row: HomepageDbRow): HomepageDocument {
+  const validation = validateHomepageContent(row.content);
+  if (!validation.content) throw new Error('Stored homepage content is invalid.');
+  return {
+    version: row.version,
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString(),
+    updatedBy: row.updated_by,
+    hash: row.content_hash,
+    content: validation.content,
+  };
+}
+
+let legacyImportChecked = false;
+async function importLegacyHomepageOnce(): Promise<void> {
+  if (legacyImportChecked || !isDatabaseConfigured()) return;
+  const legacy = readLocalHomepageDocument();
+  if (legacy.version < 1 || !legacy.updatedAt || !legacy.updatedBy) {
+    legacyImportChecked = true;
+    return;
+  }
+  const reason = readLocalHomepageHistory().find(item => item.version === legacy.version)?.reason ?? 'Imported legacy homepage publication';
+  const sql = getQueryClient();
+  await sql`
+    INSERT INTO homepage_content_versions (version,content,content_hash,updated_by,reason,updated_at)
+    VALUES (${legacy.version},${sql.json(JSON.parse(JSON.stringify(legacy.content)))},${legacy.hash},${legacy.updatedBy},${reason},${legacy.updatedAt})
+    ON CONFLICT (version) DO NOTHING
+  `;
+  legacyImportChecked = true;
+}
+
+export async function readHomepageDocument(): Promise<HomepageDocument> {
+  requireDatabaseInProduction();
+  if (!isDatabaseConfigured()) return readLocalHomepageDocument();
+  await importLegacyHomepageOnce();
+  const sql = getQueryClient();
+  const rows = await sql<HomepageDbRow[]>`SELECT * FROM homepage_content_versions ORDER BY version DESC LIMIT 1`;
+  if (rows[0]) return fromDbRow(rows[0]);
+  const content = cloneDefault();
+  return { version: 0, updatedAt: null, updatedBy: null, hash: digest(content), content };
+}
+
+export async function readHomepageHistory(): Promise<Array<Omit<HomepageDocument, 'content'> & { reason: string }>> {
+  requireDatabaseInProduction();
+  if (!isDatabaseConfigured()) return readLocalHomepageHistory();
+  await importLegacyHomepageOnce();
+  const sql = getQueryClient();
+  const rows = await sql<HomepageDbRow[]>`SELECT version,content_hash,updated_by,reason,updated_at FROM homepage_content_versions ORDER BY version ASC`;
+  return rows.map(row => ({
+    version: row.version,
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString(),
+    updatedBy: row.updated_by,
+    hash: row.content_hash,
+    reason: row.reason,
+  }));
+}
+
+export async function publishHomepageContent(content: HomepageContent, actor: string, reason: string): Promise<HomepageDocument> {
+  requireDatabaseInProduction();
+  if (!isDatabaseConfigured()) return publishLocalHomepageContent(content, actor, reason);
+  const validation = validateHomepageContent(content);
+  if (!validation.content) throw new Error('Homepage content is invalid.');
+  const contentHash = digest(validation.content);
+  const sql = getQueryClient();
+  const rows = await sql.begin(async transaction => {
+    await transaction`SELECT pg_advisory_xact_lock(hashtext('homepage_content_versions'))`;
+    const current = await transaction<{ version: number }[]>`SELECT COALESCE(MAX(version),0)::int AS version FROM homepage_content_versions`;
+    return transaction<HomepageDbRow[]>`
+      INSERT INTO homepage_content_versions (version,content,content_hash,updated_by,reason)
+      VALUES (${current[0].version + 1},${transaction.json(JSON.parse(JSON.stringify(validation.content)))},${contentHash},${actor},${reason})
+      RETURNING *
+    `;
+  });
+  return fromDbRow(rows[0]);
 }

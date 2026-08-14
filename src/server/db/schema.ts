@@ -1747,6 +1747,19 @@ export const mediaAssets = pgTable(
   ],
 );
 
+export const homepageContentVersions = pgTable(
+  'homepage_content_versions',
+  {
+    version: integer('version').primaryKey(),
+    content: jsonb('content').$type<Record<string, unknown>>().notNull(),
+    contentHash: text('content_hash').notNull(),
+    updatedBy: text('updated_by').notNull(),
+    reason: text('reason').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('homepage_content_versions_hash_idx').on(t.contentHash), index('homepage_content_versions_updated_idx').on(t.updatedAt)],
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type AdminSession = typeof adminSessions.$inferSelect;
@@ -1802,3 +1815,4 @@ export type CustomerBillScheduleRow = typeof customerBillSchedules.$inferSelect;
 export type CustomerRewardAccountRow = typeof customerRewardAccounts.$inferSelect;
 export type CustomerRewardEventRow = typeof customerRewardEvents.$inferSelect;
 export type MediaAssetRow = typeof mediaAssets.$inferSelect;
+export type HomepageContentVersionRow = typeof homepageContentVersions.$inferSelect;

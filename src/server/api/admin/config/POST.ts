@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { updateSection, resetSection } from '../../../lib/configStore.js';
+import { appendCriticalAudit } from '../../../lib/auditLog.js';
 import {
   defaultHomepageAdminView,
   homepageAdminView,
@@ -32,10 +33,12 @@ export default async function handler(req: Request, res: Response) {
     // ── Homepage: read/write the actual content JSON (virtual:content source of truth) ──
     if (section === 'homepage') {
       const actor = req.adminSession?.email ?? req.adminSession?.adminId ?? 'unknown-admin';
+      const adminId = req.adminSession?.adminId ?? 'unknown-admin';
       if (action === 'reset') {
-        const current = readHomepageDocument();
+        const current = await readHomepageDocument();
         const defaults = defaultHomepageAdminView();
-        publishHomepageContent(
+        await appendCriticalAudit({ event: 'admin_homepage_reset_intent', adminId, ip: req.ip, reason: 'Configuration Center homepage reset' });
+        await publishHomepageContent(
           mergeHomepageAdminView(current.content, defaults),
           actor,
           'Configuration Center homepage reset',
@@ -45,9 +48,10 @@ export default async function handler(req: Request, res: Response) {
       if (!data || typeof data !== 'object') {
         return res.status(400).json({ error: 'data object required' });
       }
-      const current = readHomepageDocument();
+      const current = await readHomepageDocument();
       const updated = mergeHomepage(homepageAdminView(current.content), data);
-      publishHomepageContent(
+      await appendCriticalAudit({ event: 'admin_homepage_update_intent', adminId, ip: req.ip, reason: 'Configuration Center homepage update' });
+      await publishHomepageContent(
         mergeHomepageAdminView(current.content, updated),
         actor,
         'Configuration Center homepage update',
