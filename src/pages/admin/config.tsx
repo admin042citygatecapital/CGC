@@ -543,6 +543,7 @@ export default function AdminConfigPage() {
                           ['savingsAccountEnabled',   'Savings Accounts',       'High-yield savings products'],
                           ['loanApplicationEnabled',  'Loan Applications',      'Personal & business loans'],
                           ['referralProgramEnabled',  'Referral Program',       'Customer referral rewards'],
+                          ['rewardsEnabled',          'Rewards & Benefits',     'Customer rewards workspace'],
                           ['twoFactorRequired',       '2FA Required',           'Force 2FA for all users'],
                           ['biometricLoginEnabled',   'Biometric Login',        'Fingerprint/face ID login'],
                           ['darkModeEnabled',         'Dark Mode',              'Allow users to toggle dark mode'],

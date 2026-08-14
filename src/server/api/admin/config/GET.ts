@@ -40,6 +40,7 @@ export default async function handler(req: Request, res: Response) {
     };
     res.json(safe);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to load config', message: String(err) });
+    console.error('admin.config.read.error', { errorType: err instanceof Error ? err.name : 'UnknownError' });
+    res.status(500).json({ error: 'Failed to load configuration.' });
   }
 }

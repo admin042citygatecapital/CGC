@@ -141,6 +141,7 @@ export interface FeatureTogglesConfig {
   savingsAccountEnabled:     boolean;
   loanApplicationEnabled:    boolean;
   referralProgramEnabled:    boolean;
+  rewardsEnabled:            boolean;
   twoFactorRequired:         boolean;
   biometricLoginEnabled:     boolean;
   darkModeEnabled:           boolean;
@@ -287,6 +288,7 @@ function defaultConfig(): AppConfig {
       savingsAccountEnabled:   true,
       loanApplicationEnabled:  false,
       referralProgramEnabled:  false,
+      rewardsEnabled:          false,
       twoFactorRequired:       false,
       biometricLoginEnabled:   false,
       darkModeEnabled:         true,

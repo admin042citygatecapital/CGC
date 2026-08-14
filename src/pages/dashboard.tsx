@@ -13,6 +13,7 @@ import {
   History, FileText, FileWarning, User, Users, Smartphone, MessageCircle,
   Target,
   ReceiptText,
+  Gift,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
@@ -1844,6 +1845,7 @@ export default function DashboardPage() {
                   { icon: FileWarning, label: 'Transaction Disputes', href: '/dashboard/disputes', sub: 'Report & track claims' },
                   { icon: Target,      label: 'Financial Goals',      href: '/dashboard/goals',    sub: 'Targets & progress' },
                   { icon: ReceiptText, label: 'Bills & Payments',     href: '/dashboard/bills',    sub: 'Schedules & reminders' },
+                  { icon: Gift,        label: 'Rewards & Benefits',   href: '/dashboard/rewards',  sub: 'Points & membership' },
                 ].map(({ icon: Icon, label, href, sub }, i, arr) => (
                   <Link key={label} to={href}
                     className={`flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors ${i < arr.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>

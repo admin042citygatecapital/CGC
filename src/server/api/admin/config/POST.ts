@@ -69,7 +69,8 @@ export default async function handler(req: Request, res: Response) {
     const safe = { ...cfg, exchangeRates: { ...cfg.exchangeRates, apiKey: cfg.exchangeRates.apiKey ? '••••••••' : '' } };
     res.json({ ok: true, config: safe });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to save config', message: String(err) });
+    console.error('admin.config.save.error', { errorType: err instanceof Error ? err.name : 'UnknownError' });
+    res.status(500).json({ error: 'Failed to save configuration.' });
   }
 }
 

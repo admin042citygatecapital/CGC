@@ -1688,6 +1688,31 @@ export const customerBillSchedules = pgTable(
   (t) => [index('customer_bill_schedules_user_due_idx').on(t.userId, t.nextDueDate, t.updatedAt)],
 );
 
+export const customerRewardAccounts = pgTable('customer_reward_accounts', {
+  userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  pointsBalance: bigint('points_balance', { mode: 'bigint' }).notNull().default(0n),
+  cashbackMinor: bigint('cashback_minor', { mode: 'bigint' }).notNull().default(0n),
+  cashbackCurrency: text('cashback_currency').notNull().default('GBP').references(() => platformCurrencies.code, { onDelete: 'restrict' }),
+  membershipTier: text('membership_tier').notNull().default('Member'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const customerRewardEvents = pgTable(
+  'customer_reward_events',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    eventType: text('event_type').$type<'earned' | 'pending' | 'redeemed' | 'cashback'>().notNull(),
+    points: bigint('points', { mode: 'bigint' }).notNull().default(0n),
+    cashbackMinor: bigint('cashback_minor', { mode: 'bigint' }).notNull().default(0n),
+    currency: text('currency').notNull().default('GBP').references(() => platformCurrencies.code, { onDelete: 'restrict' }),
+    description: text('description').notNull(),
+    providerReference: text('provider_reference'),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('customer_reward_events_user_date_idx').on(t.userId, t.occurredAt)],
+);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -1742,3 +1767,5 @@ export type DataQuarantineBatchRow = typeof dataQuarantineBatches.$inferSelect;
 export type DataQuarantineRecordRow = typeof dataQuarantineRecords.$inferSelect;
 export type CustomerGoalRow = typeof customerGoals.$inferSelect;
 export type CustomerBillScheduleRow = typeof customerBillSchedules.$inferSelect;
+export type CustomerRewardAccountRow = typeof customerRewardAccounts.$inferSelect;
+export type CustomerRewardEventRow = typeof customerRewardEvents.$inferSelect;
