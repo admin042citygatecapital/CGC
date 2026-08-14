@@ -4,7 +4,7 @@
  * Body: { conversationId, message, status? }
  */
 import type { Request, Response } from 'express';
-import { addMessage, updateConversationStatus } from '../../../../lib/supportStore.js';
+import { addMessage, updateConversationStatus } from '../../../../lib/supportDatabaseStore.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 
@@ -15,7 +15,7 @@ export default async function handler(req: Request, res: Response) {
   if (!conversationId) return res.status(400).json({ error: 'conversationId is required' });
   if (!message || !String(message).trim()) return res.status(400).json({ error: 'message is required' });
 
-  const conv = addMessage(
+  const conv = await addMessage(
     String(conversationId),
     'admin',
     String(message).trim(),
@@ -25,7 +25,7 @@ export default async function handler(req: Request, res: Response) {
   if (!conv) return res.status(404).json({ error: 'Conversation not found' });
 
   // Update status if provided
-  if (status) updateConversationStatus(String(conversationId), status as any);
+  if (status) await updateConversationStatus(String(conversationId), status as any);
 
   // Notify the customer
   await createNotification(

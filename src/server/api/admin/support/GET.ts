@@ -4,13 +4,13 @@
  * Query: status, priority, category, assignedTo, search, dateRange, dateFrom, dateTo, sort, page, limit
  */
 import type { Request, Response } from 'express';
-import { queryConversations } from '../../../lib/supportStore.js';
-import type { SortOption } from '../../../lib/supportStore.js';
+import { queryConversations } from '../../../lib/supportDatabaseStore.js';
+import type { SortOption } from '../../../lib/supportDatabaseStore.js';
 
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   const q = req.query as Record<string, string>;
 
-  const result = queryConversations({
+  const result = await queryConversations({
     status:     q.status     || undefined,
     priority:   q.priority   || undefined,
     category:   q.category   || undefined,

@@ -381,6 +381,7 @@ import { seoRoutes } from "../lib/seo-routes";
 import { logStartupCredentialState } from "./lib/zohoTokenStore";
 import { loadSmtpConfigFromDb } from "./lib/smtpConfigStore";
 import { loadConfigFromDb } from "./lib/configStore";
+import { syncLegacySupportConversations } from "./lib/supportDatabaseStore";
 import { loadEmailBrandingFromDb } from "./lib/emailBrandingStore";
 import { loadEmailTemplatesFromDb } from "./lib/emailTemplateStore";
 import { getSecret } from "#runtime/secrets";
@@ -1511,6 +1512,7 @@ if (isViteProductionBuild && !isVercelRuntime) {
 		// ── Startup: load config from DB into in-memory cache ──────────────
 		Promise.all([
 			loadConfigFromDb().catch(e => console.warn('configStore.load.skipped', String(e))),
+			syncLegacySupportConversations().catch(e => console.warn('supportStore.migration.skipped', e instanceof Error ? e.name : 'UnknownError')),
 			loadSmtpConfigFromDb().catch(e => console.warn('smtpConfigStore.load.skipped', String(e))),
 			loadEmailBrandingFromDb().catch(e => console.warn('emailBranding.load.skipped', String(e))),
 			loadEmailTemplatesFromDb().catch(e => console.warn('emailTemplates.load.skipped', String(e))),

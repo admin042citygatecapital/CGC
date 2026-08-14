@@ -4,11 +4,11 @@
  * Body: { conversationId, status }
  */
 import type { Request, Response } from 'express';
-import { updateConversationStatus } from '../../../../lib/supportStore.js';
-import type { SupportConversation } from '../../../../lib/supportStore.js';
+import { updateConversationStatus } from '../../../../lib/supportDatabaseStore.js';
+import type { SupportConversation } from '../../../../lib/supportDatabaseStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
   const { conversationId, status } = req.body ?? {};
 
@@ -16,7 +16,7 @@ export default function handler(req: Request, res: Response) {
   const valid = ['open', 'pending', 'in_progress', 'resolved', 'closed'];
   if (!valid.includes(String(status))) return res.status(400).json({ ok: false, error: 'invalid status' });
 
-  const ok = updateConversationStatus(String(conversationId), status as SupportConversation['status']);
+  const ok = await updateConversationStatus(String(conversationId), status as SupportConversation['status']);
   if (!ok) return res.status(404).json({ ok: false, error: 'Ticket not found' });
 
   appendAudit({

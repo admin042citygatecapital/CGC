@@ -11,15 +11,15 @@
 import type { Request, Response } from 'express';
 import {
   bulkUpdateStatus, bulkAssign, bulkUpdatePriority, bulkExportCsv,
-} from '../../../../lib/supportStore.js';
-import type { SupportConversation } from '../../../../lib/supportStore.js';
+} from '../../../../lib/supportDatabaseStore.js';
+import type { SupportConversation } from '../../../../lib/supportDatabaseStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 import { safeParseId, sanitizeString, isOneOf } from '../../../../lib/inputValidator.js';
 
 const VALID_ACTIONS    = ['resolve','close','pending','assign','priority','export'] as const;
 const VALID_PRIORITIES = ['low','medium','high','urgent'] as const;
 
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
   const { ids, action, value } = req.body ?? {};
 
@@ -52,30 +52,30 @@ export default function handler(req: Request, res: Response) {
 
   switch (safeAction) {
     case 'resolve': {
-      const result = bulkUpdateStatus(safeIds, 'resolved');
+      const result = await bulkUpdateStatus(safeIds, 'resolved');
       return res.json({ ok: true, ...result });
     }
     case 'close': {
-      const result = bulkUpdateStatus(safeIds, 'closed');
+      const result = await bulkUpdateStatus(safeIds, 'closed');
       return res.json({ ok: true, ...result });
     }
     case 'pending': {
-      const result = bulkUpdateStatus(safeIds, 'pending');
+      const result = await bulkUpdateStatus(safeIds, 'pending');
       return res.json({ ok: true, ...result });
     }
     case 'assign': {
       if (!safeValue) return res.status(400).json({ ok: false, error: 'value (agent name) required for assign' });
-      const result = bulkAssign(safeIds, safeValue);
+      const result = await bulkAssign(safeIds, safeValue);
       return res.json({ ok: true, ...result });
     }
     case 'priority': {
       const safePriority = isOneOf(safeValue, VALID_PRIORITIES);
       if (!safePriority) return res.status(400).json({ ok: false, error: `priority must be one of: ${VALID_PRIORITIES.join(', ')}` });
-      const result = bulkUpdatePriority(safeIds, safePriority as SupportConversation['priority']);
+      const result = await bulkUpdatePriority(safeIds, safePriority as SupportConversation['priority']);
       return res.json({ ok: true, ...result });
     }
     case 'export': {
-      const csv = bulkExportCsv(safeIds);
+      const csv = await bulkExportCsv(safeIds);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename="tickets-export.csv"');
       return res.send(csv);

@@ -4,7 +4,7 @@
  * Body: { subject, category, message } or { conversationId, message } (to reply)
  */
 import type { Request, Response } from 'express';
-import { createConversation, addCustomerMessage } from '../../../lib/supportStore.js';
+import { createConversation, addCustomerMessage } from '../../../lib/supportDatabaseStore.js';
 import { createNotification } from '../../../lib/notificationStore.js';
 import { createOperationsItem } from '../../../lib/operationsInboxStore.js';
 import { requireIntakeEnabled } from '../../../lib/operationalControls.js';
@@ -31,7 +31,7 @@ export default async function handler(req: Request, res: Response) {
   if (conversationId) {
     const cleanId = String(conversationId).trim();
     if (!/^sup_[a-f0-9]{16}$/i.test(cleanId)) return res.status(400).json({ error: 'Invalid conversation ID' });
-    const conv = addCustomerMessage(cleanId, user.id, cleanMessage);
+    const conv = await addCustomerMessage(cleanId, user.id, cleanMessage);
     if (!conv) return res.status(404).json({ error: 'Conversation not found' });
     return res.json({ ok: true, conversation: conv });
   }
@@ -47,7 +47,7 @@ export default async function handler(req: Request, res: Response) {
   if (!allowedCategories.has(cleanCategory)) return res.status(400).json({ error: 'Invalid support category' });
   if (!allowedPriorities.has(cleanPriority)) return res.status(400).json({ error: 'Invalid priority' });
 
-  const conv = createConversation({
+  const conv = await createConversation({
     userId:    user.id,
     userName:  user.name,
     userEmail: user.email,

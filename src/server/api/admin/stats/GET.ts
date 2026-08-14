@@ -3,7 +3,7 @@ import { loadAllUsers } from '../../../lib/userStore.js';
 import { getAuditLog } from '../../../lib/auditLog.js';
 import { queryTransactions } from '../../../lib/transactionStore.js';
 import { readRatesConfig } from '../../../lib/ratesStore.js';
-import { queryConversations } from '../../../lib/supportStore.js';
+import { queryConversations } from '../../../lib/supportDatabaseStore.js';
 
 export default async function handler(_req: Request, res: Response) {
   const now = Date.now();

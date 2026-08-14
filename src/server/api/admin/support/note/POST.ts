@@ -4,17 +4,17 @@
  * Body: { conversationId, text }
  */
 import type { Request, Response } from 'express';
-import { addInternalNote } from '../../../../lib/supportStore.js';
+import { addInternalNote } from '../../../../lib/supportDatabaseStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
   const { conversationId, text } = req.body ?? {};
 
   if (!conversationId) return res.status(400).json({ ok: false, error: 'conversationId required' });
   if (!text?.trim())   return res.status(400).json({ ok: false, error: 'text required' });
 
-  const conv = addInternalNote(
+  const conv = await addInternalNote(
     String(conversationId),
     String(text).trim(),
     session.adminId,
