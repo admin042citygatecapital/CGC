@@ -1269,16 +1269,39 @@ if (isViteProductionBuild && !isVercelRuntime) {
 		}
 	});
 
+	let shuttingDown = false;
 	const shutdown = async (signal: string) => {
-		console.log(`Got ${signal}, shutting down gracefully...`);
+		if (shuttingDown) return;
+		shuttingDown = true;
+		console.log(`Got ${signal}, draining HTTP and WebSocket connections...`);
+		const forcedExit = setTimeout(() => {
+			console.error('ssr.shutdown.timeout', { signal });
+			process.exit(1);
+		}, 25_000);
+		forcedExit.unref();
+
+		if (wsBroadcastTimer) clearInterval(wsBroadcastTimer);
+		if (wsCleanupTimer) clearInterval(wsCleanupTimer);
+		for (const client of wss.clients) {
+			try { client.close(1001, 'Service restarting'); } catch { /* already closed */ }
+		}
+
+		await new Promise<void>((resolve) => {
+			httpServer.close((error) => {
+				if (error) console.error('ssr.shutdown.http-close-failed', { error: error.message });
+				resolve();
+			});
+		});
+
 		try {
 			await closeConnection();
-			console.log("Database connections closed");
+			console.log('Database connections closed');
 		} catch (error: unknown) {
-			console.error("ssr.shutdown.db-close-failed", {
+			console.error('ssr.shutdown.db-close-failed', {
 				error: error instanceof Error ? error.message : String(error),
 			});
 		}
+		clearTimeout(forcedExit);
 		process.exit(0);
 	};
 
@@ -1335,6 +1358,7 @@ if (isViteProductionBuild && !isVercelRuntime) {
 	/** Track last ping time per client to detect dead connections */
 	const wsLastSeen = new Map<WebSocket, number>();
 	let wsBroadcastTimer: ReturnType<typeof setInterval> | null = null;
+	let wsCleanupTimer: ReturnType<typeof setInterval> | null = null;
 	/** Per-IP upgrade rate limiting counters */
 	let wsUpgradeCounters: Map<string, { count: number; resetAt: number }> | null = null;
 
@@ -1360,7 +1384,7 @@ if (isViteProductionBuild && !isVercelRuntime) {
 		}, 3_000);
 
 		// Stale-client cleanup: terminate clients that haven't pinged in 90s
-		setInterval(() => {
+		wsCleanupTimer = setInterval(() => {
 			const now = Date.now();
 			wss.clients.forEach(client => {
 				const last = wsLastSeen.get(client) ?? now;
