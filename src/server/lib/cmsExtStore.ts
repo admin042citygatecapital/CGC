@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { privateSubdirectory } from './storagePaths.js';
+import { readConfigDocument, writeConfigDocument } from './durableConfigDocument.js';
 
 const DIR = privateSubdirectory('cms');
 const FILES = {
@@ -22,35 +23,28 @@ const FILES = {
   news:       path.join(DIR, 'news.jsonl'),
   blog:       path.join(DIR, 'blog.jsonl'),
 };
+const KEYS = {
+  heroMedia: 'cms_ext_hero_media', logo: 'cms_ext_logo', navigation: 'cms_ext_navigation',
+  features: 'cms_ext_features', news: 'cms_ext_news', blog: 'cms_ext_blog',
+} as const;
 
-function ensureDir() {
-  if (!fs.existsSync(DIR)) fs.mkdirSync(DIR, { recursive: true });
+async function readJson<T>(key: string, file: string, def: T): Promise<T> {
+  return readConfigDocument<T>(key, file, def);
 }
-function readJson<T>(file: string, def: T): T {
+async function writeJson<T>(key: string, file: string, data: T, updatedBy = 'admin'): Promise<void> {
+  await writeConfigDocument(key, file, data, updatedBy);
+}
+function readLegacyJsonl<T>(file: string): T[] {
   try {
-    ensureDir();
-    if (!fs.existsSync(file)) return def;
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch { return def; }
-}
-function writeJson<T>(file: string, data: T): void {
-  ensureDir();
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
-}
-function readJsonl<T>(file: string): T[] {
-  try {
-    ensureDir();
     if (!fs.existsSync(file)) return [];
-    return fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
+    return fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line) as T);
   } catch { return []; }
 }
-function writeJsonl<T>(file: string, items: T[]): void {
-  ensureDir();
-  fs.writeFileSync(file, items.map(i => JSON.stringify(i)).join('\n') + '\n');
+async function readJsonl<T>(key: string, file: string): Promise<T[]> {
+  return readConfigDocument<T[]>(key, file, readLegacyJsonl<T>(file));
 }
-function appendJsonl<T>(file: string, item: T): void {
-  ensureDir();
-  fs.appendFileSync(file, JSON.stringify(item) + '\n');
+async function writeJsonl<T>(key: string, file: string, items: T[], updatedBy = 'admin'): Promise<void> {
+  await writeConfigDocument(key, file, items, updatedBy);
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -153,12 +147,12 @@ const DEFAULT_HERO: HeroMedia = {
   backgroundOverlay: 40, updatedAt: new Date().toISOString(),
 };
 
-export function getHeroMedia(): HeroMedia {
-  return { ...DEFAULT_HERO, ...readJson<Partial<HeroMedia>>(FILES.heroMedia, {}) };
+export async function getHeroMedia(): Promise<HeroMedia> {
+  return { ...DEFAULT_HERO, ...await readJson<Partial<HeroMedia>>(KEYS.heroMedia, FILES.heroMedia, {}) };
 }
-export function saveHeroMedia(patch: Partial<HeroMedia>): HeroMedia {
-  const next = { ...getHeroMedia(), ...patch, updatedAt: new Date().toISOString() };
-  writeJson(FILES.heroMedia, next);
+export async function saveHeroMedia(patch: Partial<HeroMedia>, updatedBy = 'admin'): Promise<HeroMedia> {
+  const next = { ...await getHeroMedia(), ...patch, updatedAt: new Date().toISOString() };
+  await writeJson(KEYS.heroMedia, FILES.heroMedia, next, updatedBy);
   return next;
 }
 
@@ -170,12 +164,12 @@ const DEFAULT_LOGO: LogoConfig = {
   updatedAt: new Date().toISOString(),
 };
 
-export function getLogoConfig(): LogoConfig {
-  return { ...DEFAULT_LOGO, ...readJson<Partial<LogoConfig>>(FILES.logo, {}) };
+export async function getLogoConfig(): Promise<LogoConfig> {
+  return { ...DEFAULT_LOGO, ...await readJson<Partial<LogoConfig>>(KEYS.logo, FILES.logo, {}) };
 }
-export function saveLogoConfig(patch: Partial<LogoConfig>): LogoConfig {
-  const next = { ...getLogoConfig(), ...patch, updatedAt: new Date().toISOString() };
-  writeJson(FILES.logo, next);
+export async function saveLogoConfig(patch: Partial<LogoConfig>, updatedBy = 'admin'): Promise<LogoConfig> {
+  const next = { ...await getLogoConfig(), ...patch, updatedAt: new Date().toISOString() };
+  await writeJson(KEYS.logo, FILES.logo, next, updatedBy);
   return next;
 }
 
@@ -191,19 +185,19 @@ const DEFAULT_NAV: NavLink[] = [
   { id: '7', label: 'Terms of Service',href: '/terms',           target: '_self', order: 2, section: 'legal',  enabled: true, children: [] },
 ];
 
-export function getNavigation(): NavLink[] {
-  const saved = readJson<NavLink[] | null>(FILES.navigation, null);
+export async function getNavigation(): Promise<NavLink[]> {
+  const saved = await readJson<NavLink[] | null>(KEYS.navigation, FILES.navigation, null);
   return saved ?? DEFAULT_NAV;
 }
-export function saveNavigation(links: NavLink[]): NavLink[] {
-  writeJson(FILES.navigation, links);
+export async function saveNavigation(links: NavLink[], updatedBy = 'admin'): Promise<NavLink[]> {
+  await writeJson(KEYS.navigation, FILES.navigation, links, updatedBy);
   return links;
 }
 
 // ─── Feature Cards ────────────────────────────────────────────────────────────
 
-export function getFeatureCards(page?: string): FeatureCard[] {
-  const all = readJsonl<FeatureCard>(FILES.features);
+export async function getFeatureCards(page?: string): Promise<FeatureCard[]> {
+  const all = await readJsonl<FeatureCard>(KEYS.features, FILES.features);
   if (all.length === 0) {
     const defaults: FeatureCard[] = [
       { id: randomUUID(), title: 'Multi-Currency Wallet Preview', description: 'Explore a demonstration interface for proposed multi-currency features. No funds are held or transferred.', icon: 'Wallet', imageUrl: '', badge: 'Preview', order: 1, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
@@ -211,18 +205,18 @@ export function getFeatureCards(page?: string): FeatureCard[] {
       { id: randomUUID(), title: 'Virtual Card Prototype', description: 'Preview proposed virtual-card controls. No payment card is issued.', icon: 'CreditCard', imageUrl: '', badge: 'Preview', order: 3, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
       { id: randomUUID(), title: 'Paper Exchange', description: 'Explore illustrative crypto exchange flows without custody or order execution.', icon: 'TrendingUp', imageUrl: '', badge: '', order: 4, enabled: true, page: 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ];
-    writeJsonl(FILES.features, defaults);
+    await writeJsonl(KEYS.features, FILES.features, defaults, 'migration');
     return page ? defaults.filter(f => f.page === page) : defaults;
   }
   return page ? all.filter(f => f.page === page) : all;
 }
 
-export function upsertFeatureCard(data: Partial<FeatureCard> & { id?: string }): FeatureCard {
-  const all = readJsonl<FeatureCard>(FILES.features);
+export async function upsertFeatureCard(data: Partial<FeatureCard> & { id?: string }, updatedBy = 'admin'): Promise<FeatureCard> {
+  const all = await readJsonl<FeatureCard>(KEYS.features, FILES.features);
   const idx = data.id ? all.findIndex(f => f.id === data.id) : -1;
   if (idx >= 0) {
     all[idx] = { ...all[idx], ...data, updatedAt: new Date().toISOString() };
-    writeJsonl(FILES.features, all);
+    await writeJsonl(KEYS.features, FILES.features, all, updatedBy);
     return all[idx];
   }
   const card: FeatureCard = {
@@ -231,22 +225,23 @@ export function upsertFeatureCard(data: Partial<FeatureCard> & { id?: string }):
     order: data.order ?? all.length + 1, enabled: data.enabled ?? true,
     page: data.page ?? 'home', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   };
-  appendJsonl(FILES.features, card);
+  all.push(card);
+  await writeJsonl(KEYS.features, FILES.features, all, updatedBy);
   return card;
 }
 
-export function deleteFeatureCard(id: string): boolean {
-  const all = readJsonl<FeatureCard>(FILES.features);
+export async function deleteFeatureCard(id: string, updatedBy = 'admin'): Promise<boolean> {
+  const all = await readJsonl<FeatureCard>(KEYS.features, FILES.features);
   const next = all.filter(f => f.id !== id);
   if (next.length === all.length) return false;
-  writeJsonl(FILES.features, next);
+  await writeJsonl(KEYS.features, FILES.features, next, updatedBy);
   return true;
 }
 
 // ─── News ─────────────────────────────────────────────────────────────────────
 
-export function getNews(opts: { status?: string; category?: string; search?: string; page?: number; limit?: number } = {}) {
-  let all = readJsonl<NewsArticle>(FILES.news);
+export async function getNews(opts: { status?: string; category?: string; search?: string; page?: number; limit?: number } = {}) {
+  let all = await readJsonl<NewsArticle>(KEYS.news, FILES.news);
   if (opts.status && opts.status !== 'all') all = all.filter(n => n.status === opts.status);
   if (opts.category && opts.category !== 'all') all = all.filter(n => n.category === opts.category);
   if (opts.search) { const q = opts.search.toLowerCase(); all = all.filter(n => n.title.toLowerCase().includes(q) || n.excerpt.toLowerCase().includes(q)); }
@@ -256,13 +251,13 @@ export function getNews(opts: { status?: string; category?: string; search?: str
   return { data: all.slice((p - 1) * l, p * l), total };
 }
 
-export function upsertNews(data: Partial<NewsArticle> & { id?: string }): NewsArticle {
-  const all = readJsonl<NewsArticle>(FILES.news);
+export async function upsertNews(data: Partial<NewsArticle> & { id?: string }, updatedBy = 'admin'): Promise<NewsArticle> {
+  const all = await readJsonl<NewsArticle>(KEYS.news, FILES.news);
   const idx = data.id ? all.findIndex(n => n.id === data.id) : -1;
   if (idx >= 0) {
     if (data.status === 'published' && !all[idx].publishedAt) data.publishedAt = new Date().toISOString();
     all[idx] = { ...all[idx], ...data, updatedAt: new Date().toISOString() };
-    writeJsonl(FILES.news, all);
+    await writeJsonl(KEYS.news, FILES.news, all, updatedBy);
     return all[idx];
   }
   const slug = (data.title ?? 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36);
@@ -275,22 +270,23 @@ export function upsertNews(data: Partial<NewsArticle> & { id?: string }): NewsAr
     featured: data.featured ?? false, viewCount: 0,
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   };
-  appendJsonl(FILES.news, article);
+  all.push(article);
+  await writeJsonl(KEYS.news, FILES.news, all, updatedBy);
   return article;
 }
 
-export function deleteNews(id: string): boolean {
-  const all = readJsonl<NewsArticle>(FILES.news);
+export async function deleteNews(id: string, updatedBy = 'admin'): Promise<boolean> {
+  const all = await readJsonl<NewsArticle>(KEYS.news, FILES.news);
   const next = all.filter(n => n.id !== id);
   if (next.length === all.length) return false;
-  writeJsonl(FILES.news, next);
+  await writeJsonl(KEYS.news, FILES.news, next, updatedBy);
   return true;
 }
 
 // ─── Blog ─────────────────────────────────────────────────────────────────────
 
-export function getBlog(opts: { status?: string; category?: string; search?: string; page?: number; limit?: number } = {}) {
-  let all = readJsonl<BlogPost>(FILES.blog);
+export async function getBlog(opts: { status?: string; category?: string; search?: string; page?: number; limit?: number } = {}) {
+  let all = await readJsonl<BlogPost>(KEYS.blog, FILES.blog);
   if (opts.status && opts.status !== 'all') all = all.filter(b => b.status === opts.status);
   if (opts.category && opts.category !== 'all') all = all.filter(b => b.category === opts.category);
   if (opts.search) { const q = opts.search.toLowerCase(); all = all.filter(b => b.title.toLowerCase().includes(q) || b.excerpt.toLowerCase().includes(q)); }
@@ -300,13 +296,13 @@ export function getBlog(opts: { status?: string; category?: string; search?: str
   return { data: all.slice((p - 1) * l, p * l), total };
 }
 
-export function upsertBlog(data: Partial<BlogPost> & { id?: string }): BlogPost {
-  const all = readJsonl<BlogPost>(FILES.blog);
+export async function upsertBlog(data: Partial<BlogPost> & { id?: string }, updatedBy = 'admin'): Promise<BlogPost> {
+  const all = await readJsonl<BlogPost>(KEYS.blog, FILES.blog);
   const idx = data.id ? all.findIndex(b => b.id === data.id) : -1;
   if (idx >= 0) {
     if (data.status === 'published' && !all[idx].publishedAt) data.publishedAt = new Date().toISOString();
     all[idx] = { ...all[idx], ...data, updatedAt: new Date().toISOString() };
-    writeJsonl(FILES.blog, all);
+    await writeJsonl(KEYS.blog, FILES.blog, all, updatedBy);
     return all[idx];
   }
   const slug = (data.title ?? 'post').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36);
@@ -322,14 +318,15 @@ export function upsertBlog(data: Partial<BlogPost> & { id?: string }): BlogPost 
     readingTime: Math.max(1, Math.ceil(words / 200)),
     viewCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   };
-  appendJsonl(FILES.blog, post);
+  all.push(post);
+  await writeJsonl(KEYS.blog, FILES.blog, all, updatedBy);
   return post;
 }
 
-export function deleteBlog(id: string): boolean {
-  const all = readJsonl<BlogPost>(FILES.blog);
+export async function deleteBlog(id: string, updatedBy = 'admin'): Promise<boolean> {
+  const all = await readJsonl<BlogPost>(KEYS.blog, FILES.blog);
   const next = all.filter(b => b.id !== id);
   if (next.length === all.length) return false;
-  writeJsonl(FILES.blog, next);
+  await writeJsonl(KEYS.blog, FILES.blog, next, updatedBy);
   return true;
 }

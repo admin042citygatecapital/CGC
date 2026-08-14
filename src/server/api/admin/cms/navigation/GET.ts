@@ -1,3 +1,3 @@
 import type { Request, Response } from 'express';
 import { getNavigation } from '../../../../lib/cmsExtStore.js';
-export default function handler(_req: Request, res: Response) { res.json({ navigation: getNavigation() }); }
+export default async function handler(_req: Request, res: Response) { res.json({ navigation: await getNavigation() }); }
