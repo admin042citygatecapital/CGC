@@ -8,6 +8,8 @@ describe('authenticated global search boundary', () => {
     const source = read('src/server/api/users/search/GET.ts');
     expect(source).toContain('const customer = req.customerUser');
     expect(source).toContain('WHERE user_id=${customer.id}');
+    expect(source).toContain("to_char(date_trunc('month',created_at),'YYYY-MM') AS period");
+    expect(source).toContain("type: 'statement'");
     expect(source).not.toMatch(/req\.(body|query)\.(userId|customerId)/);
     expect(source).not.toMatch(/SELECT[^\n]*(password|token|number_full|cvv|private_key)/i);
   });
@@ -26,6 +28,9 @@ describe('authenticated global search boundary', () => {
     expect(entry).toContain('app.get("/api/users/search", rateLimitMiddleware(');
     expect(entry).toContain('app.get("/api/admin/search", rateLimitMiddleware(');
     expect(entry).not.toMatch(/app\.(post|put|patch|delete)\("\/api\/(users|admin)\/search/);
+    const developer = read('src/server/api/admin/developer/GET.ts');
+    expect(developer).toContain("path:'/api/admin/search'");
+    expect(developer).toContain("path:'/api/users/search'");
   });
 
   it('places customer search behind CustomerOnly and exposes it in mobile navigation', () => {

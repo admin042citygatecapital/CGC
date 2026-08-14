@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { BarChart3, CreditCard, FileText, Gift, HelpCircle, Home, Landmark, Menu, MessageCircle, ReceiptText, Search, Send, Settings, Shield, Target, TrendingUp, User, Users, WalletCards, X } from 'lucide-react';
+import { BarChart3, Bell, CreditCard, FileText, FileWarning, Gift, HelpCircle, Home, Landmark, Menu, MessageCircle, ReceiptText, Search, Send, Settings, Shield, Target, TrendingUp, User, Users, WalletCards, X } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -18,6 +18,8 @@ const more = [
   { label: 'Bills & Payments', href: '/dashboard/bills', icon: ReceiptText },
   { label: 'Beneficiaries', href: '/dashboard/beneficiaries', icon: Users },
   { label: 'Statements', href: '/dashboard/statements', icon: FileText },
+  { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+  { label: 'Disputes', href: '/dashboard/disputes', icon: FileWarning },
   { label: 'Rewards', href: '/dashboard/rewards', icon: Gift },
   { label: 'Security Center', href: '/dashboard/security', icon: Shield },
   { label: 'Support', href: '/dashboard/support', icon: MessageCircle },

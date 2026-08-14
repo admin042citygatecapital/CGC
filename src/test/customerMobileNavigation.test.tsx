@@ -2,6 +2,6 @@ import fs from 'node:fs'; import path from 'node:path'; import { describe, expec
 const read=(file:string)=>fs.readFileSync(path.resolve(process.cwd(),file),'utf8');
 describe('shared customer mobile navigation',()=>{
   it('provides the required primary destinations',()=>{const nav=read('src/components/CustomerMobileNav.tsx');for(const label of ['Home','Accounts','Transfer','Cards','More']) expect(nav).toContain(label);});
-  it('connects every remaining core customer area through More',()=>{const nav=read('src/components/CustomerMobileNav.tsx');for(const pathName of ['wallets','trading','analytics','goals','bills','beneficiaries','statements','rewards','security','support','profile','settings']) expect(nav).toContain(`/dashboard/${pathName}`);});
+  it('connects every remaining core customer area through More',()=>{const nav=read('src/components/CustomerMobileNav.tsx');for(const pathName of ['wallets','trading','analytics','goals','bills','beneficiaries','statements','notifications','disputes','rewards','security','support','profile','settings']) expect(nav).toContain(`/dashboard/${pathName}`);});
   it('is attached once at the authenticated customer boundary',()=>{const routes=read('src/routes.tsx');expect(routes).toContain('<CustomerMobileNav />');expect(routes).toContain('pb-16 md:pb-0');});
 });

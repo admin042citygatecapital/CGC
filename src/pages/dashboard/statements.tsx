@@ -3,7 +3,7 @@
  */
 import { useState, useEffect } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download,
   Loader2, Activity, Eye, EyeOff, ChevronDown,
@@ -96,6 +96,12 @@ const PERIODS = [
 function filterByPeriod(txs: Tx[], period: string): Tx[] {
   const now = new Date();
   let from: Date;
+  if (/^\d{4}-\d{2}$/.test(period)) {
+    const [year, month] = period.split('-').map(Number);
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 1);
+    return txs.filter(t => { const date = new Date(t.createdAt); return date >= start && date < end; });
+  }
   switch (period) {
     case 'this_month': from = new Date(now.getFullYear(), now.getMonth(), 1); break;
     case 'last_month': from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -114,10 +120,13 @@ function filterByPeriod(txs: Tx[], period: string): Tx[] {
 export default function StatementsPage() {
   const { customer, token, loading } = useCustomerAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedPeriod = searchParams.get('period');
+  const initialPeriod = requestedPeriod && /^\d{4}-\d{2}$/.test(requestedPeriod) ? requestedPeriod : 'this_month';
   const [privacy, setPrivacy]     = useState(false);
   const [allTx, setAllTx]         = useState<Tx[]>([]);
   const [txLoading, setTxLoading] = useState(true);
-  const [period, setPeriod]       = useState('this_month');
+  const [period, setPeriod]       = useState(initialPeriod);
 
   useEffect(() => { setPrivacy(localStorage.getItem('cgc_privacy_mode') === 'true'); }, []);
   useEffect(() => {
@@ -137,7 +146,10 @@ export default function StatementsPage() {
   }
 
   const filtered = filterByPeriod(allTx, period);
-  const periodLabel = PERIODS.find(p => p.id === period)?.label ?? 'All Time';
+  const monthlyPeriodLabel = /^\d{4}-\d{2}$/.test(period)
+    ? new Date(`${period}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    : null;
+  const periodLabel = monthlyPeriodLabel ?? PERIODS.find(p => p.id === period)?.label ?? 'All Time';
   const totalIn  = filtered.filter(t => isCredit(t.type)).reduce((s, t) => s + Number(t.amount ?? 0), 0);
   const totalOut = filtered.filter(t => !isCredit(t.type)).reduce((s, t) => s + Number(t.amount ?? 0), 0);
   const filename = `CGC-Statement-${periodLabel.replace(/\s/g, '-')}-${new Date().toISOString().split('T')[0]}`;
@@ -182,6 +194,7 @@ export default function StatementsPage() {
                 className="appearance-none bg-white/4 border border-white/8 rounded-xl px-4 py-2.5 pr-9 text-sm text-foreground focus:outline-none focus:border-primary/40 transition-colors cursor-pointer"
                 style={{ background: 'rgba(255,255,255,0.04)' }}
               >
+                {monthlyPeriodLabel && <option value={period} style={{ background: '#0a0a0a' }}>{monthlyPeriodLabel}</option>}
                 {PERIODS.map(p => <option key={p.id} value={p.id} style={{ background: '#0a0a0a' }}>{p.label}</option>)}
               </select>
               <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/30 pointer-events-none" />

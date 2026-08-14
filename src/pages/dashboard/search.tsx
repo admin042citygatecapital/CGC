@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCustomerAuth } from '@/lib/customerAuth';
 
-interface Result { type: 'transaction'|'beneficiary'|'support'|'help'; id: string; title: string; description: string; href: string; }
-const icons = { transaction: FileText, beneficiary: Users, support: HelpCircle, help: BookOpen };
+interface Result { type: 'transaction'|'statement'|'beneficiary'|'support'|'help'; id: string; title: string; description: string; href: string; }
+const icons = { transaction: FileText, statement: FileText, beneficiary: Users, support: HelpCircle, help: BookOpen };
 
 export default function CustomerSearchPage() {
   const { customer, loading } = useCustomerAuth(); const navigate=useNavigate(); const [params,setParams]=useSearchParams();
