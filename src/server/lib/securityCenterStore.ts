@@ -18,16 +18,15 @@ import fs   from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { privateSubdirectory } from './storagePaths.js';
+import { getQueryClient, isDatabaseConfigured } from '../db/db.js';
+import { readConfigDocument, writeConfigDocument } from './durableConfigDocument.js';
 
 const DIR = privateSubdirectory('security');
-function ensureDir(file: string) {
-  const d = path.dirname(file);
-  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-}
 
 // ─── RBAC Roles ───────────────────────────────────────────────────────────────
 
-const ROLES_FILE = `${DIR}/roles.json`;
+const ROLES_FILE = path.join(DIR, 'roles.json');
+const ROLES_CONFIG_KEY = 'security_center_roles';
 
 export type PermissionKey =
   | 'dashboard.view'
@@ -97,41 +96,37 @@ const SYSTEM_ROLES: Role[] = [
   },
 ];
 
-export function readRoles(): Role[] {
-  try {
-    if (!fs.existsSync(ROLES_FILE)) return SYSTEM_ROLES;
-    const saved = JSON.parse(fs.readFileSync(ROLES_FILE, 'utf8')) as Role[];
-    // Merge: system roles always win on isSystem=true; custom roles are appended
-    const savedMap = new Map(saved.map(r => [r.id, r]));
-    const merged: Role[] = SYSTEM_ROLES.map(sr => {
-      const s = savedMap.get(sr.id);
-      // For system roles, only allow permission edits (not name/label/isSystem)
-      return s ? { ...sr, permissions: s.permissions, updatedAt: s.updatedAt } : sr;
-    });
-    // Append custom (non-system) roles
-    for (const r of saved) {
-      if (!r.isSystem && !merged.find(m => m.id === r.id)) merged.push(r);
-    }
-    return merged;
-  } catch { return SYSTEM_ROLES; }
+function mergeRoles(saved: Role[]): Role[] {
+  const savedMap = new Map(saved.map(role => [role.id, role]));
+  const merged = SYSTEM_ROLES.map(systemRole => {
+    const savedRole = savedMap.get(systemRole.id);
+    return savedRole ? { ...systemRole, permissions: savedRole.permissions, updatedAt: savedRole.updatedAt } : systemRole;
+  });
+  for (const role of saved) {
+    if (!role.isSystem && !merged.find(existing => existing.id === role.id)) merged.push(role);
+  }
+  return merged;
 }
 
-export function writeRoles(roles: Role[]): void {
-  ensureDir(ROLES_FILE);
-  fs.writeFileSync(ROLES_FILE, JSON.stringify(roles, null, 2));
+export async function readRoles(): Promise<Role[]> {
+  return mergeRoles(await readConfigDocument(ROLES_CONFIG_KEY, ROLES_FILE, SYSTEM_ROLES));
 }
 
-export function updateRolePermissions(roleId: string, permissions: PermissionKey[]): Role | null {
-  const roles = readRoles();
+export async function writeRoles(roles: Role[], updatedBy = 'admin'): Promise<void> {
+  await writeConfigDocument(ROLES_CONFIG_KEY, ROLES_FILE, roles, updatedBy);
+}
+
+export async function updateRolePermissions(roleId: string, permissions: PermissionKey[], updatedBy = 'admin'): Promise<Role | null> {
+  const roles = await readRoles();
   const idx = roles.findIndex(r => r.id === roleId);
   if (idx === -1) return null;
   roles[idx] = { ...roles[idx], permissions, updatedAt: new Date().toISOString() };
-  writeRoles(roles);
+  await writeRoles(roles, updatedBy);
   return roles[idx];
 }
 
-export function createCustomRole(data: { name: string; label: string; description: string; permissions: PermissionKey[]; color: string }): Role {
-  const roles = readRoles();
+export async function createCustomRole(data: { name: string; label: string; description: string; permissions: PermissionKey[]; color: string }, updatedBy = 'admin'): Promise<Role> {
+  const roles = await readRoles();
   const role: Role = {
     ...data,
     id:        'role_' + crypto.randomBytes(6).toString('hex'),
@@ -140,15 +135,15 @@ export function createCustomRole(data: { name: string; label: string; descriptio
     updatedAt: new Date().toISOString(),
   };
   roles.push(role);
-  writeRoles(roles);
+  await writeRoles(roles, updatedBy);
   return role;
 }
 
-export function deleteCustomRole(roleId: string): boolean {
-  const roles = readRoles();
+export async function deleteCustomRole(roleId: string, updatedBy = 'admin'): Promise<boolean> {
+  const roles = await readRoles();
   const role = roles.find(r => r.id === roleId);
   if (!role || role.isSystem) return false;
-  writeRoles(roles.filter(r => r.id !== roleId));
+  await writeRoles(roles.filter(r => r.id !== roleId), updatedBy);
   return true;
 }
 
@@ -209,7 +204,8 @@ export const PERMISSION_CATALOGUE: PermissionDef[] = [
 
 // ─── Rate Limit Config ────────────────────────────────────────────────────────
 
-const RATE_LIMITS_FILE = `${DIR}/rate-limits.json`;
+const RATE_LIMITS_FILE = path.join(DIR, 'rate-limits.json');
+const RATE_LIMITS_CONFIG_KEY = 'security_center_rate_limits';
 
 export interface RateLimitRule {
   id:          string;
@@ -233,36 +229,33 @@ const DEFAULT_RATE_LIMITS: RateLimitRule[] = [
   { id: 'rl_password_reset', label: 'Password Reset',       description: 'Limit password reset requests to prevent enumeration attacks.',   path: '/api/auth/reset',        windowMs: 3_600_000, max: 5,  enabled: true,  isSystem: true,  updatedAt: '2024-01-01T00:00:00Z' },
 ];
 
-export function readRateLimits(): RateLimitRule[] {
-  try {
-    if (!fs.existsSync(RATE_LIMITS_FILE)) return DEFAULT_RATE_LIMITS;
-    const saved = JSON.parse(fs.readFileSync(RATE_LIMITS_FILE, 'utf8')) as RateLimitRule[];
-    const savedMap = new Map(saved.map(r => [r.id, r]));
-    const merged = DEFAULT_RATE_LIMITS.map(def => savedMap.get(def.id) ?? def);
-    for (const r of saved) {
-      if (!merged.find(m => m.id === r.id)) merged.push(r);
-    }
-    return merged;
-  } catch { return DEFAULT_RATE_LIMITS; }
+function mergeRateLimits(saved: RateLimitRule[]): RateLimitRule[] {
+  const savedMap = new Map(saved.map(rule => [rule.id, rule]));
+  const merged = DEFAULT_RATE_LIMITS.map(defaultRule => savedMap.get(defaultRule.id) ?? defaultRule);
+  for (const rule of saved) if (!merged.find(existing => existing.id === rule.id)) merged.push(rule);
+  return merged;
 }
 
-export function writeRateLimits(rules: RateLimitRule[]): void {
-  ensureDir(RATE_LIMITS_FILE);
-  fs.writeFileSync(RATE_LIMITS_FILE, JSON.stringify(rules, null, 2));
+export async function readRateLimits(): Promise<RateLimitRule[]> {
+  return mergeRateLimits(await readConfigDocument(RATE_LIMITS_CONFIG_KEY, RATE_LIMITS_FILE, DEFAULT_RATE_LIMITS));
 }
 
-export function updateRateLimitRule(id: string, patch: Partial<Pick<RateLimitRule, 'windowMs' | 'max' | 'enabled'>>): RateLimitRule | null {
-  const rules = readRateLimits();
+export async function writeRateLimits(rules: RateLimitRule[], updatedBy = 'admin'): Promise<void> {
+  await writeConfigDocument(RATE_LIMITS_CONFIG_KEY, RATE_LIMITS_FILE, rules, updatedBy);
+}
+
+export async function updateRateLimitRule(id: string, patch: Partial<Pick<RateLimitRule, 'windowMs' | 'max' | 'enabled'>>, updatedBy = 'admin'): Promise<RateLimitRule | null> {
+  const rules = await readRateLimits();
   const idx = rules.findIndex(r => r.id === id);
   if (idx === -1) return null;
   rules[idx] = { ...rules[idx], ...patch, updatedAt: new Date().toISOString() };
-  writeRateLimits(rules);
+  await writeRateLimits(rules, updatedBy);
   return rules[idx];
 }
 
 // ─── Security Alerts ──────────────────────────────────────────────────────────
 
-const ALERTS_FILE = `${DIR}/security-alerts.jsonl`;
+const ALERTS_FILE = path.join(DIR, 'security-alerts.jsonl');
 
 export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 export type AlertType =
@@ -287,46 +280,127 @@ export interface SecurityAlert {
   meta?:      Record<string, unknown>;
 }
 
-export function loadAlerts(limit = 200): SecurityAlert[] {
+function readLegacyAlerts(): SecurityAlert[] {
   try {
     if (!fs.existsSync(ALERTS_FILE)) return [];
     return fs.readFileSync(ALERTS_FILE, 'utf8')
       .split('\n').filter(Boolean)
-      .map(l => JSON.parse(l) as SecurityAlert)
-      .reverse()
-      .slice(0, limit);
+      .flatMap(line => {
+        try { return [JSON.parse(line) as SecurityAlert]; } catch { return []; }
+      });
   } catch { return []; }
 }
 
-export function appendAlert(data: Omit<SecurityAlert, 'id' | 'ts'>): SecurityAlert {
-  ensureDir(ALERTS_FILE);
+function writeLegacyAlerts(alerts: SecurityAlert[]): void {
+  fs.mkdirSync(path.dirname(ALERTS_FILE), { recursive: true });
+  fs.writeFileSync(ALERTS_FILE, `${alerts.map(alert => JSON.stringify(alert)).join('\n')}\n`, 'utf8');
+}
+
+function requireAlertsDatabaseInProduction(): void {
+  if (process.env.NODE_ENV === 'production' && !isDatabaseConfigured()) throw new Error('SECURITY_ALERT_DATABASE_UNAVAILABLE');
+}
+
+let alertMigrationPromise: Promise<void> | null = null;
+async function ensureLegacyAlertsMigrated(): Promise<void> {
+  requireAlertsDatabaseInProduction();
+  if (!isDatabaseConfigured()) return;
+  if (alertMigrationPromise) return alertMigrationPromise;
+  alertMigrationPromise = (async () => {
+    const sql = getQueryClient();
+    for (const alert of readLegacyAlerts()) {
+      await sql`
+        INSERT INTO security_center_alerts
+          (id, ts, type, severity, title, detail, ip, user_id, admin_id, event_count, resolved,
+           resolved_at, resolved_by, meta)
+        VALUES (${alert.id}, ${alert.ts}, ${alert.type}, ${alert.severity}, ${alert.title}, ${alert.detail},
+          ${alert.ip ?? null}, ${alert.userId ?? null}, ${alert.adminId ?? null}, ${alert.count ?? null},
+          ${alert.resolved}, ${alert.resolvedAt ?? null}, ${alert.resolvedBy ?? null},
+          ${sql.json((alert.meta ?? {}) as never)})
+        ON CONFLICT (id) DO NOTHING
+      `;
+    }
+  })();
+  return alertMigrationPromise;
+}
+
+function mapAlertRow(row: Record<string, unknown>): SecurityAlert {
+  return {
+    id: String(row.id),
+    ts: new Date(row.ts as string | Date).toISOString(),
+    type: row.type as AlertType,
+    severity: row.severity as AlertSeverity,
+    title: String(row.title),
+    detail: String(row.detail),
+    ip: row.ip ? String(row.ip) : undefined,
+    userId: row.user_id ? String(row.user_id) : undefined,
+    adminId: row.admin_id ? String(row.admin_id) : undefined,
+    count: row.event_count === null || row.event_count === undefined ? undefined : Number(row.event_count),
+    resolved: Boolean(row.resolved),
+    resolvedAt: row.resolved_at ? new Date(row.resolved_at as string | Date).toISOString() : undefined,
+    resolvedBy: row.resolved_by ? String(row.resolved_by) : undefined,
+    meta: row.meta && typeof row.meta === 'object' ? row.meta as Record<string, unknown> : {},
+  };
+}
+
+export async function loadAlerts(limit = 200): Promise<SecurityAlert[]> {
+  requireAlertsDatabaseInProduction();
+  const safeLimit = Math.max(1, Math.min(limit, 2_000));
+  if (!isDatabaseConfigured()) return readLegacyAlerts().reverse().slice(0, safeLimit);
+  await ensureLegacyAlertsMigrated();
+  const rows = await getQueryClient()<Array<Record<string, unknown>>>`
+    SELECT * FROM security_center_alerts ORDER BY ts DESC, id DESC LIMIT ${safeLimit}
+  `;
+  return rows.map(mapAlertRow);
+}
+
+export async function appendAlert(data: Omit<SecurityAlert, 'id' | 'ts'>): Promise<SecurityAlert> {
+  requireAlertsDatabaseInProduction();
   const alert: SecurityAlert = {
     ...data,
     id: 'alrt_' + crypto.randomBytes(6).toString('hex'),
     ts: new Date().toISOString(),
   };
-  fs.appendFileSync(ALERTS_FILE, JSON.stringify(alert) + '\n');
+  if (!isDatabaseConfigured()) {
+    writeLegacyAlerts([...readLegacyAlerts(), alert]);
+    return alert;
+  }
+  await ensureLegacyAlertsMigrated();
+  const sql = getQueryClient();
+  await sql`
+    INSERT INTO security_center_alerts
+      (id, ts, type, severity, title, detail, ip, user_id, admin_id, event_count, resolved,
+       resolved_at, resolved_by, meta)
+    VALUES (${alert.id}, ${alert.ts}, ${alert.type}, ${alert.severity}, ${alert.title}, ${alert.detail},
+      ${alert.ip ?? null}, ${alert.userId ?? null}, ${alert.adminId ?? null}, ${alert.count ?? null},
+      ${alert.resolved}, ${alert.resolvedAt ?? null}, ${alert.resolvedBy ?? null},
+      ${sql.json((alert.meta ?? {}) as never)})
+  `;
   return alert;
 }
 
-export function resolveAlert(id: string, resolvedBy: string): boolean {
-  try {
-    if (!fs.existsSync(ALERTS_FILE)) return false;
-    const alerts = fs.readFileSync(ALERTS_FILE, 'utf8')
-      .split('\n').filter(Boolean)
-      .map(l => JSON.parse(l) as SecurityAlert);
+export async function resolveAlert(id: string, resolvedBy: string): Promise<boolean> {
+  requireAlertsDatabaseInProduction();
+  if (!isDatabaseConfigured()) {
+    const alerts = readLegacyAlerts();
     const idx = alerts.findIndex(a => a.id === id);
     if (idx === -1) return false;
     alerts[idx].resolved   = true;
     alerts[idx].resolvedAt = new Date().toISOString();
     alerts[idx].resolvedBy = resolvedBy;
-    fs.writeFileSync(ALERTS_FILE, alerts.map(a => JSON.stringify(a)).join('\n') + '\n');
+    writeLegacyAlerts(alerts);
     return true;
-  } catch { return false; }
+  }
+  await ensureLegacyAlertsMigrated();
+  const rows = await getQueryClient()<Array<{ id: string }>>`
+    UPDATE security_center_alerts
+    SET resolved=TRUE, resolved_at=NOW(), resolved_by=${resolvedBy}
+    WHERE id=${id} AND resolved=FALSE RETURNING id
+  `;
+  return rows.length === 1;
 }
 
-export function alertStats(): { total: number; unresolved: number; bySeverity: Record<string, number> } {
-  const alerts = loadAlerts(1000);
+export async function alertStats(): Promise<{ total: number; unresolved: number; bySeverity: Record<string, number> }> {
+  const alerts = await loadAlerts(2_000);
   const unresolved = alerts.filter(a => !a.resolved);
   const bySeverity: Record<string, number> = {};
   for (const a of unresolved) bySeverity[a.severity] = (bySeverity[a.severity] ?? 0) + 1;

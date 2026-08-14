@@ -57,8 +57,8 @@ export default async function handler(req: Request, res: Response) {
       case 'kyc':           data = await kycReport(q);           break;
       case 'aml':           data = await amlReport(q);           break;
       case 'support':       data = await supportReport(q); break;
-      case 'emails':        data = emailsReport(q);        break;
-      case 'security':      data = securityReport(q);      break;
+      case 'emails':        data = await emailsReport(q);   break;
+      case 'security':      data = await securityReport(q); break;
       default:              return res.status(400).json({ error: 'Unknown report type' });
     }
 

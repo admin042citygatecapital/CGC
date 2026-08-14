@@ -4,7 +4,7 @@
  */
 
 import crypto from 'node:crypto';
-import { eq, desc, and, gte, lte, ilike, or, sql as drizzleSql } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, ilike, inArray, or, sql as drizzleSql } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { transactions } from '../db/schema.js';
 import type { Transaction as DbTransaction } from '../db/schema.js';
@@ -343,6 +343,32 @@ export async function getTransactionsForUser(
     transactions: rows.map(toTransactionRecord),
     total:        countResult[0]?.count ?? 0,
   };
+}
+
+/**
+ * Return only transaction records relevant to the customer's withdrawal-limit
+ * calculation. The production query is date- and state-bounded so a limit
+ * check never loads the customer's complete history.
+ */
+export async function getWithdrawalTransactionsSince(userId: string, since: Date): Promise<Transaction[]> {
+  if (!isDatabaseConfigured()) {
+    const { transactions: userTransactions } = await (await ff()).getTransactionsForUser(userId, { limit: 100_000 });
+    return userTransactions.filter(transaction =>
+      ['withdrawal', 'wire_transfer', 'manual_debit'].includes(transaction.type)
+      && ['completed', 'pending'].includes(transaction.status)
+      && new Date(transaction.createdAt) >= since
+    );
+  }
+
+  const rows = await getDb().select().from(transactions)
+    .where(and(
+      eq(transactions.userId, userId),
+      inArray(transactions.type, ['withdrawal', 'wire_transfer', 'manual_debit']),
+      inArray(transactions.status, ['completed', 'pending']),
+      gte(transactions.createdAt, since),
+    ))
+    .orderBy(desc(transactions.createdAt));
+  return rows.map(toTransactionRecord);
 }
 
 export async function txStats(): Promise<{

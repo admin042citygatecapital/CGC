@@ -121,7 +121,7 @@ export default async function handler(req: Request, res: Response) {
   }
 
   // Check current usage
-  const usage = getWithdrawalUsage(user.id);
+  const usage = await getWithdrawalUsage(user.id);
 
   if (dailyLimitUSD > 0 && (usage.todayUSD + amountUsd) > dailyLimitUSD) {
     const remaining = Math.max(0, dailyLimitUSD - usage.todayUSD);

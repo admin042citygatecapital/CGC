@@ -14,13 +14,14 @@
  *  - "period" is one of: 7d | 30d | 90d | ytd | all
  */
 
-import fs   from 'node:fs';
 import { loadAllUsers }        from './userStore.js';
 import { queryTransactions }   from './transactionStore.js';
 import { readRatesConfig }     from './ratesStore.js';
 import { listSupportConversationsForReport } from './supportDatabaseStore.js';
 import { loadAlerts }          from './securityCenterStore.js';
-import { privateSubdirectory } from './storagePaths.js';
+import { readEmailLog }        from './campaignStore.js';
+import { getEmailLogs, getPendingQueue } from './emailQueue.js';
+import { getLoginHistory }     from './loginLog.js';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -647,28 +648,47 @@ export async function supportReport(q: ReportQuery) {
 
 // ─── 10. EMAILS REPORT ───────────────────────────────────────────────────────
 
-const EMAIL_LOG_FILE = privateSubdirectory('email/email-log.jsonl');
-
 interface EmailLogEntry {
   id: string; ts: string; to: string; subject: string;
   template: string; status: 'sent' | 'failed' | 'queued' | 'bounced';
   error?: string; provider?: string;
 }
 
-function loadEmailLog(): EmailLogEntry[] {
-  try {
-    if (!fs.existsSync(EMAIL_LOG_FILE)) return [];
-    return fs.readFileSync(EMAIL_LOG_FILE, 'utf8')
-      .split('\n').filter(Boolean)
-      .map(l => JSON.parse(l) as EmailLogEntry);
-  } catch { return []; }
+async function loadEmailLog(): Promise<EmailLogEntry[]> {
+  const [campaignEntries, completedQueue, pendingQueue] = await Promise.all([
+    readEmailLog({ limit: 500 }),
+    getEmailLogs(500),
+    getPendingQueue(),
+  ]);
+  const normalizedCampaigns: EmailLogEntry[] = campaignEntries.map(entry => ({
+    id: entry.id,
+    ts: entry.sentAt,
+    to: entry.to,
+    subject: entry.subject,
+    template: entry.template,
+    status: entry.status === 'delivered' ? 'sent' : entry.status === 'pending' ? 'queued' : entry.status,
+    error: entry.errorMessage,
+    provider: 'campaign-delivery',
+  }));
+  const normalizedQueue: EmailLogEntry[] = [...completedQueue, ...pendingQueue].map(entry => ({
+    id: entry.id,
+    ts: entry.sentAt || entry.lastAttemptAt || entry.createdAt,
+    to: entry.to,
+    subject: entry.subject,
+    template: 'transactional',
+    status: entry.status === 'retrying' ? 'queued' : entry.status,
+    error: entry.errorMessage || undefined,
+    provider: 'transactional-queue',
+  }));
+  return [...new Map([...normalizedCampaigns, ...normalizedQueue].map(entry => [entry.id, entry])).values()]
+    .sort((a, b) => b.ts.localeCompare(a.ts));
 }
 
-export function emailsReport(q: ReportQuery) {
+export async function emailsReport(q: ReportQuery) {
   const start  = periodStart(q.period);
   const pStart = prevPeriodStart(q.period);
 
-  const all      = loadEmailLog();
+  const all      = await loadEmailLog();
   const inPeriod = all.filter(e => e.ts >= start);
   const inPrev   = all.filter(e => e.ts >= pStart && e.ts < start);
 
@@ -726,12 +746,12 @@ export function emailsReport(q: ReportQuery) {
 
 // ─── 11. SECURITY REPORT ─────────────────────────────────────────────────────
 
-export function securityReport(q: ReportQuery) {
+export async function securityReport(q: ReportQuery) {
   const start  = periodStart(q.period);
   const pStart = prevPeriodStart(q.period);
 
   // Security alerts
-  const allAlerts = loadAlerts(2000);
+  const allAlerts = await loadAlerts(2000);
   const inPeriod  = allAlerts.filter(a => a.ts >= start);
   const inPrev    = allAlerts.filter(a => a.ts >= pStart && a.ts < start);
 
@@ -744,16 +764,7 @@ export function securityReport(q: ReportQuery) {
   const resolved   = inPeriod.filter(a => a.resolved).length;
   const unresolved = inPeriod.filter(a => !a.resolved).length;
 
-  // Login history from security log
-  const LOGIN_LOG = privateSubdirectory('security/login-log.jsonl');
-  let loginEvents: Array<{ ts: string; result: string; actor: string; ip: string }> = [];
-  try {
-    if (fs.existsSync(LOGIN_LOG)) {
-      loginEvents = fs.readFileSync(LOGIN_LOG, 'utf8')
-        .split('\n').filter(Boolean)
-        .map(l => JSON.parse(l));
-    }
-  } catch { /* silent */ }
+  const loginEvents = await getLoginHistory({ from: pStart, limit: 100_000 });
 
   const logins   = loginEvents.filter(e => e.ts >= start);
   const prevLogins = loginEvents.filter(e => e.ts >= pStart && e.ts < start);

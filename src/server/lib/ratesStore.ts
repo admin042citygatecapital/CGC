@@ -445,54 +445,45 @@ export async function feeHistoryCsv(): Promise<string> {
  * Compute how much a user has withdrawn today and this month (UTC).
  * Reads from the transaction store — import lazily to avoid circular deps.
  */
-export function getWithdrawalUsage(userId: string): { todayUSD: number; monthUSD: number } {
-  try {
-    const txFile = path.join(privateSubdirectory('transactions'), 'transactions.jsonl');
-    if (!fs.existsSync(txFile)) return { todayUSD: 0, monthUSD: 0 };
+export async function getWithdrawalUsage(userId: string): Promise<{ todayUSD: number; monthUSD: number }> {
+  const { getWithdrawalTransactionsSince } = await import('./transactionStore.js');
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const transactions = await getWithdrawalTransactionsSince(userId, monthStart);
 
-    // Use live admin-controlled rates from the store (no hardcoded fallbacks)
-    const liveCfg = readRatesConfig();
-    const lr = liveCfg.rates;
-    const TO_USD: Record<string, number> = {
-      USD: 1,
-      EUR: lr.EUR_USD,
-      GBP: lr.GBP_USD,
-      CHF: lr.CHF_USD,
-      CAD: lr.CAD_USD,
-      AUD: lr.AUD_USD,
-      JPY: lr.JPY_USD,
-      SGD: lr.SGD_USD,
-      AED: lr.AED_USD,
-      NGN: lr.NGN_USD,
-      BTC:  lr.BTC_USD,
-      ETH:  lr.ETH_USD,
-      SOL:  lr.SOL_USD,
-      USDT: lr.USDT_USD,
-      BNB:  lr.BNB_USD,
-    };
+  // Use live admin-controlled rates from the store (no hardcoded fallbacks).
+  const lr = readRatesConfig().rates;
+  const TO_USD: Record<string, number> = {
+    USD: 1,
+    EUR: lr.EUR_USD,
+    GBP: lr.GBP_USD,
+    CHF: lr.CHF_USD,
+    CAD: lr.CAD_USD,
+    AUD: lr.AUD_USD,
+    JPY: lr.JPY_USD,
+    SGD: lr.SGD_USD,
+    AED: lr.AED_USD,
+    NGN: lr.NGN_USD,
+    BTC: lr.BTC_USD,
+    ETH: lr.ETH_USD,
+    SOL: lr.SOL_USD,
+    USDT: lr.USDT_USD,
+    BNB: lr.BNB_USD,
+  };
 
-    const now   = new Date();
-    const today = now.toISOString().slice(0, 10); // YYYY-MM-DD
-    const month = now.toISOString().slice(0, 7);  // YYYY-MM
+  const today = now.toISOString().slice(0, 10);
+  const month = now.toISOString().slice(0, 7);
 
-    const WITHDRAWAL_TYPES = new Set(['withdrawal', 'wire_transfer', 'manual_debit']);
+  let todayUSD = 0;
+  let monthUSD = 0;
+  for (const transaction of transactions) {
+    const rate = TO_USD[transaction.currency];
+    if (!Number.isFinite(rate) || rate <= 0) throw new Error(`Withdrawal usage rate is unavailable for ${transaction.currency}.`);
+    const usd = Number(transaction.amount) * rate;
+    if (!Number.isFinite(usd) || usd < 0) throw new Error('Withdrawal usage contains an invalid amount.');
+    if (transaction.createdAt.startsWith(today)) todayUSD += usd;
+    if (transaction.createdAt.startsWith(month)) monthUSD += usd;
+  }
 
-    const lines = fs.readFileSync(txFile, 'utf8').split('\n').filter(Boolean);
-    let todayUSD = 0;
-    let monthUSD = 0;
-
-    for (const line of lines) {
-      try {
-        const tx = JSON.parse(line);
-        if (tx.userId !== userId) continue;
-        if (!WITHDRAWAL_TYPES.has(tx.type)) continue;
-        if (!['completed', 'approved', 'pending'].includes(tx.status)) continue;
-        const usd = Number(tx.amount ?? 0) * (TO_USD[tx.currency] ?? 1);
-        if (tx.createdAt?.startsWith(today)) todayUSD += usd;
-        if (tx.createdAt?.startsWith(month)) monthUSD += usd;
-      } catch { /* skip malformed */ }
-    }
-
-    return { todayUSD, monthUSD };
-  } catch { return { todayUSD: 0, monthUSD: 0 }; }
+  return { todayUSD, monthUSD };
 }

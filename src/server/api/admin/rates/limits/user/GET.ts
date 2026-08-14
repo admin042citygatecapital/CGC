@@ -21,7 +21,7 @@ export default async function handler(req: Request, res: Response) {
     for (const user of users) {
       const tier = user.accountTier ?? 'personal';
       if (!tierMap[tier]) tierMap[tier] = { todayUSD: 0, monthUSD: 0, userCount: 0 };
-      const usage = getWithdrawalUsage(user.id);
+      const usage = await getWithdrawalUsage(user.id);
       tierMap[tier].todayUSD  += usage.todayUSD;
       tierMap[tier].monthUSD  += usage.monthUSD;
       tierMap[tier].userCount += 1;
@@ -61,7 +61,7 @@ export default async function handler(req: Request, res: Response) {
   const effectiveDaily   = override ? override.dailyLimitUSD   : tierRule.dailyLimitUSD;
   const effectiveMonthly = override ? override.monthlyLimitUSD : tierRule.monthlyLimitUSD;
 
-  const { todayUSD, monthUSD } = getWithdrawalUsage(userId);
+  const { todayUSD, monthUSD } = await getWithdrawalUsage(userId);
 
   return res.json({
     ok: true,
