@@ -56,6 +56,21 @@ interface SupportRow {
 export type SortOption = 'newest' | 'oldest' | 'priority' | 'longest';
 export interface BulkResult { updated: number; ids: string[] }
 
+export interface CannedResponse {
+  id: string; title: string; body: string; category: string; createdAt: string; updatedAt: string;
+}
+
+export interface RoutingRule { id: string; category: string; assignTo: string; enabled: boolean }
+export interface RoutingConfig { rules: RoutingRule[]; updatedAt: string }
+export interface SupportNotificationSettings {
+  urgentTicketInPanel: boolean; urgentTicketEmail: boolean;
+  noResponseInPanel: boolean; noResponseEmail: boolean; noResponseHours: number;
+  reopenedInPanel: boolean; reopenedEmail: boolean; notifyEmail: string; updatedAt: string;
+}
+
+const ROUTING_CONFIG_KEY = 'support_routing';
+const NOTIFICATION_CONFIG_KEY = 'support_notifications';
+
 let legacySync: Promise<number> | null = null;
 
 /** Import disk-era support cases exactly once before the managed store is used. */
@@ -91,6 +106,25 @@ export function syncLegacySupportConversations(): Promise<number> {
         }
       });
     }
+    for (const response of legacy.readCannedResponses()) {
+      await sql`
+        INSERT INTO canned_responses (id,title,body,category,created_at,updated_at)
+        VALUES (${response.id},${response.title},${response.body},${response.category},${response.createdAt},${response.updatedAt})
+        ON CONFLICT (id) DO NOTHING
+      `;
+    }
+    const routing = legacy.readRoutingConfig();
+    const notifications = legacy.readNotificationSettings();
+    await sql`
+      INSERT INTO config (key,value,updated_at,updated_by)
+      VALUES (${ROUTING_CONFIG_KEY},${sql.json(routing as unknown as Parameters<typeof sql.json>[0])},NOW(),'system:migration')
+      ON CONFLICT (key) DO NOTHING
+    `;
+    await sql`
+      INSERT INTO config (key,value,updated_at,updated_by)
+      VALUES (${NOTIFICATION_CONFIG_KEY},${sql.json(notifications as unknown as Parameters<typeof sql.json>[0])},NOW(),'system:migration')
+      ON CONFLICT (key) DO NOTHING
+    `;
     return data.length;
   })().catch(error => {
     legacySync = null;
@@ -399,4 +433,83 @@ export async function getSupportStats() {
     byPriority,
     byCategory,
   };
+}
+
+export async function readCannedResponses(): Promise<CannedResponse[]> {
+  await syncLegacySupportConversations();
+  const sql = getQueryClient();
+  const rows = await sql<Array<{ id: string; title: string; body: string; category: string; createdAt: Date | string; updatedAt: Date | string }>>`
+    SELECT id,title,body,category,created_at AS "createdAt",updated_at AS "updatedAt"
+    FROM canned_responses ORDER BY category,title
+  `;
+  return rows.map(row => ({ ...row, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt) }));
+}
+
+export async function createCannedResponse(data: { title: string; body: string; category: string }): Promise<CannedResponse> {
+  await syncLegacySupportConversations();
+  const sql = getQueryClient();
+  const rows = await sql<Array<{ id: string; title: string; body: string; category: string; createdAt: Date | string; updatedAt: Date | string }>>`
+    INSERT INTO canned_responses (id,title,body,category,created_at,updated_at)
+    VALUES (${`cr_${crypto.randomBytes(6).toString('hex')}`},${data.title},${data.body},${data.category},NOW(),NOW())
+    RETURNING id,title,body,category,created_at AS "createdAt",updated_at AS "updatedAt"
+  `;
+  const row = rows[0];
+  return { ...row, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt) };
+}
+
+export async function updateCannedResponse(id: string, patch: Partial<Pick<CannedResponse, 'title' | 'body' | 'category'>>): Promise<CannedResponse | null> {
+  await syncLegacySupportConversations();
+  const existing = (await readCannedResponses()).find(response => response.id === id);
+  if (!existing) return null;
+  const sql = getQueryClient();
+  const rows = await sql<Array<{ id: string; title: string; body: string; category: string; createdAt: Date | string; updatedAt: Date | string }>>`
+    UPDATE canned_responses SET
+      title=${patch.title ?? existing.title}, body=${patch.body ?? existing.body},
+      category=${patch.category ?? existing.category}, updated_at=NOW()
+    WHERE id=${id}
+    RETURNING id,title,body,category,created_at AS "createdAt",updated_at AS "updatedAt"
+  `;
+  const row = rows[0];
+  return row ? { ...row, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt) } : null;
+}
+
+export async function deleteCannedResponse(id: string): Promise<boolean> {
+  await syncLegacySupportConversations();
+  const sql = getQueryClient();
+  const rows = await sql<{ id: string }[]>`DELETE FROM canned_responses WHERE id=${id} RETURNING id`;
+  return Boolean(rows[0]);
+}
+
+async function readSupportConfig<T>(key: string): Promise<T> {
+  await syncLegacySupportConversations();
+  const sql = getQueryClient();
+  const rows = await sql<Array<{ value: T }>>`SELECT value FROM config WHERE key=${key} LIMIT 1`;
+  if (!rows[0]) throw new Error('SUPPORT_CONFIGURATION_UNAVAILABLE');
+  return rows[0].value;
+}
+
+async function writeSupportConfig<T extends object>(key: string, value: T, updatedBy: string): Promise<void> {
+  await syncLegacySupportConversations();
+  const sql = getQueryClient();
+  await sql`
+    INSERT INTO config (key,value,updated_at,updated_by)
+    VALUES (${key},${sql.json(value as unknown as Parameters<typeof sql.json>[0])},NOW(),${updatedBy})
+    ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW(),updated_by=EXCLUDED.updated_by
+  `;
+}
+
+export function readRoutingConfig(): Promise<RoutingConfig> {
+  return readSupportConfig<RoutingConfig>(ROUTING_CONFIG_KEY);
+}
+
+export function writeRoutingConfig(config: RoutingConfig, updatedBy = 'admin'): Promise<void> {
+  return writeSupportConfig(ROUTING_CONFIG_KEY, config, updatedBy);
+}
+
+export function readNotificationSettings(): Promise<SupportNotificationSettings> {
+  return readSupportConfig<SupportNotificationSettings>(NOTIFICATION_CONFIG_KEY);
+}
+
+export function writeNotificationSettings(settings: SupportNotificationSettings, updatedBy = 'admin'): Promise<void> {
+  return writeSupportConfig(NOTIFICATION_CONFIG_KEY, settings, updatedBy);
 }

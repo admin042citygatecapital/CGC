@@ -3,8 +3,8 @@
  * Returns all canned responses.
  */
 import type { Request, Response } from 'express';
-import { readCannedResponses } from '../../../../lib/supportStore.js';
+import { readCannedResponses } from '../../../../lib/supportDatabaseStore.js';
 
-export default function handler(_req: Request, res: Response) {
-  return res.json(readCannedResponses());
+export default async function handler(_req: Request, res: Response) {
+  return res.json(await readCannedResponses());
 }
