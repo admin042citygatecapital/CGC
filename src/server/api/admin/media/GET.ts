@@ -7,16 +7,16 @@ export default async function handler(req: Request, res: Response) {
     const { type, folder, tag, search, page, limit, view } = req.query as Record<string, string>;
 
     if (view === 'stats') {
-      return res.json({ ...getMediaStats(), optimizedCount: 0, optimizerConfigured: false });
+      return res.json({ ...(await getMediaStats()), optimizedCount: 0, optimizerConfigured: false });
     }
     if (view === 'folders') {
-      return res.json({ folders: getFolders() });
+      return res.json({ folders: await getFolders() });
     }
     if (view === 'tags') {
-      return res.json({ tags: getAllTags() });
+      return res.json({ tags: await getAllTags() });
     }
 
-    const result = listMedia({
+    const result = await listMedia({
       type:   type ? type as MediaType : undefined,
       folder: folder || undefined,
       tag:    tag    || undefined,
@@ -30,7 +30,8 @@ export default async function handler(req: Request, res: Response) {
       data: result.data.map(record => ({ ...record, optimized: false, optimizedSize: undefined })),
       optimizerConfigured: false,
     });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to list media', message: String(err) });
+  } catch (error) {
+    console.error('admin.media.list.failed', { errorType: error instanceof Error ? error.name : 'UnknownError' });
+    res.status(500).json({ error: 'The media library could not be loaded.' });
   }
 }

@@ -93,11 +93,11 @@ const TYPE_COLOR: Record<MediaType, string> = {
 };
 
 const ACCEPT_MAP: Record<string, string> = {
-  '':         'image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv,.txt',
-  'image':    'image/*',
-  'video':    'video/*',
+  '':         'image/jpeg,image/png,image/webp,image/gif,video/mp4,application/pdf',
+  'image':    'image/jpeg,image/png,image/webp,image/gif',
+  'video':    'video/mp4',
   'pdf':      'application/pdf',
-  'document': '.doc,.docx,.xls,.xlsx,.csv,.txt',
+  'document': '',
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -337,7 +337,7 @@ export default function AdminMediaPage() {
 
             <input ref={fileInputRef} type="file" multiple accept={ACCEPT_MAP[typeFilter]}
               className="hidden" onChange={e => handleUpload(e.target.files)} />
-            <input ref={replaceInputRef} type="file" accept="*/*"
+            <input ref={replaceInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,application/pdf"
               className="hidden" onChange={e => handleReplace(e.target.files?.[0] ?? null)} />
           </div>
 
@@ -379,7 +379,7 @@ export default function AdminMediaPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/5">
-                    {['Pre-deployment','Name','Type','Size','Folder','Optimized','Date','Actions'].map(h => (
+                    {['Preview','Name','Type','Size','Folder','Optimized','Date','Actions'].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-white/25 text-[10px] uppercase tracking-wide font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>

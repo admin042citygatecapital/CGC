@@ -1,9 +1,10 @@
 /**
  * supabaseStorage.ts — Supabase Storage integration
  *
- * Managed object storage with a persistent local fallback.
+ * Managed object storage with a development-only local fallback.
  * When Supabase credentials are configured, uploads go to Supabase Storage.
- * When not configured, falls back to local /shared-storage/public/assets/media/.
+ * Production uploads fail closed when managed storage is unavailable so a
+ * deploy cannot silently create objects on an instance-local filesystem.
  *
  * Required secrets (all optional — falls back to local storage if absent):
  *   SUPABASE_URL              — e.g. https://xxxx.supabase.co
@@ -125,7 +126,7 @@ export async function deleteFromSupabase(key: string, bucketOverride?: string): 
   const { client } = ctx;
   const bucket = bucketOverride ?? ctx.bucket;
   const { error } = await client.storage.from(bucket).remove([key]);
-  if (error) console.error('supabase.storage.delete.failed', error.message);
+  if (error) throw new Error(`Supabase Storage delete failed: ${error.message}`);
 }
 
 // ── Local filesystem fallback ─────────────────────────────────────────────────
@@ -183,6 +184,7 @@ export async function uploadMedia(
     const { url } = await uploadToSupabase(key, buffer, mimeType, targetBucket);
     return { url, storage: 'supabase', storageKey: key };
   }
+  if (process.env.NODE_ENV === 'production') throw new Error('MEDIA_STORAGE_UNAVAILABLE');
   const { url } = saveToLocal(filename, buffer);
   return { url, storage: 'local', storageKey: '' };
 }

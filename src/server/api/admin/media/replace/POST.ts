@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { replaceMediaRecord, getMedia } from '../../../../lib/mediaStore.js';
 import { uploadMedia, deleteMedia } from '../../../../lib/supabaseStorage.js';
+import { safeMediaError, validateMediaUpload } from '../../../../lib/mediaValidation.js';
 
 export default async function handler(req: Request, res: Response) {
   try {
@@ -12,31 +13,39 @@ export default async function handler(req: Request, res: Response) {
     }
 
     // Delete old object from storage before replacing
-    const existing = getMedia(id);
-    if (existing) {
-      await deleteMedia(existing.filename, existing.storageKey);
-    }
+    const existing = await getMedia(id);
+    if (!existing) return res.status(404).json({ error: 'Media record not found' });
 
-    const buffer    = Buffer.from(dataBase64, 'base64');
+    const validated = validateMediaUpload({ originalName, mimeType, dataBase64 });
+    const buffer    = validated.buffer;
     const timestamp = Date.now();
-    const safeName  = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const safeName  = validated.originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
     const filename  = `${timestamp}-${safeName}`;
 
     // Upload replacement to Supabase Storage (or local fallback)
-    const { url, storage, storageKey } = await uploadMedia(filename, buffer, mimeType, 'cgc-media', 'media');
+    const { url, storage, storageKey } = await uploadMedia(filename, buffer, validated.mimeType, undefined, 'media');
 
-    const record = replaceMediaRecord(id, {
-      originalName,
-      mimeType,
-      size:       buffer.length,
-      buffer,
-      url,
-      storageKey: storage === 'supabase' ? storageKey : undefined,
-    });
+    let record;
+    try {
+      record = await replaceMediaRecord(id, {
+        originalName: validated.originalName,
+        mimeType: validated.mimeType,
+        size:       buffer.length,
+        buffer,
+        url,
+        storageKey: storage === 'supabase' ? storageKey : undefined,
+      });
+    } catch (error) {
+      await deleteMedia(filename, storage === 'supabase' ? storageKey : undefined).catch(() => undefined);
+      throw error;
+    }
 
     if (!record) return res.status(404).json({ error: 'Media record not found' });
+    await deleteMedia(existing.filename, existing.storageKey);
     res.json(record);
-  } catch (err) {
-    res.status(500).json({ error: 'Replace failed', message: String(err) });
+  } catch (error) {
+    const safe = safeMediaError(error);
+    console.error('admin.media.replace.failed', { errorType: error instanceof Error ? error.name : 'UnknownError' });
+    res.status(safe.status).json({ error: safe.message });
   }
 }

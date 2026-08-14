@@ -1715,6 +1715,38 @@ export const customerRewardEvents = pgTable(
 
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
+// Public brand/media metadata. Binary objects live in managed object storage.
+export const mediaAssets = pgTable(
+  'media_assets',
+  {
+    id: text('id').primaryKey(),
+    filename: text('filename').notNull(),
+    originalName: text('original_name').notNull(),
+    mimeType: text('mime_type').notNull(),
+    mediaType: text('media_type').$type<'image' | 'video' | 'pdf' | 'document'>().notNull(),
+    sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
+    publicUrl: text('public_url').notNull(),
+    storageKey: text('storage_key'),
+    altText: text('alt_text').notNull().default(''),
+    tags: jsonb('tags').$type<string[]>().notNull().default([]),
+    folder: text('folder').notNull().default('uncategorized'),
+    width: integer('width'),
+    height: integer('height'),
+    durationSeconds: integer('duration_seconds'),
+    optimized: boolean('optimized').notNull().default(false),
+    optimizedSizeBytes: bigint('optimized_size_bytes', { mode: 'number' }),
+    replacedById: text('replaced_by_id'),
+    uploadedBy: text('uploaded_by').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('media_assets_created_idx').on(t.createdAt),
+    index('media_assets_type_idx').on(t.mediaType),
+    index('media_assets_folder_idx').on(t.folder),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type AdminSession = typeof adminSessions.$inferSelect;
@@ -1769,3 +1801,4 @@ export type CustomerGoalRow = typeof customerGoals.$inferSelect;
 export type CustomerBillScheduleRow = typeof customerBillSchedules.$inferSelect;
 export type CustomerRewardAccountRow = typeof customerRewardAccounts.$inferSelect;
 export type CustomerRewardEventRow = typeof customerRewardEvents.$inferSelect;
+export type MediaAssetRow = typeof mediaAssets.$inferSelect;
