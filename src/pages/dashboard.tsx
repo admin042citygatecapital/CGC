@@ -11,6 +11,7 @@ import {
   Lock, Fingerprint, Moon, Sun, Languages, Key, X,
   TrendingUp as TrendUp, Info, CreditCard as CardIcon,
   History, FileText, FileWarning, User, Users, Smartphone, MessageCircle,
+  Target,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
@@ -1840,6 +1841,7 @@ export default function DashboardPage() {
                   { icon: User,       label: 'My Profile',         href: '/dashboard/profile',       sub: 'Personal info' },
                   { icon: MessageCircle, label: 'Customer Support', href: '/dashboard/support',       sub: 'Tickets & messages' },
                   { icon: FileWarning, label: 'Transaction Disputes', href: '/dashboard/disputes', sub: 'Report & track claims' },
+                  { icon: Target,      label: 'Financial Goals',      href: '/dashboard/goals',    sub: 'Targets & progress' },
                 ].map(({ icon: Icon, label, href, sub }, i, arr) => (
                   <Link key={label} to={href}
                     className={`flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors ${i < arr.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>

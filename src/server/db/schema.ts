@@ -1649,6 +1649,26 @@ export const operationsQuarantineRecords = pgTable(
   (t) => [index('operations_quarantine_records_batch_idx').on(t.batchId), uniqueIndex('operations_quarantine_records_batch_item_idx').on(t.batchId, t.operationsItemId)],
 );
 
+// Planning records only. These values are not account balances and cannot
+// create journal entries or move funds.
+export const customerGoals = pgTable(
+  'customer_goals',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    currency: text('currency').notNull().references(() => platformCurrencies.code, { onDelete: 'restrict' }),
+    targetMinor: bigint('target_minor', { mode: 'bigint' }).notNull(),
+    trackedMinor: bigint('tracked_minor', { mode: 'bigint' }).notNull().default(0n),
+    monthlyContributionMinor: bigint('monthly_contribution_minor', { mode: 'bigint' }).notNull().default(0n),
+    targetDate: date('target_date'),
+    status: text('status').$type<'active' | 'completed' | 'paused'>().notNull().default('active'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('customer_goals_user_updated_idx').on(t.userId, t.updatedAt)],
+);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -1701,3 +1721,4 @@ export type LegalEntityVerificationEventRow = typeof legalEntityVerificationEven
 export type PlaidItemRow = typeof plaidItems.$inferSelect;
 export type DataQuarantineBatchRow = typeof dataQuarantineBatches.$inferSelect;
 export type DataQuarantineRecordRow = typeof dataQuarantineRecords.$inferSelect;
+export type CustomerGoalRow = typeof customerGoals.$inferSelect;
