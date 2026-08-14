@@ -33,4 +33,16 @@ describe('durable configuration documents', () => {
       expect(source).toMatch(/await write(?:WebsiteSettings|ChatbotConfig|Links)/);
     }
   });
+
+  it('keeps non-secret integration settings in PostgreSQL and awaits every mutation', () => {
+    const store = fs.readFileSync(path.resolve(process.cwd(), 'src/server/lib/integrationStore.ts'), 'utf8');
+    const updateRoute = fs.readFileSync(path.resolve(process.cwd(), 'src/server/api/admin/integrations/POST.ts'), 'utf8');
+    const testRoute = fs.readFileSync(path.resolve(process.cwd(), 'src/server/api/admin/integrations/test/POST.ts'), 'utf8');
+    expect(store).toContain("readConfigDocument<Partial<IntegrationStore>>('integration_settings'");
+    expect(store).toContain("writeConfigDocument('integration_settings'");
+    expect(store).not.toContain('writeFileSync');
+    expect(updateRoute).toContain('await appendCriticalAudit');
+    expect(updateRoute).toContain('await updateIntegration');
+    expect(testRoute).toContain('await recordTestResult');
+  });
 });

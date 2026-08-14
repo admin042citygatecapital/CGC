@@ -11,12 +11,12 @@ export default async function handler(req: Request, res: Response) {
     const { id } = req.query as { id?: string };
 
     if (id) {
-      const integration = getIntegration(id as IntegrationId);
+      const integration = await getIntegration(id as IntegrationId);
       if (!integration) return res.status(404).json({ error: `Unknown integration: ${id}` });
       return res.json({ integration });
     }
 
-    const integrations = getAllIntegrations();
+    const integrations = await getAllIntegrations();
     res.json({ integrations });
   } catch (err) {
     res.status(500).json({ error: 'Failed to load integrations', message: String(err) });

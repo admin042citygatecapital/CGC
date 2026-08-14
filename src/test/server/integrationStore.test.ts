@@ -35,7 +35,7 @@ describe('integration status reporting', () => {
     })) dependencies.secrets.set(name, value);
 
     const { getAllIntegrations } = await import('../../server/lib/integrationStore.js');
-    const byId = Object.fromEntries(getAllIntegrations().map(item => [item.id, item]));
+    const byId = Object.fromEntries((await getAllIntegrations()).map(item => [item.id, item]));
 
     expect(byId.resend).toMatchObject({ name: 'Resend', status: 'connected', enabled: false });
     expect(byId.zoho_mail).toMatchObject({ status: 'connected', enabled: false });
@@ -47,6 +47,14 @@ describe('integration status reporting', () => {
   it('reports partial configuration when only some required secrets are present', async () => {
     dependencies.secrets.set('RESEND_API_KEY', 're_test_key');
     const { getIntegration } = await import('../../server/lib/integrationStore.js');
-    expect(getIntegration('resend')).toMatchObject({ status: 'partial' });
+    await expect(getIntegration('resend')).resolves.toMatchObject({ status: 'partial' });
+  });
+
+  it('rejects undocumented fields so credentials cannot enter non-secret settings', async () => {
+    const { updateIntegration } = await import('../../server/lib/integrationStore.js');
+    await expect(updateIntegration('resend', { config: { apiKey: 'must-not-be-stored' } })).rejects.toThrow('INVALID_INTEGRATION_SETTINGS');
+    await expect(updateIntegration('resend', { config: { fromEmail: 'noreply@citygate.capital' } })).resolves.toMatchObject({
+      config: { fromEmail: 'noreply@citygate.capital' },
+    });
   });
 });

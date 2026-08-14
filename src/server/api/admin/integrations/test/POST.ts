@@ -273,7 +273,7 @@ export default async function handler(req: Request, res: Response) {
     const result = await TESTERS[id]();
     const latencyMs = Date.now() - start;
 
-    recordTestResult(id, result.ok);
+    await recordTestResult(id, result.ok, req.adminSession?.adminId ?? 'admin');
 
     res.json({ ok: result.ok, message: result.message, latencyMs, testedAt: new Date().toISOString() });
   } catch (err) {

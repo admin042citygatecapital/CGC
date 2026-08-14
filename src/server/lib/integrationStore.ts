@@ -8,10 +8,10 @@
  * File: /private/config/integrations.json
  */
 
-import fs   from 'node:fs';
 import path from 'node:path';
 import { getSecret } from '#runtime/secrets';
 import { privateSubdirectory } from './storagePaths.js';
+import { readConfigDocument, writeConfigDocument } from './durableConfigDocument.js';
 
 const DIR  = privateSubdirectory('config');
 const FILE = path.join(DIR, 'integrations.json');
@@ -64,29 +64,17 @@ function defaultStore(): IntegrationStore {
 
 // ─── File I/O ─────────────────────────────────────────────────────────────────
 
-function ensureDir() {
-  if (!fs.existsSync(DIR)) fs.mkdirSync(DIR, { recursive: true });
-}
-
-function readStore(): IntegrationStore {
-  try {
-    ensureDir();
-    if (!fs.existsSync(FILE)) return defaultStore();
-    const raw = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-    // Merge with defaults so new integrations added later are always present
-    const def = defaultStore();
-    for (const id of ALL_IDS) {
-      if (!raw[id]) raw[id] = def[id];
-    }
-    return raw as IntegrationStore;
-  } catch {
-    return defaultStore();
+async function readStore(): Promise<IntegrationStore> {
+  const stored = await readConfigDocument<Partial<IntegrationStore>>('integration_settings', FILE, {});
+  const merged = defaultStore();
+  for (const id of ALL_IDS) {
+    if (stored[id]) merged[id] = { ...merged[id], ...stored[id], config: { ...stored[id]?.config } };
   }
+  return merged;
 }
 
-function writeStore(store: IntegrationStore): void {
-  ensureDir();
-  fs.writeFileSync(FILE, JSON.stringify(store, null, 2) + '\n');
+async function writeStore(store: IntegrationStore, updatedBy: string): Promise<void> {
+  await writeConfigDocument('integration_settings', FILE, store, updatedBy);
 }
 
 // ─── Secret resolution ────────────────────────────────────────────────────────
@@ -329,8 +317,8 @@ function deriveStatus(id: IntegrationId, _record: IntegrationRecord): Connection
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export function getAllIntegrations(): IntegrationStatus[] {
-  const store = readStore();
+export async function getAllIntegrations(): Promise<IntegrationStatus[]> {
+  const store = await readStore();
   return ALL_IDS.map(id => {
     const record = store[id];
     const meta   = META[id];
@@ -358,30 +346,40 @@ export function getAllIntegrations(): IntegrationStatus[] {
   });
 }
 
-export function getIntegration(id: IntegrationId): IntegrationStatus | null {
-  const all = getAllIntegrations();
+export async function getIntegration(id: IntegrationId): Promise<IntegrationStatus | null> {
+  const all = await getAllIntegrations();
   return all.find(i => i.id === id) ?? null;
 }
 
-export function updateIntegration(
+export async function updateIntegration(
   id: IntegrationId,
-  patch: { enabled?: boolean; notes?: string; config?: Record<string, string> }
-): IntegrationStatus {
-  const store = readStore();
+  patch: { enabled?: boolean; notes?: string; config?: Record<string, string> },
+  updatedBy = 'admin',
+): Promise<IntegrationStatus> {
+  if (patch.enabled !== undefined && typeof patch.enabled !== 'boolean') throw new Error('INVALID_INTEGRATION_SETTINGS');
+  if (patch.notes !== undefined && (typeof patch.notes !== 'string' || patch.notes.length > 2_000)) throw new Error('INVALID_INTEGRATION_SETTINGS');
+  if (patch.config !== undefined) {
+    if (!patch.config || typeof patch.config !== 'object' || Array.isArray(patch.config)) throw new Error('INVALID_INTEGRATION_SETTINGS');
+    const allowed = new Set(META[id].configFields.map(field => field.key));
+    for (const [key, value] of Object.entries(patch.config)) {
+      if (!allowed.has(key) || typeof value !== 'string' || value.length > 500) throw new Error('INVALID_INTEGRATION_SETTINGS');
+    }
+  }
+  const store = await readStore();
   const rec   = store[id] ?? defaultRecord(id);
   if (patch.enabled  !== undefined) rec.enabled = patch.enabled;
   if (patch.notes    !== undefined) rec.notes   = patch.notes;
   if (patch.config   !== undefined) rec.config  = { ...rec.config, ...patch.config };
   store[id] = rec;
-  writeStore(store);
-  return getIntegration(id)!;
+  await writeStore(store, updatedBy);
+  return (await getIntegration(id))!;
 }
 
-export function recordTestResult(id: IntegrationId, success: boolean): void {
-  const store = readStore();
+export async function recordTestResult(id: IntegrationId, success: boolean, updatedBy = 'admin'): Promise<void> {
+  const store = await readStore();
   const rec   = store[id] ?? defaultRecord(id);
   rec.lastTestedAt = new Date().toISOString();
   if (success) rec.lastSyncAt = new Date().toISOString();
   store[id] = rec;
-  writeStore(store);
+  await writeStore(store, updatedBy);
 }

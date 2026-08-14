@@ -6,6 +6,7 @@
  */
 import type { Request, Response } from 'express';
 import { updateIntegration, type IntegrationId } from '../../../lib/integrationStore.js';
+import { appendCriticalAudit } from '../../../lib/auditLog.js';
 
 const VALID_IDS = new Set<IntegrationId>([
   'resend', 'zoho_mail', 'smartsupp', 'cloudflare', 'google_analytics',
@@ -22,9 +23,19 @@ export default async function handler(req: Request, res: Response) {
       return res.status(400).json({ error: `Invalid integration id: ${id}` });
     }
 
-    const updated = updateIntegration(id, { enabled, notes, config });
+    const adminId = req.adminSession?.adminId ?? 'admin';
+    await appendCriticalAudit({
+      event: 'admin_integration_settings_updated',
+      adminId,
+      ip: req.ip,
+      meta: { id, fields: Object.keys({ enabled, notes, config }).filter(key => req.body[key] !== undefined) },
+    });
+    const updated = await updateIntegration(id, { enabled, notes, config }, adminId);
     res.json({ ok: true, integration: updated });
   } catch (err) {
+    if (err instanceof Error && err.message === 'INVALID_INTEGRATION_SETTINGS') {
+      return res.status(400).json({ error: 'Only documented non-secret integration settings are accepted.' });
+    }
     res.status(500).json({ error: 'Failed to update integration', message: String(err) });
   }
 }
