@@ -1669,6 +1669,25 @@ export const customerGoals = pgTable(
   (t) => [index('customer_goals_user_updated_idx').on(t.userId, t.updatedAt)],
 );
 
+export const customerBillSchedules = pgTable(
+  'customer_bill_schedules',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    payee: text('payee').notNull(),
+    category: text('category').notNull(),
+    currency: text('currency').notNull().references(() => platformCurrencies.code, { onDelete: 'restrict' }),
+    amountMinor: bigint('amount_minor', { mode: 'bigint' }).notNull(),
+    frequency: text('frequency').$type<'one_time' | 'weekly' | 'monthly' | 'quarterly' | 'annually'>().notNull(),
+    nextDueDate: date('next_due_date').notNull(),
+    reminderDays: integer('reminder_days').notNull().default(3),
+    status: text('status').$type<'scheduled' | 'paused' | 'completed'>().notNull().default('scheduled'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('customer_bill_schedules_user_due_idx').on(t.userId, t.nextDueDate, t.updatedAt)],
+);
+
 // ── Type exports (inferred from schema) ───────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -1722,3 +1741,4 @@ export type PlaidItemRow = typeof plaidItems.$inferSelect;
 export type DataQuarantineBatchRow = typeof dataQuarantineBatches.$inferSelect;
 export type DataQuarantineRecordRow = typeof dataQuarantineRecords.$inferSelect;
 export type CustomerGoalRow = typeof customerGoals.$inferSelect;
+export type CustomerBillScheduleRow = typeof customerBillSchedules.$inferSelect;

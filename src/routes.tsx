@@ -70,6 +70,7 @@ const DashboardBeneficiaries = lazy(() => import('./pages/dashboard/beneficiarie
 const DashboardSupport       = lazy(() => import('./pages/dashboard/support'));
 const DashboardDisputes      = lazy(() => import('./pages/dashboard/disputes'));
 const DashboardGoals         = lazy(() => import('./pages/dashboard/goals'));
+const DashboardBills         = lazy(() => import('./pages/dashboard/bills'));
 const DashboardRates         = lazy(() => import('./pages/dashboard/rates'));
 const DashboardTrading       = lazy(() => import('./pages/dashboard/trading'));
 const DashboardTradingMarkets   = lazy(() => import('./pages/dashboard/trading/markets'));
@@ -175,6 +176,8 @@ export const routes: RouteObject[] = [
   { path: '/dashboard/support',       element: <CustomerOnly><DashboardSupport /></CustomerOnly> },
   { path: '/dashboard/disputes',      element: <CustomerOnly><DashboardDisputes /></CustomerOnly> },
   { path: '/dashboard/goals',         element: <CustomerOnly><DashboardGoals /></CustomerOnly> },
+  { path: '/dashboard/bills',         element: <CustomerOnly><DashboardBills /></CustomerOnly> },
+  { path: '/dashboard/payments',      element: <CustomerOnly><DashboardBills /></CustomerOnly> },
   { path: '/dashboard/rates',         element: <CustomerOnly><DashboardRates /></CustomerOnly> },
   { path: '/dashboard/exchange',      element: <CustomerOnly><DashboardRates /></CustomerOnly> },
   { path: '/dashboard/trading',         element: <CustomerOnly><DashboardTrading /></CustomerOnly> },

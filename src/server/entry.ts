@@ -351,6 +351,8 @@ import users_disputes_get from "./api/users/disputes/GET";
   import users_disputes_post from "./api/users/disputes/POST";
   import users_goals_get from "./api/users/goals/GET";
   import users_goals_post from "./api/users/goals/POST";
+  import users_bills_get from "./api/users/bills/GET";
+  import users_bills_post from "./api/users/bills/POST";
 import users_transfer_post_275 from "./api/users/transfer/POST";
 import users_transfers_get_276 from "./api/users/transfers/GET";
 import users_transfers_post_277 from "./api/users/transfers/POST";
@@ -935,6 +937,12 @@ app.get("/api/users/disputes", users_disputes_get);
     { windowMs: 60 * 60_000, max: 60 },
     'Too many goal changes. Please try again later.',
   ), users_goals_post);
+  app.get("/api/users/bills", users_bills_get);
+  app.post("/api/users/bills", rateLimitMiddleware(
+    (req) => `customer-bills:${req.customerUser?.id ?? req.ip ?? 'unknown'}`,
+    { windowMs: 60 * 60_000, max: 60 },
+    'Too many bill schedule changes. Please try again later.',
+  ), users_bills_post);
 app.post("/api/users/transfer", users_transfer_post_275);
 app.get("/api/users/transfers", users_transfers_get_276);
 app.post("/api/users/transfers", users_transfers_post_277);
