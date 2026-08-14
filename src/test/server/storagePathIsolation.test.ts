@@ -10,7 +10,6 @@ const ISOLATED_RUNTIME_FILES = [
   'src/server/lib/supportStore.ts',
   'src/server/lib/ratesStore.ts',
   'src/server/lib/tradingAdminStore.ts',
-  'src/server/api/admin/health/GET.ts',
 ] as const;
 
 describe('runtime storage isolation', () => {

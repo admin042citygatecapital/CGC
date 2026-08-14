@@ -75,8 +75,9 @@ interface HealthData {
   status: string;
   uptime: { seconds: number; human: string };
   memory: { heapUsedMb: number; heapTotalMb: number; rssMb: number; freeRamMb: number; totalRamMb: number };
-  stores: Record<string, { exists: boolean; sizeBytes: number; lineCount: number; lastModified: string | null }>;
-  runtime: { activeSessions: number; nodeVersion: string; platform: string; pid: number };
+  stores: Record<string, { mode: 'managed'; recordCount: number; lastUpdated: string | null }>;
+  storage: { database: string; media: string; trackedRecords: number };
+  runtime: { activeSessions: number; activeAdminSessions: number; activeCustomerSessions: number; nodeVersion: string; platform: string; pid: number };
   users: { total: number; verified: number; pending: number; suspended: number };
   database: { ok: boolean; latencyMs: number | null; provider: string };
   email: { configured: boolean; provider: string };
@@ -351,11 +352,7 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
   const memPct  = health ? pct(health.memory.heapUsedMb, health.memory.heapTotalMb) : 0;
   const ramPct  = health ? pct(health.memory.heapTotalMb + health.memory.rssMb, health.memory.totalRamMb) : 0;
 
-  // Derive storage usage from store sizes
-  const storageBytes = health
-    ? Object.values(health.stores).reduce((s, st) => s + (st.sizeBytes ?? 0), 0)
-    : 0;
-  const storageMb = Math.round(storageBytes / 1024 / 1024 * 10) / 10;
+  const trackedRecords = health?.storage.trackedRecords ?? 0;
 
   // CPU: use load average as proxy (load1m / cores — not available here, use uptime heuristic)
   // We'll show uptime instead of CPU% since we don't have CPU% from health endpoint
@@ -381,9 +378,8 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
       detail: health ? `Node ${health.runtime.nodeVersion}` : 'Unknown',
     },
     {
-      key: 'storage',    label: 'Storage',    icon: HardDrive,  ok: storageMb < 900,
-      warn: storageMb > 500,
-      detail: `${storageMb} MB used`,
+      key: 'storage',    label: 'Storage',    icon: HardDrive,  ok: health?.storage.database === 'managed',
+      detail: health?.storage.database === 'managed' ? 'Managed storage' : 'Unavailable',
     },
     {
       key: 'memory',     label: 'Memory',     icon: Cpu,        ok: memPct < 85,
@@ -461,12 +457,12 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
           </div>
           <GaugeBar value={ramPct} color={ramPct > 85 ? '#EF4444' : ramPct > 70 ? '#F59E0B' : '#627EEA'} />
         </div>
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-white/35 text-[10px]">Storage</p>
-            <p className="text-white/50 text-[10px] font-mono">{storageMb} MB</p>
+        <div className="flex items-center justify-between rounded-lg border border-white/[0.05] px-3 py-2">
+          <div>
+            <p className="text-white/35 text-[10px]">Managed records</p>
+            <p className="text-white/55 text-[11px]">PostgreSQL + object storage</p>
           </div>
-          <GaugeBar value={Math.min(storageMb, 1000)} max={1000} color="#C9A84C" />
+          <p className="text-[#C9A84C] text-[11px] font-mono">{trackedRecords.toLocaleString()}</p>
         </div>
       </div>
 
