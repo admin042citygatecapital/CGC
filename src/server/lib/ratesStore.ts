@@ -1,7 +1,8 @@
 /**
  * ratesStore.ts — Admin-controlled exchange rates, transfer fees, FX markups,
  * tier fees, withdrawal limits, and fee change history.
- * Backed by /private/cms/rates.json
+ * PostgreSQL is authoritative in deployed environments. The legacy private
+ * files are read only once to migrate existing installations.
  *
  * Backwards-compatible: existing ExchangeRates + TransferFees shapes are preserved.
  */
@@ -9,10 +10,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { privateSubdirectory } from './storagePaths.js';
+import { getQueryClient, isDatabaseConfigured } from '../db/db.js';
+import { readConfigDocument } from './durableConfigDocument.js';
 
 const CMS_DIR      = privateSubdirectory('cms');
 const RATES_FILE   = path.join(CMS_DIR, 'rates.json');
-const FEE_LOG_FILE = path.join(CMS_DIR, 'fee-history.jsonl');
+const LEGACY_FEE_LOG_FILE = path.join(CMS_DIR, 'fee-history.jsonl');
+const RATES_CONFIG_KEY = 'financial_rates_config';
 
 // ── Existing types (preserved for backwards compat) ───────────────────────────
 
@@ -243,18 +247,10 @@ const DEFAULTS: RatesConfig = {
   },
 };
 
-// ── File helpers ──────────────────────────────────────────────────────────────
+// ── Durable configuration helpers ─────────────────────────────────────────────
 
-function ensureDir(file: string) {
-  const dir = path.dirname(file);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
-
-export function readRatesConfig(): RatesConfig {
+function normalizeRatesConfig(stored: Partial<RatesConfig>): RatesConfig {
   try {
-    ensureDir(RATES_FILE);
-    if (!fs.existsSync(RATES_FILE)) return DEFAULTS;
-    const stored = JSON.parse(fs.readFileSync(RATES_FILE, 'utf8')) as Partial<RatesConfig>;
 
     // Deep-merge txFees: each FeeRule is merged individually so new sub-fields
     // (e.g. a newly added `minFee`) always get their default value even if the
@@ -301,64 +297,146 @@ export function readRatesConfig(): RatesConfig {
       updatedAt:     storedLim.updatedAt,
     };
 
-    return {
+    return structuredClone({
       rates:     { ...DEFAULTS.rates,  ...(stored.rates  ?? {}) },
       fees:      { ...DEFAULTS.fees,   ...(stored.fees   ?? {}) },
       txFees,
       fxMarkups,
       tierFees,
       limits,
-    };
+    });
   } catch {
-    return DEFAULTS;
+    return structuredClone(DEFAULTS);
   }
 }
 
-export function writeRatesConfig(config: RatesConfig): void {
-  ensureDir(RATES_FILE);
-  fs.writeFileSync(RATES_FILE, JSON.stringify(config, null, 2));
+let cachedRatesConfig = structuredClone(DEFAULTS);
+let loadedFromDurableStore = false;
+
+/** Load the authoritative rates document before customer traffic is served. */
+export async function loadRatesConfigFromDb(): Promise<RatesConfig> {
+  const stored = await readConfigDocument<Partial<RatesConfig>>(RATES_CONFIG_KEY, RATES_FILE, DEFAULTS);
+  cachedRatesConfig = normalizeRatesConfig(stored);
+  await migrateLegacyFeeHistory();
+  loadedFromDurableStore = true;
+  return readRatesConfig();
 }
 
-// ── Fee history log ───────────────────────────────────────────────────────────
+/** Synchronous read from the startup-loaded, immutable-in-practice process cache. */
+export function readRatesConfig(): RatesConfig {
+  if (process.env.NODE_ENV === 'production' && !loadedFromDurableStore) {
+    throw new Error('RATES_CONFIG_NOT_READY');
+  }
+  return structuredClone(cachedRatesConfig);
+}
 
-export function appendFeeHistory(entry: Omit<FeeHistoryEntry, 'id' | 'ts'>): FeeHistoryEntry {
-  ensureDir(FEE_LOG_FILE);
-  const full: FeeHistoryEntry = {
-    ...entry,
-    id: 'fh_' + crypto.randomBytes(6).toString('hex'),
-    ts: new Date().toISOString(),
+// ── Immutable fee history ─────────────────────────────────────────────────────
+
+export type PendingFeeHistoryEntry = Omit<FeeHistoryEntry, 'id' | 'ts'>;
+
+async function migrateLegacyFeeHistory(): Promise<void> {
+  if (!isDatabaseConfigured() || !fs.existsSync(LEGACY_FEE_LOG_FILE)) return;
+  const validSections = new Set(['rates', 'transfer_fees', 'fx_markup', 'tier_fees', 'limits']);
+  const entries = fs.readFileSync(LEGACY_FEE_LOG_FILE, 'utf8')
+    .split('\n').filter(Boolean).slice(0, 100_000)
+    .flatMap(line => {
+      try {
+        const entry = JSON.parse(line) as FeeHistoryEntry;
+        if (!entry.id || !entry.adminId || !validSections.has(entry.section) || !entry.field || !entry.ts) return [];
+        if (!Number.isFinite(new Date(entry.ts).getTime())) return [];
+        return [entry];
+      } catch { return []; }
+    });
+  if (entries.length === 0) return;
+  const sql = getQueryClient();
+  await sql.begin(async transaction => {
+    for (const entry of entries) {
+      await transaction`
+        INSERT INTO rate_fee_history
+          (id, ts, admin_id, admin_email, section, field, old_value, new_value, ip)
+        VALUES
+          (${entry.id.slice(0, 200)}, ${entry.ts}, ${entry.adminId.slice(0, 200)}, ${entry.adminEmail?.slice(0, 320) ?? null},
+           ${entry.section}, ${entry.field.slice(0, 200)}, ${String(entry.oldValue)}, ${String(entry.newValue)}, ${String(entry.ip ?? 'unknown').slice(0, 200)})
+        ON CONFLICT (id) DO NOTHING
+      `;
+    }
+  });
+}
+
+/**
+ * Persist a rates change and all history rows in one PostgreSQL transaction.
+ * The cache is updated only after the database commit succeeds.
+ */
+export async function applyRatesConfigChange(
+  config: RatesConfig,
+  entries: PendingFeeHistoryEntry[],
+  updatedBy: string,
+): Promise<RatesConfig> {
+  const normalized = normalizeRatesConfig(config);
+  if (!isDatabaseConfigured()) {
+    if (process.env.NODE_ENV === 'production') throw new Error('RATES_DATABASE_UNAVAILABLE');
+    fs.mkdirSync(path.dirname(RATES_FILE), { recursive: true });
+    fs.writeFileSync(RATES_FILE, JSON.stringify(normalized, null, 2), 'utf8');
+    cachedRatesConfig = normalized;
+    loadedFromDurableStore = true;
+    return readRatesConfig();
+  }
+
+  const sql = getQueryClient();
+  const jsonDocument = JSON.parse(JSON.stringify({ data: normalized })) as Record<string, unknown>;
+  await sql.begin(async transaction => {
+    await transaction`
+      INSERT INTO config (key, value, updated_at, updated_by)
+      VALUES (${RATES_CONFIG_KEY}, ${transaction.json(jsonDocument as never)}, NOW(), ${updatedBy})
+      ON CONFLICT (key) DO UPDATE SET
+        value = EXCLUDED.value,
+        updated_at = NOW(),
+        updated_by = EXCLUDED.updated_by
+    `;
+    for (const entry of entries) {
+      await transaction`
+        INSERT INTO rate_fee_history
+          (id, admin_id, admin_email, section, field, old_value, new_value, ip)
+        VALUES
+          (${'fh_' + crypto.randomBytes(12).toString('hex')}, ${entry.adminId}, ${entry.adminEmail ?? null},
+           ${entry.section}, ${entry.field}, ${entry.oldValue}, ${entry.newValue}, ${entry.ip})
+      `;
+    }
+  });
+  cachedRatesConfig = normalized;
+  loadedFromDurableStore = true;
+  return readRatesConfig();
+}
+
+export async function readFeeHistory(limit = 200, offset = 0): Promise<{ data: FeeHistoryEntry[]; total: number }> {
+  if (!isDatabaseConfigured()) return { data: [], total: 0 };
+  const sql = getQueryClient();
+  const [rows, counts] = await Promise.all([
+    sql<Array<{ id: string; ts: Date; admin_id: string; admin_email: string | null; section: string; field: string; old_value: string; new_value: string; ip: string }>>`
+      SELECT id, ts, admin_id, admin_email, section, field, old_value, new_value, ip
+      FROM rate_fee_history ORDER BY ts DESC, id DESC LIMIT ${limit} OFFSET ${offset}
+    `,
+    sql<Array<{ total: number }>>`SELECT COUNT(*)::int AS total FROM rate_fee_history`,
+  ]);
+  return {
+    data: rows.map(row => ({
+      id: row.id, ts: row.ts.toISOString(), adminId: row.admin_id,
+      adminEmail: row.admin_email ?? undefined, section: row.section, field: row.field,
+      oldValue: row.old_value, newValue: row.new_value, ip: row.ip,
+    })),
+    total: counts[0]?.total ?? 0,
   };
-  fs.appendFileSync(FEE_LOG_FILE, JSON.stringify(full) + '\n');
-  return full;
 }
 
-export function readFeeHistory(limit = 200, offset = 0): { data: FeeHistoryEntry[]; total: number } {
-  try {
-    if (!fs.existsSync(FEE_LOG_FILE)) return { data: [], total: 0 };
-    const lines = fs.readFileSync(FEE_LOG_FILE, 'utf8')
-      .split('\n').filter(Boolean)
-      .map(l => JSON.parse(l) as FeeHistoryEntry)
-      .reverse();
-    return { data: lines.slice(offset, offset + limit), total: lines.length };
-  } catch { return { data: [], total: 0 }; }
-}
-
-export function feeHistoryCsv(): string {
-  try {
-    if (!fs.existsSync(FEE_LOG_FILE)) return 'id,ts,adminId,adminEmail,section,field,oldValue,newValue,ip\n';
-    const lines = fs.readFileSync(FEE_LOG_FILE, 'utf8')
-      .split('\n').filter(Boolean)
-      .map(l => JSON.parse(l) as FeeHistoryEntry)
-      .reverse();
-    const header = 'id,ts,adminId,adminEmail,section,field,oldValue,newValue,ip';
-    const rows = lines.map(e =>
-      [e.id, e.ts, e.adminId, e.adminEmail ?? '', e.section, e.field,
-       `"${String(e.oldValue).replace(/"/g, '""')}"`,
-       `"${String(e.newValue).replace(/"/g, '""')}"`,
-       e.ip].join(',')
-    );
-    return [header, ...rows].join('\n');
-  } catch { return 'id,ts,adminId,adminEmail,section,field,oldValue,newValue,ip\n'; }
+export async function feeHistoryCsv(): Promise<string> {
+  const history = await readFeeHistory(10_000, 0);
+  const header = 'id,ts,adminId,adminEmail,section,field,oldValue,newValue,ip';
+  const csv = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+  const rows = history.data.map(e =>
+    [e.id, e.ts, e.adminId, e.adminEmail ?? '', e.section, e.field, e.oldValue, e.newValue, e.ip]
+      .map(csv).join(',')
+  );
+  return [header, ...rows].join('\n');
 }
 
 // ── Withdrawal usage helpers ──────────────────────────────────────────────────

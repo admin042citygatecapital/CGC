@@ -6,14 +6,14 @@
 import type { Request, Response } from 'express';
 import { readFeeHistory, feeHistoryCsv } from '../../../../lib/ratesStore.js';
 
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   if (req.query.csv === '1') {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="fee-history.csv"');
-    return res.send(feeHistoryCsv());
+    return res.send(await feeHistoryCsv());
   }
 
   const limit  = Math.min(Number(req.query.limit  ?? 200), 500);
   const offset = Number(req.query.offset ?? 0);
-  return res.json(readFeeHistory(limit, offset));
+  return res.json(await readFeeHistory(limit, offset));
 }

@@ -385,6 +385,7 @@ import { loadConfigFromDb } from "./lib/configStore";
 import { syncLegacySupportConversations } from "./lib/supportDatabaseStore";
 import { loadEmailBrandingFromDb } from "./lib/emailBrandingStore";
 import { loadEmailTemplatesFromDb } from "./lib/emailTemplateStore";
+import { loadRatesConfigFromDb } from "./lib/ratesStore";
 import { getSecret } from "#runtime/secrets";
 import { validateEnvAtStartup } from "./lib/envValidator";
 import { APP_ENV } from "./lib/envConfig";
@@ -428,6 +429,22 @@ if (process.env.PUBLIC_SITE_PUBLISHED !== '1') {
 // production; WARNING vars log and continue. See src/server/lib/envValidator.ts
 validateEnvAtStartup();
 console.log(JSON.stringify({ event: 'server.startup', environment: APP_ENV }));
+
+// Customer-facing rates and limits must be loaded from the durable store
+// before any route can calculate or display financial configuration.
+const ratesConfigReady = loadRatesConfigFromDb();
+app.use(async (_req, res, next) => {
+	try {
+		await ratesConfigReady;
+		next();
+	} catch (error) {
+		console.error(JSON.stringify({
+			event: 'rates.config.load_failed',
+			error: error instanceof Error ? error.message : 'UnknownError',
+		}));
+		res.status(503).json({ error: 'Financial configuration is temporarily unavailable.' });
+	}
+});
 
 // ── Security & performance ──────────────────────────────────────────────────
 app.set("trust proxy", true);
@@ -1136,7 +1153,9 @@ if (isViteProductionBuild && !isVercelRuntime) {
 		const stack   = err instanceof Error ? err.stack : undefined;
 		console.error(JSON.stringify({ event: 'api.unhandled_error', path: req.path, error: message, stack }));
 		if (res.headersSent) return;
-		res.status(500).json({ error: 'Internal server error', message });
+		res.status(500).json(process.env.NODE_ENV === 'production'
+			? { error: 'Internal server error' }
+			: { error: 'Internal server error', message });
 	});
 
 	// Resolve the SSR module once into a stable render function. A failed

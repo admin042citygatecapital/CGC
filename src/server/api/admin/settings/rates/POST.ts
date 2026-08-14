@@ -5,12 +5,24 @@
  * Also logs changes to the fee history log.
  */
 import type { Request, Response } from 'express';
-import { readRatesConfig, writeRatesConfig, appendFeeHistory } from '../../../../lib/ratesStore.js';
-import { appendAudit } from '../../../../lib/auditLog.js';
+import { readRatesConfig, applyRatesConfigChange, type PendingFeeHistoryEntry } from '../../../../lib/ratesStore.js';
+import { appendCriticalAudit } from '../../../../lib/auditLog.js';
 
-export default function handler(req: Request, res: Response) {
+const RATE_KEYS = new Set(['BTC_USD','ETH_USD','SOL_USD','BNB_USD','USDT_USD','EUR_USD','GBP_USD','JPY_USD','CHF_USD','CAD_USD','AUD_USD','SGD_USD','AED_USD','NGN_USD']);
+const FEE_KEYS = new Set(['flatFeeUSD','percentageFee','minFeeUSD','maxFeeUSD','withdrawalFlatFeeUSD','withdrawalPercentageFee']);
+
+function validNumbers(value: unknown, allowed: Set<string>, max: number): value is Record<string, number> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const entries = Object.entries(value as Record<string, unknown>);
+  return entries.length > 0 && entries.every(([key, item]) => allowed.has(key) && typeof item === 'number' && Number.isFinite(item) && item >= 0 && item <= max);
+}
+
+export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
   const { rates, fees } = req.body ?? {};
+  if (rates !== undefined && !validNumbers(rates, RATE_KEYS, 10_000_000)) return res.status(400).json({ error: 'Invalid rates payload.' });
+  if (fees !== undefined && !validNumbers(fees, FEE_KEYS, 100_000)) return res.status(400).json({ error: 'Invalid fees payload.' });
+  if (rates === undefined && fees === undefined) return res.status(400).json({ error: 'Provide rates or fees.' });
 
   const current = readRatesConfig();
 
@@ -20,7 +32,7 @@ export default function handler(req: Request, res: Response) {
     fees:  fees  ? { ...current.fees,  ...fees,  updatedAt: new Date().toISOString() } : current.fees,
   };
 
-  writeRatesConfig(updated);
+  const history: PendingFeeHistoryEntry[] = [];
 
   // Log rate changes
   if (rates) {
@@ -28,7 +40,7 @@ export default function handler(req: Request, res: Response) {
       if (key === 'updatedAt') continue;
       const old = (current.rates as unknown as Record<string, unknown>)[key];
       if (old !== val) {
-        appendFeeHistory({
+        history.push({
           adminId:    session.adminId,
           adminEmail: session.email,
           section:    'rates',
@@ -47,7 +59,7 @@ export default function handler(req: Request, res: Response) {
       if (key === 'updatedAt') continue;
       const old = (current.fees as unknown as Record<string, unknown>)[key];
       if (old !== val) {
-        appendFeeHistory({
+        history.push({
           adminId:    session.adminId,
           adminEmail: session.email,
           section:    'transfer_fees',
@@ -60,12 +72,14 @@ export default function handler(req: Request, res: Response) {
     }
   }
 
-  appendAudit({
+  await appendCriticalAudit({
     event:   'admin_rates_updated',
     adminId: session.adminId,
     ip:      req.ip ?? 'unknown',
     meta:    { rates: !!rates, fees: !!fees },
   });
 
-  return res.json({ ok: true, config: updated });
+  const saved = await applyRatesConfigChange(updated, history, session.adminId);
+
+  return res.json({ ok: true, config: saved });
 }
