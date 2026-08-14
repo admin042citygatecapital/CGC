@@ -15,24 +15,24 @@ export interface AccountPlanConfig {
 export const DEFAULT_ACCOUNT_PLANS: AccountPlanConfig[] = [
   {
     id: 'standard', name: 'Standard', monthlyPrice: 'Free', annualPrice: 'Free',
-    description: 'A simple, modern foundation for viewing and organising financial activity from one secure dashboard.',
-    features: ['Multi-Currency Experience', 'Digital Wallets', 'Transfer Workflows', 'Smart Card Experience', 'Card & Spending Controls', 'Financial Dashboard', 'Smart Analytics', 'Bill Payments', 'Customer Support', 'Enhanced Security'],
+    description: 'Essential tools for viewing and organising your financial activity from one secure, connected dashboard.',
+    features: ['Multi-Currency Experience', 'Digital Wallets', 'Transfer Workflows', 'Virtual Card Experience', 'Card & Spending Controls', 'Financial Dashboard', 'Smart Analytics', 'Bill Payments', 'Customer Support', 'Enhanced Security', 'Advanced Account Security'],
     limits: 'Essential account and support access.', ctaLabel: 'Explore Standard',
     ctaLink: '/register?product=digital-banking-standard', visible: true,
     eligibility: 'Individuals beginning their digital financial journey and customers with straightforward financial needs.',
   },
   {
     id: 'premium', name: 'Premium', monthlyPrice: '$9', annualPrice: '$90',
-    description: 'Expanded visibility, flexibility and control for a more active financial life.',
-    features: ['Multi-Currency Experience', 'Digital Wallets', 'Transfer Workflows', 'Smart Card Experience', 'Card & Spending Controls', 'Financial Dashboard', 'Smart Analytics', 'Portfolio & Market View', 'Rewards & Benefits', 'Bill Payments', 'Customer Support', 'Enhanced Security'],
+    description: 'More advanced financial capabilities for professionals, entrepreneurs and active customers.',
+    features: ['Multi-Currency Experience', 'Digital Wallets', 'Transfer Workflows', 'Virtual Card Experience', 'Physical Card Experience', 'Card & Spending Controls', 'Financial Dashboard', 'Smart Analytics', 'Investment & Portfolio View', 'Digital-Asset View', 'Rewards & Benefits', 'Bill Payments', 'Customer Support', 'Enhanced Security', 'Advanced Account Security'],
     limits: 'Enhanced eligible account, transfer and support access.', ctaLabel: 'Explore Premium',
     ctaLink: '/register?product=digital-banking-premium', visible: true,
     eligibility: 'Professionals, frequent travellers, entrepreneurs and customers who want more sophisticated tools.',
   },
   {
     id: 'elite', name: 'Elite', monthlyPrice: '$29', annualPrice: '$290',
-    description: 'Premium digital capabilities combined with a higher-touch service experience.',
-    features: ['Multi-Currency Experience', 'Digital Wallets', 'Transfer Workflows', 'Smart Card Experience', 'Card & Spending Controls', 'Financial Dashboard', 'Smart Analytics', 'Portfolio & Market View', 'Rewards & Benefits', 'Bill Payments', 'Customer Support', 'Relationship Support', 'White-Glove Onboarding', 'Concierge Services', 'Business & API Capabilities', 'Advanced Reporting', 'Enhanced Security'],
+    description: 'Premium digital capabilities combined with personalised support and a higher-touch service experience.',
+    features: ['Multi-Currency Experience', 'Digital Wallets', 'Transfer Workflows', 'Virtual Card Experience', 'Physical Card Experience', 'Card & Spending Controls', 'Financial Dashboard', 'Smart Analytics', 'Investment & Portfolio View', 'Digital-Asset View', 'Rewards & Benefits', 'Bill Payments', 'Customer Support', 'Relationship Support', 'White-Glove Onboarding', 'Concierge Services', 'Business & API Access', 'Advanced Reporting', 'Enhanced Security', 'Advanced Account Security'],
     limits: 'Personalised service and advanced capabilities subject to eligibility.', ctaLabel: 'Contact Elite Team',
     ctaLink: '/contact?service=elite-digital-banking', visible: true,
     eligibility: 'Executives, business owners and eligible professional clients with sophisticated financial requirements.',
@@ -45,6 +45,9 @@ const LEGACY_FEATURES: Record<string, string[]> = {
   'Financial Analytics': ['Financial Dashboard', 'Smart Analytics', 'Bill Payments'],
   'Layered Security': ['Enhanced Security'],
   'Concierge & Onboarding': ['White-Glove Onboarding', 'Concierge Services'],
+  'Smart Card Experience': ['Virtual Card Experience', 'Physical Card Experience'],
+  'Portfolio & Market View': ['Investment & Portfolio View'],
+  'Business & API Capabilities': ['Business & API Access'],
 };
 
 function normalizeFeatures(value: unknown, fallback: string[]) {

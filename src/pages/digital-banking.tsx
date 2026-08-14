@@ -5,10 +5,12 @@ import { useEffect, useState } from 'react';
 import {
   ArrowRight,
   BarChart3,
+  Bitcoin,
   Check,
   Code2,
   CreditCard,
   FileChartColumn,
+  Fingerprint,
   Gift,
   Globe2,
   Handshake,
@@ -54,7 +56,7 @@ const PLAN_PRESENTATION: Plan[] = [
     name: 'Standard',
     eyebrow: 'Start with the essentials',
     price: 'Free',
-    summary: 'A simple, modern foundation for viewing and organising financial activity from one secure dashboard.',
+    summary: 'Essential tools for viewing and organising your financial activity from one secure, connected dashboard.',
     builtFor: 'Individuals beginning their digital financial journey and customers with straightforward financial needs.',
     closing: 'Simple. Digital. Essential.',
     cta: 'Explore Standard',
@@ -68,7 +70,7 @@ const PLAN_PRESENTATION: Plan[] = [
     eyebrow: 'More capability',
     price: '$9',
     period: '/ month',
-    summary: 'Expanded visibility, flexibility and control for a more active financial life.',
+    summary: 'More advanced financial capabilities for professionals, entrepreneurs and active customers.',
     builtFor: 'Professionals, frequent travellers, entrepreneurs and customers who want more sophisticated tools.',
     closing: 'Powerful. Flexible. Intelligent.',
     cta: 'Explore Premium',
@@ -83,7 +85,7 @@ const PLAN_PRESENTATION: Plan[] = [
     eyebrow: 'A personalised experience',
     price: '$29',
     period: '/ month',
-    summary: 'Premium digital capabilities combined with a higher-touch service experience.',
+    summary: 'Premium digital capabilities combined with personalised support and a higher-touch service experience.',
     builtFor: 'Executives, business owners and eligible professional clients with sophisticated financial requirements.',
     closing: 'Personalised. Advanced. Exclusive.',
     cta: 'Contact Elite Team',
@@ -114,9 +116,15 @@ const comparisonFeatures: ComparisonFeature[] = [
   },
   {
     icon: CreditCard,
-    name: 'Smart Card Experience',
-    description: 'Manage eligible virtual and physical card activity digitally.',
-    plans: { standard: 'Virtual', premium: 'Virtual & physical', elite: 'Virtual & physical' },
+    name: 'Virtual Card Experience',
+    description: 'Manage eligible virtual-card activity and available controls digitally.',
+    plans: { standard: 'Eligible access', premium: 'Enhanced', elite: 'Enhanced' },
+  },
+  {
+    icon: CreditCard,
+    name: 'Physical Card Experience',
+    description: 'Eligible physical-card options delivered through an approved issuer or programme.',
+    plans: { standard: false, premium: 'Eligible access', elite: 'Eligible access' },
   },
   {
     icon: SlidersHorizontal,
@@ -138,9 +146,15 @@ const comparisonFeatures: ComparisonFeature[] = [
   },
   {
     icon: Sparkles,
-    name: 'Portfolio & Market View',
-    description: 'Follow supported positions, assets and market information.',
+    name: 'Investment & Portfolio View',
+    description: 'Follow supported positions, holdings and market information without conflating data with execution.',
     plans: { standard: false, premium: true, elite: true },
+  },
+  {
+    icon: Bitcoin,
+    name: 'Digital-Asset View',
+    description: 'Organise supported digital-asset information; custody and execution require approved providers.',
+    plans: { standard: false, premium: 'Provider-gated', elite: 'Provider-gated' },
   },
   {
     icon: Gift,
@@ -180,7 +194,7 @@ const comparisonFeatures: ComparisonFeature[] = [
   },
   {
     icon: Code2,
-    name: 'Business & API Capabilities',
+    name: 'Business & API Access',
     description: 'Supported integration capabilities for eligible business workflows.',
     plans: { standard: false, premium: false, elite: true },
   },
@@ -189,6 +203,12 @@ const comparisonFeatures: ComparisonFeature[] = [
     name: 'Advanced Reporting',
     description: 'Detailed financial information and customised reporting options.',
     plans: { standard: false, premium: false, elite: true },
+  },
+  {
+    icon: Fingerprint,
+    name: 'Advanced Account Security',
+    description: 'Additional authentication and account-protection controls where supported by the device and programme.',
+    plans: { standard: 'Layered', premium: 'Enhanced', elite: 'Advanced' },
   },
   {
     icon: ShieldCheck,
@@ -282,7 +302,7 @@ export default function DigitalBankingPage() {
                 <span className="text-gold-shimmer">That Fits Your Ambition</span>
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-white/55 md:text-xl">
-                Banking designed around the way you manage money. Start with the essentials, add greater capability as you grow, and move into a personalised experience when your financial world becomes more sophisticated.
+                Your financial needs change as you grow. Choose a connected account experience that brings together everyday financial management, supported currencies, wallets, transfers, cards and intelligent insights.
               </p>
               <p className="mt-5 text-sm font-semibold tracking-wide text-white/70">Powerful features. Flexible plans. Built for you.</p>
             </motion.div>
@@ -292,10 +312,10 @@ export default function DigitalBankingPage() {
         <section className="py-14 md:py-24" aria-labelledby="compare-plans">
           <div className="container mx-auto px-4 md:px-6">
             <div className="mb-10 text-center md:mb-14">
-              <span className="text-xs font-bold uppercase tracking-[0.22em] text-primary">One platform · three experiences</span>
+              <span className="text-xs font-bold uppercase tracking-[0.22em] text-primary">One platform · three experiences · your choice</span>
               <h2 id="compare-plans" className="mt-3 text-3xl font-bold tracking-tight md:text-5xl">Compare your experience</h2>
               <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-white/48 md:text-base">
-                Every account is built around visibility, connected financial tools, layered security and a global perspective.
+                Compare the essentials, enhanced capabilities and personalised support available at each account level.
               </p>
             </div>
 

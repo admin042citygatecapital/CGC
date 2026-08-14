@@ -32,6 +32,19 @@ describe('account plan management', () => {
     ]);
   });
 
+  it('migrates prior card, portfolio and API labels into the current account comparison', () => {
+    const plans = normalizeAccountPlans([{
+      id: 'elite',
+      features: ['Smart Card Experience', 'Portfolio & Market View', 'Business & API Capabilities'],
+    }]);
+    expect(plans[2].features).toEqual([
+      'Virtual Card Experience',
+      'Physical Card Experience',
+      'Investment & Portfolio View',
+      'Business & API Access',
+    ]);
+  });
+
   it('projects plans publicly and preserves super-admin, CSRF and audit controls for writes', () => {
     const publicRoute = fs.readFileSync(path.resolve(process.cwd(), 'src/server/api/settings/website/GET.ts'), 'utf8');
     const adminRoute = fs.readFileSync(path.resolve(process.cwd(), 'src/server/api/admin/website/POST.ts'), 'utf8');
@@ -40,6 +53,8 @@ describe('account plan management', () => {
     expect(publicRoute).toContain('accountPlans: normalizeAccountPlans');
     expect(adminRoute).toContain('admin_website_settings_updated');
     expect(publicPage).toContain("fetch('/api/settings/website')");
+    expect(publicPage).toContain("name: 'Digital-Asset View'");
+    expect(publicPage).toContain("name: 'Physical Card Experience'");
     expect(adminPage).toContain('Account Plan Management');
     expect(adminPage).toContain('authHeaders()');
   });
