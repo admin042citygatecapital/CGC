@@ -3,7 +3,7 @@
  * Send or schedule a campaign to the selected subscriber segment.
  */
 import type { Request, Response } from 'express';
-import { getCampaign, markCampaignSent, appendEmailLog } from '../../../../../lib/campaignStore.js';
+import { claimCampaignForSending, markCampaignSent, appendEmailLog, updateCampaign } from '../../../../../lib/campaignStore.js';
 import { getAllSubscribers as readSubscribers } from '../../../../../lib/subscriberStore.js';
 import { sendMail } from '../../../../../lib/emailService.js';
 
@@ -22,13 +22,14 @@ function applyVariables(text: string, vars: Record<string, string>): string {
 }
 
 export default async function handler(req: Request, res: Response) {
+  let claimedId = '';
   try {
     const { id } = req.body as { id: string };
     if (!id) return res.status(400).json({ error: 'Campaign id required' });
 
-    const campaign = getCampaign(id);
-    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-    if (campaign.status === 'sent') return res.status(400).json({ error: 'Campaign already sent' });
+    const campaign = await claimCampaignForSending(id);
+    if (!campaign) return res.status(409).json({ error: 'Campaign is missing, already sent, or currently sending.' });
+    claimedId = id;
 
     // Resolve recipients
     let subscribers = (await readSubscribers()).filter(s => s.status === 'active');
@@ -57,10 +58,10 @@ export default async function handler(req: Request, res: Response) {
 
       try {
         await sendMail({ to: sub.email, subject, html: bodyWithFooter });
-        appendEmailLog({ to: sub.email, subject, template: `campaign:${id}`, status: 'delivered', sentAt: new Date().toISOString(), campaignId: id });
+        await appendEmailLog({ to: sub.email, subject, template: `campaign:${id}`, status: 'delivered', sentAt: new Date().toISOString(), campaignId: id });
         sent++;
       } catch (err) {
-        appendEmailLog({ to: sub.email, subject, template: `campaign:${id}`, status: 'failed', sentAt: new Date().toISOString(), errorMessage: String(err), campaignId: id });
+        await appendEmailLog({ to: sub.email, subject, template: `campaign:${id}`, status: 'failed', sentAt: new Date().toISOString(), errorMessage: err instanceof Error ? err.name : 'DeliveryError', campaignId: id });
         failed++;
       }
     }
@@ -75,9 +76,13 @@ export default async function handler(req: Request, res: Response) {
       unsubscribes: 0,
     };
 
-    const updated = markCampaignSent(id, stats);
+    const updated = await markCampaignSent(id, stats);
     return res.json({ ok: true, campaign: updated, stats });
   } catch (err) {
-    return res.status(500).json({ error: String(err) });
+    if (claimedId) {
+      try { await updateCampaign(claimedId, { status: 'failed' }); } catch { /* original error remains authoritative */ }
+    }
+    console.error('newsletter.campaign.send_failed', err);
+    return res.status(500).json({ error: 'Unable to send campaign.' });
   }
 }

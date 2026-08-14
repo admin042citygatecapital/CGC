@@ -29,7 +29,7 @@ function response() {
 describe('newsletter campaign tracking classification', () => {
   it('creates campaigns without invented engagement measurements', async () => {
     const store = await import('../../server/lib/campaignStore.js');
-    const campaign = store.createCampaign({
+    const campaign = await store.createCampaign({
       name: 'Preview update',
       subject: 'Product update',
       body: '<p>Update</p>',
@@ -55,7 +55,7 @@ describe('newsletter campaign tracking classification', () => {
     fs.writeFileSync(path.join(newsletterDir, 'campaigns.json'), JSON.stringify([legacy]), 'utf8');
 
     const store = await import('../../server/lib/campaignStore.js');
-    expect(store.listCampaigns()[0].stats).toMatchObject({
+    expect((await store.listCampaigns())[0].stats).toMatchObject({
       openRate: null,
       clickRate: null,
       engagementTracking: 'not_configured',
@@ -65,7 +65,7 @@ describe('newsletter campaign tracking classification', () => {
   it('labels campaign API data as delivery records without engagement tracking', async () => {
     const handler = (await import('../../server/api/admin/newsletter/campaigns/GET.js')).default;
     const result = response();
-    handler({} as Request, result.res);
+    await handler({} as Request, result.res);
     expect(result.state.status).toBe(200);
     expect(result.state.body.dataClassification).toBe('email_delivery_records_without_engagement_tracking');
   });
