@@ -4,31 +4,27 @@
  * Body: CMS form fields (heroTitle, heroSubtitle, heroCTA, metaTitle, etc.)
  */
 import type { Request, Response } from 'express';
-import { writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { appendAudit } from '../../../lib/auditLog.js';
-import { privateSubdirectory } from '../../../lib/storagePaths.js';
+import { appendCriticalAudit } from '../../../lib/auditLog.js';
+import { validateCmsSettings, writeCmsSettings } from '../../../lib/cmsSettingsStore.js';
 
-const STORE_DIR  = privateSubdirectory('admin');
-const STORE_FILE = join(STORE_DIR, 'cms.json');
-
-export default function handler(req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
   try {
-    const body = req.body as Record<string, unknown>;
-    if (!body || typeof body !== 'object') {
+    const body = validateCmsSettings(req.body);
+    if (!body) {
       return res.status(400).json({ error: 'Invalid request body.' });
     }
 
-    mkdirSync(STORE_DIR, { recursive: true });
-    writeFileSync(STORE_FILE, JSON.stringify({ ...body, updatedAt: new Date().toISOString() }, null, 2), 'utf-8');
-
-    appendAudit({
+    const session = req.adminSession!;
+    await appendCriticalAudit({
       event: 'admin_cms_updated',
+      adminId: session.adminId,
+      email: session.email,
       ip: req.ip ?? 'unknown',
       meta: { fields: Object.keys(body) },
     });
+    const data = await writeCmsSettings(body, session.adminId);
 
-    return res.json({ ok: true, message: 'CMS content saved.' });
+    return res.json({ ok: true, message: 'CMS content saved.', data });
   } catch (err) {
     console.error('admin.cms.save.error', err);
     return res.status(500).json({ error: 'Failed to save CMS content.' });
