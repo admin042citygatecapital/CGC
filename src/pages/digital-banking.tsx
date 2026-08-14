@@ -36,6 +36,8 @@ interface Plan {
   closing: string;
   cta: string;
   href: string;
+  icon: typeof WalletCards;
+  audience: string;
   highlight?: boolean;
 }
 
@@ -57,6 +59,8 @@ const PLAN_PRESENTATION: Plan[] = [
     closing: 'Simple. Digital. Essential.',
     cta: 'Explore Standard',
     href: '/register?product=digital-banking-standard',
+    icon: WalletCards,
+    audience: 'For individuals getting started',
   },
   {
     key: 'premium',
@@ -69,6 +73,8 @@ const PLAN_PRESENTATION: Plan[] = [
     closing: 'Powerful. Flexible. Intelligent.',
     cta: 'Explore Premium',
     href: '/register?product=digital-banking-premium',
+    icon: CreditCard,
+    audience: 'For professionals and active customers',
     highlight: true,
   },
   {
@@ -82,6 +88,8 @@ const PLAN_PRESENTATION: Plan[] = [
     closing: 'Personalised. Advanced. Exclusive.',
     cta: 'Contact Elite Team',
     href: '/contact?service=elite-digital-banking',
+    icon: Sparkles,
+    audience: 'For eligible private and professional clients',
   },
 ];
 
@@ -118,9 +126,15 @@ const comparisonFeatures: ComparisonFeature[] = [
   },
   {
     icon: BarChart3,
-    name: 'Financial Analytics',
-    description: 'Understand balances, spending, income and account-performance trends.',
-    plans: { standard: 'Smart insights', premium: 'Advanced insights', elite: 'Advanced insights' },
+    name: 'Financial Dashboard',
+    description: 'See balances, recent transactions, income and spending activity in one place.',
+    plans: { standard: true, premium: true, elite: true },
+  },
+  {
+    icon: BarChart3,
+    name: 'Smart Analytics',
+    description: 'Understand spending, income and account-performance trends.',
+    plans: { standard: 'Essential', premium: 'Advanced', elite: 'Advanced' },
   },
   {
     icon: Sparkles,
@@ -133,6 +147,12 @@ const comparisonFeatures: ComparisonFeature[] = [
     name: 'Rewards & Benefits',
     description: 'Eligible programme benefits where supported and available.',
     plans: { standard: false, premium: true, elite: true },
+  },
+  {
+    icon: FileChartColumn,
+    name: 'Bill Payments',
+    description: 'Organise eligible bills and scheduled or recurring payment instructions.',
+    plans: { standard: 'Eligible bills', premium: 'Expanded', elite: 'Expanded' },
   },
   {
     icon: Headphones,
@@ -148,9 +168,15 @@ const comparisonFeatures: ComparisonFeature[] = [
   },
   {
     icon: Handshake,
-    name: 'Concierge & Onboarding',
-    description: 'Guided onboarding and eligible lifestyle or service assistance.',
-    plans: { standard: false, premium: false, elite: 'White-glove' },
+    name: 'White-Glove Onboarding',
+    description: 'A guided onboarding experience for configuring eligible services.',
+    plans: { standard: false, premium: false, elite: true },
+  },
+  {
+    icon: Handshake,
+    name: 'Concierge Services',
+    description: 'Eligible lifestyle, travel or service assistance where available.',
+    plans: { standard: false, premium: false, elite: true },
   },
   {
     icon: Code2,
@@ -166,9 +192,9 @@ const comparisonFeatures: ComparisonFeature[] = [
   },
   {
     icon: ShieldCheck,
-    name: 'Layered Security',
+    name: 'Enhanced Security',
     description: 'Authentication, monitoring, notifications and account-protection controls.',
-    plans: { standard: true, premium: 'Enhanced', elite: 'Enhanced' },
+    plans: { standard: 'Layered', premium: 'Enhanced', elite: 'Enhanced' },
   },
 ];
 
@@ -284,8 +310,12 @@ export default function DigitalBankingPage() {
                 {plans.map(plan => (
                   <div key={plan.key} className={`relative border-l border-white/10 p-7 text-center ${plan.highlight ? 'bg-gradient-to-b from-primary/15 to-primary/[0.035]' : ''}`}>
                     {plan.highlight && <span className="absolute right-4 top-4 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-primary">Popular</span>}
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{plan.eyebrow}</p>
+                    <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
+                      <plan.icon size={23} />
+                    </span>
+                    <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{plan.eyebrow}</p>
                     <h3 className="mt-3 text-2xl font-bold uppercase tracking-[0.1em]">{plan.name}</h3>
+                    <p className="mt-2 text-xs text-white/45">{plan.audience}</p>
                     <div className="mt-4 flex items-end justify-center gap-1">
                       <span className="text-4xl font-bold text-primary">{plan.price}</span>
                       {plan.period && <span className="pb-1 text-sm text-white/45">{plan.period}</span>}
@@ -344,6 +374,7 @@ export default function DigitalBankingPage() {
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">{plan.eyebrow}</p>
                         <h3 className="mt-2 text-3xl font-bold">{plan.name}</h3>
+                        <p className="mt-2 text-xs text-white/45">{plan.audience}</p>
                       </div>
                       {plan.highlight && <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">Popular</span>}
                     </div>

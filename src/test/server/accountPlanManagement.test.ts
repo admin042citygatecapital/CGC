@@ -17,6 +17,21 @@ describe('account plan management', () => {
     expect(plans[2].ctaLink).toBe('/contact?service=elite-digital-banking');
   });
 
+  it('migrates saved legacy feature labels into the current comparison model', () => {
+    const plans = normalizeAccountPlans([{
+      id: 'elite',
+      features: ['Financial Analytics', 'Layered Security', 'Concierge & Onboarding'],
+    }]);
+    expect(plans[2].features).toEqual([
+      'Financial Dashboard',
+      'Smart Analytics',
+      'Bill Payments',
+      'Enhanced Security',
+      'White-Glove Onboarding',
+      'Concierge Services',
+    ]);
+  });
+
   it('projects plans publicly and preserves super-admin, CSRF and audit controls for writes', () => {
     const publicRoute = fs.readFileSync(path.resolve(process.cwd(), 'src/server/api/settings/website/GET.ts'), 'utf8');
     const adminRoute = fs.readFileSync(path.resolve(process.cwd(), 'src/server/api/admin/website/POST.ts'), 'utf8');
