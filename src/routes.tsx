@@ -3,6 +3,7 @@ import { useCustomerAuth } from '@/lib/customerAuth';
 import { lazy,useEffect,type ReactNode } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { Navigate, useNavigate } from 'react-router-dom';
+import CustomerMobileNav from './components/CustomerMobileNav';
 
 export type Path = string;
 export type Params = Record<string, string | undefined>;
@@ -15,7 +16,7 @@ function AdminOnly({ children }: { children: ReactNode }) {
     if (!loading && !admin) navigate('/admin/login', { replace: true });
   }, [admin, loading, navigate]);
   if (loading || !admin) return null;
-  return <>{children}</>;
+  return <><div className="pb-16 md:pb-0">{children}</div><CustomerMobileNav /></>;
 }
 
 /** Redirect to /login if not authenticated as customer */
