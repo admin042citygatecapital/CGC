@@ -11,11 +11,12 @@ describe('published public website boundary', () => {
     expect(routes).toContain("{ path: '/support', element: <SupportPage /> }");
   });
 
-  it('provides the complete AIRO-style public navigation', () => {
+  it('provides focused public navigation without a duplicate registration CTA', () => {
     const header = readFileSync('src/layouts/parts/Header.tsx', 'utf8');
     expect(header).toContain('Digital Banking');
-    expect(header).toContain('Open Account');
     expect(header).toContain('to="/login"');
+    expect(header).not.toContain('to="/register"');
+    expect(header).not.toContain('Open Account');
   });
 
   it('publishes the canonical homepage and public product routes', () => {
