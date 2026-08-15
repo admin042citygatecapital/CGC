@@ -9,6 +9,7 @@
  *   TransfersSection
  *   SecuritySection
  *   MobileAppSection
+ *   LookingAheadSection
  *   PricingSection
  *   TestimonialsSection
  *   FaqSection
@@ -374,6 +375,45 @@ export function BankingFitsLifeBanner() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </motion.div>
+    </section>
+  );
+}
+
+export function LookingAheadSection() {
+  return (
+    <section className="relative overflow-hidden border-y border-primary/10 bg-primary/[0.025] px-4 py-16 md:px-6 md:py-24">
+      <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-[110px]" />
+      <motion.div
+        initial={{ opacity: 0, y: 28 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.65, ease: 'easeOut' }}
+        className="container relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-primary/20 bg-gradient-to-br from-[#11100c] via-[#090909] to-black shadow-[0_28px_90px_rgba(0,0,0,0.38)]"
+      >
+        <div className="absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+        <div className="grid items-center gap-10 px-7 pb-10 pt-14 md:px-12 md:pb-14 lg:grid-cols-[1.25fr_0.75fr] lg:gap-16 lg:px-16 lg:pt-16">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Looking ahead</p>
+            <h2 className="mt-5 max-w-3xl text-4xl font-bold leading-tight tracking-tight md:text-5xl">
+              Opening the gate to <span className="text-gold-gradient">what comes next.</span>
+            </h2>
+            <div className="mt-7 max-w-3xl space-y-5 text-sm leading-7 text-foreground/55 md:text-base md:leading-8">
+              <p>Money will continue becoming more digital. Businesses will become increasingly international. Financial information will become more immediate, and security expectations will continue to rise.</p>
+              <p>City Gate Capital is being built to evolve alongside those needs while maintaining the principles required for a trusted financial relationship.</p>
+              <p className="font-semibold text-foreground/90">We are building carefully. We are thinking globally. We are creating a foundation for what comes next.</p>
+            </div>
+          </div>
+
+          <div className="relative mt-12 rounded-3xl border border-primary/25 bg-black/55 px-7 pb-9 pt-20 text-center shadow-[0_20px_70px_rgba(201,168,76,0.08)] lg:mt-8">
+            <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/30 bg-[#080808] p-3 shadow-[0_0_45px_rgba(201,168,76,0.22)]">
+              <img src="/assets/brand/city-gate-capital-seal.png" alt="City Gate Capital" className="h-28 w-28 object-contain" />
+            </div>
+            <div className="mx-auto mb-7 h-px w-24 bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+            <p className="text-xl font-semibold leading-8 text-foreground md:text-2xl">Technology is the infrastructure.</p>
+            <p className="mt-2 text-xl font-semibold leading-8 text-primary md:text-2xl">People are the purpose.</p>
           </div>
         </div>
       </motion.div>

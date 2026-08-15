@@ -120,13 +120,6 @@ function ComparisonCell({ value }: { value: string | boolean | null }) {
   return <span className="text-xs text-foreground/60">{value}</span>;
 }
 
-// Hero account experience card
-const heroStats = [
-  { label: 'Total Balance', value: '$48,291.40', sub: '+2.4% this month', color: '#C9A84C' },
-  { label: 'Projected Return', value: '$210.18', sub: 'Illustrative only', color: '#10B981' },
-  { label: 'Transfers',     value: '12',         sub: 'This week',        color: '#627EEA' },
-];
-
 function AccountsPageContent() {
   const [selectedType, setSelectedType] = useState('Savings');
   const [showComparison, setShowComparison] = useState(false);
@@ -207,7 +200,8 @@ function AccountsPageContent() {
       </Helmet>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <section className="relative pt-36 pb-24 overflow-hidden">
+      {false && (
+      <section>
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] opacity-[0.05] blur-[120px] pointer-events-none"
           style={{ background: 'radial-gradient(ellipse, #C9A84C, transparent)' }} />
@@ -335,9 +329,10 @@ function AccountsPageContent() {
           </div>
         </div>
       </section>
+      )}
 
-      <FeaturesGrid />
       <DashboardPreview />
+      <FeaturesGrid />
       <InvestmentsSection />
 
       {/* ── Account Type Cards ───────────────────────────────────────── */}
@@ -499,7 +494,8 @@ function AccountsPageContent() {
       </AnimatePresence>
 
       {/* ── KYC Steps ────────────────────────────────────────────────── */}
-      <section className="py-28">
+      {false && (
+      <section>
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
@@ -540,6 +536,7 @@ function AccountsPageContent() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── Testimonials ─────────────────────────────────────────────── */}
       <section className="py-16 bg-[#060606]">
@@ -642,6 +639,12 @@ function AccountsPageContent() {
     </>
   );
 }
+
+const heroStats = [
+  { label: 'Total Balance', value: '$48,291.40', sub: '+2.4% this month', color: '#C9A84C' },
+  { label: 'Projected Return', value: '$210.18', sub: 'Illustrative only', color: '#10B981' },
+  { label: 'Transfers',     value: '12',         sub: 'This week',        color: '#627EEA' },
+];
 
 export default function AccountsPage() {
   return <HomepageContentProvider><AccountsPageContent /></HomepageContentProvider>;

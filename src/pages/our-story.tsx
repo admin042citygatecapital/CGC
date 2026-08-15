@@ -254,25 +254,6 @@ export default function OurStoryPage() {
           </div>
         </section>
 
-        <section className="py-24 border-y border-primary/10 bg-primary/[0.03]">
-          <div className="container mx-auto px-4 md:px-6 max-w-5xl grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
-            <Reveal>
-              <p className="text-primary text-xs uppercase tracking-[0.25em] mb-4">Looking ahead</p>
-              <h2 className="text-4xl md:text-5xl font-bold mb-7">Opening the gate to what comes next.</h2>
-              <div className="space-y-5 text-foreground/60 leading-8">
-                <p>Money will continue becoming more digital. Businesses will become increasingly international. Financial information will become more immediate, and security expectations will continue to rise.</p>
-                <p>City Gate Capital is being built to evolve alongside those needs while maintaining the principles required for a trusted financial relationship.</p>
-                <p className="text-foreground font-semibold">We are building carefully. We are thinking globally. We are creating a foundation for what comes next.</p>
-              </div>
-            </Reveal>
-            <Reveal className="rounded-3xl border border-primary/20 bg-black/35 p-8">
-              <img src="/assets/brand/city-gate-capital-seal.png" alt="City Gate Capital" className="w-28 h-28 object-contain mx-auto mb-6" />
-              <p className="text-center text-2xl font-semibold">Technology is the infrastructure.</p>
-              <p className="text-center text-primary text-2xl font-semibold mt-2">People are the purpose.</p>
-            </Reveal>
-          </div>
-        </section>
-
         <section className="py-24">
           <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
             <Reveal>

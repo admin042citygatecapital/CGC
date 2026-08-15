@@ -9,6 +9,7 @@ import {
   FaqSection,
   GlobalBankingSection,
   HeroSection,
+  LookingAheadSection,
 } from '@/sections/BankingModule';
 
 function HomePageContent() {
@@ -82,6 +83,7 @@ function HomePageContent() {
       <HeroSection />
       <GlobalBankingSection />
       <BankingFitsLifeBanner />
+      <LookingAheadSection />
 
       <section className="border-y border-primary/10 bg-[#060606] py-10 md:py-12">
         <div className="container mx-auto px-4 md:px-6">
