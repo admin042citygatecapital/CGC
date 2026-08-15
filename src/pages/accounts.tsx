@@ -11,7 +11,6 @@ import { trackConversion } from '@/lib/useAnalytics';
 import AccountOpeningModal from '@/components/AccountOpeningModal';
 import { HomepageContentProvider } from '@/lib/homepageContentContext';
 import { DashboardPreview, FeaturesGrid } from '@/sections/BankingModule';
-import { InvestmentsSection } from '@/sections/InvestmentsModule';
 
 const kycSteps = [
   { icon: User,        step: '01', title: 'Create Your Profile',      desc: 'Enter your email and set a secure password to access the platform workspace.',                       color: '#C9A84C' },
@@ -236,7 +235,6 @@ function AccountsPageContent() {
 
       <DashboardPreview compactTop />
       <FeaturesGrid />
-      <InvestmentsSection />
 
       {/* ── KYC Steps ────────────────────────────────────────────────── */}
       {showRetiredPresentationSections && (

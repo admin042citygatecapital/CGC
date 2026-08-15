@@ -24,6 +24,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { DEFAULT_ACCOUNT_PLANS, normalizeAccountPlans, type AccountPlanConfig } from '@/lib/accountPlans';
+import { InvestmentsSection } from '@/sections/InvestmentsModule';
 
 type PlanKey = 'standard' | 'premium' | 'elite';
 
@@ -240,6 +241,8 @@ const experiencePrinciples = [
   },
 ];
 
+const showPlanComparison = false;
+
 function Availability({ value }: { value: string | boolean }) {
   if (!value) return <span className="text-white/25" aria-label="Not included">—</span>;
   if (value === true) {
@@ -309,10 +312,7 @@ export default function DigitalBankingPage() {
           <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:42px_42px]" />
           <div className="container relative mx-auto px-4 text-center md:px-6">
             <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65 }}>
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-                <WalletCards size={15} /> Banking designed around the way you manage money
-              </span>
-              <h1 className="mx-auto mt-7 max-w-5xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-7xl">
+              <h1 className="mx-auto max-w-5xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-7xl">
                 Choose the Account<br />
                 <span className="text-gold-shimmer">That Fits Your Ambition</span>
               </h1>
@@ -324,6 +324,7 @@ export default function DigitalBankingPage() {
           </div>
         </section>
 
+        {showPlanComparison && (
         <section className="py-14 md:py-24" aria-labelledby="compare-plans">
           <div className="container mx-auto px-4 md:px-6">
             <div className="mb-10 text-center md:mb-14">
@@ -447,6 +448,9 @@ export default function DigitalBankingPage() {
             </div>
           </div>
         </section>
+        )}
+
+        <InvestmentsSection />
 
         <section className="border-y border-primary/10 bg-[#090909] py-20 md:py-28">
           <div className="container mx-auto grid items-center gap-12 px-4 md:px-6 lg:grid-cols-[1.05fr_.95fr]">
@@ -514,9 +518,6 @@ export default function DigitalBankingPage() {
                   <p className="mt-2 text-xs leading-5 text-white/42">{item.body}</p>
                 </div>
               ))}
-            </div>
-            <div className="mx-auto mt-10 max-w-5xl rounded-2xl border border-white/10 bg-white/[0.025] px-5 py-4 text-center text-[11px] leading-5 text-white/38">
-              Account features, eligibility, pricing and availability may vary by jurisdiction. Banking, payment, card, investment, custody and digital-asset services requiring regulatory authorisation are available only when delivered through appropriately licensed or regulated entities and approved partners.
             </div>
           </div>
         </section>

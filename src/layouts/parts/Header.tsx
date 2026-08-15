@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X } from 'lucide-react';
+import { Home, Menu, X } from 'lucide-react';
 import { prefetchRoute } from '@/lib/prefetchRoute';
 import CgcLogo from '@/components/CgcLogo';
 
 const navLinks = [
   { label: 'Digital Banking', href: '/digital-banking' },
-  { label: 'Accounts',        href: '/accounts'          },
   { label: 'About',           href: '/about'            },
   { label: 'Contact',         href: '/contact'          },
   { label: 'Support',         href: '/support'          },
@@ -38,10 +37,18 @@ export default function Header() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex items-center justify-between h-[72px]">
 
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+            {/* Brand and explicit home navigation */}
+            <div className="flex shrink-0 items-center gap-2.5">
               <CgcLogo size={48} variant="horizontal" glow />
-            </Link>
+              <Link
+                to="/"
+                aria-label="Home"
+                title="Home"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.05] text-foreground/55 transition-colors hover:border-primary/35 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Home size={17} />
+              </Link>
+            </div>
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-0.5">
@@ -52,7 +59,7 @@ export default function Header() {
                     key={link.href}
                     to={link.href}
                     onMouseEnter={() => prefetchRoute(link.href)}
-                    className={`relative px-4 py-2 text-sm font-medium transition-colors rounded-lg ${
+                    className={`relative px-3 py-2 text-sm font-medium transition-colors rounded-lg ${
                       active
                         ? 'text-primary'
                         : 'text-foreground/60 hover:text-foreground'

@@ -48,8 +48,13 @@ function formatChange(value: unknown): string {
   return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
 }
 
+/** Normalise exchange-specific codes before they become map keys in the UI. */
+function normalizeTickerSymbol(value: unknown): string {
+  return String(value ?? '').trim().toUpperCase().replace(/^XBT/, 'BTC');
+}
+
 function parseTicker(raw: Record<string, unknown>): TickerData | null {
-  const symbol = String(raw.symbol ?? raw.s ?? '');
+  const symbol = normalizeTickerSymbol(raw.symbol ?? raw.s);
   const price  = finiteNumber(raw.price ?? raw.lastPrice ?? raw.p, Number.NaN);
   if (!symbol || !Number.isFinite(price)) return null;
   const change24h = finiteNumber(

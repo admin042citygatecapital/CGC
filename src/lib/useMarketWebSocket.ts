@@ -67,9 +67,14 @@ function formatChange(value: unknown): string {
   return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
 }
 
+/** Keep provider-specific asset codes out of the customer-facing data model. */
+function normalizeTickerSymbol(value: unknown): string {
+  return String(value ?? '').trim().toUpperCase().replace(/^XBT/, 'BTC');
+}
+
 // Parse a raw REST ticker response into TickerData
 function parseRestTicker(raw: Record<string, unknown>): TickerData | null {
-  const symbol = String(raw.symbol ?? raw.s ?? '');
+  const symbol = normalizeTickerSymbol(raw.symbol ?? raw.s);
   const price  = finiteNumber(raw.price ?? raw.p ?? raw.lastPrice, Number.NaN);
   if (!symbol || !Number.isFinite(price)) return null;
   const change24h = finiteNumber(raw.change24h ?? raw.priceChangePercent ?? raw.changePercent);

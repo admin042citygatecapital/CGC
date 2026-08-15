@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BarChart3,
   Building2,
-  CheckCircle2,
   Globe2,
   Landmark,
   MapPin,
@@ -265,11 +264,6 @@ export default function OurStoryPage() {
                 <iframe src={storyLocation.mapEmbedUrl} title="Google Map showing City Gate Capital at 51 Mosley Street, Manchester" className="h-72 md:h-96 w-full" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
               </div>
               <a href={storyLocation.directionsUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"><MapPin size={17} /> Open in Google Maps</a>
-              <div><Link to="/contact" className="inline-flex items-center gap-2 mt-10 px-7 py-4 rounded-xl bg-primary text-black font-semibold">Talk to our team <ArrowRight size={18} /></Link></div>
-              <div className="mt-12 rounded-2xl border border-primary/15 bg-primary/[0.025] p-6 text-left flex gap-4">
-                <CheckCircle2 className="text-primary shrink-0 mt-1" size={20} />
-                <p className="text-xs md:text-sm text-foreground/50 leading-7">Product availability, eligibility, and functionality may vary by jurisdiction. Banking, payment, investment, custody, or digital-asset services requiring authorisation will be made available only through appropriate legal structures and, where applicable, licensed or regulated third-party institutions. Product-specific disclosures will identify the responsible provider and applicable protections.</p>
-              </div>
             </Reveal>
           </div>
         </section>

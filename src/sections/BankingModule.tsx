@@ -129,21 +129,18 @@ export function HeroSection() {
       <div className="absolute top-1/3 left-1/4 w-[600px] h-[600px] rounded-full opacity-10 blur-[120px]"
         style={{ background: 'radial-gradient(circle, #C9A84C 0%, transparent 70%)' }} />
 
-      <motion.div style={{ opacity: heroOpacity }} className="container mx-auto px-4 md:px-6 relative z-10 py-32 pt-40">
+      <motion.div style={{ opacity: heroOpacity }} className="container relative z-10 mx-auto px-5 pb-20 pt-28 sm:px-6 sm:pb-24 sm:pt-36 md:py-32 md:pt-40">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="text-center lg:text-left">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
-              <span className="inline-flex rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary shadow-[0_0_30px_rgba(201,168,76,0.08)]">
-                {home.finalCta.badge}
-              </span>
-              <h1 className="mt-8 text-5xl font-bold leading-[0.98] tracking-tight text-foreground md:text-6xl xl:text-7xl">
+              <h1 className="text-4xl font-bold leading-[1.02] tracking-tight text-foreground sm:text-5xl md:text-6xl xl:text-7xl">
                 {home.finalCta.headline1}{' '}
                 <span className="block text-gold-shimmer lg:inline">{home.finalCta.headlineAccent}</span>
               </h1>
-              <p className="mx-auto mt-7 max-w-xl text-lg leading-8 text-foreground/55 lg:mx-0">
+              <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-foreground/55 sm:mt-7 sm:text-lg sm:leading-8 lg:mx-0">
                 {home.finalCta.subheadline}
               </p>
-              <div className="mt-9 flex flex-wrap items-center justify-center gap-5 lg:justify-start">
+              <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-4 sm:mt-9 sm:flex-row sm:flex-wrap sm:items-center sm:gap-5 lg:justify-start [&>a]:justify-center">
                 <GoldButton to="/register">{home.finalCta.ctaPrimary}</GoldButton>
                 <Link to="/digital-banking" className="inline-flex items-center gap-2 text-sm font-medium text-foreground/65 transition-colors hover:text-foreground">
                   {home.finalCta.ctaSecondary} <ArrowRight size={15} />
@@ -394,20 +391,8 @@ export function LookingAheadSection() {
         className="container relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-primary/20 bg-gradient-to-br from-[#11100c] via-[#090909] to-black shadow-[0_28px_90px_rgba(0,0,0,0.38)]"
       >
         <div className="absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
-        <div className="grid items-center gap-10 px-7 pb-10 pt-14 md:px-12 md:pb-14 lg:grid-cols-[1.25fr_0.75fr] lg:gap-16 lg:px-16 lg:pt-16">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Looking ahead</p>
-            <h2 className="mt-5 max-w-3xl text-4xl font-bold leading-tight tracking-tight md:text-5xl">
-              Opening the gate to <span className="text-gold-gradient">what comes next.</span>
-            </h2>
-            <div className="mt-7 max-w-3xl space-y-5 text-sm leading-7 text-foreground/55 md:text-base md:leading-8">
-              <p>Money will continue becoming more digital. Businesses will become increasingly international. Financial information will become more immediate, and security expectations will continue to rise.</p>
-              <p>City Gate Capital is being built to evolve alongside those needs while maintaining the principles required for a trusted financial relationship.</p>
-              <p className="font-semibold text-foreground/90">We are building carefully. We are thinking globally. We are creating a foundation for what comes next.</p>
-            </div>
-          </div>
-
-          <div className="relative mt-12 rounded-3xl border border-primary/25 bg-black/55 px-7 pb-9 pt-20 text-center shadow-[0_20px_70px_rgba(201,168,76,0.08)] lg:mt-8">
+        <div className="flex justify-center px-7 pb-10 pt-20 md:px-12 md:pb-14 lg:px-16 lg:pt-24">
+          <div className="relative w-full max-w-xl rounded-3xl border border-primary/25 bg-black/55 px-7 pb-9 pt-20 text-center shadow-[0_20px_70px_rgba(201,168,76,0.08)]">
             <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/30 bg-[#080808] p-3 shadow-[0_0_45px_rgba(201,168,76,0.22)]">
               <img src="/assets/brand/city-gate-capital-seal.png" alt="City Gate Capital" className="h-28 w-28 object-contain" />
             </div>
@@ -430,7 +415,6 @@ export function DashboardPreview({ compactTop = false }: { compactTop?: boolean 
       <div className="container mx-auto px-4 md:px-6">
         <div className={`text-center ${compactTop ? 'mb-10' : 'mb-16'}`}>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">{home.dashboard.eyebrow}</span>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
               {home.dashboard.headline1}<br /><span className="text-gold-gradient">{home.dashboard.headlineAccent}</span>
             </h2>

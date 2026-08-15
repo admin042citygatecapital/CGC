@@ -2,7 +2,7 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { MessageCircle, Mail, Phone, ChevronDown, ChevronUp, Search, ArrowRight, Clock, Zap, Shield, BookOpen, CreditCard, Globe, Lock, Star, Send, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { MessageCircle, ChevronDown, ChevronUp, Search, ArrowRight, Clock, Zap, Shield, BookOpen, CreditCard, Globe, Lock, Send, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 
 const categories = [
@@ -23,12 +23,12 @@ const faqs = [
   {
     category: 'Account & KYC',
     q: 'Is my money safe with City Gate Capital?',
-    a: 'The current platform does not accept customer funds. Sample balances are not deposits or insured funds. Financial operation requires approved providers, safeguarding arrangements and independent review.',
+    a: 'City Gate Capital does not currently accept customer funds. Account funding becomes available only with approved providers, appropriate safeguarding arrangements and the required account approvals.',
   },
   {
     category: 'Transfers',
     q: 'What are the transfer fees?',
-    a: 'Transfer screens currently use sample values. Operational fees, exchange rates, availability and settlement terms will be published after payment providers and target jurisdictions are approved.',
+    a: 'Available fees, exchange rates and settlement estimates are shown before an eligible transfer is authorized. Coverage depends on the payment provider, currency and destination.',
   },
   {
     category: 'Transfers',
@@ -38,17 +38,17 @@ const faqs = [
   {
     category: 'Crypto & Wallet',
     q: 'What cryptocurrencies do you support?',
-    a: 'The interface demonstrates several digital assets using market or sample data. City Gate Capital does not provide live trading or custody in this environment.',
+    a: 'Supported asset pages may provide market information and portfolio views. Digital-asset custody, deposits, withdrawals and execution are available only where an approved provider and applicable permissions are in place.',
   },
   {
     category: 'Cards & Payments',
     q: 'How do I freeze my card?',
-    a: 'Card controls currently operate on sample records. No payment card is issued, and the freeze control does not affect a real card.',
+    a: 'Open Cards, select the eligible card, and choose Freeze Card. Card controls are available only after a card has been issued through an approved issuing partner.',
   },
   {
     category: 'Account & KYC',
     q: 'What is the daily transfer limit?',
-    a: 'Displayed limits are illustrative and do not authorize financial transactions. Operational limits will be defined by risk policy, provider contracts, verification level and applicable law.',
+    a: 'Your applicable transfer limit is shown during the transfer journey. Limits may vary by account, verification level, currency, destination, risk policy and provider coverage.',
   },
   {
     category: 'Getting Started',
@@ -63,7 +63,7 @@ const faqs = [
   {
     category: 'Cards & Payments',
     q: 'Can I use my card internationally?',
-    a: 'Cards in this environment are sample records and cannot be used for purchases. Issuing coverage, fees, exchange rates and card controls require an approved issuing partner before activation.',
+    a: 'International card use depends on the card programme, account eligibility, destination and applicable fees. These details are displayed only after card services are activated through an approved issuing partner.',
   },
 ];
 
@@ -88,13 +88,6 @@ function FaqItem({ q, a, category }: { q: string; a: string; category: string })
     </div>
   );
 }
-
-const supportStats = [
-  { value: 'Web',      label: 'Platform Support',            icon: Zap,           color: '#C9A84C' },
-  { value: 'Email',    label: 'Contact Channel',      icon: Clock,         color: '#627EEA' },
-  { value: 'Tracked',  label: 'Support Requests',     icon: MessageCircle, color: '#10B981' },
-  { value: 'Clear',    label: 'Launch Disclosures',   icon: Star,          color: '#9945FF' },
-];
 
 interface SupportConversation {
   id: string; subject: string; status: string;
@@ -247,89 +240,6 @@ export default function SupportPage() {
               />
             </div>
           </motion.div>
-        </div>
-      </section>
-
-      {/* Support stats */}
-      <section className="py-12 bg-[#060606]">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {supportStats.map((s, i) => (
-              <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                className="glass-card rounded-2xl p-5 gradient-border text-center">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3"
-                  style={{ background: `${s.color}15` }}>
-                  <s.icon size={18} style={{ color: s.color }} />
-                </div>
-                <p className="text-xl font-bold text-gold-gradient mb-0.5">{s.value}</p>
-                <p className="text-xs text-foreground/55">{s.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Contact channels */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-12">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="text-3xl font-bold text-foreground tracking-tight">
-                Reach Us <span className="text-gold-gradient">Directly</span>
-              </h2>
-            </motion.div>
-          </div>
-          <div className="grid md:grid-cols-3 gap-5">
-            {[
-              {
-                icon: MessageCircle,
-                title: 'Website Chat',
-                desc: 'Use website chat when the support team is available. Do not share passwords, identity documents, or payment information.',
-                action: 'Start Chat',
-                badge: 'When available',
-                color: '#10B981',
-              },
-              {
-                icon: Mail,
-                title: 'Email Support',
-                desc: 'Send a message to support@citygate.capital. Response and resolution times vary.',
-                action: 'Send Email',
-                badge: 'Email',
-                color: '#C9A84C',
-              },
-              {
-                icon: Phone,
-                title: 'Phone Support',
-                desc: 'Call +44 7888 382458. Availability and response times vary; no priority-service commitment is represented.',
-                action: 'Call Now',
-                badge: 'Phone',
-                color: '#627EEA',
-              },
-            ].map((c, i) => (
-              <motion.div
-                key={c.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="glass-card rounded-2xl p-7 gradient-border hover:border-primary/25 transition-colors group"
-              >
-                <div className="flex items-start justify-between mb-5">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110"
-                    style={{ background: `${c.color}15` }}>
-                    <c.icon size={24} style={{ color: c.color }} />
-                  </div>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: `${c.color}15`, color: c.color }}>{c.badge}</span>
-                </div>
-                <h3 className="text-base font-semibold text-foreground mb-2">{c.title}</h3>
-                <p className="text-sm text-foreground/50 leading-relaxed mb-5">{c.desc}</p>
-                <Link to="/contact" className="inline-flex items-center gap-2 text-sm font-semibold transition-colors"
-                  style={{ color: c.color }}>
-                  {c.action} <ArrowRight size={14} />
-                </Link>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 

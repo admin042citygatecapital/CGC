@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, ArrowRight, CheckCircle, ChevronDown, Loader2, Mail, MapPin } from 'lucide-react';
+import { ArrowRight, CheckCircle, ChevronDown, Loader2, Mail, MapPin } from 'lucide-react';
 import { SocialPlatformIcon } from '@/components/SocialPlatformIcon';
 import type { BusinessLocation } from '@/lib/businessLocation';
 
@@ -153,21 +153,6 @@ export default function Footer() {
               ))}
             </div>
           )}
-          <div className="flex items-center gap-5 text-xs text-foreground/50">
-            <button
-              type="button"
-              onClick={() => window.revokeAnalyticsConsent?.()}
-              className="transition-colors hover:text-primary"
-            >
-              Cookie settings
-            </button>
-            <div className="flex items-center gap-1.5">
-              <Globe size={11} />
-              <span>Financial technology company</span>
-            </div>
-            <span className="hidden md:inline">·</span>
-            <span className="hidden md:inline">Regulated services subject to authorisation and provider approval</span>
-          </div>
         </div>
       </div>
     </footer>

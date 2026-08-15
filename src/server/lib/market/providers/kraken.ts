@@ -35,6 +35,11 @@ function toKrakenPair(symbol: string): string {
   return symbol.replace('BTC', 'XBT').replace('/', '');
 }
 
+/** Translate Kraken's XBT code back to the platform's canonical BTC code. */
+function fromKrakenPair(symbol: string): string {
+  return symbol.toUpperCase().replace(/^XBT/, 'BTC');
+}
+
 export class KrakenProvider implements MarketDataProvider {
   readonly id   = 'kraken';
   readonly name = 'Kraken';
@@ -57,8 +62,8 @@ export class KrakenProvider implements MarketDataProvider {
       const price = parseFloat(c[0]);
       const open  = parseFloat(o);
       return {
-        symbol:      pair,
-        name:        pair,
+        symbol:      fromKrakenPair(pair),
+        name:        fromKrakenPair(pair),
         assetClass:  'crypto' as const,
         price,
         change24h:   price - open,
@@ -138,8 +143,8 @@ export class KrakenProvider implements MarketDataProvider {
       const price = parseFloat(c[0]);
       const open  = parseFloat(o);
       return {
-        symbol:      pair,
-        name:        pair,
+        symbol:      fromKrakenPair(pair),
+        name:        fromKrakenPair(pair),
         assetClass:  'crypto' as const,
         price,
         change24h:   price - open,
@@ -190,8 +195,8 @@ export class KrakenProvider implements MarketDataProvider {
           if (d.channel !== 'ticker') return;
           for (const t of d.data ?? []) {
             onUpdate({
-              symbol:      t.symbol,
-              name:        t.symbol,
+              symbol:      fromKrakenPair(t.symbol),
+              name:        fromKrakenPair(t.symbol),
               assetClass:  'crypto',
               price:       t.last,
               change24h:   t.change,

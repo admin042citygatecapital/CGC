@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MarketDataRegistry } from '../../server/lib/market/registry.js';
 import { CoinbaseProvider, toCoinbaseProductId } from '../../server/lib/market/providers/coinbase.js';
+import { KrakenProvider } from '../../server/lib/market/providers/kraken.js';
 import type { MarketDataProvider, ProviderCapabilities, Ticker } from '../../server/lib/market/types.js';
 
 const tickerCapabilities: ProviderCapabilities = {
@@ -71,6 +72,24 @@ describe('market provider fallbacks', () => {
       expect.any(Object),
     );
     expect(tickers).toHaveLength(1);
+    fetchMock.mockRestore();
+  });
+
+  it('normalizes Kraken XBT responses to the platform BTC symbol', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      error: [],
+      result: {
+        XBTUSDT: {
+          c: ['63158.81'], o: '62882.00', h: ['63300', '63400'],
+          l: ['62500', '62400'], v: ['100', '200'],
+        },
+      },
+    }), { status: 200 }));
+
+    const [ticker] = await new KrakenProvider().getTicker(['BTCUSDT']);
+
+    expect(ticker.symbol).toBe('BTCUSDT');
+    expect(ticker.name).toBe('BTCUSDT');
     fetchMock.mockRestore();
   });
 });

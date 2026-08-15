@@ -17,38 +17,33 @@ export interface TickerItem {
 
 const TICKER_SYMBOLS = [
   'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT',
-  'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'USDTUSDT',
+  'XRPUSDT', 'ADAUSDT', 'DOGEUSDT',
 ];
 
-const FALLBACK: TickerItem[] = [
-  { symbol: 'BTC/USD', price: '$67,420', change: '+3.2%', up: true  },
-  { symbol: 'ETH/USD', price: '$3,840',  change: '+1.8%', up: true  },
-  { symbol: 'SOL/USD', price: '$182.50', change: '-0.9%', up: false },
-  { symbol: 'BNB/USD', price: '$598',    change: '+2.1%', up: true  },
-  { symbol: 'XRP/USD', price: '$0.5420', change: '+0.4%', up: true  },
-  { symbol: 'ADA/USD', price: '$0.4810', change: '-0.3%', up: false },
-  { symbol: 'DOGE/USD',price: '$0.1620', change: '+1.1%', up: true  },
-  { symbol: 'USDT',    price: '$1.00',   change: '0.0%',  up: true  },
-];
+const EMPTY_TICKERS: TickerItem[] = TICKER_SYMBOLS.map(symbol => ({
+  symbol: symbol.replace(/USDT$/, '/USD'),
+  price: '—',
+  change: '—',
+  up: true,
+}));
 
 function cleanSymbol(raw: string): string {
-  return raw
-    .replace(/USDT$/, '/USD')
-    .replace(/USD$/, '/USD')
-    .replace(/USDT/, '/USDT');
+  const symbol = raw.trim().toUpperCase();
+  if (symbol.endsWith('USDT')) return `${symbol.slice(0, -4)}/USD`;
+  if (symbol.endsWith('USD')) return `${symbol.slice(0, -3)}/USD`;
+  return symbol;
 }
 
 export function useLiveTicker(): TickerItem[] {
   const { tickers } = useMarketWebSocket(TICKER_SYMBOLS, 10_000);
 
   return useMemo(() => {
-    if (tickers.size === 0) return FALLBACK;
+    if (tickers.size === 0) return EMPTY_TICKERS;
 
     return TICKER_SYMBOLS.map(sym => {
       const t = tickers.get(sym);
       if (!t) {
-        const fb = FALLBACK.find(f => f.symbol.startsWith(sym.replace('USDT', '')));
-        return fb ?? { symbol: cleanSymbol(sym), price: '—', change: '—', up: true };
+        return { symbol: cleanSymbol(sym), price: '—', change: '—', up: true };
       }
       return {
         symbol: cleanSymbol(sym),

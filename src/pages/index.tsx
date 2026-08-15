@@ -65,16 +65,20 @@ function HomePageContent() {
         <div className={`relative z-10 overflow-hidden border-b border-primary/10 bg-[#060606] ${announcement?.enabled && announcement.text.trim() ? '' : 'mt-[72px]'}`}>
           <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#060606] to-transparent" />
           <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#060606] to-transparent" />
-          <div className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 sm:flex"><WsStatusBadge status={wsStatus} isLive={isLive} source={source} /></div>
-          <div className="flex overflow-hidden py-2.5 sm:pl-40 lg:pl-44">
-            <div className="flex gap-10 whitespace-nowrap" style={{ animation: 'ticker 50s linear infinite', willChange: 'transform' }}>
+          <div className="flex min-w-0 items-stretch">
+            <div className="relative z-20 hidden shrink-0 items-center border-r border-primary/10 bg-[#060606] px-4 sm:flex">
+              <WsStatusBadge status={wsStatus} isLive={isLive} source={source} />
+            </div>
+            <div className="min-w-0 flex-1 overflow-hidden py-2.5">
+              <div className="flex w-max gap-10 whitespace-nowrap pl-6" style={{ animation: 'ticker 50s linear infinite', willChange: 'transform' }}>
               {[...tickers, ...tickers].map((ticker, index) => (
-                <span key={index} className="inline-flex shrink-0 items-center gap-2 text-xs">
+                <span key={index} className="inline-flex shrink-0 items-center gap-2 text-xs" aria-label={`${ticker.symbol} ${ticker.price}, ${ticker.change}`}>
                   <span className="font-medium tracking-wide text-foreground/65">{ticker.symbol}</span>
                   <span className="font-semibold tabular-nums text-foreground">{ticker.price}</span>
                   <span className={`flex items-center gap-0.5 font-semibold ${ticker.up ? 'text-emerald-400' : 'text-red-400'}`}>{ticker.up ? <TrendingUp size={9} /> : <TrendingDown size={9} />}{ticker.change}</span>
                 </span>
               ))}
+              </div>
             </div>
           </div>
         </div>
