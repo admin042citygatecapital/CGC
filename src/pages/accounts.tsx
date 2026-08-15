@@ -121,6 +121,7 @@ function ComparisonCell({ value }: { value: string | boolean | null }) {
 }
 
 function AccountsPageContent() {
+  const showRetiredPresentationSections = false;
   const [selectedType, setSelectedType] = useState('Savings');
   const [showComparison, setShowComparison] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -200,7 +201,7 @@ function AccountsPageContent() {
       </Helmet>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      {false && (
+      {showRetiredPresentationSections && (
       <section>
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] opacity-[0.05] blur-[120px] pointer-events-none"
@@ -494,7 +495,7 @@ function AccountsPageContent() {
       </AnimatePresence>
 
       {/* ── KYC Steps ────────────────────────────────────────────────── */}
-      {false && (
+      {showRetiredPresentationSections && (
       <section>
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
