@@ -481,7 +481,7 @@ export default function DigitalBankingPage() {
             preload="metadata"
             aria-hidden="true"
           >
-            <source src="/assets/media/city-gate-digital-banking-hero.mp4" type="video/mp4" />
+            <source src="/assets/media/city-gate-global-transfers.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-black/70" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-transparent to-black/55" />
