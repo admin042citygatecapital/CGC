@@ -71,23 +71,13 @@ export default function Header() {
               })}
             </nav>
 
-            {/* CTA group */}
+            {/* Customer access */}
             <div className="hidden md:flex items-center gap-2">
               <Link
                 to="/login"
                 className="text-sm text-foreground/65 hover:text-foreground transition-colors px-3 py-2"
               >
                 Log In
-              </Link>
-              <Link
-                to="/register"
-                className="relative group px-5 py-2.5 rounded-xl text-sm font-bold overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080] transition-opacity duration-300" />
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%)' }}
-                />
-                <span className="relative text-black font-bold">Open Account</span>
               </Link>
             </div>
 
@@ -136,15 +126,6 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
-              <div className="pt-3 mt-1 border-t border-primary/10 flex flex-col gap-2">
-                <Link
-                  to="/register"
-                  className="px-4 py-3.5 rounded-xl text-sm font-bold text-black text-center"
-                  style={{ background: 'linear-gradient(135deg, #C9A84C, #F0D080)' }}
-                >
-                  Open Account
-                </Link>
-              </div>
             </div>
           </motion.div>
         )}

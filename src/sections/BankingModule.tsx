@@ -15,8 +15,6 @@
  *   CtaSection
  */
 import { AnimatedBar,GlassCard,GoldButton,StatBadge } from '@/lib/homeShared';
-import { useABTest } from '@/lib/useABTest';
-import { trackConversion } from '@/lib/useAnalytics';
 import {
 ArrowRight,
 Apple,
@@ -47,7 +45,7 @@ Zap,
 } from 'lucide-react';
 import { motion,useScroll,useTransform } from 'motion/react';
 import { useEffect,useRef,useState } from 'react';
-import { Link,useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useHomepageContent } from '@/lib/homepageContentContext';
 
 // ── Animated counter ──────────────────────────────────────────────────────────
@@ -113,11 +111,6 @@ export function HeroSection() {
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroY       = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const location    = useLocation();
-
-  const heroCTA = useABTest('hero-cta-copy', ['control', 'urgency', 'benefit'] as const, location.pathname);
-  const heroCTALabels = home.hero.heroCTALabels;
-
   return (
     <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden">
       <motion.div style={{ y: heroY }} className="absolute inset-0 scale-110">
@@ -137,43 +130,31 @@ export function HeroSection() {
 
       <motion.div style={{ opacity: heroOpacity }} className="container mx-auto px-4 md:px-6 relative z-10 py-32 pt-40">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div>
+          <div className="text-center lg:text-left">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-gold-glow mb-8">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-semibold text-foreground/70 tracking-widest uppercase">{home.hero.trustBadge}</span>
-              </div>
-              <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold text-foreground mb-6 leading-[1.05] tracking-tight">
-                {home.hero.headline1}{' '}
-                <span className="text-gold-shimmer">{home.hero.headlineAccent}</span>{' '}
-                {home.hero.headline2}
+              <span className="inline-flex rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary shadow-[0_0_30px_rgba(201,168,76,0.08)]">
+                {home.finalCta.badge}
+              </span>
+              <h1 className="mt-8 text-5xl font-bold leading-[0.98] tracking-tight text-foreground md:text-6xl xl:text-7xl">
+                {home.finalCta.headline1}{' '}
+                <span className="block text-gold-shimmer lg:inline">{home.finalCta.headlineAccent}</span>
               </h1>
-              <p className="text-lg text-foreground/50 mb-10 leading-relaxed max-w-lg">{home.hero.subheadline}</p>
-              <div className="flex flex-wrap gap-4 mb-12">
-                <Link to="/accounts"
-                  onClick={() => {
-                    heroCTA.convert({ source: 'hero_cta' });
-                    trackConversion('signup_started', location.pathname, { source: 'hero_cta', ab_variant: heroCTA.variant });
-                  }}
-                  className="group relative inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-bold text-black overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary via-[#F0D080] to-primary bg-[length:200%] transition-all duration-500 group-hover:bg-right-center" />
-                  <span className="relative">{heroCTALabels[heroCTA.variant]}</span>
-                  <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
-                </Link>
-                <Link to="/digital-banking" className="inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-medium text-foreground/70 glass border-gold-glow hover:text-foreground transition-colors">
-                  {home.hero.ctaSecondary}
+              <p className="mx-auto mt-7 max-w-xl text-lg leading-8 text-foreground/55 lg:mx-0">
+                {home.finalCta.subheadline}
+              </p>
+              <div className="mt-9 flex flex-wrap items-center justify-center gap-5 lg:justify-start">
+                <GoldButton to="/register">{home.finalCta.ctaPrimary}</GoldButton>
+                <Link to="/digital-banking" className="inline-flex items-center gap-2 text-sm font-medium text-foreground/65 transition-colors hover:text-foreground">
+                  {home.finalCta.ctaSecondary} <ArrowRight size={15} />
                 </Link>
               </div>
-              <div className="flex flex-wrap gap-5">
-                {home.hero.trustBadges.map((b) => {
-                  const BadgeIcon = b.label === 'Security Controls' ? Shield : b.label === 'Encrypted Connections' ? Lock : Award;
-                  return (
-                    <div key={b.id} className="flex items-center gap-2 text-foreground/55">
-                      <BadgeIcon size={14} className="text-primary" />
-                      <span className="text-xs font-medium">{b.label}</span>
-                    </div>
-                  );
-                })}
+              <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-4 sm:flex sm:flex-wrap sm:justify-center lg:justify-start">
+                {home.finalCta.featureStrip.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2 text-left text-foreground/45">
+                    <CheckCircle size={14} className="shrink-0 text-primary" />
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </div>
+                ))}
               </div>
             </motion.div>
           </div>

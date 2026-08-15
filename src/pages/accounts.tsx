@@ -12,7 +12,7 @@ import { trackConversion } from '@/lib/useAnalytics';
 import { useABTest } from '@/lib/useABTest';
 import AccountOpeningModal from '@/components/AccountOpeningModal';
 import { HomepageContentProvider } from '@/lib/homepageContentContext';
-import { CtaSection, DashboardPreview, FeaturesGrid } from '@/sections/BankingModule';
+import { DashboardPreview, FeaturesGrid } from '@/sections/BankingModule';
 import { InvestmentsSection } from '@/sections/InvestmentsModule';
 
 const accountTypes = [
@@ -613,8 +613,6 @@ function AccountsPageContent() {
           </div>
         </div>
       </section>
-
-      <CtaSection primaryTo="/register" secondaryTo="/digital-banking" />
 
       {/* ── Mobile sticky CTA ────────────────────────────────────────── */}
       <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden safe-bottom">
