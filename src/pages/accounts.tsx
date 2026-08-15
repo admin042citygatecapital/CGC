@@ -1,80 +1,17 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  CheckCircle, XCircle, Shield, Fingerprint, Camera,
-  FileText, User, Building2, TrendingUp, DollarSign, Zap,
-  ArrowRight, Star, CreditCard, Globe, Lock, ChevronRight,
-  Minus
+  CheckCircle, Shield, Fingerprint, Camera,
+  FileText, User, DollarSign, Zap,
+  ArrowRight, Star, CreditCard, Globe, Lock, ChevronRight
 } from 'lucide-react';
 import { trackConversion } from '@/lib/useAnalytics';
-import { useABTest } from '@/lib/useABTest';
 import AccountOpeningModal from '@/components/AccountOpeningModal';
 import { HomepageContentProvider } from '@/lib/homepageContentContext';
 import { DashboardPreview, FeaturesGrid } from '@/sections/BankingModule';
 import { InvestmentsSection } from '@/sections/InvestmentsModule';
-
-const accountTypes = [
-  {
-    icon: User,
-    name: 'Personal',
-    tagline: 'For individuals',
-    desc: 'Explore the everyday account, portfolio, and transfer experience in one workspace.',
-    price: 'Platform access',
-    color: '#C9A84C',
-    accentClass: 'from-primary/20 to-primary/5',
-    features: [
-      { text: 'Multi-currency account (50+ currencies)', included: true  },
-      { text: 'Crypto wallet (50+ assets)',              included: true  },
-      { text: '1 virtual debit card',                   included: true  },
-      { text: 'International transfer workflow',       included: true  },
-      { text: 'Basic investment tools',                 included: true  },
-      { text: 'Metal physical card',                    included: false },
-      { text: 'Priority support',                       included: false },
-      { text: 'Dedicated account manager',              included: false },
-    ],
-  },
-  {
-    icon: TrendingUp,
-    name: 'Savings',
-    tagline: 'Goal-based planning',
-    desc: 'Organise savings goals, automated rules, and progress insights in one account experience.',
-    price: 'Platform access',
-    color: '#10B981',
-    highlight: true,
-    accentClass: 'from-emerald-500/20 to-emerald-500/5',
-    features: [
-      { text: 'Illustrative return projections',       included: true  },
-      { text: 'Multi-currency goal tracking',          included: true  },
-      { text: 'No minimum balance required',           included: true  },
-      { text: 'Withdrawal workflow',                    included: true  },
-      { text: 'Auto-save rules & round-ups',           included: true  },
-      { text: 'Savings goals & tracking',              included: true  },
-      { text: 'Deposits currently unavailable',               included: true  },
-      { text: 'Dedicated savings manager',             included: false },
-    ],
-  },
-  {
-    icon: Building2,
-    name: 'Business',
-    tagline: 'For companies',
-    desc: 'Explore multi-user access, expense workflows, and proposed API integrations.',
-    price: 'Platform access',
-    color: '#627EEA',
-    accentClass: 'from-blue-500/20 to-blue-500/5',
-    features: [
-      { text: 'Up to 10 team member seats',            included: true },
-      { text: 'Expense management & approvals',        included: true },
-      { text: 'Full REST API access',                  included: true },
-      { text: 'Bulk payment processing',               included: true },
-      { text: 'Accounting integrations (Xero, QB)',    included: true },
-      { text: 'Custom virtual cards per team',         included: true },
-      { text: 'Dedicated business manager',            included: true },
-      { text: 'Custom transfer limits',                included: true },
-    ],
-  },
-];
 
 const kycSteps = [
   { icon: User,        step: '01', title: 'Create Your Profile',      desc: 'Enter your email and set a secure password to access the platform workspace.',                       color: '#C9A84C' },
@@ -100,29 +37,9 @@ const testimonials = [
   { name: 'Savings', role: 'Goal-led money management', text: 'Organize savings goals and monitor progress with clear account insights.', rating: 5 },
 ];
 
-// Comparison table data
-const comparisonRows = [
-  { feature: 'Platform access', personal: 'Included', savings: 'Included', business: 'Included' },
-  { feature: 'Currencies supported',  personal: '50+',        savings: '50+',         business: '50+' },
-  { feature: 'Virtual cards',         personal: '1',          savings: '1',           business: 'Unlimited' },
-  { feature: 'Physical metal card',   personal: null,         savings: null,          business: true },
-  { feature: 'Return modelling',      personal: null,         savings: true,          business: null },
-  { feature: 'Transfer workflows',           personal: true,         savings: true,          business: true },
-  { feature: 'Team seats',            personal: null,         savings: null,          business: 'Up to 10' },
-  { feature: 'API access',            personal: null,         savings: null,          business: true },
-  { feature: 'Priority support',      personal: null,         savings: null,          business: true },
-  { feature: 'Live deposits',         personal: null,         savings: null,          business: null },
-];
-
-function ComparisonCell({ value }: { value: string | boolean | null }) {
-  if (value === null) return <Minus size={14} className="text-foreground/20 mx-auto" />;
-  if (value === true) return <CheckCircle size={14} className="text-primary mx-auto" />;
-  return <span className="text-xs text-foreground/60">{value}</span>;
-}
-
 function AccountsPageContent() {
   const showRetiredPresentationSections = false;
-  const [selectedType, setSelectedType] = useState('Savings');
+  const [selectedType] = useState('Savings');
   const [showComparison, setShowComparison] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPlan, setModalPlan] = useState<'Personal' | 'Savings' | 'Business'>('Personal');
@@ -132,21 +49,6 @@ function AccountsPageContent() {
     const safePlan = (['Personal', 'Savings', 'Business'].includes(plan) ? plan : 'Personal') as 'Personal' | 'Savings' | 'Business';
     setModalPlan(safePlan);
     setModalOpen(true);
-  }
-
-  // A/B test: plan card CTA button copy
-  // control  → "Open {Plan} Account"
-  // action   → "Get Started — Free"
-  // social   → "Join 2M+ Members"
-  const planCTA = useABTest(
-    'plan-card-cta',
-    ['control', 'action', 'social'] as const,
-    location.pathname
-  );
-  function getPlanCTALabel(planName: string): string {
-    if (planCTA.variant === 'action') return 'Get Started — Free';
-    if (planCTA.variant === 'social') return 'Explore the Platform';
-    return `Open ${planName} Account`;
   }
 
   return (
@@ -335,164 +237,6 @@ function AccountsPageContent() {
       <DashboardPreview compactTop />
       <FeaturesGrid />
       <InvestmentsSection />
-
-      {/* ── Account Type Cards ───────────────────────────────────────── */}
-      <section id="accounts" className="py-20 bg-[#060606]">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-12">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="text-4xl font-bold text-foreground tracking-tight mb-3">
-                Explore a Proposed <span className="text-gold-gradient">Profile</span>
-              </h2>
-              <p className="text-foreground/55 max-w-md mx-auto text-sm">Compare illustrative profile concepts. No bank account, deposit, card, or financial service is opened.</p>
-            </motion.div>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {accountTypes.map((type, i) => (
-              <motion.div
-                key={type.name}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                onClick={() => setSelectedType(type.name)}
-                whileHover={{ y: -4 }}
-                className={`relative rounded-3xl p-7 cursor-pointer transition-all duration-300 ${
-                  type.highlight
-                    ? 'border border-primary/40'
-                    : selectedType === type.name
-                      ? 'glass-card border border-primary/30'
-                      : 'glass-card gradient-border hover:border-primary/20'
-                }`}
-                style={
-                  type.highlight
-                    ? { background: 'linear-gradient(160deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04), rgba(10,10,10,0.9))', boxShadow: '0 0 40px rgba(16,185,129,0.08)' }
-                    : {}
-                }
-              >
-                {type.highlight && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-black whitespace-nowrap"
-                    style={{ background: 'linear-gradient(135deg, #C9A84C, #F0D080)' }}>
-                    Best Rate
-                  </div>
-                )}
-
-                {/* Icon + name */}
-                <div className="flex items-start justify-between mb-5">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{ background: `${type.color}15`, border: `1px solid ${type.color}25` }}>
-                    <type.icon size={22} style={{ color: type.color }} />
-                  </div>
-                  {selectedType === type.name && (
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center"
-                      style={{ background: type.color }}>
-                      <CheckCircle size={13} className="text-black" />
-                    </div>
-                  )}
-                </div>
-
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] mb-1" style={{ color: type.color }}>{type.tagline}</p>
-                <h3 className="text-xl font-bold text-foreground mb-1">{type.name}</h3>
-                <p className="text-2xl font-bold mb-3" style={{ color: type.color }}>{type.price}</p>
-                <p className="text-sm text-foreground/55 leading-relaxed mb-6">{type.desc}</p>
-
-                <ul className="space-y-2.5 mb-8">
-                  {type.features.map(f => (
-                    <li key={f.text} className={`flex items-start gap-2.5 text-xs leading-relaxed ${f.included ? 'text-foreground/65' : 'text-foreground/22'}`}>
-                      {f.included
-                        ? <CheckCircle size={12} className="shrink-0 mt-0.5" style={{ color: type.color }} />
-                        : <XCircle size={12} className="shrink-0 mt-0.5 text-foreground/18" />
-                      }
-                      {f.text}
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => {
-                    planCTA.convert({ plan: type.name.toLowerCase() });
-                    trackConversion('plan_selected', location.pathname, { plan: type.name.toLowerCase(), ab_variant: planCTA.variant });
-                    openModal(type.name);
-                  }}
-                  className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                    type.highlight
-                      ? 'text-black'
-                      : 'glass border border-primary/20 text-foreground hover:border-primary/40 hover:bg-primary/5'
-                  }`}
-                  style={type.highlight ? { background: 'linear-gradient(135deg, #C9A84C, #F0D080)' } : {}}
-                >
-                  {getPlanCTALabel(type.name)}
-                </button>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Compare toggle */}
-          <div className="text-center mt-8">
-            <button
-              onClick={() => setShowComparison(v => !v)}
-              className="inline-flex items-center gap-2 text-sm text-foreground/40 hover:text-primary transition-colors"
-            >
-              {showComparison ? 'Hide' : 'Show'} full comparison
-              <ChevronRight size={14} className={`transition-transform ${showComparison ? 'rotate-90' : ''}`} />
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Comparison Table ─────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showComparison && (
-          <motion.section
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.35 }}
-            className="overflow-hidden"
-          >
-            <div className="py-16 bg-[#060606]">
-              <div className="container mx-auto px-4 md:px-6">
-                <div className="text-center mb-10">
-                  <h2 className="text-3xl font-bold text-foreground tracking-tight">
-                    Full <span className="text-gold-gradient">Comparison</span>
-                  </h2>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[560px]">
-                    <thead>
-                      <tr>
-                        <th className="text-left py-4 pr-6 text-xs text-foreground/55 uppercase tracking-widest font-semibold w-1/3">Feature</th>
-                        {accountTypes.map(t => (
-                          <th key={t.name} className="py-4 px-3 text-center">
-                            <div className="inline-flex flex-col items-center gap-1">
-                              <span className="text-sm font-bold text-foreground">{t.name}</span>
-                              <span className="text-xs font-semibold" style={{ color: t.color }}>{t.price}</span>
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {comparisonRows.map((row, i) => (
-                        <tr
-                          key={row.feature}
-                          className={`border-t border-primary/8 ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}
-                        >
-                          <td className="py-3.5 pr-6 text-sm text-foreground/50">{row.feature}</td>
-                          <td className="py-3.5 px-3 text-center"><ComparisonCell value={row.personal} /></td>
-                          <td className="py-3.5 px-3 text-center"><ComparisonCell value={row.savings} /></td>
-                          <td className="py-3.5 px-3 text-center"><ComparisonCell value={row.business} /></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </motion.section>
-        )}
-      </AnimatePresence>
 
       {/* ── KYC Steps ────────────────────────────────────────────────── */}
       {showRetiredPresentationSections && (
