@@ -11,6 +11,9 @@ import {
 import { trackConversion } from '@/lib/useAnalytics';
 import { useABTest } from '@/lib/useABTest';
 import AccountOpeningModal from '@/components/AccountOpeningModal';
+import { HomepageContentProvider } from '@/lib/homepageContentContext';
+import { CtaSection, DashboardPreview, FeaturesGrid } from '@/sections/BankingModule';
+import { InvestmentsSection } from '@/sections/InvestmentsModule';
 
 const accountTypes = [
   {
@@ -36,7 +39,7 @@ const accountTypes = [
     icon: TrendingUp,
     name: 'Savings',
     tagline: 'Goal-based planning',
-    desc: 'Explore savings goals, automated rules, and projected returns using sample data.',
+    desc: 'Organise savings goals, automated rules, and progress insights in one account experience.',
     price: 'Platform access',
     color: '#10B981',
     highlight: true,
@@ -75,9 +78,9 @@ const accountTypes = [
 
 const kycSteps = [
   { icon: User,        step: '01', title: 'Create Your Profile',      desc: 'Enter your email and set a secure password to access the platform workspace.',                       color: '#C9A84C' },
-  { icon: Camera,      step: '02', title: 'Review KYC Flow',   desc: 'Explore the identity-verification journey. A contracted KYC provider is required before launch.',  color: '#627EEA' },
-  { icon: Fingerprint, step: '03', title: 'Security Preferences',     desc: 'Review the biometric interface; native biometric login is not currently active.',                  color: '#10B981' },
-  { icon: DollarSign,  step: '04', title: 'Explore Sample Data',      desc: 'Use sample balances and transactions. Funding and money movement are currently unavailable.',       color: '#9945FF' },
+  { icon: Camera,      step: '02', title: 'Verify Your Identity',     desc: 'Complete the required identity and eligibility review for your selected account.',                  color: '#627EEA' },
+  { icon: Fingerprint, step: '03', title: 'Set Security Preferences', desc: 'Configure available account protection and sign-in controls.',                                       color: '#10B981' },
+  { icon: DollarSign,  step: '04', title: 'Manage Your Accounts',     desc: 'View balances, transactions and available financial tools from one secure dashboard.',               color: '#9945FF' },
 ];
 
 const trustBadges = [
@@ -86,15 +89,15 @@ const trustBadges = [
   { icon: FileText,    label: 'Launch Gated',      desc: 'Approvals required',         color: '#10B981' },
   { icon: Zap,         label: 'Guided Setup',      desc: 'Platform workflow',                 color: '#9945FF' },
   { icon: Lock,        label: 'Secure Sessions',   desc: 'Protected account access', color: '#EC4899' },
-  { icon: Globe,       label: 'Multi-Currency',    desc: 'Prototype coverage',        color: '#F7931A' },
+  { icon: Globe,       label: 'Multi-Currency',    desc: 'Supported currency access', color: '#F7931A' },
   { icon: CreditCard,  label: 'Virtual Cards',     desc: 'Issuance not yet available',        color: '#14B8A6' },
   { icon: Star,        label: 'Responsive UI',     desc: 'Published web experience',          color: '#F0D080' },
 ];
 
 const testimonials = [
-  { name: 'Personal Experience', role: 'Illustrative scenario', text: 'See balances, cards, transfers, and spending insights together in a guided account experience.', rating: 5 },
-  { name: 'Business Experience', role: 'Illustrative scenario', text: 'Explore team access, expense controls, approval flows, and reporting before provider integrations go live.', rating: 5 },
-  { name: 'Savings Experience', role: 'Illustrative scenario', text: 'Model goals and projected returns with sample data; no deposit or advertised yield is offered.', rating: 5 },
+  { name: 'Personal Banking', role: 'Connected account experience', text: 'See balances, cards, transfers, and spending insights together in one guided account experience.', rating: 5 },
+  { name: 'Business Banking', role: 'Operational account controls', text: 'Organize team access, expense controls, approval flows, and reporting from one place.', rating: 5 },
+  { name: 'Savings', role: 'Goal-led money management', text: 'Organize savings goals and monitor progress with clear account insights.', rating: 5 },
 ];
 
 // Comparison table data
@@ -124,7 +127,7 @@ const heroStats = [
   { label: 'Transfers',     value: '12',         sub: 'This week',        color: '#627EEA' },
 ];
 
-export default function AccountsPage() {
+function AccountsPageContent() {
   const [selectedType, setSelectedType] = useState('Savings');
   const [showComparison, setShowComparison] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -156,7 +159,7 @@ export default function AccountsPage() {
     <>
       <Helmet>
         <title>Open an Account — Personal, Savings & Business | CGC</title>
-        <meta name="description" content="Explore City Gate Capital personal, savings, and business account experiences using sample balances and guided workflows." />
+        <meta name="description" content="Explore City Gate Capital personal, savings, and business account experiences with connected financial tools and guided account management." />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://citygate.capital/accounts" />
         <meta property="og:title" content="Open a Bank Account — Personal, Savings & Business" />
@@ -218,11 +221,11 @@ export default function AccountsPage() {
                 Account Experiences
               </span>
               <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight">
-                Choose the Right Profile,<br />
-                <span className="text-gold-shimmer">Using Sample Data</span>
+                Accounts Designed<br />
+                <span className="text-gold-shimmer">Around Your Ambition</span>
               </h1>
               <p className="text-lg text-foreground/50 mb-8 leading-relaxed max-w-lg">
-                Compare account experiences using sample data. Financial account activation, deposits, card issuance and money movement require completed verification and approved providers.
+                Compare personal, savings and business account experiences. Service activation depends on completed verification, eligibility and approved provider arrangements.
               </p>
 
               {/* Feature pills */}
@@ -274,7 +277,7 @@ export default function AccountsPage() {
                   </div>
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-xs text-emerald-400 font-medium">Sample profile</span>
+                    <span className="text-xs text-emerald-400 font-medium">Savings overview</span>
                   </div>
                 </div>
 
@@ -332,6 +335,10 @@ export default function AccountsPage() {
           </div>
         </div>
       </section>
+
+      <FeaturesGrid />
+      <DashboardPreview />
+      <InvestmentsSection />
 
       {/* ── Account Type Cards ───────────────────────────────────────── */}
       <section id="accounts" className="py-20 bg-[#060606]">
@@ -607,38 +614,7 @@ export default function AccountsPage() {
         </div>
       </section>
 
-      {/* ── CTA ──────────────────────────────────────────────────────── */}
-      <section className="py-24 pb-40 md:pb-24 bg-[#060606]">
-        <div className="container mx-auto px-4 md:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative glass-card rounded-3xl p-12 md:p-16 gradient-border text-center overflow-hidden"
-            style={{ boxShadow: 'var(--gold-glow)' }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
-            <div className="absolute top-0 left-0 w-32 h-32 border-t-2 border-l-2 border-primary/20 rounded-tl-3xl pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-32 h-32 border-b-2 border-r-2 border-primary/20 rounded-br-3xl pointer-events-none" />
-            <h2 className="text-4xl font-bold text-foreground mb-5 tracking-tight relative">
-              Ready to <span className="text-gold-gradient">Get Started?</span>
-            </h2>
-            <p className="text-foreground/55 mb-8 max-w-md mx-auto relative text-sm leading-relaxed">
-              Create a platform profile to explore the interface. Financial account activation remains subject to verification, provider availability and applicable approvals.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 relative">
-              <button onClick={() => { trackConversion('signup_started', location.pathname, { source: 'bottom_cta' }); openModal(selectedType); }} className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-black overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                <span className="relative">Create Platform Profile</span>
-                <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
-              </button>
-              <Link to="/contact" className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-medium text-foreground/60 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors">
-                Talk to Sales
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      <CtaSection primaryTo="/register" secondaryTo="/digital-banking" />
 
       {/* ── Mobile sticky CTA ────────────────────────────────────────── */}
       <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden safe-bottom">
@@ -667,4 +643,8 @@ export default function AccountsPage() {
       />
     </>
   );
+}
+
+export default function AccountsPage() {
+  return <HomepageContentProvider><AccountsPageContent /></HomepageContentProvider>;
 }

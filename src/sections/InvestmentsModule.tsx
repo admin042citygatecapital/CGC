@@ -39,7 +39,7 @@ const accountProducts: ProductCardItem[] = [
     label: 'Business Account',
     desc: 'Business profiles, authorised users, approval workflows, expense visibility, and operational reporting.',
     color: '#627EEA',
-    status: 'Phased activation',
+    status: 'Business services',
   },
   {
     icon: Globe2,
@@ -47,7 +47,7 @@ const accountProducts: ProductCardItem[] = [
     label: 'Multi-Currency Service Wallet',
     desc: 'A unified view for configured GBP, EUR, USD, CAD, AUD, and CHF balances and conversion instructions.',
     color: '#00B4D8',
-    status: 'Provider-gated',
+    status: 'Multi-currency',
   },
 ];
 
@@ -58,7 +58,7 @@ const wealthServices: ProductCardItem[] = [
     label: 'Digital-Asset Wallet',
     desc: 'Portfolio and transaction views for configured assets, with custody and withdrawals dependent on an approved custodian.',
     color: '#F7931A',
-    status: 'Custodian required',
+    status: 'Digital assets',
   },
   {
     icon: BarChart3,
@@ -66,7 +66,7 @@ const wealthServices: ProductCardItem[] = [
     label: 'Markets & Investments',
     desc: 'Market data, watchlists, holdings, orders, and performance reporting with market data separated from execution.',
     color: '#9945FF',
-    status: 'Broker required',
+    status: 'Market access',
   },
   {
     icon: Users,

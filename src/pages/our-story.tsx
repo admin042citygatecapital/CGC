@@ -111,10 +111,22 @@ export default function OurStoryPage() {
       </Helmet>
 
       <main className="overflow-hidden">
-        <section className="relative min-h-[760px] flex items-center pt-32 pb-24 border-b border-primary/10">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-[#080705] to-black" />
-          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_70%_35%,rgba(218,174,70,0.34),transparent_42%)]" />
-          <div className="container mx-auto px-4 md:px-6 relative max-w-6xl">
+        <section className="relative min-h-[760px] flex items-center overflow-hidden pt-32 pb-24 border-b border-primary/10">
+          <video
+            className="absolute inset-0 h-full w-full object-cover object-center motion-reduce:hidden"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-hidden="true"
+          >
+            <source src="/assets/media/city-gate-team-story.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/75 to-black/45" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/55" />
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,rgba(218,174,70,0.34),transparent_48%)]" />
+          <div className="container mx-auto px-4 md:px-6 relative z-10 max-w-6xl">
             <Reveal className="max-w-4xl">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary mb-6">The City Gate Capital story</p>
               <h1 className="text-5xl md:text-7xl font-bold leading-[1.05] tracking-tight">

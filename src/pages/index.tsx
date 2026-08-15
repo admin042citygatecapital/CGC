@@ -6,14 +6,10 @@ import { useLiveTicker } from '@/lib/useLiveTicker';
 import { useMarketWebSocket } from '@/lib/useMarketWebSocket';
 import {
   BankingFitsLifeBanner,
-  CtaSection,
-  DashboardPreview,
   FaqSection,
-  FeaturesGrid,
   GlobalBankingSection,
   HeroSection,
 } from '@/sections/BankingModule';
-import { InvestmentsSection } from '@/sections/InvestmentsModule';
 
 function HomePageContent() {
   const home = useHomepageContent();
@@ -84,22 +80,14 @@ function HomePageContent() {
       )}
 
       <HeroSection />
-      <FeaturesGrid />
-      <DashboardPreview />
-      <InvestmentsSection />
       <GlobalBankingSection />
       <BankingFitsLifeBanner />
 
-      <section className="bg-[#060606] py-20 md:py-28">
+      <section className="border-y border-primary/10 bg-[#060606] py-10 md:py-12">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="mb-14 text-center">
-            <span className="mb-5 inline-block rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">{home.faq.eyebrow}</span>
-            <h2 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">{home.faq.headline1} <span className="text-gold-gradient">{home.faq.headlineAccent}</span></h2>
-          </div>
           <FaqSection />
         </div>
       </section>
-      <CtaSection />
     </>
   );
 }

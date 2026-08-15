@@ -37,7 +37,7 @@
       "id": "s2",
       "value": 50,
       "suffix": "+",
-      "label": "Prototype Currencies"
+      "label": "Currency Views"
     },
     {
       "id": "s3",
@@ -50,13 +50,13 @@
       "id": "s4",
       "value": 0,
       "suffix": "",
-      "label": "Live Transactions"
+      "label": "Secure Access"
     }
   ],
   "trustBadges": [
     {
       "id": "tb1",
-      "label": "Security Controls Pre-deployment"
+      "label": "Security Controls"
     },
     {
       "id": "tb2",
@@ -68,7 +68,7 @@
     },
     {
       "id": "tb4",
-        "label": "Multi-Currency Prototype"
+        "label": "Multi-Currency Access"
     },
     {
       "id": "tb5",
@@ -112,11 +112,11 @@
     "eyebrow": "Smart Dashboard",
     "headline1": "Your Finances,",
     "headlineAccent": "Beautifully Clear",
-    "subheadline": "A demonstration dashboard shows how balances, spending trends, portfolio data, and upcoming payments could appear after launch.",
+    "subheadline": "See balances, spending trends, portfolio information and upcoming payments through one clear account view.",
     "featureBullets": [
       {
         "id": "db1",
-        "label": "Demonstration analytics"
+        "label": "Financial analytics"
       },
       {
         "id": "db2",
@@ -165,36 +165,36 @@
     ]
   },
   "crypto": {
-    "eyebrow": "Crypto Exchange",
-    "headline1": "Explore Digital Assets",
-    "headlineAccent": "50+ Cryptocurrencies",
-    "subheadline": "Pre-deployment paper-trading, portfolio, and custody workflows using demonstration balances. No live trading or custody is available.",
-    "ctaLabel": "Explore Crypto Wallet",
+    "eyebrow": "Digital Assets",
+    "headline1": "Your Digital Assets.",
+    "headlineAccent": "One View.",
+    "subheadline": "Follow supported assets, market information and portfolio performance from one connected experience. Execution and custody require approved provider coverage.",
+    "ctaLabel": "Explore Digital Wallets",
     "featureBullets": [
       {
         "id": "cr1",
-        "title": "Settlement Simulation",
-        "desc": "Demonstration orders update sample balances without executing or settling a live trade."
+        "title": "Market Overview",
+        "desc": "Follow configured markets, quotes and price movements with clear data-source information."
       },
       {
         "id": "cr2",
-        "title": "Cold Storage Security",
-        "desc": "Custody is not active in the pre-deployment platform and requires a contracted, independently reviewed provider before launch."
+        "title": "Custody Controls",
+        "desc": "Asset custody and transfers are available only through a contracted and independently reviewed provider."
       },
       {
         "id": "cr3",
         "title": "Portfolio Analytics",
-        "desc": "Explore sample performance, allocation, and P&L views using demonstration holdings."
+        "desc": "Review performance, allocation, holdings and gains or losses in one portfolio view."
       },
       {
         "id": "cr4",
         "title": "Auto-Rebalancing",
-        "desc": "Explore proposed target-allocation controls; automatic rebalancing is not active."
+        "desc": "Organize target allocations and review available portfolio-management controls."
       },
       {
         "id": "cr5",
-        "title": "Illustrative Pricing",
-        "desc": "Fees and spreads are not live commercial terms and require provider and legal approval before launch."
+        "title": "Transparent Pricing",
+        "desc": "Applicable fees and spreads are disclosed before an eligible order is authorized."
       }
     ]
   },
@@ -202,38 +202,38 @@
     "eyebrow": "Multi-Currency Wallet",
     "headline1": "One Wallet,",
     "headlineAccent": "Every Currency",
-    "subheadline": "Explore how fiat and digital-asset balances, conversions, and spending controls could work in a unified interface.",
+    "subheadline": "Organize supported fiat and digital-asset balances, conversions and available controls in one unified interface.",
     "ctaLabel": "Explore the Wallet",
     "featureBullets": [
       {
         "id": "w1",
         "title": "50+ Fiat Currencies",
-        "desc": "Pre-deployment sample balances in multiple currencies; holding, spending, and live conversion are unavailable."
+        "desc": "Manage configured currency views and see eligible services for each supported currency."
       },
       {
         "id": "w2",
         "title": "50+ Cryptocurrencies",
-        "desc": "Explore demonstration balances for selected digital assets alongside sample fiat balances."
+        "desc": "Follow selected digital assets alongside supported fiat currencies in one organized view."
       },
       {
         "id": "w3",
-        "title": "Currency Exchange Pre-deployment",
-        "desc": "Simulate conversions using illustrative rates; no currency is bought, sold, or settled."
+        "title": "Currency Exchange",
+        "desc": "Review exchange information and eligible currency pairs with rates and fees shown before authorization."
       },
       {
         "id": "w4",
         "title": "Virtual & Physical Cards",
-        "desc": "Explore proposed card and currency-selection controls; no payment card is issued in this environment."
+        "desc": "Manage eligible card and currency-selection controls after card services are activated."
       },
       {
         "id": "w5",
         "title": "Scheduled Conversions",
-        "desc": "Explore proposed target-rate controls without executing automatic conversions."
+        "desc": "Set and manage available target-rate and scheduled-conversion preferences."
       },
       {
         "id": "w6",
         "title": "Net Worth in One View",
-        "desc": "View demonstration totals across sample currencies and assets in a selected display currency."
+        "desc": "View account and portfolio totals across configured currencies in your selected display currency."
       }
     ]
   },
@@ -241,29 +241,29 @@
     "eyebrow": "Security & Compliance",
     "headline1": "Security by",
     "headlineAccent": "Design",
-    "subheadline": "Review implemented account controls and the additional provider, compliance, and security work required before a financial launch.",
-    "zeroIncidentsHeadline": "No Live Financial Exposure",
-    "zeroIncidentsSub": "The pre-deployment does not accept deposits, custody assets, issue cards, or execute live transactions.",
+    "subheadline": "Protective account controls, secure sessions and transparent service availability support every customer journey.",
+    "zeroIncidentsHeadline": "Account Protection",
+    "zeroIncidentsSub": "Security controls are combined with provider, compliance and operational safeguards.",
     "featureBullets": [
       {
         "id": "sec1",
         "title": "Encryption Controls",
-        "desc": "Sensitive application data uses encryption controls; production assurance still requires independent review and penetration testing."
+        "desc": "Sensitive application data uses encryption controls supported by ongoing assurance and independent review."
       },
       {
         "id": "sec2",
-        "title": "Biometric Interface Pre-deployment",
-        "desc": "The interface demonstrates biometric and liveness journeys; production biometric verification is not active."
+        "title": "Secure Sign-In",
+        "desc": "Available sign-in controls include protected sessions, multi-factor authentication and device security."
       },
       {
         "id": "sec3",
-        "title": "Cold Storage Custody",
-        "desc": "Custody is not active in the pre-deployment platform and requires a contracted, independently reviewed provider before launch."
+        "title": "Provider-Governed Custody",
+        "desc": "Custody services are available only through an approved, contracted and independently reviewed provider."
       },
       {
         "id": "sec4",
         "title": "Fraud-Control Design",
-        "desc": "The pre-deployment demonstrates risk signals and review workflows; live transaction monitoring requires an approved provider."
+        "desc": "Risk signals and review workflows support monitoring when approved provider and compliance controls are active."
       }
     ]
   },
@@ -271,9 +271,9 @@
     "eyebrow": "Mobile App",
     "headline1": "The Platform in Your",
     "headlineAccent": "Pocket",
-    "subheadline": "Explore the proposed mobile experience. Native iOS and Android applications and live financial functions are not yet available.",
-    "awardLabel": "Mobile Pre-deployment Platform",
-    "awardSub": "Demonstration interface · No live transactions",
+    "subheadline": "Access a responsive financial experience designed for secure use across desktop, tablet and mobile browsers.",
+    "awardLabel": "Mobile-Ready Platform",
+    "awardSub": "Responsive access across supported devices",
     "appChips": [
       {
         "id": "ac1",
@@ -304,146 +304,146 @@
       {
         "id": "ma1",
         "title": "Instant Notifications",
-        "desc": "Explore proposed alerts for demonstration transactions, transfers, and price movements."
+        "desc": "Receive available account, security, transfer and price-movement notifications."
       },
       {
         "id": "ma2",
         "title": "Biometric Login",
-        "desc": "Explore the intended Face ID and Touch ID experience; native biometric login is not active."
+        "desc": "Use available device and multi-factor security controls to protect account access."
       },
       {
         "id": "ma3",
         "title": "Auto-sync Across Devices",
-        "desc": "Explore the proposed cross-device experience; production synchronization is not yet offered."
+        "desc": "Keep account preferences and security information consistent across supported sessions."
       },
       {
         "id": "ma4",
         "title": "Portfolio Dashboard",
-        "desc": "View sample fiat and digital-asset portfolios, charts, and allocations."
+        "desc": "Review fiat and digital-asset portfolio information, charts and allocations."
       },
       {
         "id": "ma5",
         "title": "One-tap Transfers",
-        "desc": "Pre-deployment saved-recipient and confirmation workflows without sending money."
+        "desc": "Use saved recipients and confirmation controls for eligible transfers."
       }
     ]
   },
   "pricing": {
-    "eyebrow": "Proposed Plans",
+    "eyebrow": "Account Plans",
     "headline1": "Simple,",
     "headlineAccent": "Transparent",
-    "headline2": "Concepts",
-    "subheadline": "Illustrative plan concepts for product research only. No paid banking plan is currently offered.",
+    "headline2": "Account Options",
+    "subheadline": "Choose an account experience aligned with your financial needs. Eligibility, availability and final pricing are confirmed before activation.",
     "trustStrip": [
       {
         "id": "pt1",
-        "label": "No live subscriptions"
+        "label": "Clear eligibility"
       },
       {
         "id": "pt2",
-        "label": "Illustrative prices only"
+        "label": "Transparent pricing"
       },
       {
         "id": "pt3",
-        "label": "Security review required"
+        "label": "Secure account review"
       },
       {
         "id": "pt4",
-        "label": "No payment card required for pre-deployment"
+        "label": "No card details during registration"
       }
     ]
   },
   "testimonials": {
-    "eyebrow": "Use Cases",
-    "headline1": "Illustrative",
-    "headlineAccent": "User",
-    "headline2": "Scenarios",
-    "subheadline": "Illustrative scenarios showing how different audiences could use the proposed platform.",
-    "featuredQuote": "This scenario illustrates how a treasury team could review controls and reporting after approved provider integrations become available.",
-    "featuredName": "Illustrative scenario",
-    "featuredRole": "Not a customer testimonial",
+    "eyebrow": "Financial Experiences",
+    "headline1": "Designed for",
+    "headlineAccent": "Modern",
+    "headline2": "Financial Lives",
+    "subheadline": "Connected tools for individuals, businesses and professionals managing money across borders.",
+    "featuredQuote": "Bring account visibility, controls and financial information together in one premium experience.",
+    "featuredName": "City Gate Capital",
+    "featuredRole": "Connected financial technology",
     "pressLabel": "",
     "pressLogos": [],
     "items": [
       {
         "id": "t1",
-        "name": "Sarah M.",
-        "role": "Entrepreneur",
-        "location": "New York, USA",
-        "avatar": "S",
+        "name": "Personal Banking",
+        "role": "Everyday money management",
+        "location": "",
+        "avatar": "P",
         "color": "#C9A84C",
         "rating": 5,
-        "text": "This scenario illustrates how an entrepreneur could review proposed international-payment workflows and transparent fee disclosures."
+        "text": "Organize accounts, transfers, cards and spending insights from one connected dashboard."
       },
       {
         "id": "t2",
-        "name": "David K.",
-        "role": "Crypto Investor",
-        "location": "London, UK",
+        "name": "Digital Assets",
+        "role": "Market and portfolio visibility",
+        "location": "",
         "avatar": "D",
         "color": "#627EEA",
         "rating": 5,
-        "text": "This scenario illustrates how a user could compare sample fiat and digital-asset portfolio views without live custody."
+        "text": "Follow configured assets, market information and portfolio allocation with provider-approved services clearly identified."
       },
       {
         "id": "t3",
-        "name": "Priya R.",
-        "role": "Freelancer",
-        "location": "Singapore",
-        "avatar": "P",
+        "name": "Global Transfers",
+        "role": "Cross-border financial needs",
+        "location": "",
+        "avatar": "G",
         "color": "#10B981",
         "rating": 5,
-        "text": "This scenario illustrates a proposed cross-border payment journey after licensed providers and approved corridors are available."
+        "text": "Review eligible routes, fees, recipient information and status through a streamlined transfer journey."
       },
       {
         "id": "t4",
-        "name": "Marcus T.",
-        "role": "CFO",
-        "location": "Dubai, UAE",
-        "avatar": "M",
+        "name": "Business Banking",
+        "role": "Controls and reporting",
+        "location": "",
+        "avatar": "B",
         "color": "#9945FF",
         "rating": 5,
-        "text": "This scenario demonstrates how treasury users could review controls and reporting after approved provider integrations are available."
+        "text": "Coordinate authorized users, approvals, expense visibility and operational reporting."
       },
       {
         "id": "t5",
-        "name": "Yuki T.",
-        "role": "Portfolio Manager",
-        "location": "Tokyo, Japan",
-        "avatar": "Y",
+        "name": "Investments",
+        "role": "Portfolio insights",
+        "location": "",
+        "avatar": "I",
         "color": "#F7931A",
         "rating": 5,
-        "text": "This scenario illustrates how a portfolio manager could review sample analytics and market-data interfaces."
+        "text": "Review holdings, allocation, performance and market information where approved investment services are available."
       },
       {
         "id": "t6",
-        "name": "Amara O.",
-        "role": "Business Owner",
-        "location": "Lagos, Nigeria",
+        "name": "Financial Analytics",
+        "role": "Clarity and control",
+        "location": "",
         "avatar": "A",
         "color": "#F0D080",
         "rating": 5,
-        "text": "This scenario illustrates how a remittance user could compare disclosed rates and fees after an approved payment provider is connected."
+        "text": "Understand spending, income, account activity and portfolio performance through clear visual insights."
       },
       {
         "id": "t7",
-        "name": "Lena B.",
-        "role": "Digital Nomad",
-        "location": "Berlin, Germany",
-        "avatar": "L",
+        "name": "Multi-Currency",
+        "role": "Money across borders",
+        "location": "",
+        "avatar": "M",
         "color": "#EC4899",
         "rating": 5,
-        "text": "This scenario demonstrates a multi-currency card experience; coverage and exchange terms are not live in the pre-deployment."
+        "text": "Organize supported currencies and access available exchange information from one account experience."
       },
       {
         "id": "t8",
-        "name": "James W.",
-        "role": "Hedge Fund Manager",
-        "location": "Zurich, Switzerland",
-        "avatar": "J",
+        "name": "Private Client",
+        "role": "Personalized service",
+        "location": "",
+        "avatar": "P",
         "color": "#14B8A6",
         "rating": 5,
-        "text": "This scenario illustrates a proposed treasury API and compliance workflow; no live treasury service is offered."
+        "text": "Access relationship support, enhanced reporting and eligible premium services in one secure setting."
       }
     ]
   },
@@ -461,79 +461,79 @@
         "id": "fq1",
         "cat": "Security",
         "q": "Is City Gate Capital safe?",
-        "a": "The pre-deployment includes account-security controls such as multi-factor authentication and secure sessions. It does not hold customer funds or crypto assets, and no custody service is active."
+        "a": "City Gate Capital uses account-security controls including multi-factor authentication and protected sessions. Financial, custody and investment services are available only through eligible accounts and approved providers."
       },
       {
         "id": "fq2",
         "cat": "Security",
         "q": "What happens if I lose access to my account?",
-        "a": "The pre-deployment supports password-reset and account-security workflows. Support response times and identity re-verification service levels are not guaranteed."
+        "a": "Use the secure password-reset journey or contact support. Additional identity checks may be required before account access is restored."
       },
       {
         "id": "fq3",
         "cat": "Accounts",
         "q": "How quickly can I open an account?",
-        "a": "You can create a pre-deployment profile to explore the interface. Live identity verification, funding, and transactions are not enabled."
+        "a": "Registration takes only a few minutes. Final account activation depends on identity verification, eligibility, jurisdiction and approved provider coverage."
       },
       {
         "id": "fq4",
         "cat": "Accounts",
         "q": "What currencies and crypto do you support?",
-        "a": "The pre-deployment displays selected fiat currencies and digital assets using sample or market data. Live availability will depend on approved providers and launch jurisdictions."
+        "a": "Available fiat currencies and digital assets are shown in your account. Coverage depends on approved providers, account eligibility and jurisdiction."
       },
       {
         "id": "fq5",
         "cat": "Pricing",
         "q": "Are there monthly fees?",
-        "a": "Displayed plans and prices are illustrative concepts. No paid banking subscription, transfer allowance, card, or investment service is currently offered."
+        "a": "Any applicable plan fee is disclosed before you choose or activate an account plan. Available services and pricing may vary by eligibility and jurisdiction."
       },
       {
         "id": "fq6",
         "cat": "Pricing",
         "q": "Are there hidden fees on transfers?",
-        "a": "The pre-deployment uses illustrative fees and rates. Final pricing, spreads, and disclosures will be published only after provider and legal approval."
+        "a": "Applicable transfer fees, exchange rates and spreads are displayed before an eligible transfer is authorized."
       },
       {
         "id": "fq7",
         "cat": "Transfers",
         "q": "How do international transfers work?",
-        "a": "The interface demonstrates amount, recipient, rate, fee, and status screens. It does not transmit or settle funds."
+        "a": "Choose an eligible account and recipient, enter the amount, review the rate and fees, complete security verification, and follow the transfer status. Availability depends on the route and provider."
       },
       {
         "id": "fq8",
         "cat": "Transfers",
         "q": "Can I schedule or automate recurring transfers?",
-        "a": "Recurring transfers and target-rate actions are demonstration features. The pre-deployment does not execute live payments or currency conversions."
+        "a": "Scheduled and recurring transfers appear when supported for your account, currency and payment route. Review all details before authorization."
       }
     ]
   },
   "finalCta": {
-    "badge": "Pre-deployment platform access",
-    "headline1": "Ready to Explore",
-    "headlineAccent": "the Pre-deployment?",
-    "subheadline": "Explore the City Gate Capital vision for global transfers, digital assets, investments, and everyday account management.",
-    "ctaPrimary": "Create Pre-deployment Profile",
-    "ctaSecondary": "Talk to Sales",
+    "badge": "Connected financial experience",
+    "headline1": "Ready to Take",
+    "headlineAccent": "Control?",
+    "subheadline": "Bring accounts, transfers, wallets, investments and financial insights together with City Gate Capital.",
+    "ctaPrimary": "Open an Account",
+    "ctaSecondary": "Explore Digital Banking",
     "featureStrip": [
       {
         "id": "fs1",
-        "label": "Security controls pre-deployment"
+        "label": "Security controls"
       },
       {
         "id": "fs2",
-        "label": "Multi-currency pre-deployment"
+        "label": "Multi-currency access"
       },
       {
         "id": "fs3",
-        "label": "Pre-deployment profile creation"
+        "label": "Guided registration"
       },
       {
         "id": "fs4",
-        "label": "No live subscription"
+        "label": "Clear account terms"
       },
       {
         "id": "fs5",
-        "label": "Free pre-deployment platform"
+        "label": "Responsive account access"
       }
     ]
   },
@@ -541,42 +541,42 @@
     {
       "id": "plan1",
       "name": "Standard",
-      "tagline": "For individuals getting started",
+      "tagline": "Everyday banking essentials",
       "monthlyPrice": 0,
       "yearlyPrice": 0,
       "highlight": false,
       "badge": "",
       "color": "#627EEA",
-      "cta": "Explore Standard Pre-deployment",
+      "cta": "Open Standard Account",
       "features": [
         {
           "id": "pf1",
-          "label": "Multi-currency interface (10 samples)",
+          "label": "Multi-Currency Accounts",
           "included": true
         },
         {
           "id": "pf2",
-          "label": "Virtual card design pre-deployment",
+          "label": "Virtual Card",
           "included": true
         },
         {
           "id": "pf3",
-          "label": "Transfer workflow demonstrations",
+          "label": "Transfers",
           "included": true
         },
         {
           "id": "pf4",
-          "label": "Digital-asset interface (10 samples)",
+          "label": "Digital Wallets",
           "included": true
         },
         {
           "id": "pf5",
-          "label": "Mobile interface pre-deployment",
+          "label": "Spending Analytics",
           "included": true
         },
         {
           "id": "pf6",
-          "label": "Email support channel",
+          "label": "Customer Support",
           "included": true
         },
         {
@@ -599,27 +599,27 @@
     {
       "id": "plan2",
       "name": "Premium",
-      "tagline": "For professionals & frequent traders",
+      "tagline": "More control for an active financial life",
       "monthlyPrice": 9,
       "yearlyPrice": 7,
       "highlight": true,
       "badge": "Most Popular",
       "color": "#C9A84C",
-      "cta": "Explore Premium Concept",
+      "cta": "Choose Premium",
       "features": [
         {
           "id": "pf10",
-          "label": "Expanded multi-currency prototype",
+          "label": "Expanded Multi-Currency Access",
           "included": true
         },
         {
           "id": "pf11",
-          "label": "Virtual and physical card concepts",
+          "label": "Physical & Virtual Cards",
           "included": true
         },
         {
           "id": "pf12",
-          "label": "Expanded transfer workflow pre-deployment",
+          "label": "Advanced Transfers",
           "included": true
         },
         {
@@ -629,12 +629,12 @@
         },
         {
           "id": "pf14",
-          "label": "Mobile product concept",
+          "label": "Enhanced Financial Insights",
           "included": true
         },
         {
           "id": "pf15",
-          "label": "Support concept pre-deployment",
+          "label": "Priority Support",
           "included": true
         },
         {
@@ -657,13 +657,13 @@
     {
       "id": "plan3",
       "name": "Elite",
-      "tagline": "For HNWIs & institutional clients",
+      "tagline": "A more personalized financial experience",
       "monthlyPrice": 29,
       "yearlyPrice": 23,
       "highlight": false,
       "badge": "White Glove",
       "color": "#9945FF",
-      "cta": "Contact Elite Team",
+      "cta": "Contact Private Client Team",
       "features": [
         {
           "id": "pf19",
@@ -682,7 +682,7 @@
         },
         {
           "id": "pf22",
-          "label": "Custody provider required before launch",
+          "label": "Eligible provider-governed services",
           "included": true
         },
         {

@@ -6,16 +6,16 @@ import { ArrowLeftRight, ArrowRight, Globe, Heart, Landmark, Shield, TrendingUp,
 const stats = [
   { value: 'Build', label: 'Current Stage', sub: 'Sponsor readiness' },
   { value: 'Web', label: 'Architecture', sub: 'Managed deployment' },
-  { value: '50+', label: 'Currencies', sub: 'Prototype coverage' },
+  { value: '50+', label: 'Currencies', sub: 'Global account vision' },
   { value: '3', label: 'Account Views', sub: 'Personal, savings, business' },
   { value: '2FA', label: 'Account Security', sub: 'Implemented control' },
   { value: '1', label: 'Unified Platform', sub: 'Web and administration' },
 ];
 
 const values = [
-  { icon: Shield,   title: 'Security by Design',     desc: 'Build and test protective controls before connecting regulated data or financial providers.',                          color: '#C9A84C' },
-  { icon: Globe,    title: 'Global Product Vision',  desc: 'Explore how multi-currency experiences could work after geographic approvals and provider coverage are confirmed.',   color: '#627EEA' },
-  { icon: TrendingUp, title: 'Measured Improvement', desc: 'Validate product decisions while keeping financial operations locked until every launch dependency is approved.',       color: '#10B981' },
+  { icon: Shield,   title: 'Security by Design',     desc: 'Protective controls support secure access to financial information and services.',                                     color: '#C9A84C' },
+  { icon: Globe,    title: 'Global Product Vision',  desc: 'A connected multi-currency experience designed around approved geographic and provider coverage.',                    color: '#627EEA' },
+  { icon: TrendingUp, title: 'Measured Improvement', desc: 'Customer outcomes, reliability and security guide every product decision.',                                             color: '#10B981' },
   { icon: Users,    title: 'User-Centred Design',    desc: 'Design clear account, support, and administration workflows around user needs and accessibility.',                      color: '#9945FF' },
   { icon: Heart,    title: 'Truthful Communication', desc: 'Clearly distinguish current availability, proposed terms and verified provider capabilities.',                       color: '#EC4899' },
   { icon: Zap,      title: 'Simple Experiences',     desc: 'Turn complex operational workflows into understandable, accessible interfaces.',                                      color: '#F7931A' },

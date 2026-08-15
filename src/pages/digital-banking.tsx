@@ -154,7 +154,7 @@ const comparisonFeatures: ComparisonFeature[] = [
     icon: Bitcoin,
     name: 'Digital-Asset View',
     description: 'Organise supported digital-asset information; custody and execution require approved providers.',
-    plans: { standard: false, premium: 'Provider-gated', elite: 'Provider-gated' },
+    plans: { standard: false, premium: 'Eligible access', elite: 'Eligible access' },
   },
   {
     icon: Gift,
@@ -223,6 +223,21 @@ const trustItems = [
   { icon: Globe2, title: 'Global Perspective', body: 'Built for increasingly international financial needs.' },
   { icon: Headphones, title: 'Dedicated Support', body: 'Clear routes to help across every account level.' },
   { icon: LockKeyhole, title: 'Privacy by Design', body: 'Thoughtful controls for personal and financial information.' },
+];
+
+const experiencePrinciples = [
+  {
+    title: 'Start with the essentials',
+    body: 'Begin with a clear, connected account experience for everyday financial organisation.',
+  },
+  {
+    title: 'Upgrade as your needs grow',
+    body: 'Move into broader supported capabilities, deeper insights and enhanced service when you need them.',
+  },
+  {
+    title: 'Choose a personalised experience',
+    body: 'Access higher-touch support and eligible advanced capabilities for more sophisticated requirements.',
+  },
 ];
 
 function Availability({ value }: { value: string | boolean }) {
@@ -295,14 +310,14 @@ export default function DigitalBankingPage() {
           <div className="container relative mx-auto px-4 text-center md:px-6">
             <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65 }}>
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-                <WalletCards size={15} /> Account experiences
+                <WalletCards size={15} /> Banking designed around the way you manage money
               </span>
               <h1 className="mx-auto mt-7 max-w-5xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-7xl">
                 Choose the Account<br />
                 <span className="text-gold-shimmer">That Fits Your Ambition</span>
               </h1>
               <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-white/55 md:text-xl">
-                Your financial needs change as you grow. Choose a connected account experience that brings together everyday financial management, supported currencies, wallets, transfers, cards and intelligent insights.
+                Your financial needs change as you grow. Your account should be able to grow with you. Choose the connected experience that matches the way you live, work and manage your finances.
               </p>
               <p className="mt-5 text-sm font-semibold tracking-wide text-white/70">Powerful features. Flexible plans. Built for you.</p>
             </motion.div>
@@ -341,6 +356,10 @@ export default function DigitalBankingPage() {
                       {plan.period && <span className="pb-1 text-sm text-white/45">{plan.period}</span>}
                     </div>
                     <p className="mx-auto mt-4 max-w-[250px] text-xs leading-5 text-white/45">{plan.summary}</p>
+                    <div className="mx-auto mt-5 max-w-[260px] border-t border-white/10 pt-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary/80">Built for</p>
+                      <p className="mt-2 text-xs leading-5 text-white/42">{plan.builtFor}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -439,16 +458,49 @@ export default function DigitalBankingPage() {
               </p>
             </motion.div>
             <div className="grid gap-4">
-              {plans.map((plan, index) => (
-                <motion.div key={plan.key} initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.08 }} className="flex items-center gap-5 rounded-2xl border border-primary/15 bg-black/35 p-5">
+              {experiencePrinciples.map((principle, index) => (
+                <motion.div key={principle.title} initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.08 }} className="flex items-center gap-5 rounded-2xl border border-primary/15 bg-black/35 p-5">
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-lg font-bold text-primary">0{index + 1}</span>
                   <div>
-                    <p className="font-bold text-white">{plan.name}</p>
-                    <p className="mt-1 text-sm text-white/42">{plan.closing}</p>
+                    <p className="font-bold text-white">{principle.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-white/42">{principle.body}</p>
                   </div>
                 </motion.div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden border-b border-primary/10 py-20 md:py-32">
+          <video
+            className="absolute inset-0 h-full w-full object-cover object-center motion-reduce:hidden"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-hidden="true"
+          >
+            <source src="/assets/media/city-gate-digital-banking-hero.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-transparent to-black/55" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/55" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(201,168,76,0.16),transparent_48%)]" />
+          <div className="container relative z-10 mx-auto px-4 text-center md:px-6">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">One platform · three experiences · your choice</p>
+            <h2 className="mx-auto mt-4 max-w-4xl text-3xl font-bold leading-tight tracking-tight md:text-5xl">
+              The future of banking is <span className="text-gold-shimmer">designed to grow with you.</span>
+            </h2>
+            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-white/50">
+              From everyday money management to supported currencies, wallet activity, eligible transfers, smart-card controls and financial analytics, City Gate Capital brings your financial view into one connected platform.
+            </p>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-white/65">
+              {['Multi-Currency Accounts', 'Digital Wallets', 'Transfers', 'Smart Cards', 'Analytics'].map(item => (
+                <span key={item} className="rounded-full border border-primary/20 bg-primary/[0.06] px-4 py-2">{item}</span>
+              ))}
+            </div>
+            <p className="mt-9 text-lg font-bold text-primary">Your Money. Your World. One Gateway.</p>
           </div>
         </section>
 

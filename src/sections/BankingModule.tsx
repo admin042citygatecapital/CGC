@@ -19,6 +19,7 @@ import { useABTest } from '@/lib/useABTest';
 import { trackConversion } from '@/lib/useAnalytics';
 import {
 ArrowRight,
+Apple,
 Award,
 BarChart3,
 Bell,
@@ -30,9 +31,11 @@ CreditCard,
 Eye,
 Fingerprint,
 Globe,
+HelpCircle,
 Layers,
 Lock,
 PieChart,
+Play,
 RefreshCw,
 Send,
 Shield,
@@ -163,7 +166,7 @@ export function HeroSection() {
               </div>
               <div className="flex flex-wrap gap-5">
                 {home.hero.trustBadges.map((b) => {
-                  const BadgeIcon = b.label === 'Pre-deployment Safeguard' ? Shield : b.label === '256-bit Encryption' ? Lock : Award;
+                  const BadgeIcon = b.label === 'Security Controls' ? Shield : b.label === 'Encrypted Connections' ? Lock : Award;
                   return (
                     <div key={b.id} className="flex items-center gap-2 text-foreground/55">
                       <BadgeIcon size={14} className="text-primary" />
@@ -323,7 +326,18 @@ export function GlobalBankingSection() {
     <section className="relative overflow-hidden border-y border-primary/10 bg-[#060606]">
       <div className="grid min-h-[650px] lg:grid-cols-2">
         <div className="relative min-h-[360px] lg:min-h-full">
-          <img src="/assets/media/city-gate-global-banking-city-v1.png" alt="International financial district representing City Gate Capital global banking" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+          <video
+            className="absolute inset-0 h-full w-full object-cover object-center motion-reduce:hidden"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-label="City Gate Capital global transfer experience"
+          >
+            <source src="/assets/media/hero.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/20" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#060606]" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#060606]/60 to-transparent" />
         </div>
@@ -347,9 +361,39 @@ export function BankingFitsLifeBanner() {
     <section className="px-4 py-16 md:px-6 md:py-24">
       <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="container mx-auto overflow-hidden rounded-[2rem] border border-primary/25 bg-gradient-to-r from-[#090806] via-[#11100c] to-[#060606] shadow-2xl">
         <div className="grid items-center gap-10 px-7 py-10 md:px-12 lg:grid-cols-[0.8fr_1fr_1fr]">
-          <div className="relative flex justify-center"><div className="w-40 rounded-[2rem] border-2 border-primary/30 bg-black p-3 shadow-[0_20px_60px_rgba(201,168,76,0.18)]"><div className="rounded-[1.35rem] bg-[#0d0d0c] p-4"><p className="text-[9px] text-foreground/45">Good morning</p><p className="mt-4 text-[9px] text-foreground/40">Total balance</p><p className="text-xl font-bold">$28,650</p><div className="mt-5 space-y-2">{['Accounts','Transfers','Cards','Analytics'].map(item => <div key={item} className="rounded-lg border border-primary/10 px-3 py-2 text-[9px] text-foreground/60">{item}</div>)}</div></div></div></div>
+          <div className="relative flex justify-center lg:justify-start">
+            <div className="relative w-full max-w-sm overflow-hidden rounded-[1.75rem] border border-primary/25 bg-black shadow-[0_20px_60px_rgba(201,168,76,0.18)]">
+              <video
+                className="aspect-[4/5] h-full w-full object-cover object-center motion-reduce:hidden"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-label="City Gate Capital mobile banking experience"
+              >
+                <source src="/assets/media/city-gate-mobile-app.mp4" type="video/mp4" />
+              </video>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10" />
+            </div>
+          </div>
           <div><p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Banking that moves with you</p><h2 className="mt-4 text-4xl font-bold md:text-5xl">Banking that fits <span className="text-gold-gradient">your life.</span></h2></div>
-          <div><p className="text-foreground/55 leading-8">Manage your accounts, follow transfers, review spending and control important security settings from one responsive digital experience.</p><div className="mt-6 flex flex-wrap gap-3"><Link to="/accounts" className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-black">Explore banking <ArrowRight size={17}/></Link><Link to="/register" className="inline-flex items-center gap-2 rounded-xl border border-primary/25 px-6 py-3 font-semibold">Create profile</Link></div></div>
+          <div>
+            <p className="text-foreground/55 leading-8">Manage your accounts, follow transfers, review spending and control important security settings from one responsive digital experience.</p>
+            <div className="mt-6" aria-label="City Gate Capital mobile applications">
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/40">Mobile access</p>
+              <div className="flex flex-wrap gap-3">
+                <div className="inline-flex min-w-[178px] items-center gap-3 rounded-xl border border-primary/25 bg-black/70 px-5 py-3.5 shadow-[0_10px_30px_rgba(0,0,0,0.24)]">
+                  <Apple size={28} className="shrink-0 text-white" aria-hidden="true" />
+                  <div className="leading-none"><p className="text-[10px] text-foreground/50">Download on the</p><p className="mt-1 text-base font-semibold text-white">App Store</p></div>
+                </div>
+                <div className="inline-flex min-w-[178px] items-center gap-3 rounded-xl border border-primary/25 bg-black/70 px-5 py-3.5 shadow-[0_10px_30px_rgba(0,0,0,0.24)]">
+                  <Play size={27} className="shrink-0 fill-primary/20 text-primary" aria-hidden="true" />
+                  <div className="leading-none"><p className="text-[10px] text-foreground/50">Get it on</p><p className="mt-1 text-base font-semibold text-white">Google Play</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </motion.div>
     </section>
@@ -681,10 +725,10 @@ export function SecuritySection() {
                   <span className="text-xs text-foreground/40">/ 100</span>
                 </div>
               </div>
-              <p className="text-center text-sm font-semibold text-foreground mb-1">Excellent</p>
-              <p className="text-center text-xs text-foreground/40 mb-6">Your account is fully secured</p>
+              <p className="text-center text-sm font-semibold text-foreground mb-1">Security Center</p>
+              <p className="text-center text-xs text-foreground/40 mb-6">Review and strengthen your account protection</p>
               <div className="space-y-3">
-                {['Secure Sessions','Biometric UI','2FA Enabled','KYC Pre-deployment','No Live Custody'].map((item, i) => (
+                {['Secure Sessions','Device Controls','Two-Factor Authentication','Identity Review','Service Availability'].map((item, i) => (
                   <motion.div key={item} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.4 + i * 0.07 }} className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-full bg-emerald-400/15 flex items-center justify-center shrink-0"><CheckCircle size={11} className="text-emerald-400" /></div>
                     <span className="text-xs text-foreground/60">{item}</span>
@@ -692,7 +736,7 @@ export function SecuritySection() {
                 ))}
               </div>
               <div className="mt-6 pt-5 border-t border-primary/10">
-                <p className="text-xs text-foreground/30 uppercase tracking-widest mb-3">Pre-deployment Safeguards</p>
+                <p className="text-xs text-foreground/30 uppercase tracking-widest mb-3">Account Safeguards</p>
                 <div className="flex flex-wrap gap-2">
                   {['Secure Cookies','CSRF Controls','Admin RBAC','Audit Events','Launch Guard'].map(badge => (
                     <span key={badge} className="text-[10px] font-bold px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/20">{badge}</span>
@@ -724,7 +768,7 @@ export function SecuritySection() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <p className="text-sm font-semibold text-foreground">KYC Verification</p>
-                  <p className="text-xs text-foreground/40">Demonstration workflow only</p>
+                  <p className="text-xs text-foreground/40">Secure identity and eligibility review</p>
                 </div>
                 <span className="text-xs font-bold text-amber-300 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20">Provider Required</span>
               </div>
@@ -733,7 +777,7 @@ export function SecuritySection() {
                   { icon: User,        step: '01', label: 'Personal Info',  desc: 'Name, DOB, address',      done: true },
                   { icon: Camera,      step: '02', label: 'ID Document',    desc: 'Passport or national ID', done: true },
                   { icon: Fingerprint, step: '03', label: 'Liveness Check', desc: 'Quick selfie scan',       done: true },
-                  { icon: CheckCircle, step: '04', label: 'Review',         desc: 'No live decision',         done: true },
+                  { icon: CheckCircle, step: '04', label: 'Review',         desc: 'Eligibility decision',     done: true },
                 ].map((s, i) => (
                   <motion.div key={s.step} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 + i * 0.1 }}
                     className="relative p-4 rounded-2xl border text-center bg-primary/5 border-primary/25">
@@ -856,8 +900,8 @@ export function MobileAppSection() {
               </motion.div>
               <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const, delay: 1 }}
                 className="absolute -left-10 bottom-24 glass-card rounded-2xl px-3 py-2.5 gradient-border w-32" style={{ boxShadow: '0 8px 32px rgba(201,168,76,0.15)' }}>
-                <p className="text-[9px] font-bold text-primary mb-0.5">Mobile Pre-deployment</p>
-                <p className="text-[8px] text-foreground/40">Coming soon</p>
+                <p className="text-[9px] font-bold text-primary mb-0.5">Mobile Access</p>
+                <p className="text-[8px] text-foreground/40">Responsive web experience</p>
               </motion.div>
             </div>
           </motion.div>
@@ -884,7 +928,7 @@ export function MobileAppSection() {
               ))}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {[{ value: 'Pre-deployment', label: 'Current Stage' }, { value: '50+', label: 'Prototype Currencies' }, { value: '2FA', label: 'Account Protection' }, { value: '$0', label: 'Live Funds Moved' }].map((s, i) => (
+              {[{ value: 'Web', label: 'Mobile Access' }, { value: '50+', label: 'Currency Views' }, { value: '2FA', label: 'Account Protection' }, { value: '24/7', label: 'Secure Access' }].map((s, i) => (
                 <StatBadge key={s.label} value={s.value} label={s.label} delay={0.3 + i * 0.07} />
               ))}
             </div>
@@ -1009,46 +1053,59 @@ export function TestimonialsSection() {
 
 export function FaqSection() {
   const home = useHomepageContent();
-  const cats = ['All', 'Security', 'Accounts', 'Pricing', 'Transfers'] as const;
-  const [active, setActive] = useState<string>('All');
+  const [panelOpen, setPanelOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   return (
-    <>
-      <div className="flex flex-wrap justify-center gap-2 mb-10">
-        {cats.map(cat => (
-          <button key={cat} onClick={() => setActive(cat)}
-            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${active === cat ? 'bg-primary text-black' : 'bg-white/5 text-foreground/50 border border-primary/10 hover:border-primary/25 hover:text-foreground/70'}`}>
-            {cat}
-          </button>
-        ))}
-      </div>
-      <div className="grid md:grid-cols-2 gap-3 max-w-5xl mx-auto">
-        {home.faq.items.map((faq, i) => (
-          <motion.div key={faq.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className={active === 'All' || faq.cat === active ? 'block' : 'hidden'}>
-            <motion.div className="border border-primary/10 rounded-2xl overflow-hidden hover:border-primary/20 transition-colors bg-white/[0.02]" layout>
-              <button onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="w-full flex items-center justify-between px-6 py-5 text-left group">
-                <span className="font-medium text-foreground text-sm pr-4 group-hover:text-primary transition-colors">{faq.q}</span>
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all ${openId === faq.id ? 'bg-primary text-black rotate-180' : 'bg-primary/10 text-primary'}`}>
-                  <ChevronDown size={14} />
-                </div>
+    <div className="mx-auto max-w-3xl">
+      <button
+        type="button"
+        onClick={() => setPanelOpen(open => !open)}
+        aria-expanded={panelOpen}
+        aria-controls="homepage-faq-panel"
+        className="group flex w-full items-center justify-between rounded-2xl border border-primary/20 bg-primary/[0.035] px-5 py-4 text-left transition-colors hover:border-primary/40 md:px-6"
+      >
+        <span className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary"><HelpCircle size={20} /></span>
+          <span><span className="block text-sm font-semibold text-foreground">Frequently asked questions</span><span className="mt-1 block text-xs text-foreground/45">Find quick answers about accounts, security, pricing and transfers.</span></span>
+        </span>
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform ${panelOpen ? 'rotate-180' : ''}`}><ChevronDown size={17} /></span>
+      </button>
+
+      {panelOpen && (
+        <motion.div
+          id="homepage-faq-panel"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="mt-3 space-y-2 overflow-hidden"
+        >
+          {home.faq.items.map((faq, i) => (
+            <motion.div key={faq.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.025 }} className="overflow-hidden rounded-xl border border-primary/10 bg-white/[0.02]">
+              <button type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} aria-expanded={openId === faq.id} className="group flex w-full items-center justify-between px-5 py-4 text-left">
+                <span className="pr-4 text-sm font-medium text-foreground transition-colors group-hover:text-primary">{faq.q}</span>
+                <ChevronDown size={14} className={`shrink-0 text-primary transition-transform ${openId === faq.id ? 'rotate-180' : ''}`} />
               </button>
               {openId === faq.id && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="px-6 pb-5">
-                  <p className="text-sm text-foreground/50 leading-relaxed">{faq.a}</p>
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="px-5 pb-5">
+                  <p className="text-sm leading-relaxed text-foreground/50">{faq.a}</p>
                 </motion.div>
               )}
             </motion.div>
-          </motion.div>
-        ))}
-      </div>
-    </>
+          ))}
+        </motion.div>
+      )}
+    </div>
   );
 }
 
 // ── CtaSection ────────────────────────────────────────────────────────────────
 
-export function CtaSection() {
+export function CtaSection({
+  primaryTo = '/accounts',
+  secondaryTo = '/digital-banking',
+}: {
+  primaryTo?: string;
+  secondaryTo?: string;
+} = {}) {
   const home = useHomepageContent();
   return (
     <section className="py-28 relative overflow-hidden">
@@ -1065,8 +1122,8 @@ export function CtaSection() {
           </h2>
           <p className="text-foreground/50 max-w-xl mx-auto mb-10 leading-relaxed">{home.finalCta.subheadline}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <GoldButton to="/accounts">{home.finalCta.ctaPrimary}</GoldButton>
-            <Link to="/digital-banking" className="inline-flex items-center gap-2 text-sm text-foreground/60 hover:text-foreground transition-colors">
+            <GoldButton to={primaryTo}>{home.finalCta.ctaPrimary}</GoldButton>
+            <Link to={secondaryTo} className="inline-flex items-center gap-2 text-sm text-foreground/60 hover:text-foreground transition-colors">
               {home.finalCta.ctaSecondary} <ArrowRight size={14} />
             </Link>
           </div>
