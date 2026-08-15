@@ -10,7 +10,7 @@
 const routeImports: Record<string, () => Promise<unknown>> = {
   // ── Public pages ──────────────────────────────────────────────────────────
   '/':                () => import('../pages/index'),
-  '/about':           () => import('../pages/about'),
+  '/about':           () => import('../pages/our-story'),
   '/our-story':       () => import('../pages/our-story'),
   '/digital-banking': () => import('../pages/digital-banking'),
   '/wallet':          () => import('../pages/wallet'),

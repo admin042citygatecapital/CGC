@@ -72,7 +72,7 @@ const Reveal = ({ children, className = '' }: { children: React.ReactNode; class
 );
 
 export default function OurStoryPage() {
-  const title = 'Our Story | City Gate Capital';
+  const title = 'About City Gate Capital | Our Story';
   const description =
     'Discover the City Gate Capital vision for connected, secure, and responsible digital financial experiences for individuals and businesses.';
 
@@ -81,11 +81,11 @@ export default function OurStoryPage() {
       <Helmet>
         <title>{title}</title>
         <meta name="description" content={description} />
-        <link rel="canonical" href="https://citygate.capital/our-story" />
+        <link rel="canonical" href="https://citygate.capital/about" />
         <meta property="og:type" content="article" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
-        <meta property="og:url" content="https://citygate.capital/our-story" />
+        <meta property="og:url" content="https://citygate.capital/about" />
         <meta property="og:image" content="https://citygate.capital/assets/brand/city-gate-capital-seal.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
@@ -98,7 +98,7 @@ export default function OurStoryPage() {
               '@type': 'AboutPage',
               name: title,
               description,
-              url: 'https://citygate.capital/our-story',
+              url: 'https://citygate.capital/about',
               mainEntity: {
                 '@type': 'Organization',
                 name: 'City Gate Capital',
