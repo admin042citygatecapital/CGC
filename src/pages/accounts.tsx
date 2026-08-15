@@ -332,7 +332,7 @@ function AccountsPageContent() {
       </section>
       )}
 
-      <DashboardPreview />
+      <DashboardPreview compactTop />
       <FeaturesGrid />
       <InvestmentsSection />
 

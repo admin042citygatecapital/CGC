@@ -423,12 +423,12 @@ export function LookingAheadSection() {
 
 // ── DashboardPreview ──────────────────────────────────────────────────────────
 
-export function DashboardPreview() {
+export function DashboardPreview({ compactTop = false }: { compactTop?: boolean }) {
   const home = useHomepageContent();
   return (
-    <section className="py-28 bg-[#060606]">
+    <section className={`${compactTop ? 'pb-20 pt-8 md:pt-10' : 'py-28'} bg-[#060606]`}>
       <div className="container mx-auto px-4 md:px-6">
-        <div className="text-center mb-16">
+        <div className={`text-center ${compactTop ? 'mb-10' : 'mb-16'}`}>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">{home.dashboard.eyebrow}</span>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
