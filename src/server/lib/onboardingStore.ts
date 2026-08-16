@@ -100,9 +100,17 @@ export async function submitOnboardingCase(caseId: string, userId: string, actor
   const evidence = await db.select({ id: onboardingEvidence.id }).from(onboardingEvidence).where(eq(onboardingEvidence.caseId, caseId));
   if (evidence.length === 0) throw Object.assign(new Error('At least one secure evidence reference is required.'), { code: 'EVIDENCE_REQUIRED' });
   const now = new Date();
-  const updated = await db.update(onboardingCases).set({ status: 'submitted', submittedBy: actorId, submittedAt: now, lastEditedBy: actorId, updatedAt: now }).where(eq(onboardingCases.id, caseId)).returning();
-  await appendEvent({ caseId, userId, action: 'case_submitted', actorId, actorType, fromStatus: current.status, toStatus: 'submitted', details: { version: current.version, evidenceCount: evidence.length } });
-  return updated[0];
+  const nextVersion = current.version + 1;
+  return db.transaction(async tx => {
+    const updated = await tx.update(onboardingCases).set({ status: 'submitted', submittedBy: actorId, submittedAt: now, lastEditedBy: actorId, version: nextVersion, updatedAt: now })
+      .where(and(eq(onboardingCases.id, caseId), eq(onboardingCases.status, current.status), eq(onboardingCases.version, current.version))).returning();
+    if (!updated[0]) throw Object.assign(new Error('The registration workflow changed. Refresh it before continuing.'), { code: 'WORKFLOW_CONFLICT' });
+    await tx.insert(onboardingEvents).values({
+      id: `oe_${crypto.randomBytes(10).toString('hex')}`, caseId, userId, action: 'case_submitted', actorId, actorType,
+      fromStatus: current.status, toStatus: 'submitted', details: { previousVersion: current.version, version: nextVersion, evidenceCount: evidence.length }, createdAt: now,
+    });
+    return updated[0];
+  });
 }
 
 export async function reviewOnboardingCase(input: { caseId: string; reviewerId: string; decision: OnboardingStatus; reason: string }) {
@@ -115,9 +123,18 @@ export async function reviewOnboardingCase(input: { caseId: string; reviewerId: 
   if (!REVIEWABLE.has(current.status)) throw Object.assign(new Error('Case is not reviewable in its current status.'), { code: 'INVALID_TRANSITION' });
   assertMakerChecker(current, input.reviewerId);
   const now = new Date();
-  const updated = await db.update(onboardingCases).set({ status: input.decision, reviewedBy: input.reviewerId, reviewedAt: now, reviewReason: input.reason.trim(), updatedAt: now }).where(eq(onboardingCases.id, input.caseId)).returning();
-  await appendEvent({ caseId: current.id, userId: current.userId, action: 'case_reviewed', actorId: input.reviewerId, actorType: 'admin', fromStatus: current.status, toStatus: input.decision, details: { reason: input.reason.trim(), version: current.version } });
-  return updated[0];
+  const nextVersion = current.version + 1;
+  return db.transaction(async tx => {
+    const updated = await tx.update(onboardingCases).set({ status: input.decision, reviewedBy: input.reviewerId, reviewedAt: now, reviewReason: input.reason.trim(), version: nextVersion, updatedAt: now })
+      .where(and(eq(onboardingCases.id, input.caseId), eq(onboardingCases.status, current.status), eq(onboardingCases.version, current.version))).returning();
+    if (!updated[0]) throw Object.assign(new Error('The registration workflow changed. Refresh it before reviewing.'), { code: 'WORKFLOW_CONFLICT' });
+    await tx.insert(onboardingEvents).values({
+      id: `oe_${crypto.randomBytes(10).toString('hex')}`, caseId: current.id, userId: current.userId, action: 'case_reviewed',
+      actorId: input.reviewerId, actorType: 'admin', fromStatus: current.status, toStatus: input.decision,
+      details: { reason: input.reason.trim(), previousVersion: current.version, version: nextVersion }, createdAt: now,
+    });
+    return updated[0];
+  });
 }
 
 export async function getOnboardingCaseBundle(caseId: string) {

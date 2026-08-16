@@ -40,4 +40,19 @@ describe('registration workflow', () => {
     expect(workflow.nextHref).toBe('/dashboard');
     expect(workflow.steps.every((step) => step.status === 'complete')).toBe(true);
   });
+
+  it('directs an unverified customer to the sign-in verification step', () => {
+    const workflow = buildRegistrationWorkflow({ ...baseUser, emailVerified: false }, null, 0, null);
+    expect(workflow.currentStep).toBe('email');
+    expect(workflow.nextHref).toBe('/login');
+    expect(workflow.canContinue).toBe(true);
+  });
+
+  it.each(['rejected', 'expired'] as const)('closes a %s workflow without a continuation action', (status) => {
+    const workflow = buildRegistrationWorkflow(baseUser, { status }, 1, 3);
+    expect(workflow.status).toBe('closed');
+    expect(workflow.nextHref).toBeNull();
+    expect(workflow.canContinue).toBe(false);
+    expect(workflow.queuePosition).toBeNull();
+  });
 });

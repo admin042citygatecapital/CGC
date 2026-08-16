@@ -63,6 +63,24 @@ describe('customer onboarding controls', () => {
     expect(override).toContain('Activation cannot bypass compliance');
   });
 
+  it('versions every submitted and reviewed registration transition', () => {
+    const source = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/onboardingStore.ts'), 'utf8');
+    const submitTransition = source.slice(source.indexOf('export async function submitOnboardingCase'), source.indexOf('export async function reviewOnboardingCase'));
+    const reviewTransition = source.slice(source.indexOf('export async function reviewOnboardingCase'), source.indexOf('export async function getOnboardingCaseBundle'));
+    expect(submitTransition).toContain('const nextVersion = current.version + 1');
+    expect(submitTransition).toContain('version: nextVersion');
+    expect(submitTransition).toContain('previousVersion: current.version');
+    expect(submitTransition).toContain('db.transaction(async tx =>');
+    expect(submitTransition).toContain('eq(onboardingCases.version, current.version)');
+    expect(submitTransition).toContain("code: 'WORKFLOW_CONFLICT'");
+    expect(reviewTransition).toContain('const nextVersion = current.version + 1');
+    expect(reviewTransition).toContain('version: nextVersion');
+    expect(reviewTransition).toContain('previousVersion: current.version');
+    expect(reviewTransition).toContain('db.transaction(async tx =>');
+    expect(reviewTransition).toContain('eq(onboardingCases.version, current.version)');
+    expect(reviewTransition).toContain("code: 'WORKFLOW_CONFLICT'");
+  });
+
   it('publishes a jurisdiction-labelled programme register with no activation effect', () => {
     const map = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/onboardingComplianceMap.ts'), 'utf8');
     const route = fs.readFileSync(path.join(process.cwd(), 'src/server/api/admin/onboarding/GET.ts'), 'utf8');
