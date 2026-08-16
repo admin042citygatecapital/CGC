@@ -160,6 +160,20 @@ export async function getOnboardingQueuePosition(caseId: string): Promise<number
   return index < 0 ? null : index + 1;
 }
 
+/** Position across the complete non-terminal registration intake, including
+ * email verification, evidence collection, review and final approval. */
+export async function getRegistrationIntakePosition(caseId: string): Promise<number | null> {
+  const queued = await listRegistrationIntakeQueueIds();
+  const index = queued.findIndex((record) => record.id === caseId);
+  return index < 0 ? null : index + 1;
+}
+
+export async function listRegistrationIntakeQueueIds() {
+  return getDb().select({ id: onboardingCases.id }).from(onboardingCases)
+    .where(inArray(onboardingCases.status, ['draft', 'submitted', 'under_review', 'needs_info', 'approved']))
+    .orderBy(onboardingCases.createdAt);
+}
+
 export async function listOnboardingQueueIds() {
   return getDb().select({ id: onboardingCases.id }).from(onboardingCases)
     .where(inArray(onboardingCases.status, ['submitted', 'under_review']))

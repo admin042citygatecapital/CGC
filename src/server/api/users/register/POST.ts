@@ -1,8 +1,10 @@
 import type { Request, Response } from 'express';
 import { hashPassword } from '../../../lib/passwordHash.js';
 import {
-  createUser, generateVerifyToken, detectDuplicate,
+  createUserWithRegistrationCase, generateVerifyToken, detectDuplicate,
 } from '../../../lib/userStore.js';
+import { buildRegistrationWorkflow } from '../../../lib/registrationWorkflow.js';
+import { getRegistrationIntakePosition } from '../../../lib/onboardingStore.js';
 import { appendAudit } from '../../../lib/auditLog.js';
 import { sendVerificationEmail, sendAdminNewUserAlert } from '../../../lib/emailService.js';
 import { sanitizeString, isValidEmail, validatePassword } from '../../../lib/inputValidator.js';
@@ -68,7 +70,8 @@ export default async function handler(req: Request, res: Response) {
   const { token, expiry } = generateVerifyToken();
   const passwordHash = await hashPassword(password);
 
-  const user = await createUser({
+  const caseType = product.accountTier === 'business' ? 'business' : 'individual';
+  const { user, applicationReference } = await createUserWithRegistrationCase({
     email,
     name,
     phone: phone || undefined,
@@ -85,7 +88,7 @@ export default async function handler(req: Request, res: Response) {
     emailVerifyExpiry: expiry,
     passwordHash,
     ip,
-  });
+  }, caseType);
 
   appendAudit({
     event: 'user_registered',
@@ -101,6 +104,7 @@ export default async function handler(req: Request, res: Response) {
       },
       requestedProduct: product.slug,
       accountTier: product.accountTier,
+      applicationReference,
     },
   });
 
@@ -108,10 +112,14 @@ export default async function handler(req: Request, res: Response) {
   await sendVerificationEmail(email, name, token, base);
   await sendAdminNewUserAlert('admin@citygate.capital', { name, email, country: country || undefined, ip });
 
+  const intakePosition = applicationReference ? await getRegistrationIntakePosition(applicationReference) : null;
   return res.status(201).json({
     ok: true,
     message: 'Registration successful. Please check your email to verify your account.',
     userId: user.id,
+    applicationReference,
+    intakePosition,
+    workflow: buildRegistrationWorkflow(user, { status: 'draft' }, 0, null),
     documentUploadToken: process.env.NODE_ENV === 'production' ? undefined : issueKycUploadToken(user.id),
     kycAvailable: process.env.NODE_ENV !== 'production',
   });

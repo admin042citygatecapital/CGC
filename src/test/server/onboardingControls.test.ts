@@ -81,6 +81,17 @@ describe('customer onboarding controls', () => {
     expect(reviewTransition).toContain("code: 'WORKFLOW_CONFLICT'");
   });
 
+  it('maintains separate full-intake and compliance-review queues', () => {
+    const source = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/onboardingStore.ts'), 'utf8');
+    const intake = source.slice(source.indexOf('export async function getRegistrationIntakePosition'), source.indexOf('export async function listOnboardingQueueIds'));
+    expect(intake).toContain('listRegistrationIntakeQueueIds');
+    expect(intake).toContain("['draft', 'submitted', 'under_review', 'needs_info', 'approved']");
+    expect(intake).not.toMatch(/rejected|expired/);
+    const adminRoute = fs.readFileSync(path.join(process.cwd(), 'src/server/api/admin/onboarding/GET.ts'), 'utf8');
+    expect(adminRoute).toContain('intakePosition');
+    expect(adminRoute).toContain('queuePosition');
+  });
+
   it('publishes a jurisdiction-labelled programme register with no activation effect', () => {
     const map = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/onboardingComplianceMap.ts'), 'utf8');
     const route = fs.readFileSync(path.join(process.cwd(), 'src/server/api/admin/onboarding/GET.ts'), 'utf8');

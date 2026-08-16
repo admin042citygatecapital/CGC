@@ -22,4 +22,23 @@ describe('product-specific registration', () => {
     expect(route).toContain('requestedProduct: product.slug');
     expect(route).toContain('accountTier: product.accountTier');
   });
+
+  it('creates the customer and registration case in one database transaction', () => {
+    const store = readFileSync('src/server/lib/userStore.ts', 'utf8');
+    const route = readFileSync('src/server/api/users/register/POST.ts', 'utf8');
+    const page = readFileSync('src/pages/register.tsx', 'utf8');
+    const atomic = store.slice(store.indexOf('export async function createUserWithRegistrationCase'), store.indexOf('export async function updateUser'));
+    expect(atomic).toContain('db.transaction(async (tx) =>');
+    expect(atomic).toContain('tx.insert(users)');
+    expect(atomic).toContain('tx.insert(onboardingCases)');
+    expect(atomic).toContain('tx.insert(onboardingEvents)');
+    expect(atomic).toContain("action: 'registration_received'");
+    const eventInsert = atomic.slice(atomic.indexOf('tx.insert(onboardingEvents)'), atomic.indexOf('return { user:'));
+    expect(eventInsert).not.toMatch(/passwordHash|emailVerifyToken|sessionToken/);
+    expect(route).toContain('createUserWithRegistrationCase');
+    expect(route).toContain('applicationReference');
+    expect(route).toContain('intakePosition');
+    expect(page).toContain('Application reference');
+    expect(page).toContain('Intake #');
+  });
 });

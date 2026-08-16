@@ -27,6 +27,8 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error,      setError]      = useState('');
   const [success,    setSuccess]    = useState(false);
+  const [applicationReference, setApplicationReference] = useState('');
+  const [intakePosition, setIntakePosition] = useState<number | null>(null);
   const [busy,       setBusy]       = useState(false);
   const [legalAccepted, setLegalAccepted] = useState(false);
 
@@ -78,6 +80,8 @@ export default function RegisterPage() {
       if (!res.ok) {
         setError(data.error ?? 'Registration failed. Please try again.');
       } else {
+        setApplicationReference(typeof data.applicationReference === 'string' ? data.applicationReference : '');
+        setIntakePosition(typeof data.intakePosition === 'number' ? data.intakePosition : null);
         setSuccess(true);
       }
     } catch {
@@ -110,6 +114,13 @@ export default function RegisterPage() {
               We've sent a verification link to <span className="text-foreground font-medium">{form.email}</span>.
               Verify your email to continue the {getProductBySlug(form.requestedProduct)?.label ?? 'selected service'} onboarding process.
             </p>
+            {applicationReference && (
+              <div className="mb-6 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3 text-left">
+                <div className="flex items-center justify-between gap-3"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Application reference</p>{intakePosition && <span className="rounded-full border border-primary/20 px-2 py-0.5 text-[10px] text-primary">Intake #{intakePosition}</span>}</div>
+                <p className="mt-1 break-all font-mono text-sm text-foreground">{applicationReference}</p>
+                <p className="mt-2 text-xs leading-5 text-foreground/45">Your registration is saved in the secure application workflow. Verify your email, sign in, then continue each required step from Registration Progress.</p>
+              </div>
+            )}
             <Link
               to="/login"
               className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold text-black"

@@ -11,7 +11,7 @@
 import crypto from 'node:crypto';
 import { eq, sql as drizzleSql } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
-import { users } from '../db/schema.js';
+import { onboardingCases, onboardingEvents, users } from '../db/schema.js';
 import type { User, NewUser } from '../db/schema.js';
 import { stripDangerousKeys } from './inputValidator.js';
 
@@ -274,6 +274,86 @@ export async function createUser(
 
   const rows = await db.insert(users).values(insert).returning();
   return toRecord(rows[0]);
+}
+
+/**
+ * Create the customer and the first registration-workflow case atomically.
+ *
+ * The public registration endpoint uses this path so a successful response can
+ * never leave a customer profile outside the administration intake queue. The
+ * opaque case reference is safe to display to the customer; credentials,
+ * identity documents and session tokens are deliberately excluded.
+ */
+export async function createUserWithRegistrationCase(
+  data: CreateUserInput,
+  caseType: 'individual' | 'business',
+): Promise<{ user: UserRecord; applicationReference: string | null }> {
+  if (!isDatabaseConfigured()) {
+    const user = await createUser(data);
+    return { user, applicationReference: null };
+  }
+
+  const db = getDb();
+  const userId = 'usr_' + crypto.randomBytes(8).toString('hex');
+  const caseId = 'oc_' + crypto.randomBytes(10).toString('hex');
+  const eventId = 'oe_' + crypto.randomBytes(10).toString('hex');
+  const now = new Date();
+  const insert: NewUser = {
+    id: userId,
+    email: data.email.toLowerCase(),
+    name: data.name,
+    phone: data.phone ?? null,
+    country: data.country ?? null,
+    status: (data.status ?? 'pending_verification') as User['status'],
+    kycStatus: (data.kycStatus ?? 'not_submitted') as User['kycStatus'],
+    amlStatus: data.amlStatus ?? 'not_screened',
+    amlRiskLevel: data.amlRiskLevel ?? 'unrated',
+    emailVerified: data.emailVerified ?? false,
+    emailVerifyToken: data.emailVerifyToken ?? null,
+    emailVerifyExpiry: data.emailVerifyExpiry ? new Date(data.emailVerifyExpiry) : null,
+    passwordHash: data.passwordHash,
+    loginAttempts: 0,
+    ip: data.ip ?? null,
+    balance: data.balance ?? 0,
+    primaryCurrency: data.primaryCurrency ?? 'USD',
+    accountTier: (data.accountTier ?? 'personal') as User['accountTier'],
+    requestedProduct: data.requestedProduct ?? null,
+    address: data.address ?? null,
+    city: data.city ?? null,
+    postalCode: data.postalCode ?? null,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return db.transaction(async (tx) => {
+    const rows = await tx.insert(users).values(insert).returning();
+    await tx.insert(onboardingCases).values({
+      id: caseId,
+      userId,
+      caseType,
+      status: 'draft',
+      version: 1,
+      lastEditedBy: userId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await tx.insert(onboardingEvents).values({
+      id: eventId,
+      caseId,
+      userId,
+      action: 'registration_received',
+      actorId: userId,
+      actorType: 'customer',
+      toStatus: 'draft',
+      details: {
+        requestedProduct: data.requestedProduct ?? null,
+        accountTier: data.accountTier ?? 'personal',
+        workflowVersion: 1,
+      },
+      createdAt: now,
+    });
+    return { user: toRecord(rows[0]), applicationReference: caseId };
+  });
 }
 
 export async function updateUser(id: string, patch: Partial<UserRecord>): Promise<UserRecord | null> {
