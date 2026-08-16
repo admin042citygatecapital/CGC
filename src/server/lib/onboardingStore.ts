@@ -137,6 +137,18 @@ export async function listOnboardingCases(status?: OnboardingStatus) {
   return db.select().from(onboardingCases).where(status ? eq(onboardingCases.status, status) : undefined).orderBy(desc(onboardingCases.updatedAt));
 }
 
+export async function getOnboardingQueuePosition(caseId: string): Promise<number | null> {
+  const queued = await listOnboardingQueueIds();
+  const index = queued.findIndex((record) => record.id === caseId);
+  return index < 0 ? null : index + 1;
+}
+
+export async function listOnboardingQueueIds() {
+  return getDb().select({ id: onboardingCases.id }).from(onboardingCases)
+    .where(inArray(onboardingCases.status, ['submitted', 'under_review']))
+    .orderBy(onboardingCases.submittedAt, onboardingCases.createdAt);
+}
+
 export async function getLatestOnboardingCaseForUser(userId: string) {
   const rows = await getDb().select().from(onboardingCases)
     .where(eq(onboardingCases.userId, userId)).orderBy(desc(onboardingCases.updatedAt)).limit(1);

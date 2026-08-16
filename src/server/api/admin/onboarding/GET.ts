@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
-import { getOnboardingCaseBundle, listOnboardingCases, type OnboardingStatus } from '../../../lib/onboardingStore.js';
+import { getOnboardingCaseBundle, getOnboardingQueuePosition, listOnboardingCases, listOnboardingQueueIds, type OnboardingStatus } from '../../../lib/onboardingStore.js';
+import { buildRegistrationWorkflow } from '../../../lib/registrationWorkflow.js';
 import { findUserById } from '../../../lib/userStore.js';
 import { ONBOARDING_COMPLIANCE_MAP } from '../../../lib/onboardingComplianceMap.js';
 
@@ -10,8 +11,10 @@ export default async function handler(req: Request, res: Response) {
     const bundle = await getOnboardingCaseBundle(caseId);
     if (!bundle) return res.status(404).json({ error: 'Onboarding case not found.' });
     const user = await findUserById(bundle.case.userId);
+    const queuePosition = await getOnboardingQueuePosition(bundle.case.id);
     return res.json({
       ...bundle,
+      workflow: user ? buildRegistrationWorkflow(user, bundle.case, bundle.evidence.length, queuePosition) : null,
       customer: user ? {
         id: user.id, name: user.name, email: user.email, status: user.status,
         emailVerified: user.emailVerified, kycStatus: user.kycStatus,
@@ -25,8 +28,13 @@ export default async function handler(req: Request, res: Response) {
   }
   const raw = String(req.query.status ?? '');
   if (raw && !STATUSES.has(raw)) return res.status(400).json({ error: 'Invalid onboarding status.' });
+  const [cases, queued] = await Promise.all([
+    listOnboardingCases(raw as OnboardingStatus || undefined),
+    listOnboardingQueueIds(),
+  ]);
+  const queuePositions = new Map(queued.map((record, index) => [record.id, index + 1]));
   return res.json({
-    data: await listOnboardingCases(raw as OnboardingStatus || undefined),
+    data: cases.map((record) => ({ ...record, queuePosition: queuePositions.get(record.id) ?? null })),
     controls: ONBOARDING_COMPLIANCE_MAP,
     programme: {
       launchJurisdiction: 'UNDECIDED',

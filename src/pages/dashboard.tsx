@@ -1129,7 +1129,7 @@ export default function DashboardPage() {
                   </p>
                   <p className="mt-0.5 text-xs text-foreground/40">
                     {customer.kycStatus === 'approved'
-                      ? (isPreview ? 'Recorded for this product environment; regulated services remain provider-gated.' : 'Your account standing is current.')
+                      ? 'Your identity review is approved. Service availability remains subject to account eligibility.'
                       : customer.kycStatus === 'submitted'
                       ? 'You can continue using available account features while the assessment is pending.'
                       : 'Complete the requested information to progress your account application.'}
@@ -1137,8 +1137,8 @@ export default function DashboardPage() {
                 </div>
               </div>
               {customer.kycStatus !== 'approved' && (
-                <Link to="/kyc" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15">
-                  {customer.kycStatus === 'submitted' ? 'View verification status' : 'Continue onboarding'}
+                <Link to="/onboarding" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15">
+                  {customer.kycStatus === 'submitted' ? 'View registration progress' : 'Continue registration'}
                   <ChevronRight size={13} />
                 </Link>
               )}
