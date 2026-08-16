@@ -18,6 +18,8 @@ import {
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
 import { CurrencyMark } from '@/components/CurrencyMark';
+import { usePlatformFeatures } from '@/lib/platformFeatures';
+import type { PlatformFeatureKey } from '@/shared/platformFeatures';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -127,6 +129,22 @@ const QUICK_ACTIONS = [
   { icon: BarChart2,     label: 'Trade',        href: '/dashboard/trading',       color: '#F7931A' },
   { icon: Shield,        label: 'Security',     href: '/dashboard/security',      color: '#F7931A' },
 ];
+
+function featureForCustomerHref(href: string): PlatformFeatureKey | undefined {
+  if (href.includes('/wallet')) return 'wallets';
+  if (href.includes('/transfer')) return 'transfers';
+  if (href.includes('/cards')) return 'cards';
+  if (href.includes('/analytics')) return 'analytics';
+  if (href.includes('/exchange') || href.includes('/rates')) return 'fx';
+  if (href.includes('/trading') || href.includes('/portfolio')) return 'investments';
+  if (href.includes('/statements')) return 'statements';
+  if (href.includes('/beneficiaries')) return 'beneficiaries';
+  if (href.includes('/support')) return 'support';
+  if (href.includes('/goals')) return 'savingsGoals';
+  if (href.includes('/bills') || href.includes('/payments')) return 'payments';
+  if (href.includes('/rewards')) return 'rewards';
+  return undefined;
+}
 
 // ── Privacy mask component ────────────────────────────────────────────────────
 
@@ -596,6 +614,7 @@ function WalletTxModal({
 
 export default function DashboardPage() {
   const { customer, token, loading, logout } = useCustomerAuth();
+  const platformFeatures = usePlatformFeatures();
   const navigate = useNavigate();
   const isPreview = import.meta.env.VITE_PLATFORM_MODE !== 'live';
 
@@ -905,7 +924,7 @@ export default function DashboardPage() {
                 { label: 'Analytics',     href: '/dashboard/analytics' },
                 { label: 'Exchange',      href: '/dashboard/exchange' },
                 { label: 'Disputes',      href: '/dashboard/disputes' },
-              ].map(({ label, href }) => (
+              ].filter(({ href }) => { const feature = featureForCustomerHref(href); return !feature || platformFeatures[feature]; }).map(({ label, href }) => (
                 <Link key={label} to={href}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium text-foreground/50 hover:text-foreground hover:bg-white/5 transition-all">
                   {label}
@@ -1317,7 +1336,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 }}
               >
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                  {QUICK_ACTIONS.map(({ icon: Icon, label, href, color }) => (
+                  {QUICK_ACTIONS.filter(({ href }) => { const feature = featureForCustomerHref(href); return !feature || platformFeatures[feature]; }).map(({ icon: Icon, label, href, color }) => (
                     <Link key={label} to={href}
                       className="flex flex-col items-center gap-2 p-3.5 rounded-2xl border border-white/6 hover:border-white/12 transition-all group"
                       style={{ background: 'rgba(255,255,255,0.02)' }}>
@@ -1846,7 +1865,7 @@ export default function DashboardPage() {
                   { icon: Target,      label: 'Financial Goals',      href: '/dashboard/goals',    sub: 'Targets & progress' },
                   { icon: ReceiptText, label: 'Bills & Payments',     href: '/dashboard/bills',    sub: 'Schedules & reminders' },
                   { icon: Gift,        label: 'Rewards & Benefits',   href: '/dashboard/rewards',  sub: 'Points & membership' },
-                ].map(({ icon: Icon, label, href, sub }, i, arr) => (
+                ].filter(({ href }) => { const feature = featureForCustomerHref(href); return !feature || platformFeatures[feature]; }).map(({ icon: Icon, label, href, sub }, i, arr) => (
                   <Link key={label} to={href}
                     className={`flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors ${i < arr.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
                     <div className="w-8 h-8 rounded-xl bg-white/4 border border-white/6 flex items-center justify-center shrink-0">

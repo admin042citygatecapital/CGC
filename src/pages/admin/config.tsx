@@ -157,6 +157,17 @@ export default function AdminConfigPage() {
     setDirty(true);
   }
 
+  function patchPlatformFeature(key: string, value: boolean) {
+    setConfig(current => ({
+      ...current,
+      featureToggles: {
+        ...current.featureToggles,
+        platformFeatures: { ...current.featureToggles?.platformFeatures, [key]: value },
+      },
+    }));
+    setDirty(true);
+  }
+
   // ── Save ──────────────────────────────────────────────────────────────────
 
   async function save() {
@@ -534,6 +545,28 @@ export default function AdminConfigPage() {
                   <>
                     <SectionHeader title="Feature Toggles" desc={SECTIONS[6].desc} onReset={reset} saving={saving} />
                     <div className="space-y-3">
+                      <div className="rounded-2xl border border-primary/15 bg-primary/[.035] p-4">
+                        <div className="mb-4">
+                          <p className="text-sm font-semibold text-white/80">Customer modules</p>
+                          <p className="mt-1 text-xs leading-5 text-white/30">Disabled modules disappear from customer navigation and their server endpoints reject new activity. Existing data is retained. These controls never override provider, compliance, or launch safeguards.</p>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                          {[
+                            ['accounts','Accounts'], ['multiCurrency','Multi-Currency'], ['fx','FX & Exchange'],
+                            ['transfers','Transfers'], ['cards','Cards'], ['wallets','Wallets'],
+                            ['investments','Investments'], ['markets','Markets'], ['analytics','Analytics'],
+                            ['savingsGoals','Savings Goals'], ['businessBanking','Business Banking'], ['rewards','Rewards'],
+                            ['statements','Statements'], ['supportChat','Support Chat'], ['kyc','KYC'],
+                            ['registration','Registration'], ['notifications','Notifications'], ['emails','Emails'],
+                            ['beneficiaries','Beneficiaries'], ['payments','Bills & Payments'], ['support','Support Centre'],
+                          ].map(([key, label]) => (
+                            <div key={key} className="flex items-center justify-between rounded-xl border border-white/5 bg-black/20 p-3">
+                              <span className="text-sm font-medium text-white/60">{label}</span>
+                              <Toggle value={s('featureToggles').platformFeatures?.[key] ?? key !== 'rewards'} onChange={value => patchPlatformFeature(key, value)} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
                           ['virtualCardsEnabled',     'Virtual Cards',          'Issue virtual debit cards'],
@@ -543,7 +576,6 @@ export default function AdminConfigPage() {
                           ['savingsAccountEnabled',   'Savings Accounts',       'High-yield savings products'],
                           ['loanApplicationEnabled',  'Loan Applications',      'Personal & business loans'],
                           ['referralProgramEnabled',  'Referral Program',       'Customer referral rewards'],
-                          ['rewardsEnabled',          'Rewards & Benefits',     'Customer rewards workspace'],
                           ['twoFactorRequired',       '2FA Required',           'Force 2FA for all users'],
                           ['biometricLoginEnabled',   'Biometric Login',        'Fingerprint/face ID login'],
                           ['darkModeEnabled',         'Dark Mode',              'Allow users to toggle dark mode'],

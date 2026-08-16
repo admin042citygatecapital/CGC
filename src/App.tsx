@@ -16,6 +16,7 @@ import PageSkeleton from './components/PageSkeleton';
 import RootLayout from './layouts/RootLayout';
 import { AdminAuthProvider } from './lib/adminAuth';
 import { CustomerAuthProvider } from './lib/customerAuth';
+import { PlatformFeatureProvider } from './lib/platformFeatures';
 import { routes } from './routes';
 
 const CookieBanner = lazy(() =>
@@ -82,7 +83,9 @@ export default function App() {
     <AppErrorBoundary>
       <AdminAuthProvider>
         <CustomerAuthProvider>
-          <RouterProvider router={router} />
+          <PlatformFeatureProvider>
+            <RouterProvider router={router} />
+          </PlatformFeatureProvider>
           <ClientOnly>
             <CookieBannerErrorBoundary>
               <Suspense fallback={null}>

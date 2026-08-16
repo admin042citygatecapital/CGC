@@ -13,6 +13,8 @@ import { isSystemHost } from "./seo-host";
 import cookieParser from "cookie-parser";
 import compression from "compression";
 import { closeConnection } from "./db/db";
+import { requireEnabledCustomerFeature } from "./lib/platformFeatureControls";
+import platform_features_get from "./api/platform/features/GET";
 import { createMediaAssetsMiddleware } from "../../export-plugins/media-assets-plugin";
 import admin_kyc_document_get from "./api/admin/kyc/document/GET";
 import admin_operations_get from "./api/admin/operations/GET";
@@ -589,6 +591,7 @@ app.use('/api/users', (req: Request, res: Response, next: NextFunction) => {
   if (PUBLIC_SUFFIXES.has(suffix)) return next();
   return requireCustomerAuth(req, res, next);
 });
+app.use('/api/users', requireEnabledCustomerFeature);
 
 // Public visitors may submit consented, data-minimised events. Analytics reports
 // and every other analytics route remain administrator-only.
@@ -617,6 +620,7 @@ app.use(['/api/zoho/connect', '/api/zoho/status'], (req: Request, res: Response,
 });
 
 // <api-registrations>
+app.get("/api/platform/features", platform_features_get);
 app.post("/api/providers/onboarding/webhook/:provider", providers_onboarding_webhook_post);
 app.post("/api/webhooks/resend", resend_webhook_post);
 app.get("/api/admin/onboarding/screening", admin_onboarding_screening_get);

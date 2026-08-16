@@ -4,6 +4,9 @@ import { lazy,useEffect,type ReactNode } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { Navigate, useNavigate } from 'react-router-dom';
 import CustomerMobileNav from './components/CustomerMobileNav';
+import FeatureUnavailable from './components/FeatureUnavailable';
+import { usePlatformFeature } from './lib/platformFeatures';
+import type { PlatformFeatureKey } from './shared/platformFeatures';
 
 export type Path = string;
 export type Params = Record<string, string | undefined>;
@@ -28,6 +31,10 @@ function CustomerOnly({ children }: { children: ReactNode }) {
   }, [customer, loading, navigate]);
   if (loading || !customer) return null;
   return <>{children}</>;
+}
+
+function FeatureOnly({ feature, children }: { feature: PlatformFeatureKey; children: ReactNode }) {
+  return usePlatformFeature(feature) ? <>{children}</> : <FeatureUnavailable />;
 }
 
 const HomePage = lazy(() => import('./pages/index'));
@@ -156,45 +163,45 @@ export const routes: RouteObject[] = [
   { path: '/newsletter', element: <AdminOnly><NewsletterPage /></AdminOnly> },
   // Customer auth routes (no RootLayout — these pages manage their own chrome)
   { path: '/login',           element: <LoginPage /> },
-  { path: '/register',        element: <RegisterPage /> },
+  { path: '/register',        element: <FeatureOnly feature="registration"><RegisterPage /></FeatureOnly> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password',  element: <ResetPasswordPage /> },
   { path: '/plaid/oauth',     element: <CustomerOnly><PlaidOAuthPage /></CustomerOnly> },
   { path: '/dashboard',               element: <CustomerOnly><DashboardPage /></CustomerOnly> },
-  { path: '/dashboard/cards',         element: <CustomerOnly><DashboardCards /></CustomerOnly> },
-  { path: '/dashboard/analytics',     element: <CustomerOnly><DashboardAnalytics /></CustomerOnly> },
+  { path: '/dashboard/cards',         element: <CustomerOnly><FeatureOnly feature="cards"><DashboardCards /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/analytics',     element: <CustomerOnly><FeatureOnly feature="analytics"><DashboardAnalytics /></FeatureOnly></CustomerOnly> },
   { path: '/dashboard/security',      element: <CustomerOnly><DashboardSecurity /></CustomerOnly> },
-  { path: '/dashboard/wallets',       element: <CustomerOnly><DashboardWallets /></CustomerOnly> },
-  { path: '/dashboard/accounts',      element: <CustomerOnly><DashboardAccounts /></CustomerOnly> },
-  { path: '/dashboard/transfers',     element: <CustomerOnly><DashboardTransfers /></CustomerOnly> },
-  { path: '/dashboard/deposits',      element: <CustomerOnly><DashboardDeposits /></CustomerOnly> },
-  { path: '/dashboard/notifications', element: <CustomerOnly><DashboardNotifications /></CustomerOnly> },
+  { path: '/dashboard/wallets',       element: <CustomerOnly><FeatureOnly feature="wallets"><DashboardWallets /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/accounts',      element: <CustomerOnly><FeatureOnly feature="accounts"><DashboardAccounts /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/transfers',     element: <CustomerOnly><FeatureOnly feature="transfers"><DashboardTransfers /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/deposits',      element: <CustomerOnly><FeatureOnly feature="wallets"><DashboardDeposits /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/notifications', element: <CustomerOnly><FeatureOnly feature="notifications"><DashboardNotifications /></FeatureOnly></CustomerOnly> },
   { path: '/dashboard/profile',       element: <CustomerOnly><DashboardProfile /></CustomerOnly> },
   { path: '/dashboard/settings',      element: <CustomerOnly><DashboardSettings /></CustomerOnly> },
-  { path: '/dashboard/statements',    element: <CustomerOnly><DashboardStatements /></CustomerOnly> },
-  { path: '/dashboard/transactions',  element: <CustomerOnly><DashboardStatements /></CustomerOnly> },
+  { path: '/dashboard/statements',    element: <CustomerOnly><FeatureOnly feature="statements"><DashboardStatements /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/transactions',  element: <CustomerOnly><FeatureOnly feature="statements"><DashboardStatements /></FeatureOnly></CustomerOnly> },
   { path: '/dashboard/devices',       element: <CustomerOnly><DashboardDevices /></CustomerOnly> },
-  { path: '/dashboard/beneficiaries', element: <CustomerOnly><DashboardBeneficiaries /></CustomerOnly> },
-  { path: '/dashboard/support',       element: <CustomerOnly><DashboardSupport /></CustomerOnly> },
+  { path: '/dashboard/beneficiaries', element: <CustomerOnly><FeatureOnly feature="beneficiaries"><DashboardBeneficiaries /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/support',       element: <CustomerOnly><FeatureOnly feature="support"><DashboardSupport /></FeatureOnly></CustomerOnly> },
   { path: '/dashboard/disputes',      element: <CustomerOnly><DashboardDisputes /></CustomerOnly> },
-  { path: '/dashboard/goals',         element: <CustomerOnly><DashboardGoals /></CustomerOnly> },
-  { path: '/dashboard/bills',         element: <CustomerOnly><DashboardBills /></CustomerOnly> },
-  { path: '/dashboard/payments',      element: <CustomerOnly><DashboardBills /></CustomerOnly> },
-  { path: '/dashboard/rewards',       element: <CustomerOnly><DashboardRewards /></CustomerOnly> },
+  { path: '/dashboard/goals',         element: <CustomerOnly><FeatureOnly feature="savingsGoals"><DashboardGoals /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/bills',         element: <CustomerOnly><FeatureOnly feature="payments"><DashboardBills /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/payments',      element: <CustomerOnly><FeatureOnly feature="payments"><DashboardBills /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/rewards',       element: <CustomerOnly><FeatureOnly feature="rewards"><DashboardRewards /></FeatureOnly></CustomerOnly> },
   { path: '/dashboard/search',        element: <CustomerOnly><DashboardSearch /></CustomerOnly> },
-  { path: '/dashboard/rates',         element: <CustomerOnly><DashboardRates /></CustomerOnly> },
-  { path: '/dashboard/exchange',      element: <CustomerOnly><DashboardRates /></CustomerOnly> },
-  { path: '/dashboard/trading',         element: <CustomerOnly><DashboardTrading /></CustomerOnly> },
-  { path: '/dashboard/trading/markets',   element: <CustomerOnly><DashboardTradingMarkets /></CustomerOnly> },
-  { path: '/dashboard/trading/orders',    element: <CustomerOnly><DashboardTradingOrders /></CustomerOnly> },
-  { path: '/dashboard/trading/chart',     element: <CustomerOnly><DashboardTradingChart /></CustomerOnly> },
-  { path: '/dashboard/trading/watchlist', element: <CustomerOnly><DashboardTradingWatchlist /></CustomerOnly> },
-  { path: '/dashboard/trading/analytics', element: <CustomerOnly><DashboardTradingAnalytics /></CustomerOnly> },
-  { path: '/dashboard/portfolio',         element: <CustomerOnly><DashboardTradingAnalytics /></CustomerOnly> },
-  { path: '/dashboard/trading/spot',      element: <CustomerOnly><DashboardTradingSpot /></CustomerOnly> },
-  { path: '/dashboard/trading/trades',    element: <CustomerOnly><DashboardTradingTrades /></CustomerOnly> },
-  { path: '/kyc',                     element: <CustomerOnly><OnboardingPage /></CustomerOnly> },
-  { path: '/onboarding',              element: <CustomerOnly><OnboardingPage /></CustomerOnly> },
+  { path: '/dashboard/rates',         element: <CustomerOnly><FeatureOnly feature="fx"><DashboardRates /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/exchange',      element: <CustomerOnly><FeatureOnly feature="fx"><DashboardRates /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/trading',         element: <CustomerOnly><FeatureOnly feature="investments"><DashboardTrading /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/trading/markets',   element: <CustomerOnly><FeatureOnly feature="markets"><DashboardTradingMarkets /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/trading/orders',    element: <CustomerOnly><FeatureOnly feature="investments"><DashboardTradingOrders /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/trading/chart',     element: <CustomerOnly><FeatureOnly feature="markets"><DashboardTradingChart /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/trading/watchlist', element: <CustomerOnly><FeatureOnly feature="markets"><DashboardTradingWatchlist /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/trading/analytics', element: <CustomerOnly><FeatureOnly feature="investments"><DashboardTradingAnalytics /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/portfolio',         element: <CustomerOnly><FeatureOnly feature="investments"><DashboardTradingAnalytics /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/trading/spot',      element: <CustomerOnly><FeatureOnly feature="investments"><DashboardTradingSpot /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/trading/trades',    element: <CustomerOnly><FeatureOnly feature="investments"><DashboardTradingTrades /></FeatureOnly></CustomerOnly> },
+  { path: '/kyc',                     element: <CustomerOnly><FeatureOnly feature="kyc"><OnboardingPage /></FeatureOnly></CustomerOnly> },
+  { path: '/onboarding',              element: <CustomerOnly><FeatureOnly feature="kyc"><OnboardingPage /></FeatureOnly></CustomerOnly> },
   // Admin routes (no RootLayout wrapper — AdminLayout handles its own chrome)
   { path: '/admin/login',             element: <AdminLoginPage /> },
   { path: '/admin/forgot-password',   element: <AdminForgotPasswordPage /> },

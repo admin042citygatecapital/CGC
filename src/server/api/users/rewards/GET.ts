@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express';
 import { getQueryClient } from '../../../db/db.js';
-import { getSection } from '../../../lib/configStore.js';
+import { isPlatformFeatureEnabled } from '../../../lib/platformFeatureControls.js';
 
 export default async function handler(req: Request, res: Response) {
   const customer = req.customerUser;
   if (!customer) return res.status(401).json({ error: 'Authentication required' });
-  const enabled = getSection('featureToggles').rewardsEnabled === true;
+  const enabled = isPlatformFeatureEnabled('rewards');
   res.setHeader('Cache-Control', 'no-store');
   if (!enabled) return res.json({ enabled: false, account: null, activity: [], offers: [] });
   try {

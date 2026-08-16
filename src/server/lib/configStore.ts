@@ -47,7 +47,14 @@ export async function loadConfigFromDb(): Promise<void> {
         ...stored,
         // Nested sections must also inherit newly introduced controls when an
         // older persisted configuration is loaded after a deployment.
-        featureToggles: { ...defaults.featureToggles, ...(stored.featureToggles ?? {}) },
+        featureToggles: {
+          ...defaults.featureToggles,
+          ...(stored.featureToggles ?? {}),
+          platformFeatures: {
+            ...defaults.featureToggles.platformFeatures,
+            ...(stored.featureToggles?.platformFeatures ?? {}),
+          },
+        },
       };
     }
   } catch { /* use defaults */ }
@@ -141,7 +148,6 @@ export interface FeatureTogglesConfig {
   savingsAccountEnabled:     boolean;
   loanApplicationEnabled:    boolean;
   referralProgramEnabled:    boolean;
-  rewardsEnabled:            boolean;
   twoFactorRequired:         boolean;
   biometricLoginEnabled:     boolean;
   darkModeEnabled:           boolean;
@@ -149,6 +155,7 @@ export interface FeatureTogglesConfig {
   kycRequiredForTransfers:   boolean;
   maxDailyTransferLimit:     number;
   maxSingleTransferLimit:    number;
+  platformFeatures:          Partial<import('../../shared/platformFeatures.js').PlatformFeatures>;
 }
 
 export interface ExchangeRateConfig {
@@ -229,12 +236,12 @@ function defaultConfig(): AppConfig {
       sidebarCollapsed:  false,
     },
     homepage: {
-      heroTitle:                 'Explore the Future of Financial Technology',
-      heroSubtitle:              'Discover City Gate Capital’s proposed digital-finance experience. No live financial services are currently available.',
-      heroCtaLabel:              'Explore Demo',
+      heroTitle:                 'The Future of Banking is Here',
+      heroSubtitle:              'A connected financial experience designed to give you greater visibility, flexibility and control over your money.',
+      heroCtaLabel:              'Open an Account',
       heroCtaUrl:                '/register',
-      heroSecondaryCtaLabel:     'Learn More',
-      heroSecondaryCtaUrl:       '#features',
+      heroSecondaryCtaLabel:     'Explore Digital Banking',
+      heroSecondaryCtaUrl:       '/digital-banking',
       showStats:                 true,
       showTestimonials:          true,
       showPartners:              true,
@@ -288,7 +295,6 @@ function defaultConfig(): AppConfig {
       savingsAccountEnabled:   true,
       loanApplicationEnabled:  false,
       referralProgramEnabled:  false,
-      rewardsEnabled:          false,
       twoFactorRequired:       false,
       biometricLoginEnabled:   false,
       darkModeEnabled:         true,
@@ -296,6 +302,14 @@ function defaultConfig(): AppConfig {
       kycRequiredForTransfers: true,
       maxDailyTransferLimit:   50000,
       maxSingleTransferLimit:  10000,
+      platformFeatures: {
+        accounts: true, multiCurrency: true, fx: true, transfers: true,
+        cards: true, wallets: true, investments: true, markets: true,
+        analytics: true, savingsGoals: true, businessBanking: true,
+        rewards: false, statements: true, supportChat: true, kyc: true,
+        registration: true, notifications: true, emails: true,
+        beneficiaries: true, payments: true, support: true,
+      },
     },
     exchangeRates: {
       baseCurrency:          'USD',

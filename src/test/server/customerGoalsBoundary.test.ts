@@ -29,6 +29,8 @@ describe('customer goals boundary', () => {
     expect(entry).toContain('app.get("/api/users/goals"');
     expect(entry).toContain('app.post("/api/users/goals"');
     expect(routes).toContain("path: '/dashboard/goals'");
-    expect(routes).toContain('<CustomerOnly><DashboardGoals /></CustomerOnly>');
+    expect(routes).toContain(
+      '<CustomerOnly><FeatureOnly feature="savingsGoals"><DashboardGoals /></FeatureOnly></CustomerOnly>',
+    );
   });
 });
