@@ -21,12 +21,22 @@ export function PlatformFeatureProvider({ children }: { children: ReactNode }) {
   const [features, setFeatures] = useState(DEFAULT_PLATFORM_FEATURES);
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/platform/features', { signal: controller.signal })
+    const customerSurface = window.location.pathname.startsWith('/dashboard') || window.location.pathname.startsWith('/onboarding');
+    const publicEndpoint = '/api/platform/features';
+    const endpoint = customerSurface ? '/api/users/features' : publicEndpoint;
+    fetch(endpoint, { signal: controller.signal, credentials: 'same-origin' })
       .then(response => response.ok ? response.json() : Promise.reject(new Error('feature configuration unavailable')))
       .then(payload => setFeatures(normalizeFeatures(payload.features)))
       .catch(error => {
         if (error instanceof DOMException && error.name === 'AbortError') return;
-        // Keep safe defaults when the read-only configuration endpoint is unavailable.
+        if (!customerSurface) return;
+        return fetch(publicEndpoint, { signal: controller.signal })
+          .then(response => response.ok ? response.json() : Promise.reject(new Error('public feature configuration unavailable')))
+          .then(payload => setFeatures(normalizeFeatures(payload.features)))
+          .catch(fallbackError => {
+            if (fallbackError instanceof DOMException && fallbackError.name === 'AbortError') return;
+            // Keep safe defaults when both read-only configuration endpoints are unavailable.
+          });
       });
     return () => controller.abort();
   }, []);

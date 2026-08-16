@@ -7,6 +7,7 @@
 import { eq } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { config as configTable } from '../db/schema.js';
+import { normalizePlatformFeatureAccess, type PlatformFeatureAccessScopes } from '../../shared/platformFeatures.js';
 
 const CONFIG_KEY = 'app_config';
 
@@ -54,6 +55,7 @@ export async function loadConfigFromDb(): Promise<void> {
             ...defaults.featureToggles.platformFeatures,
             ...(stored.featureToggles?.platformFeatures ?? {}),
           },
+          featureAccess: normalizePlatformFeatureAccess(stored.featureToggles?.featureAccess),
         },
       };
     }
@@ -156,6 +158,7 @@ export interface FeatureTogglesConfig {
   maxDailyTransferLimit:     number;
   maxSingleTransferLimit:    number;
   platformFeatures:          Partial<import('../../shared/platformFeatures.js').PlatformFeatures>;
+  featureAccess:             PlatformFeatureAccessScopes;
 }
 
 export interface ExchangeRateConfig {
@@ -310,6 +313,7 @@ function defaultConfig(): AppConfig {
         registration: true, notifications: true, emails: true,
         beneficiaries: true, payments: true, support: true,
       },
+      featureAccess: normalizePlatformFeatureAccess(undefined),
     },
     exchangeRates: {
       baseCurrency:          'USD',
@@ -369,7 +373,11 @@ export function updateSection<K extends keyof Omit<AppConfig, 'updatedAt'>>(
   patch: Partial<AppConfig[K]>
 ): AppConfig {
   const cfg = readConfig();
-  (cfg as any)[section] = { ...(cfg as any)[section], ...patch };
+  const next = { ...(cfg as any)[section], ...patch };
+  if (section === 'featureToggles') {
+    next.featureAccess = normalizePlatformFeatureAccess(next.featureAccess);
+  }
+  (cfg as any)[section] = next;
   cfg.updatedAt = new Date().toISOString();
   writeConfig(cfg);
   return cfg;

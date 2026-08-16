@@ -43,6 +43,19 @@ interface EnvVar {
   description: string; status: 'PRESENT' | 'MISSING' | 'DEFAULT'; isPublic: boolean;
 }
 
+const PLATFORM_MODULES = [
+  ['accounts','Accounts'], ['multiCurrency','Multi-Currency'], ['fx','FX & Exchange'],
+  ['transfers','Transfers'], ['cards','Cards'], ['wallets','Wallets'],
+  ['investments','Investments'], ['markets','Markets'], ['analytics','Analytics'],
+  ['savingsGoals','Savings Goals'], ['businessBanking','Business Banking'], ['rewards','Rewards'],
+  ['statements','Statements'], ['supportChat','Support Chat'], ['kyc','KYC'],
+  ['registration','Registration'], ['notifications','Notifications'], ['emails','Emails'],
+  ['beneficiaries','Beneficiaries'], ['payments','Bills & Payments'], ['support','Support Centre'],
+] as const;
+
+const PLAN_SCOPES = [['standard', 'Standard'], ['premium', 'Premium'], ['elite', 'Elite']] as const;
+type FeatureScopeKind = 'users' | 'countries' | 'internalRoles';
+
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const SECTIONS: { id: SectionKey | 'env'; label: string; icon: typeof Palette; desc: string }[] = [
@@ -128,6 +141,9 @@ export default function AdminConfigPage() {
   const [saving,   setSaving]   = useState(false);
   const [toast,    setToast]    = useState<{ msg: string; ok: boolean } | null>(null);
   const [dirty,    setDirty]    = useState(false);
+  const [scopeKind, setScopeKind] = useState<FeatureScopeKind>('users');
+  const [scopeIdentifier, setScopeIdentifier] = useState('');
+  const [scopeFeature, setScopeFeature] = useState('accounts');
 
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -166,6 +182,37 @@ export default function AdminConfigPage() {
       },
     }));
     setDirty(true);
+  }
+
+  function patchScopedFeature(kind: 'plans' | FeatureScopeKind, identifier: string, feature: string, restricted: boolean) {
+    const normalizedIdentifier = kind === 'countries' || kind === 'internalRoles' ? identifier.trim().toUpperCase() : identifier.trim();
+    if (!normalizedIdentifier) return;
+    setConfig(current => {
+      const featureToggles = current.featureToggles ?? {};
+      const featureAccess = featureToggles.featureAccess ?? {};
+      const scope = featureAccess[kind] ?? {};
+      const nextOverrides = { ...(scope[normalizedIdentifier] ?? {}) };
+      if (restricted) nextOverrides[feature] = false;
+      else delete nextOverrides[feature];
+      const nextScope = { ...scope };
+      if (Object.keys(nextOverrides).length) nextScope[normalizedIdentifier] = nextOverrides;
+      else delete nextScope[normalizedIdentifier];
+      return { ...current, featureToggles: { ...featureToggles, featureAccess: { ...featureAccess, [kind]: nextScope } } };
+    });
+    setDirty(true);
+  }
+
+  function addScopedRestriction() {
+    const identifier = scopeKind === 'countries' || scopeKind === 'internalRoles' ? scopeIdentifier.trim().toUpperCase() : scopeIdentifier.trim();
+    const valid = scopeKind === 'users'
+      ? /^usr_[a-z0-9]{8,64}$/i.test(identifier)
+      : scopeKind === 'countries' ? /^[A-Z]{2}$/.test(identifier) : /^[A-Z][A-Z0-9_]{1,39}$/.test(identifier);
+    if (!valid) {
+      showToast(scopeKind === 'users' ? 'Enter a valid customer ID beginning with usr_' : scopeKind === 'countries' ? 'Enter a two-letter country code' : 'Enter a valid internal role code', false);
+      return;
+    }
+    patchScopedFeature(scopeKind, identifier, scopeFeature, true);
+    setScopeIdentifier('');
   }
 
   // ── Save ──────────────────────────────────────────────────────────────────
@@ -551,20 +598,65 @@ export default function AdminConfigPage() {
                           <p className="mt-1 text-xs leading-5 text-white/30">Disabled modules disappear from customer navigation and their server endpoints reject new activity. Existing data is retained. These controls never override provider, compliance, or launch safeguards.</p>
                         </div>
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                          {[
-                            ['accounts','Accounts'], ['multiCurrency','Multi-Currency'], ['fx','FX & Exchange'],
-                            ['transfers','Transfers'], ['cards','Cards'], ['wallets','Wallets'],
-                            ['investments','Investments'], ['markets','Markets'], ['analytics','Analytics'],
-                            ['savingsGoals','Savings Goals'], ['businessBanking','Business Banking'], ['rewards','Rewards'],
-                            ['statements','Statements'], ['supportChat','Support Chat'], ['kyc','KYC'],
-                            ['registration','Registration'], ['notifications','Notifications'], ['emails','Emails'],
-                            ['beneficiaries','Beneficiaries'], ['payments','Bills & Payments'], ['support','Support Centre'],
-                          ].map(([key, label]) => (
+                          {PLATFORM_MODULES.map(([key, label]) => (
                             <div key={key} className="flex items-center justify-between rounded-xl border border-white/5 bg-black/20 p-3">
                               <span className="text-sm font-medium text-white/60">{label}</span>
                               <Toggle value={s('featureToggles').platformFeatures?.[key] ?? key !== 'rewards'} onChange={value => patchPlatformFeature(key, value)} />
                             </div>
                           ))}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-white/8 bg-white/[.02] p-4">
+                        <div className="mb-4">
+                          <p className="text-sm font-semibold text-white/80">Account-plan access</p>
+                          <p className="mt-1 text-xs leading-5 text-white/30">Restrict a module for Standard, Premium, or Elite customers. Inherit follows the global control above, and no plan can reactivate a globally disabled module.</p>
+                        </div>
+                        <div className="space-y-4">
+                          {PLAN_SCOPES.map(([plan, planLabel]) => (
+                            <div key={plan} className="rounded-xl border border-white/5 bg-black/20 p-3">
+                              <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-primary/80">{planLabel}</p>
+                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                {PLATFORM_MODULES.map(([key, label]) => {
+                                  const restricted = s('featureToggles').featureAccess?.plans?.[plan]?.[key] === false;
+                                  return <button key={key} type="button" onClick={() => patchScopedFeature('plans', plan, key, !restricted)}
+                                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-left text-xs transition ${restricted ? 'border-red-400/25 bg-red-500/[.06] text-red-200/75' : 'border-white/5 bg-white/[.02] text-white/45 hover:border-primary/20'}`}>
+                                    <span>{label}</span><span className="text-[9px] font-bold uppercase tracking-wide">{restricted ? 'Restricted' : 'Inherit'}</span>
+                                  </button>;
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-white/8 bg-white/[.02] p-4">
+                        <div className="mb-4">
+                          <p className="text-sm font-semibold text-white/80">Targeted access restrictions</p>
+                          <p className="mt-1 text-xs leading-5 text-white/30">Restrict modules for one customer, a country, or an internal role. Existing records are retained and every restriction is enforced by the server.</p>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1.4fr_1.3fr_auto] md:items-end">
+                          <SelectField label="Scope" value={scopeKind} onChange={value => { setScopeKind(value as FeatureScopeKind); setScopeIdentifier(''); }} options={[
+                            { value: 'users', label: 'Customer' }, { value: 'countries', label: 'Country' }, { value: 'internalRoles', label: 'Internal role' },
+                          ]} />
+                          <Field label={scopeKind === 'users' ? 'Customer ID' : scopeKind === 'countries' ? 'Country code' : 'Role code'} value={scopeIdentifier} onChange={setScopeIdentifier}
+                            placeholder={scopeKind === 'users' ? 'usr_…' : scopeKind === 'countries' ? 'GB' : 'SUPPORT_ADMIN'} />
+                          <SelectField label="Module" value={scopeFeature} onChange={setScopeFeature} options={PLATFORM_MODULES.map(([value, label]) => ({ value, label }))} />
+                          <button type="button" onClick={addScopedRestriction} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-black hover:bg-primary/90">Add restriction</button>
+                        </div>
+                        <div className="mt-4 space-y-2">
+                          {(['users', 'countries', 'internalRoles'] as const).flatMap(kind =>
+                            Object.entries(s('featureToggles').featureAccess?.[kind] ?? {}).flatMap(([identifier, overrides]) =>
+                              Object.entries(overrides as Record<string, boolean>).filter(([, value]) => value === false).map(([feature]) => {
+                                const label = PLATFORM_MODULES.find(([key]) => key === feature)?.[1] ?? feature;
+                                const kindLabel = kind === 'users' ? 'Customer' : kind === 'countries' ? 'Country' : 'Internal role';
+                                return <div key={`${kind}:${identifier}:${feature}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-400/15 bg-red-500/[.035] px-3 py-2.5">
+                                  <div><span className="text-xs font-semibold text-white/65">{kindLabel}: {identifier}</span><span className="ml-2 text-xs text-red-200/55">{label} restricted</span></div>
+                                  <button type="button" onClick={() => patchScopedFeature(kind, identifier, feature, false)} className="text-[10px] font-bold uppercase tracking-wide text-white/35 hover:text-white">Remove</button>
+                                </div>;
+                              })
+                            )
+                          )}
+                          {(['users', 'countries', 'internalRoles'] as const).every(kind => Object.keys(s('featureToggles').featureAccess?.[kind] ?? {}).length === 0) &&
+                            <p className="rounded-xl border border-dashed border-white/8 p-4 text-center text-xs text-white/25">No targeted restrictions configured.</p>}
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
