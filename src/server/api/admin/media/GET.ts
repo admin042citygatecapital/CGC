@@ -4,7 +4,7 @@ import type { MediaType } from '../../../lib/mediaStore.js';
 
 export default async function handler(req: Request, res: Response) {
   try {
-    const { type, folder, tag, search, page, limit, view } = req.query as Record<string, string>;
+    const { type, folder, tag, search, usage, page, limit, view } = req.query as Record<string, string>;
 
     if (view === 'stats') {
       return res.json({ ...(await getMediaStats()), optimizedCount: 0, optimizerConfigured: false });
@@ -21,6 +21,7 @@ export default async function handler(req: Request, res: Response) {
       folder: folder || undefined,
       tag:    tag    || undefined,
       search: search || undefined,
+      usage: usage === 'used' || usage === 'unused' ? usage : undefined,
       page:   page   ? parseInt(page,  10) : 1,
       limit:  limit  ? parseInt(limit, 10) : 50,
     });

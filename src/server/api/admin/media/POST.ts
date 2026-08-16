@@ -1,14 +1,31 @@
 import type { Request, Response } from 'express';
 import {
   createMediaRecord, updateMediaRecord, deleteMediaRecord,
-  getMedia,
+  getMedia, assignMedia, unassignMedia, listMediaAssignments,
 } from '../../../lib/mediaStore.js';
 import { uploadMedia, deleteMedia } from '../../../lib/supabaseStorage.js';
-import { safeMediaError, validateMediaMetadata, validateMediaUpload } from '../../../lib/mediaValidation.js';
+import { safeMediaError, validateMediaAssignment, validateMediaMetadata, validateMediaUpload } from '../../../lib/mediaValidation.js';
+import { appendCriticalAudit } from '../../../lib/auditLog.js';
 
 export default async function handler(req: Request, res: Response) {
   try {
     const { action } = req.body as { action?: string };
+    const adminId = req.adminSession?.adminId ?? 'admin';
+
+    if (action === 'assign') {
+      const { id } = req.body as { id: string };
+      if (!id) return res.status(400).json({ error: 'id required' });
+      const assignment = validateMediaAssignment(req.body);
+      await appendCriticalAudit({ event: 'media_asset_assigned', adminId, ip: req.ip, meta: { mediaAssetId: id, pageKey: assignment.pageKey, slotKey: assignment.slotKey } });
+      return res.json(await assignMedia({ mediaAssetId: id, ...assignment, assignedBy: adminId }));
+    }
+
+    if (action === 'unassign') {
+      const { assignmentId } = req.body as { assignmentId: string };
+      if (!assignmentId) return res.status(400).json({ error: 'assignmentId required' });
+      await appendCriticalAudit({ event: 'media_asset_unassigned', adminId, ip: req.ip, meta: { assignmentId } });
+      return res.json({ ok: await unassignMedia(assignmentId) });
+    }
 
     // ── Delete ────────────────────────────────────────────────────────────────
     if (action === 'delete') {
@@ -16,6 +33,8 @@ export default async function handler(req: Request, res: Response) {
       if (!id) return res.status(400).json({ error: 'id required' });
       const record = await getMedia(id);
       if (record) {
+        if ((await listMediaAssignments(id)).length > 0) throw new Error('MEDIA_IN_USE');
+        await appendCriticalAudit({ event: 'media_asset_deleted', adminId, ip: req.ip, meta: { mediaAssetId: id, originalName: record.originalName } });
         await deleteMedia(record.filename, record.storageKey);
         await deleteMediaRecord(id);
       }
@@ -27,6 +46,7 @@ export default async function handler(req: Request, res: Response) {
       const { id, alt, tags, folder } = req.body as { id: string; alt?: string; tags?: string[]; folder?: string };
       if (!id) return res.status(400).json({ error: 'id required' });
       const metadata = validateMediaMetadata({ alt, tags, folder });
+      await appendCriticalAudit({ event: 'media_asset_metadata_updated', adminId, ip: req.ip, meta: { mediaAssetId: id } });
       const rec = await updateMediaRecord(id, metadata);
       if (!rec) return res.status(404).json({ error: 'Not found' });
       return res.json(rec);
@@ -68,6 +88,7 @@ export default async function handler(req: Request, res: Response) {
 
     let record;
     try {
+      await appendCriticalAudit({ event: 'media_asset_upload_requested', adminId, ip: req.ip, meta: { originalName: validated.originalName, mimeType: validated.mimeType, size: buffer.length } });
       record = await createMediaRecord({
         originalName: validated.originalName,
         mimeType: validated.mimeType,
@@ -76,7 +97,7 @@ export default async function handler(req: Request, res: Response) {
         url,
         storageKey: storage === 'supabase' ? storageKey : undefined,
         ...metadata,
-        uploadedBy: req.adminSession?.adminId ?? 'admin',
+        uploadedBy: adminId,
       });
     } catch (error) {
       await deleteMedia(filename, storage === 'supabase' ? storageKey : undefined).catch(() => undefined);

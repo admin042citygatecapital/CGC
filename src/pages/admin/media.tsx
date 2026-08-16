@@ -11,6 +11,7 @@ AlertCircle,
 CheckCircle,
 ChevronLeft,ChevronRight,
 Copy,
+Crop,
 Download,
 Edit2,
 Eye,
@@ -20,12 +21,14 @@ Filter,
 Folder,
 Grid3X3,
 Image,
+Link2,
 List,
 Loader2,
 RefreshCw,
 Search,
 Trash2,
 Upload,
+Unlink,
 Video,
 X,
 Zap
@@ -38,6 +41,11 @@ const MEDIA_OPTIMIZATION_CONFIGURED = false;
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type MediaType = 'image' | 'video' | 'pdf' | 'document';
+type CropAspect = 'original' | 'square' | 'portrait' | 'landscape' | 'wide';
+interface MediaAssignment {
+  id: string; mediaAssetId: string; pageKey: string; slotKey: string;
+  cropX: number; cropY: number; cropZoom: number; cropAspect: CropAspect;
+}
 
 interface MediaRecord {
   id:           string;
@@ -58,11 +66,14 @@ interface MediaRecord {
   uploadedBy:   string;
   createdAt:    string;
   updatedAt:    string;
+  usageCount?:  number;
+  assignments?: MediaAssignment[];
 }
 
 interface Stats {
   total: number; images: number; videos: number; pdfs: number; documents: number;
   totalSize: number; optimizedCount: number;
+  usedCount: number; unusedCount: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -114,6 +125,7 @@ export default function AdminMediaPage() {
   const [typeFilter,   setTypeFilter]   = useState<MediaType | ''>('');
   const [folderFilter, setFolderFilter] = useState('');
   const [search,       setSearch]       = useState('');
+  const [usageFilter,  setUsageFilter]  = useState<'used' | 'unused' | ''>('');
   const [folders,      setFolders]      = useState<string[]>([]);
 
   // UI state
@@ -124,6 +136,7 @@ export default function AdminMediaPage() {
   const [toast,     setToast]     = useState<{ msg: string; ok: boolean } | null>(null);
   const [optimizing,setOptimizing]= useState<string | null>(null);
   const [replacing, setReplacing] = useState<MediaRecord | null>(null);
+  const [assigning, setAssigning] = useState<{ asset: MediaRecord; pageKey: string; slotKey: string; cropX: number; cropY: number; cropZoom: number; cropAspect: CropAspect } | null>(null);
 
   const fileInputRef    = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
@@ -151,10 +164,11 @@ export default function AdminMediaPage() {
     if (typeFilter)   p.set('type',   typeFilter);
     if (folderFilter) p.set('folder', folderFilter);
     if (search)       p.set('search', search);
+    if (usageFilter)  p.set('usage', usageFilter);
     const r = await fetch(`/api/admin/media?${p}`, { headers: authHeaders() });
     if (r.ok) { const d = await r.json(); setRecords(d.data ?? []); setTotal(d.total ?? 0); }
     setLoading(false);
-  }, [page, typeFilter, folderFilter, search]);
+  }, [page, typeFilter, folderFilter, search, usageFilter]);
 
   useEffect(() => { loadStats(); loadFolders(); }, [loadStats, loadFolders]);
   useEffect(() => { loadRecords(); }, [loadRecords]);
@@ -210,7 +224,23 @@ export default function AdminMediaPage() {
       showToast('Deleted');
       if (selected?.id === id) setSelected(null);
       loadRecords(); loadStats();
-    } else showToast('Delete failed', false);
+    } else { const data = await r.json().catch(() => ({})); showToast(data.error ?? 'Delete failed', false); }
+  }
+
+  async function saveAssignment() {
+    if (!assigning) return;
+    const r = await fetch('/api/admin/media', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ action: 'assign', id: assigning.asset.id, pageKey: assigning.pageKey, slotKey: assigning.slotKey, cropX: assigning.cropX, cropY: assigning.cropY, cropZoom: assigning.cropZoom, cropAspect: assigning.cropAspect }),
+    });
+    if (r.ok) { showToast('Page assignment saved'); setAssigning(null); setSelected(null); loadRecords(); loadStats(); }
+    else { const data = await r.json().catch(() => ({})); showToast(data.error ?? 'Assignment failed', false); }
+  }
+
+  async function removeAssignment(assignmentId: string) {
+    const r = await fetch('/api/admin/media', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action: 'unassign', assignmentId }) });
+    if (r.ok) { showToast('Page assignment removed'); setSelected(null); loadRecords(); loadStats(); }
+    else showToast('Could not remove assignment', false);
   }
 
   // ── Optimize ──────────────────────────────────────────────────────────────
@@ -266,13 +296,15 @@ export default function AdminMediaPage() {
 
           {/* ── Stats strip ─────────────────────────────────────────────── */}
           {stats && (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
               {[
                 { label: 'Total Files',  value: stats.total,          color: '#C9A84C', icon: Folder },
                 { label: 'Images',       value: stats.images,         color: '#C9A84C', icon: Image },
                 { label: 'Videos',       value: stats.videos,         color: '#6366F1', icon: Video },
                 { label: 'PDFs',         value: stats.pdfs,           color: '#EF4444', icon: FileText },
                 { label: 'Documents',    value: stats.documents,      color: '#3B82F6', icon: File },
+                { label: 'Assigned',     value: stats.usedCount,      color: '#10B981', icon: Link2 },
+                { label: 'Unused',       value: stats.unusedCount,    color: '#F59E0B', icon: Unlink },
                 { label: 'Total Size',   value: fmtSize(stats.totalSize), color: '#10B981', icon: Download, isStr: true },
               ].map(s => {
                 const Icon = s.icon;
@@ -320,6 +352,13 @@ export default function AdminMediaPage() {
                 {folders.map(f => <option key={f} value={f} className="bg-[#0A0A0A] capitalize">{f}</option>)}
               </select>
             )}
+
+            <select value={usageFilter} onChange={e => { setUsageFilter(e.target.value as 'used' | 'unused' | ''); setPage(1); }}
+              className="bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none">
+              <option value="" className="bg-[#0A0A0A]">All Usage</option>
+              <option value="used" className="bg-[#0A0A0A]">Assigned</option>
+              <option value="unused" className="bg-[#0A0A0A]">Unused</option>
+            </select>
 
             {/* View toggle */}
             <div className="flex gap-1 border border-white/8 rounded-xl p-1">
@@ -500,9 +539,24 @@ export default function AdminMediaPage() {
                   {selected.optimized && (
                     <p className="text-emerald-400 text-xs flex items-center gap-1"><Zap size={10} /> Optimized · {selected.optimizedSize ? fmtSize(selected.optimizedSize) : ''}</p>
                   )}
+                  <div className="space-y-1.5 pt-2">
+                    {(selected.assignments ?? []).map(assignment => (
+                      <div key={assignment.id} className="flex items-center gap-2 rounded-xl border border-white/5 px-3 py-2 text-xs">
+                        <Link2 size={11} className="text-emerald-400" />
+                        <span className="text-white/60 flex-1">{assignment.pageKey} / {assignment.slotKey}</span>
+                        <span className="text-white/25">{assignment.cropAspect} · {assignment.cropZoom}×</span>
+                        <button onClick={() => removeAssignment(assignment.id)} className="text-red-400/60 hover:text-red-400"><Unlink size={11} /></button>
+                      </div>
+                    ))}
+                    {(selected.assignments ?? []).length === 0 && <p className="text-amber-300/60 text-xs">Unused — not assigned to a page section.</p>}
+                  </div>
                 </div>
 
-                <div className="flex gap-2 px-5 pb-5">
+                <div className="flex flex-wrap gap-2 px-5 pb-5">
+                  <button onClick={() => setAssigning({ asset: selected, pageKey: 'home', slotKey: 'hero', cropX: 50, cropY: 50, cropZoom: 1, cropAspect: 'wide' })}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20">
+                    <Crop size={11} /> Assign & Crop
+                  </button>
                   <button onClick={() => { setEditing({ ...selected }); setSelected(null); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 text-white/60 hover:text-white hover:bg-white/10">
                     <Edit2 size={11} /> Edit
@@ -522,6 +576,26 @@ export default function AdminMediaPage() {
                     <Trash2 size={11} /> Delete
                   </button>
                 </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {assigning && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={() => setAssigning(null)}>
+              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()} className="w-full max-w-xl rounded-2xl border border-white/10 p-6 space-y-4" style={{ background: '#111' }}>
+                <div className="flex items-center justify-between"><div><p className="text-white font-semibold">Assign to Page</p><p className="text-white/30 text-xs">Choose a controlled page slot and non-destructive crop.</p></div><button onClick={() => setAssigning(null)} className="text-white/30 hover:text-white"><X size={16} /></button></div>
+                {assigning.asset.type === 'image' && <div className="h-48 overflow-hidden rounded-xl border border-white/10 bg-black"><img src={assigning.asset.url} alt={assigning.asset.alt} className="w-full h-full object-cover" style={{ objectPosition: `${assigning.cropX}% ${assigning.cropY}%`, transform: `scale(${assigning.cropZoom})` }} /></div>}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <label className="text-white/40 text-xs">Page<input value={assigning.pageKey} onChange={e => setAssigning(p => p ? { ...p, pageKey: e.target.value } : p)} placeholder="home" className="mt-1 w-full bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white" /></label>
+                  <label className="text-white/40 text-xs">Section<input value={assigning.slotKey} onChange={e => setAssigning(p => p ? { ...p, slotKey: e.target.value } : p)} placeholder="hero" className="mt-1 w-full bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white" /></label>
+                  <label className="text-white/40 text-xs">Horizontal focus · {assigning.cropX}%<input type="range" min="0" max="100" value={assigning.cropX} onChange={e => setAssigning(p => p ? { ...p, cropX: Number(e.target.value) } : p)} className="mt-2 w-full" /></label>
+                  <label className="text-white/40 text-xs">Vertical focus · {assigning.cropY}%<input type="range" min="0" max="100" value={assigning.cropY} onChange={e => setAssigning(p => p ? { ...p, cropY: Number(e.target.value) } : p)} className="mt-2 w-full" /></label>
+                  <label className="text-white/40 text-xs">Zoom · {assigning.cropZoom.toFixed(1)}×<input type="range" min="1" max="4" step="0.1" value={assigning.cropZoom} onChange={e => setAssigning(p => p ? { ...p, cropZoom: Number(e.target.value) } : p)} className="mt-2 w-full" /></label>
+                  <label className="text-white/40 text-xs">Aspect<select value={assigning.cropAspect} onChange={e => setAssigning(p => p ? { ...p, cropAspect: e.target.value as CropAspect } : p)} className="mt-1 w-full bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white"><option value="original" className="bg-[#111]">Original</option><option value="square" className="bg-[#111]">Square</option><option value="portrait" className="bg-[#111]">Portrait</option><option value="landscape" className="bg-[#111]">Landscape</option><option value="wide" className="bg-[#111]">Wide</option></select></label>
+                </div>
+                <button onClick={saveAssignment} className="w-full py-2.5 rounded-xl font-bold text-black text-sm" style={{ background: 'linear-gradient(135deg,#C9A84C,#F0D080)' }}>Save Page Assignment</button>
               </motion.div>
             </motion.div>
           )}
@@ -655,7 +729,7 @@ function MediaCard({
       {/* Footer */}
       <div className="px-2.5 py-2 border-t border-white/5">
         <p className="text-white/60 text-[10px] font-medium truncate">{rec.originalName}</p>
-        <p className="text-white/25 text-[9px] mt-0.5">{fmtSize(rec.size)}</p>
+        <div className="flex items-center justify-between mt-0.5"><p className="text-white/25 text-[9px]">{fmtSize(rec.size)}</p><span className={`text-[8px] font-bold ${rec.usageCount ? 'text-emerald-400' : 'text-amber-300/60'}`}>{rec.usageCount ? `${rec.usageCount} USE${rec.usageCount === 1 ? '' : 'S'}` : 'UNUSED'}</span></div>
       </div>
     </div>
   );

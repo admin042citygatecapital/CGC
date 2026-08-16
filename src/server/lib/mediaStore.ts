@@ -7,6 +7,7 @@ import { mediaDirectory, privateSubdirectory } from './storagePaths.js';
 
 const META_DIR = privateSubdirectory('media');
 const META_FILE = path.join(META_DIR, 'index.jsonl');
+const ASSIGNMENTS_FILE = path.join(META_DIR, 'assignments.json');
 const ASSET_DIR = mediaDirectory;
 
 export type MediaType = 'image' | 'video' | 'pdf' | 'document';
@@ -15,14 +16,26 @@ export interface MediaRecord {
   size: number; url: string; storageKey?: string; alt: string; tags: string[]; folder: string;
   width?: number; height?: number; duration?: number; optimized: boolean; optimizedSize?: number;
   replacedById?: string; uploadedBy: string; createdAt: string; updatedAt: string;
+  usageCount?: number; assignments?: MediaAssignment[];
 }
-export interface MediaListOptions { type?: MediaType | ''; folder?: string; tag?: string; search?: string; page?: number; limit?: number; }
+export type MediaCropAspect = 'original' | 'square' | 'portrait' | 'landscape' | 'wide';
+export interface MediaAssignment {
+  id: string; mediaAssetId: string; pageKey: string; slotKey: string;
+  cropX: number; cropY: number; cropZoom: number; cropAspect: MediaCropAspect;
+  assignedBy: string; createdAt: string; updatedAt: string;
+}
+export interface MediaListOptions { type?: MediaType | ''; folder?: string; tag?: string; search?: string; usage?: 'used' | 'unused'; page?: number; limit?: number; }
 interface MediaDbRow {
   id: string; filename: string; original_name: string; mime_type: string; media_type: MediaType;
   size_bytes: string | number; public_url: string; storage_key: string | null; alt_text: string;
   tags: unknown; folder: string; width: number | null; height: number | null; duration_seconds: number | null;
   optimized: boolean; optimized_size_bytes: string | number | null; replaced_by_id: string | null;
   uploaded_by: string; created_at: Date | string; updated_at: Date | string;
+}
+interface MediaAssignmentDbRow {
+  id: string; media_asset_id: string; page_key: string; slot_key: string;
+  crop_x: number; crop_y: number; crop_zoom: string | number; crop_aspect: MediaCropAspect;
+  assigned_by: string; created_at: Date | string; updated_at: Date | string;
 }
 
 function ensureDirs(): void {
@@ -40,6 +53,11 @@ function writeLocal(records: MediaRecord[]): void {
   ensureDirs();
   fs.writeFileSync(META_FILE, `${records.map(record => JSON.stringify(record)).join('\n')}\n`);
 }
+function readLocalAssignments(): MediaAssignment[] {
+  try { ensureDirs(); return fs.existsSync(ASSIGNMENTS_FILE) ? JSON.parse(fs.readFileSync(ASSIGNMENTS_FILE, 'utf8')) as MediaAssignment[] : []; }
+  catch { return []; }
+}
+function writeLocalAssignments(records: MediaAssignment[]): void { ensureDirs(); fs.writeFileSync(ASSIGNMENTS_FILE, JSON.stringify(records, null, 2)); }
 function requireDurableProductionStore(): void {
   if (process.env.NODE_ENV === 'production' && !isDatabaseConfigured()) throw new Error('MEDIA_DATABASE_UNAVAILABLE');
 }
@@ -61,6 +79,13 @@ function fromRow(row: MediaDbRow): MediaRecord {
     optimized: row.optimized, optimizedSize: row.optimized_size_bytes == null ? undefined : Number(row.optimized_size_bytes),
     replacedById: row.replaced_by_id ?? undefined, uploadedBy: row.uploaded_by,
     createdAt: asIso(row.created_at), updatedAt: asIso(row.updated_at),
+  };
+}
+function assignmentFromRow(row: MediaAssignmentDbRow): MediaAssignment {
+  return {
+    id: row.id, mediaAssetId: row.media_asset_id, pageKey: row.page_key, slotKey: row.slot_key,
+    cropX: row.crop_x, cropY: row.crop_y, cropZoom: Number(row.crop_zoom), cropAspect: row.crop_aspect,
+    assignedBy: row.assigned_by, createdAt: asIso(row.created_at), updatedAt: asIso(row.updated_at),
   };
 }
 async function insertDatabase(record: MediaRecord): Promise<void> {
@@ -88,6 +113,10 @@ async function readAll(): Promise<MediaRecord[]> {
 
 export async function listMedia(opts: MediaListOptions = {}): Promise<{ data: MediaRecord[]; total: number }> {
   let records = await readAll();
+  const assignments = await listMediaAssignments();
+  const assignmentsByAsset = new Map<string, MediaAssignment[]>();
+  for (const assignment of assignments) assignmentsByAsset.set(assignment.mediaAssetId, [...(assignmentsByAsset.get(assignment.mediaAssetId) ?? []), assignment]);
+  records = records.map(record => ({ ...record, assignments: assignmentsByAsset.get(record.id) ?? [], usageCount: assignmentsByAsset.get(record.id)?.length ?? 0 }));
   if (opts.type) records = records.filter(record => record.type === opts.type);
   if (opts.folder) records = records.filter(record => record.folder === opts.folder);
   if (opts.tag) records = records.filter(record => record.tags.includes(opts.tag!));
@@ -95,6 +124,8 @@ export async function listMedia(opts: MediaListOptions = {}): Promise<{ data: Me
     const query = opts.search.toLowerCase();
     records = records.filter(record => record.originalName.toLowerCase().includes(query) || record.alt.toLowerCase().includes(query) || record.tags.some(tag => tag.toLowerCase().includes(query)));
   }
+  if (opts.usage === 'used') records = records.filter(record => (record.usageCount ?? 0) > 0);
+  if (opts.usage === 'unused') records = records.filter(record => (record.usageCount ?? 0) === 0);
   const total = records.length;
   const page = Math.max(1, opts.page ?? 1);
   const limit = Math.min(100, Math.max(1, opts.limit ?? 50));
@@ -153,6 +184,7 @@ export async function updateMediaRecord(id: string, patch: Partial<Pick<MediaRec
 export async function deleteMediaRecord(id: string): Promise<boolean> {
   const existing = await getMedia(id);
   if (!existing) return false;
+  if ((await listMediaAssignments(id)).length > 0) throw new Error('MEDIA_IN_USE');
   if (isDatabaseConfigured()) { const sql = getQueryClient(); await sql`DELETE FROM media_assets WHERE id=${id}`; }
   else { writeLocal(readLocal().filter(record => record.id !== id)); }
   if (!existing.storageKey) { try { fs.unlinkSync(path.join(ASSET_DIR, existing.filename)); } catch { /* absent */ } }
@@ -174,9 +206,46 @@ export async function replaceMediaRecord(id: string, params: { originalName: str
   const all = readLocal(); const index = all.findIndex(record => record.id === id); all[index] = next; writeLocal(all); return next;
 }
 
-export async function getMediaStats(): Promise<{ total: number; images: number; videos: number; pdfs: number; documents: number; totalSize: number; optimizedCount: number }> {
+export async function getMediaStats(): Promise<{ total: number; images: number; videos: number; pdfs: number; documents: number; totalSize: number; optimizedCount: number; usedCount: number; unusedCount: number }> {
   const all = await readAll();
-  return { total: all.length, images: all.filter(record => record.type === 'image').length, videos: all.filter(record => record.type === 'video').length, pdfs: all.filter(record => record.type === 'pdf').length, documents: all.filter(record => record.type === 'document').length, totalSize: all.reduce((sum, record) => sum + record.size, 0), optimizedCount: all.filter(record => record.optimized).length };
+  const used = new Set((await listMediaAssignments()).map(assignment => assignment.mediaAssetId));
+  return { total: all.length, images: all.filter(record => record.type === 'image').length, videos: all.filter(record => record.type === 'video').length, pdfs: all.filter(record => record.type === 'pdf').length, documents: all.filter(record => record.type === 'document').length, totalSize: all.reduce((sum, record) => sum + record.size, 0), optimizedCount: all.filter(record => record.optimized).length, usedCount: used.size, unusedCount: all.filter(record => !used.has(record.id)).length };
 }
 export async function getFolders(): Promise<string[]> { return [...new Set((await readAll()).map(record => record.folder))].sort(); }
 export async function getAllTags(): Promise<string[]> { return [...new Set((await readAll()).flatMap(record => record.tags))].sort(); }
+
+export async function listMediaAssignments(mediaAssetId?: string): Promise<MediaAssignment[]> {
+  requireDurableProductionStore();
+  if (!isDatabaseConfigured()) return readLocalAssignments().filter(record => !mediaAssetId || record.mediaAssetId === mediaAssetId);
+  const sql = getQueryClient();
+  const rows = mediaAssetId
+    ? await sql<MediaAssignmentDbRow[]>`SELECT * FROM media_asset_assignments WHERE media_asset_id=${mediaAssetId} ORDER BY page_key,slot_key`
+    : await sql<MediaAssignmentDbRow[]>`SELECT * FROM media_asset_assignments ORDER BY page_key,slot_key`;
+  return rows.map(assignmentFromRow);
+}
+
+export async function assignMedia(params: { mediaAssetId: string; pageKey: string; slotKey: string; cropX: number; cropY: number; cropZoom: number; cropAspect: MediaCropAspect; assignedBy: string }): Promise<MediaAssignment> {
+  if (!(await getMedia(params.mediaAssetId))) throw new Error('MEDIA_NOT_FOUND');
+  const now = new Date().toISOString();
+  const assignment: MediaAssignment = { id: randomUUID(), ...params, createdAt: now, updatedAt: now };
+  if (isDatabaseConfigured()) {
+    const sql = getQueryClient();
+    const rows = await sql<MediaAssignmentDbRow[]>`
+      INSERT INTO media_asset_assignments (id,media_asset_id,page_key,slot_key,crop_x,crop_y,crop_zoom,crop_aspect,assigned_by,created_at,updated_at)
+      VALUES (${assignment.id},${assignment.mediaAssetId},${assignment.pageKey},${assignment.slotKey},${assignment.cropX},${assignment.cropY},${assignment.cropZoom},${assignment.cropAspect},${assignment.assignedBy},${assignment.createdAt},${assignment.updatedAt})
+      ON CONFLICT (page_key,slot_key) DO UPDATE SET media_asset_id=EXCLUDED.media_asset_id,crop_x=EXCLUDED.crop_x,crop_y=EXCLUDED.crop_y,crop_zoom=EXCLUDED.crop_zoom,crop_aspect=EXCLUDED.crop_aspect,assigned_by=EXCLUDED.assigned_by,updated_at=NOW()
+      RETURNING *`;
+    return assignmentFromRow(rows[0]);
+  }
+  const all = readLocalAssignments();
+  const existingIndex = all.findIndex(record => record.pageKey === assignment.pageKey && record.slotKey === assignment.slotKey);
+  if (existingIndex >= 0) all[existingIndex] = { ...assignment, id: all[existingIndex].id, createdAt: all[existingIndex].createdAt };
+  else all.push(assignment);
+  writeLocalAssignments(all);
+  return existingIndex >= 0 ? all[existingIndex] : assignment;
+}
+
+export async function unassignMedia(id: string): Promise<boolean> {
+  if (isDatabaseConfigured()) { const sql = getQueryClient(); const rows = await sql<{ id: string }[]>`DELETE FROM media_asset_assignments WHERE id=${id} RETURNING id`; return Boolean(rows[0]); }
+  const all = readLocalAssignments(); const next = all.filter(record => record.id !== id); writeLocalAssignments(next); return next.length !== all.length;
+}

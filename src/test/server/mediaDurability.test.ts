@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { safeMediaError, validateMediaMetadata, validateMediaUpload } from '../../server/lib/mediaValidation.js';
+import { safeMediaError, validateMediaAssignment, validateMediaMetadata, validateMediaUpload } from '../../server/lib/mediaValidation.js';
 
 const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 
@@ -24,13 +24,24 @@ describe('durable media library', () => {
     expect(safeMediaError(new Error('MEDIA_EXTENSION_MISMATCH')).status).toBe(400);
   });
 
+  it('validates controlled page assignments and non-destructive crop settings', () => {
+    expect(validateMediaAssignment({ pageKey: 'Home', slotKey: 'Hero', cropX: 35, cropY: 60, cropZoom: 1.4, cropAspect: 'wide' })).toEqual({ pageKey: 'home', slotKey: 'hero', cropX: 35, cropY: 60, cropZoom: 1.4, cropAspect: 'wide' });
+    expect(() => validateMediaAssignment({ pageKey: '../admin', slotKey: 'hero' })).toThrow('INVALID_MEDIA_ASSIGNMENT');
+    expect(() => validateMediaAssignment({ pageKey: 'home', slotKey: 'hero', cropZoom: 8 })).toThrow('INVALID_MEDIA_ASSIGNMENT');
+  });
+
   it('stores metadata in PostgreSQL and fails closed without managed production storage', () => {
     const migration = fs.readFileSync(path.resolve(process.cwd(), 'src/server/db/migrations/0039_media_library.sql'), 'utf8');
     const store = fs.readFileSync(path.resolve(process.cwd(), 'src/server/lib/mediaStore.ts'), 'utf8');
     const storage = fs.readFileSync(path.resolve(process.cwd(), 'src/server/lib/supabaseStorage.ts'), 'utf8');
     expect(migration).toContain('CREATE TABLE IF NOT EXISTS media_assets');
     expect(migration).toContain('size_bytes > 0 AND size_bytes <= 10485760');
+    const assignmentsMigration = fs.readFileSync(path.resolve(process.cwd(), 'src/server/db/migrations/0044_media_assignments.sql'), 'utf8');
+    expect(assignmentsMigration).toContain('CREATE TABLE IF NOT EXISTS media_asset_assignments');
+    expect(assignmentsMigration).toContain('UNIQUE (page_key, slot_key)');
     expect(store).toContain('INSERT INTO media_assets');
+    expect(store).toContain('INSERT INTO media_asset_assignments');
+    expect(store).toContain("throw new Error('MEDIA_IN_USE')");
     expect(store).toContain("process.env.NODE_ENV === 'production' && !isDatabaseConfigured()");
     expect(storage).toContain("if (process.env.NODE_ENV === 'production') throw new Error('MEDIA_STORAGE_UNAVAILABLE')");
   });

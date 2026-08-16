@@ -1747,6 +1747,27 @@ export const mediaAssets = pgTable(
   ],
 );
 
+export const mediaAssetAssignments = pgTable(
+  'media_asset_assignments',
+  {
+    id: text('id').primaryKey(),
+    mediaAssetId: text('media_asset_id').notNull().references(() => mediaAssets.id, { onDelete: 'restrict' }),
+    pageKey: text('page_key').notNull(),
+    slotKey: text('slot_key').notNull(),
+    cropX: integer('crop_x').notNull().default(50),
+    cropY: integer('crop_y').notNull().default(50),
+    cropZoom: numeric('crop_zoom', { precision: 4, scale: 2 }).notNull().default('1'),
+    cropAspect: text('crop_aspect').$type<'original' | 'square' | 'portrait' | 'landscape' | 'wide'>().notNull().default('original'),
+    assignedBy: text('assigned_by').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('media_asset_assignments_page_slot_idx').on(t.pageKey, t.slotKey),
+    index('media_asset_assignments_asset_idx').on(t.mediaAssetId),
+  ],
+);
+
 export const homepageContentVersions = pgTable(
   'homepage_content_versions',
   {
@@ -1815,4 +1836,5 @@ export type CustomerBillScheduleRow = typeof customerBillSchedules.$inferSelect;
 export type CustomerRewardAccountRow = typeof customerRewardAccounts.$inferSelect;
 export type CustomerRewardEventRow = typeof customerRewardEvents.$inferSelect;
 export type MediaAssetRow = typeof mediaAssets.$inferSelect;
+export type MediaAssetAssignmentRow = typeof mediaAssetAssignments.$inferSelect;
 export type HomepageContentVersionRow = typeof homepageContentVersions.$inferSelect;

@@ -62,12 +62,31 @@ export function validateMediaMetadata(input: { alt?: unknown; tags?: unknown; fo
   return result;
 }
 
+export function validateMediaAssignment(input: { pageKey?: unknown; slotKey?: unknown; cropX?: unknown; cropY?: unknown; cropZoom?: unknown; cropAspect?: unknown }): {
+  pageKey: string; slotKey: string; cropX: number; cropY: number; cropZoom: number; cropAspect: 'original' | 'square' | 'portrait' | 'landscape' | 'wide';
+} {
+  const pageKey = String(input.pageKey ?? '').trim().toLowerCase();
+  const slotKey = String(input.slotKey ?? '').trim().toLowerCase();
+  const cropX = input.cropX === undefined ? 50 : Number(input.cropX);
+  const cropY = input.cropY === undefined ? 50 : Number(input.cropY);
+  const cropZoom = input.cropZoom === undefined ? 1 : Number(input.cropZoom);
+  const cropAspect = String(input.cropAspect ?? 'original') as 'original' | 'square' | 'portrait' | 'landscape' | 'wide';
+  if (!/^[a-z0-9][a-z0-9-]{0,79}$/.test(pageKey) || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(slotKey)) throw new Error('INVALID_MEDIA_ASSIGNMENT');
+  if (!Number.isInteger(cropX) || cropX < 0 || cropX > 100 || !Number.isInteger(cropY) || cropY < 0 || cropY > 100) throw new Error('INVALID_MEDIA_ASSIGNMENT');
+  if (!Number.isFinite(cropZoom) || cropZoom < 1 || cropZoom > 4) throw new Error('INVALID_MEDIA_ASSIGNMENT');
+  if (!['original', 'square', 'portrait', 'landscape', 'wide'].includes(cropAspect)) throw new Error('INVALID_MEDIA_ASSIGNMENT');
+  return { pageKey, slotKey, cropX, cropY, cropZoom: Math.round(cropZoom * 100) / 100, cropAspect };
+}
+
 export function safeMediaError(error: unknown): { status: number; message: string } {
   const code = error instanceof Error ? error.message : '';
   if (code === 'INVALID_MEDIA_NAME') return { status: 400, message: 'Choose a valid filename.' };
   if (code === 'UNSUPPORTED_MEDIA_TYPE') return { status: 415, message: 'Use a JPEG, PNG, WebP, GIF, MP4, or PDF file.' };
   if (code === 'MEDIA_EXTENSION_MISMATCH') return { status: 400, message: 'The filename does not match the verified file type.' };
   if (code === 'INVALID_MEDIA_METADATA') return { status: 400, message: 'Check the media description, folder, tags, and dimensions.' };
+  if (code === 'INVALID_MEDIA_ASSIGNMENT') return { status: 400, message: 'Check the page, section, and crop settings.' };
+  if (code === 'MEDIA_IN_USE') return { status: 409, message: 'Remove this asset from its assigned page sections before deleting it.' };
+  if (code === 'MEDIA_NOT_FOUND') return { status: 404, message: 'The selected media asset was not found.' };
   if (code === 'MEDIA_SIZE_INVALID') return { status: 413, message: 'Media files must be no larger than 10 MB.' };
   if (code === 'INVALID_MEDIA_DATA' || code === 'MEDIA_SIGNATURE_MISMATCH') return { status: 400, message: 'The uploaded file could not be verified.' };
   return { status: 500, message: 'The media operation could not be completed.' };
