@@ -5,7 +5,8 @@ import { motion } from 'motion/react';
 import { UserPlus, Eye, EyeOff, AlertCircle, CheckCircle, Mail, Lock, User, Phone, Globe, MapPin, Building2 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
-import { getProductBySlug, PRODUCT_CATALOGUE } from '@/lib/productCatalogue';
+import { getProductBySlug, isAccountPlanProduct, PRODUCT_CATALOGUE } from '@/lib/productCatalogue';
+import { normalizeAccountPlans } from '@/lib/accountPlans';
 
 const COUNTRIES = [
   'United Kingdom', 'United States', 'Canada', 'Australia', 'Germany',
@@ -29,6 +30,8 @@ export default function RegisterPage() {
   const [success,    setSuccess]    = useState(false);
   const [applicationReference, setApplicationReference] = useState('');
   const [intakePosition, setIntakePosition] = useState<number | null>(null);
+  const [selectedProductLabel, setSelectedProductLabel] = useState(getProductBySlug(initialProduct)?.label ?? 'selected service');
+  const [registrationProducts, setRegistrationProducts] = useState(() => PRODUCT_CATALOGUE.map(product => ({ ...product })));
   const [busy,       setBusy]       = useState(false);
   const [legalAccepted, setLegalAccepted] = useState(false);
 
@@ -36,6 +39,28 @@ export default function RegisterPage() {
   useEffect(() => {
     if (!loading && customer) navigate('/dashboard', { replace: true });
   }, [customer, loading, navigate]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/settings/website', { headers: { Accept: 'application/json' } })
+      .then(response => response.ok ? response.json() : null)
+      .then(payload => {
+        if (!active || !payload?.data?.accountPlans) return;
+        const plans = normalizeAccountPlans(payload.data.accountPlans);
+        const planById = new Map(plans.map(plan => [plan.id, plan]));
+        const available = PRODUCT_CATALOGUE
+          .filter(product => !isAccountPlanProduct(product) || planById.get(product.planId)?.visible)
+          .map(product => isAccountPlanProduct(product)
+            ? { ...product, label: `${planById.get(product.planId)?.name ?? product.label} Account Plan` }
+            : { ...product });
+        setRegistrationProducts(available);
+        setForm(current => available.some(product => product.slug === current.requestedProduct)
+          ? current
+          : { ...current, requestedProduct: available[0]?.slug ?? 'personal-account' });
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
 
   function set(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -82,6 +107,7 @@ export default function RegisterPage() {
       } else {
         setApplicationReference(typeof data.applicationReference === 'string' ? data.applicationReference : '');
         setIntakePosition(typeof data.intakePosition === 'number' ? data.intakePosition : null);
+        setSelectedProductLabel(typeof data.selectedProductLabel === 'string' ? data.selectedProductLabel : getProductBySlug(form.requestedProduct)?.label ?? 'selected service');
         setSuccess(true);
       }
     } catch {
@@ -112,7 +138,7 @@ export default function RegisterPage() {
             <h1 className="text-2xl font-bold text-foreground mb-3">Application received</h1>
             <p className="text-foreground/50 text-sm mb-6">
               We've sent a verification link to <span className="text-foreground font-medium">{form.email}</span>.
-              Verify your email to continue the {getProductBySlug(form.requestedProduct)?.label ?? 'selected service'} onboarding process.
+              Verify your email to continue the {selectedProductLabel} onboarding process.
             </p>
             {applicationReference && (
               <div className="mb-6 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3 text-left">
@@ -179,7 +205,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Building2 size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
                   <select id="requested-product" value={form.requestedProduct} onChange={set('requestedProduct')} className="w-full pl-10 pr-4 py-3 rounded-xl bg-primary/[0.07] border border-primary/25 text-foreground text-sm focus:outline-none focus:border-primary/60 transition-colors appearance-none" required>
-                    {PRODUCT_CATALOGUE.map(product => <option key={product.slug} value={product.slug}>{product.label}</option>)}
+                    {registrationProducts.map(product => <option key={product.slug} value={product.slug}>{product.label}</option>)}
                   </select>
                 </div>
               </div>

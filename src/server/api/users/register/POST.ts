@@ -10,8 +10,10 @@ import { sendVerificationEmail, sendAdminNewUserAlert } from '../../../lib/email
 import { sanitizeString, isValidEmail, validatePassword } from '../../../lib/inputValidator.js';
 import { requirePublicRegistration } from '../../../lib/platformMode.js';
 import { issueKycUploadToken } from '../../../lib/purposeToken.js';
-import { getProductBySlug } from '../../../../lib/productCatalogue.js';
+import { getProductBySlug, isAccountPlanProduct } from '../../../../lib/productCatalogue.js';
+import { normalizeAccountPlans } from '../../../../lib/accountPlans.js';
 import { requireIntakeEnabled } from '../../../lib/operationalControls.js';
+import { readWebsiteSettings } from '../../../lib/websiteStore.js';
 
 const TERMS_VERSION = '2026-08-10';
 const PRIVACY_VERSION = '2026-08-10';
@@ -45,6 +47,16 @@ export default async function handler(req: Request, res: Response) {
   }
   if (!product) {
     return res.status(400).json({ error: 'Select a valid City Gate Capital service.' });
+  }
+  let selectedProductLabel = product.label;
+  if (isAccountPlanProduct(product)) {
+    const plans = normalizeAccountPlans((await readWebsiteSettings()).accountPlans);
+    const plan = plans.find(candidate => candidate.id === product.planId);
+    if (!plan?.visible) {
+      appendAudit({ event: 'register_plan_unavailable', email, ip, meta: { requestedProduct: product.slug } });
+      return res.status(409).json({ error: 'This account plan is not currently accepting applications. Select another available plan.' });
+    }
+    selectedProductLabel = plan.name;
   }
   if (!isValidEmail(email)) {
     return res.status(400).json({ error: 'Invalid email address' });
@@ -103,6 +115,7 @@ export default async function handler(req: Request, res: Response) {
         method: 'explicit_checkbox',
       },
       requestedProduct: product.slug,
+      requestedProductLabel: selectedProductLabel,
       accountTier: product.accountTier,
       applicationReference,
     },
@@ -119,6 +132,7 @@ export default async function handler(req: Request, res: Response) {
     userId: user.id,
     applicationReference,
     intakePosition,
+    selectedProductLabel,
     workflow: buildRegistrationWorkflow(user, { status: 'draft' }, 0, null),
     documentUploadToken: process.env.NODE_ENV === 'production' ? undefined : issueKycUploadToken(user.id),
     kycAvailable: process.env.NODE_ENV !== 'production',

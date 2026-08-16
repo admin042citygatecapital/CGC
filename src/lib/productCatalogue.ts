@@ -1,4 +1,7 @@
 export const PRODUCT_CATALOGUE = [
+  { slug: 'digital-banking-standard', label: 'Standard Account Plan', accountTier: 'personal', planId: 'standard' },
+  { slug: 'digital-banking-premium', label: 'Premium Account Plan', accountTier: 'personal', planId: 'premium' },
+  { slug: 'digital-banking-elite', label: 'Elite Account Plan', accountTier: 'personal', planId: 'elite' },
   { slug: 'personal-account', label: 'Personal Account', accountTier: 'personal' },
   { slug: 'savings-account', label: 'Savings Account', accountTier: 'savings' },
   { slug: 'business-account', label: 'Business Account', accountTier: 'business' },
@@ -11,6 +14,12 @@ export const PRODUCT_CATALOGUE = [
 
 export type ProductSlug = typeof PRODUCT_CATALOGUE[number]['slug'];
 export type ProductAccountTier = typeof PRODUCT_CATALOGUE[number]['accountTier'];
+
+export type AccountPlanProductId = 'standard' | 'premium' | 'elite';
+
+export function isAccountPlanProduct(product: (typeof PRODUCT_CATALOGUE)[number]): product is (typeof PRODUCT_CATALOGUE)[number] & { planId: AccountPlanProductId } {
+  return 'planId' in product;
+}
 
 export function getProductBySlug(value: unknown) {
   if (typeof value !== 'string') return undefined;
