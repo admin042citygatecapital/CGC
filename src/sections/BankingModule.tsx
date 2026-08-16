@@ -413,14 +413,16 @@ export function DashboardPreview({ compactTop = false }: { compactTop?: boolean 
   return (
     <section className={`${compactTop ? 'pb-20 pt-8 md:pt-10' : 'py-28'} bg-[#060606]`}>
       <div className="container mx-auto px-4 md:px-6">
-        <div className={`text-center ${compactTop ? 'mb-10' : 'mb-16'}`}>
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
-              {home.dashboard.headline1}<br /><span className="text-gold-gradient">{home.dashboard.headlineAccent}</span>
-            </h2>
-            <p className="text-foreground/50 max-w-xl mx-auto leading-relaxed">{home.dashboard.subheadline}</p>
-          </motion.div>
-        </div>
+        {!compactTop && (
+          <div className="mb-16 text-center">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-5 tracking-tight">
+                {home.dashboard.headline1}<br /><span className="text-gold-gradient">{home.dashboard.headlineAccent}</span>
+              </h2>
+              <p className="text-foreground/50 max-w-xl mx-auto leading-relaxed">{home.dashboard.subheadline}</p>
+            </motion.div>
+          </div>
+        )}
 
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
           <GlassCard className="rounded-3xl p-6 md:p-8" glow>
