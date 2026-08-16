@@ -28,7 +28,7 @@ export function buildRegistrationWorkflow(
   const steps: RegistrationWorkflowStep[] = [
     { key: 'profile', label: 'Profile created', status: 'complete' },
     { key: 'email', label: 'Email verified', status: user.emailVerified ? 'complete' : terminal ? 'blocked' : 'current', href: '/login' },
-    { key: 'evidence', label: 'Verification reference', status: needsInformation ? 'current' : evidenceCount > 0 ? 'complete' : terminal ? 'blocked' : user.emailVerified ? 'current' : 'waiting', href: '/onboarding' },
+    { key: 'evidence', label: 'Verification reference', status: terminal ? 'blocked' : needsInformation ? 'current' : evidenceCount > 0 ? 'complete' : user.emailVerified ? 'current' : 'waiting', href: '/onboarding' },
     { key: 'submission', label: 'Application submitted', status: submitted ? 'complete' : terminal ? 'blocked' : evidenceCount > 0 ? 'current' : 'waiting', href: '/onboarding' },
     { key: 'review', label: 'Compliance review', status: reviewed ? 'complete' : terminal ? 'blocked' : submitted && !needsInformation ? 'current' : 'waiting' },
     { key: 'approval', label: 'Registration decision', status: complete ? 'complete' : terminal ? 'blocked' : reviewed ? 'current' : 'waiting' },
