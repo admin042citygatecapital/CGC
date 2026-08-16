@@ -67,7 +67,7 @@ describe('card issuer boundary', () => {
     expect(customerPage).not.toMatch(/numberFull|revealedCvv|handleFreezeToggle|handleRequestCard/);
     expect(digitalBankingPage).toContain('Virtual Card Experience');
     expect(digitalBankingPage).toContain('Physical Card Experience');
-    expect(digitalBankingPage).toContain('appropriately licensed or regulated entities and approved partners');
+    expect(digitalBankingPage).toContain('approved issuer or programme');
     expect(digitalBankingPage).not.toMatch(/generateCard|freezeCard|deleteCard|\/api\/users\/cards\/generate/);
   });
 
