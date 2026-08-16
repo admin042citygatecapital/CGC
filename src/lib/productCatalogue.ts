@@ -15,6 +15,13 @@ export const PRODUCT_CATALOGUE = [
 export type ProductSlug = typeof PRODUCT_CATALOGUE[number]['slug'];
 export type ProductAccountTier = typeof PRODUCT_CATALOGUE[number]['accountTier'];
 
+export type ProductCatalogueItem = {
+  slug: ProductSlug;
+  label: string;
+  accountTier: ProductAccountTier;
+  planId?: AccountPlanProductId;
+};
+
 export type AccountPlanProductId = 'standard' | 'premium' | 'elite';
 
 export function isAccountPlanProduct(product: (typeof PRODUCT_CATALOGUE)[number]): product is (typeof PRODUCT_CATALOGUE)[number] & { planId: AccountPlanProductId } {

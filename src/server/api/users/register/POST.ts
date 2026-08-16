@@ -48,7 +48,7 @@ export default async function handler(req: Request, res: Response) {
   if (!product) {
     return res.status(400).json({ error: 'Select a valid City Gate Capital service.' });
   }
-  let selectedProductLabel = product.label;
+  let selectedProductLabel: string = product.label;
   if (isAccountPlanProduct(product)) {
     const plans = normalizeAccountPlans((await readWebsiteSettings()).accountPlans);
     const plan = plans.find(candidate => candidate.id === product.planId);

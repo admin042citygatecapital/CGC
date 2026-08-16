@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { UserPlus, Eye, EyeOff, AlertCircle, CheckCircle, Mail, Lock, User, Phone, Globe, MapPin, Building2 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import CgcLogo from '@/components/CgcLogo';
-import { getProductBySlug, isAccountPlanProduct, PRODUCT_CATALOGUE } from '@/lib/productCatalogue';
+import { getProductBySlug, isAccountPlanProduct, PRODUCT_CATALOGUE, type ProductCatalogueItem } from '@/lib/productCatalogue';
 import { normalizeAccountPlans } from '@/lib/accountPlans';
 
 const COUNTRIES = [
@@ -31,7 +31,7 @@ export default function RegisterPage() {
   const [applicationReference, setApplicationReference] = useState('');
   const [intakePosition, setIntakePosition] = useState<number | null>(null);
   const [selectedProductLabel, setSelectedProductLabel] = useState(getProductBySlug(initialProduct)?.label ?? 'selected service');
-  const [registrationProducts, setRegistrationProducts] = useState(() => PRODUCT_CATALOGUE.map(product => ({ ...product })));
+  const [registrationProducts, setRegistrationProducts] = useState<ProductCatalogueItem[]>(() => PRODUCT_CATALOGUE.map(product => ({ ...product })));
   const [busy,       setBusy]       = useState(false);
   const [legalAccepted, setLegalAccepted] = useState(false);
 
