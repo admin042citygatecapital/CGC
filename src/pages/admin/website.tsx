@@ -66,7 +66,7 @@ interface WebsiteSettings {
 
 const DEFAULT: WebsiteSettings = {
   siteName: 'City Gate Capital',
-  siteTagline: 'Digital Finance Pre-deployment Platform',
+  siteTagline: 'Connected Digital Financial Platform',
   logoUrl: '/assets/brand/city-gate-capital-horizontal.png',
   faviconUrl: '/assets/brand/city-gate-capital-favicon.png',
   primaryColor: '#C9A84C',
@@ -75,8 +75,8 @@ const DEFAULT: WebsiteSettings = {
   fontBody: 'Inter',
 
   heroTitle: 'Explore the Future of Digital Finance',
-  heroSubtitle: 'A pre-deployment platform of proposed account, wallet, transfer, card, analytics, and administration experiences.',
-  heroCTA: 'Create Pre-deployment Profile',
+  heroSubtitle: 'A connected financial experience designed to give you greater visibility, flexibility and control over your money.',
+  heroCTA: 'Open an Account',
   heroCTALink: '/accounts',
   heroSecondaryCTA: 'Explore Features',
   heroSecondaryCTALink: '/digital-banking',
@@ -89,7 +89,7 @@ const DEFAULT: WebsiteSettings = {
     { label: 'Transfers',       href: '/transfers' },
     { label: 'About',           href: '/about' },
   ],
-  navCTALabel: 'Create Pre-deployment Profile',
+  navCTALabel: 'Open an Account',
   navCTALink: '/accounts',
   showSupportInNav: true,
   showLoginInNav: true,
@@ -104,8 +104,8 @@ const DEFAULT: WebsiteSettings = {
   showNewsletterInFooter: true,
   showTrustBadgesInFooter: true,
 
-  announcementEnabled: true,
-  announcementText: 'Pre-deployment platform: balances and transactions are demonstrations.',
+  announcementEnabled: false,
+  announcementText: 'Important service information is available in the product disclosures.',
   announcementLink: '/accounts',
 
   darkMode: true,

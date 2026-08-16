@@ -12,28 +12,28 @@ import { useCustomerAuth } from '@/lib/customerAuth';
 import { newIdempotencyKey } from '@/lib/idempotency';
 
 const corridors = [
-  { from: '🇺🇸 USD', to: '🇬🇧 GBP', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
-  { from: '🇺🇸 USD', to: '🇪🇺 EUR', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
-  { from: '🇬🇧 GBP', to: '🇮🇳 INR', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
-  { from: '🇺🇸 USD', to: '🇯🇵 JPY', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
-  { from: '🇪🇺 EUR', to: '🇦🇺 AUD', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
-  { from: '🇺🇸 USD', to: '🇦🇪 AED', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
-  { from: '🇺🇸 USD', to: '🇨🇦 CAD', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
-  { from: '🇬🇧 GBP', to: '🇦🇺 AUD', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
-  { from: '🇪🇺 EUR', to: '🇨🇭 CHF', fee: 'Example', time: 'Not live', volume: 'Illustrative' },
+  { from: '🇺🇸 USD', to: '🇬🇧 GBP', fee: 'Indicative', time: 'Provider required', volume: 'Planned corridor' },
+  { from: '🇺🇸 USD', to: '🇪🇺 EUR', fee: 'Indicative', time: 'Provider required', volume: 'Planned corridor' },
+  { from: '🇬🇧 GBP', to: '🇮🇳 INR', fee: 'Indicative', time: 'Provider required', volume: 'Planned corridor' },
+  { from: '🇺🇸 USD', to: '🇯🇵 JPY', fee: 'Indicative', time: 'Provider required', volume: 'Planned corridor' },
+  { from: '🇪🇺 EUR', to: '🇦🇺 AUD', fee: 'Indicative', time: 'Provider required', volume: 'Planned corridor' },
+  { from: '🇺🇸 USD', to: '🇦🇪 AED', fee: 'Indicative', time: 'Provider required', volume: 'Planned corridor' },
+  { from: '🇺🇸 USD', to: '🇨🇦 CAD', fee: 'Indicative', time: 'Provider required', volume: 'Planned corridor' },
+  { from: '🇬🇧 GBP', to: '🇦🇺 AUD', fee: 'Indicative', time: 'Provider required', volume: 'Planned corridor' },
+  { from: '🇪🇺 EUR', to: '🇨🇭 CHF', fee: 'Indicative', time: 'Provider required', volume: 'Planned corridor' },
 ];
 
 const transferTypes = [
   { icon: Zap,        title: 'Internal Transfer',     desc: 'Review the internal-transfer workflow. Money movement is currently unavailable.',                       color: '#C9A84C', time: 'Pending provider' },
   { icon: Globe,      title: 'International Wire',    desc: 'Review international-wire fields without sending an instruction to a bank.',                           color: '#627EEA', time: 'Pending provider' },
-  { icon: RefreshCw,  title: 'Scheduled Transfers',   desc: 'Review recurring-transfer controls using sample data.',                                                color: '#10B981', time: 'Interface ready' },
+  { icon: RefreshCw,  title: 'Scheduled Transfers',   desc: 'Review recurring-transfer controls and scheduling options.',                                            color: '#10B981', time: 'Provider required' },
   { icon: TrendingUp, title: 'Bulk Payments',         desc: 'Review a multi-recipient workflow without creating payments.',                                         color: '#9945FF', time: 'Interface ready' },
 ];
 
 const testimonials = [
-  { name: 'Personal Transfer', role: 'Illustrative scenario', text: 'Explore how a future user could prepare a cross-border transfer after approved providers are connected.', rating: 5 },
-  { name: 'Currency Conversion', role: 'Illustrative scenario', text: 'Compare a proposed USD-to-JPY flow using indicative values without executing an exchange.', rating: 5 },
-  { name: 'Business Payments', role: 'Illustrative scenario', text: 'Review a proposed bulk-payment workflow without creating supplier payments.', rating: 5 },
+  { name: 'Personal Transfer', role: 'Transfer planning', text: 'Prepare a cross-border transfer for an eligible corridor after approved providers are connected.', rating: 5 },
+  { name: 'Currency Conversion', role: 'Rate review', text: 'Compare an indicative USD-to-JPY conversion before an exchange instruction is available.', rating: 5 },
+  { name: 'Business Payments', role: 'Payment planning', text: 'Organise a multi-recipient payment workflow before submitting supplier instructions.', rating: 5 },
 ];
 
 type ActiveTab = 'send' | 'deposit' | 'withdraw';
@@ -173,7 +173,7 @@ export default function TransfersPage() {
       <Helmet>
         <title>Transfers — Send, Deposit & Withdraw | CGC</title>
         <meta name="robots" content="noindex, nofollow" />
-        <meta name="description" content="Explore transfer, funding and withdrawal workflows using sample data. Money movement requires approved providers." />
+        <meta name="description" content="Explore transfer, funding and withdrawal workflows. Money movement requires approved providers and eligible accounts." />
         <link rel="canonical" href="https://citygate.capital/transfers" />
         <meta property="og:title" content="Transfers — Send, Deposit & Withdraw" />
         <meta property="og:description" content="City Gate Capital transfer, funding and withdrawal interfaces. Financial execution requires approved providers." />
@@ -189,7 +189,7 @@ export default function TransfersPage() {
         <meta name="twitter:site" content="@CityGateCapital" />
         <meta name="twitter:creator" content="@CityGateCapital" />
         <meta name="twitter:title" content="Transfers — City Gate Capital" />
-        <meta name="twitter:description" content="Explore transfer, funding and withdrawal experiences using sample data. Provider activation is required for money movement." />
+        <meta name="twitter:description" content="Explore transfer, funding and withdrawal experiences. Provider activation is required for money movement." />
         <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
@@ -197,7 +197,7 @@ export default function TransfersPage() {
           '@id': 'https://citygate.capital/transfers#webpage',
           name: 'Transfers — Send, Deposit & Withdraw | City Gate Capital',
           url: 'https://citygate.capital/transfers',
-          description: 'Explore transfer, funding and withdrawal experiences using sample data. Provider activation is required for money movement.',
+          description: 'Explore transfer, funding and withdrawal experiences. Provider activation is required for money movement.',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
           mainEntity: {
@@ -707,7 +707,7 @@ export default function TransfersPage() {
                   { icon: Shield, text: 'Protected account sessions and access controls' },
                   { icon: CheckCircle, text: 'Transaction monitoring required before launch' },
                   { icon: Globe, text: 'Provider and corridor approval required' },
-                  { icon: DollarSign, text: 'Sample balances are not customer funds' },
+                  { icon: DollarSign, text: 'Displayed values do not represent settled customer funds' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[#C9A84C]/15 flex items-center justify-center shrink-0">
@@ -721,7 +721,7 @@ export default function TransfersPage() {
             <div className="grid grid-cols-2 gap-4">
               {[
                 { label: 'Live Countries', value: '0' },
-                { label: 'Prototype Currencies', value: '50+' },
+                { label: 'Currency Options', value: '50+' },
                 { label: 'Funds Moved', value: '$0' },
                 { label: 'Settlement', value: 'Off' },
               ].map((s, i) => (
@@ -739,8 +739,8 @@ export default function TransfersPage() {
       <section className="py-20 bg-[#0A0A0A]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Illustrative Transfer Scenarios</h2>
-            <p className="text-white/50">These examples are product scenarios, not customer testimonials.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Transfer Planning Scenarios</h2>
+            <p className="text-white/50">Review common transfer journeys and the controls required before submission.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (

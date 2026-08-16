@@ -30,7 +30,7 @@ function emailShell(content: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>City Gate Capital pre-deployment platform</title>
+  <title>City Gate Capital</title>
 </head>
 <body style="margin:0;padding:0;background:${BG};font-family:Inter,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:32px 16px;">
@@ -43,7 +43,7 @@ function emailShell(content: string): string {
           ${content}
         </td></tr>
         <tr><td style="padding:24px 0 0;text-align:center;">
-          <p style="color:${MUTED};font-size:11px;margin:0 0 6px;">City Gate Capital pre-deployment platform · No live deposits, custody, cards, trading, or transactions</p>
+          <p style="color:${MUTED};font-size:11px;margin:0 0 6px;">City Gate Capital · Service availability depends on eligibility and approved providers</p>
           <p style="color:${MUTED};font-size:11px;margin:0;">
             <a href="${BASE_URL}/unsubscribe?email={{email}}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>
             &nbsp;·&nbsp;
@@ -80,20 +80,20 @@ function highlight(text: string): string {
 export const NURTURE_SEQUENCE: NurtureEmail[] = [
   {
     step: 1,
-    subject: 'Welcome to the City Gate Capital pre-deployment platform',
-    preheader: 'A clear guide to what this pre-deployment can and cannot do.',
+    subject: 'Welcome to City Gate Capital',
+    preheader: 'A clear guide to your connected financial experience.',
     delayHours: 0,
     ctaLabel: 'Explore the Platform',
     ctaUrl: `${BASE_URL}/digital-banking`,
-    bodyText: `Welcome to the City Gate Capital pre-deployment platform.
+    bodyText: `Welcome to City Gate Capital.
 
-This environment demonstrates proposed account, wallet, card, transfer, analytics, and administration experiences. It does not accept deposits, provide custody, issue cards, or execute live financial transactions.
+Your profile gives you access to account, wallet, card, transfer, analytics, and security information. Financial services activate only after eligibility review and approved-provider availability.
 
 Explore the platform: ${BASE_URL}/digital-banking`,
     bodyHtml: emailShell(`
-      ${h1(`Welcome to the ${highlight('City Gate Capital pre-deployment platform')}`)}
-      ${p('This environment demonstrates proposed account, wallet, card, transfer, analytics, and administration experiences.')}
-      ${p('It does not accept deposits, provide custody, issue cards, or execute live financial transactions. Live operation requires legal approval and contracted KYC, AML, payment, banking, and custody providers.')}
+      ${h1(`Welcome to ${highlight('City Gate Capital')}`)}
+      ${p('Your profile gives you access to connected account, wallet, card, transfer, analytics, and security information.')}
+      ${p('Financial services activate only after identity verification, eligibility review, and the availability of approved banking, payment, card, or custody providers for the relevant product.')}
       ${ctaButton('Explore the Platform', `${BASE_URL}/digital-banking`)}
     `),
   },

@@ -192,7 +192,7 @@ function AccountsPageContent() {
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-xs text-foreground/40">Savings Growth</p>
-                    <p className="text-xs text-primary font-semibold">Illustrative return</p>
+                    <p className="text-xs text-primary font-semibold">Indicative performance</p>
                   </div>
                   <div className="flex items-end gap-1 h-14">
                     {[40, 52, 48, 65, 58, 72, 68, 80, 75, 88, 84, 100].map((h, i) => (
@@ -385,7 +385,7 @@ function AccountsPageContent() {
 
 const heroStats = [
   { label: 'Total Balance', value: '$48,291.40', sub: '+2.4% this month', color: '#C9A84C' },
-  { label: 'Projected Return', value: '$210.18', sub: 'Illustrative only', color: '#10B981' },
+  { label: 'Projected Return', value: '$210.18', sub: 'Indicative value', color: '#10B981' },
   { label: 'Transfers',     value: '12',         sub: 'This week',        color: '#627EEA' },
 ];
 

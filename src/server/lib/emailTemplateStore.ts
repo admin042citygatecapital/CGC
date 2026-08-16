@@ -48,17 +48,17 @@ const DEFAULTS: EmailTemplate[] = [
   {
     id: 'welcome',
     name: 'Welcome Email',
-    description: 'Sent immediately after a new pre-deployment profile is registered.',
+    description: 'Sent immediately after a new customer profile is registered.',
     category: 'account',
     variables: ['{user_name}', '{email}', '{date}', '{account_number}'],
     subject: 'Welcome to City Gate Capital, {user_name}!',
     body: `<p>Dear {user_name},</p>
-<p>Welcome to the <strong>City Gate Capital pre-deployment platform</strong>. Your pre-deployment profile has been created successfully.</p>
-<p><strong>Pre-deployment Profile Details:</strong><br/>
+<p>Welcome to <strong>City Gate Capital</strong>. Your profile has been created successfully and your registration workflow is ready to continue.</p>
+<p><strong>Profile Details:</strong><br/>
 Email: {email}<br/>
 Account Number: {account_number}<br/>
 Date Joined: {date}</p>
-<p>This environment uses demonstration data and does not offer deposits, custody, cards, trading, KYC approval, or live financial transactions. Do not upload real identity documents.</p>
+<p>Financial services activate only after identity verification, eligibility review, and the availability of an approved provider for the relevant product. Upload identity information only through the secure onboarding workflow when requested.</p>
 <p>If you have a question, contact support@citygate.capital. No response-time guarantee is offered.</p>
 <p>Best regards,<br/>The City Gate Capital Team</p>`,
     updatedAt: new Date().toISOString(),
@@ -66,104 +66,104 @@ Date Joined: {date}</p>
   },
   {
     id: 'kyc_approved',
-    name: 'KYC Pre-deployment Reviewed',
-    description: 'Pre-deployment-only notification; must not represent a real identity-verification decision.',
+    name: 'Identity Review Updated',
+    description: 'Notification for an internal identity-review workflow update.',
     category: 'kyc',
     variables: ['{user_name}', '{date}', '{account_number}'],
-    subject: 'KYC Pre-deployment Review Complete — City Gate Capital',
+    subject: 'Identity Review Updated — City Gate Capital',
     body: `<p>Dear {user_name},</p>
-<p>A demonstration KYC record in the City Gate Capital pre-deployment platform has been marked as reviewed.</p>
-<p>This is not a real identity-verification decision and does not unlock banking, payments, cards, trading, custody, or financial services.</p>
-<p>Pre-deployment Review Date: {date}</p>
-<p>Best regards,<br/>The City Gate Capital Pre-deployment Team</p>`,
+<p>Your City Gate Capital identity-review record has been updated.</p>
+<p>This notice does not by itself activate banking, payments, cards, trading, custody, or other financial services. Product access remains subject to provider verification, eligibility, and applicable approvals.</p>
+<p>Review Date: {date}</p>
+<p>Best regards,<br/>The City Gate Capital Team</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'kyc_rejected',
-    name: 'KYC Pre-deployment Needs Changes',
-    description: 'Pre-deployment-only notification for a demonstration KYC record.',
+    name: 'Identity Review Needs Information',
+    description: 'Notification requesting additional information for identity review.',
     category: 'kyc',
     variables: ['{user_name}', '{rejection_reason}', '{date}'],
-    subject: 'KYC Pre-deployment Record Needs Changes — City Gate Capital',
+    subject: 'Identity Review Needs Information — City Gate Capital',
     body: `<p>Dear {user_name},</p>
-<p>A demonstration KYC record in the pre-deployment platform was marked as needing changes.</p>
-<p><strong>Pre-deployment note:</strong> {rejection_reason}</p>
-<p>This is not a real identity-verification decision. Do not upload real identity documents to this environment.</p>
-<p>Best regards,<br/>The City Gate Capital Pre-deployment Team</p>`,
+<p>Your identity-review workflow needs additional information.</p>
+<p><strong>Reviewer note:</strong> {rejection_reason}</p>
+<p>Submit information only through the secure onboarding workflow. This notice does not by itself activate a financial service.</p>
+<p>Best regards,<br/>The City Gate Capital Team</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'deposit_confirmed',
-    name: 'Demo Deposit Recorded',
-    description: 'Pre-deployment-only notification for a demonstration deposit record.',
+    name: 'Funding Record Updated',
+    description: 'Notification for an internal funding record that does not represent settled funds.',
     category: 'transaction',
     variables: ['{user_name}', '{amount}', '{currency}', '{date}', '{transaction_id}', '{account_number}'],
-    subject: 'Demo Deposit Recorded: {amount} {currency} — City Gate Capital Pre-deployment',
+    subject: 'Funding Record Updated: {amount} {currency} — City Gate Capital',
     body: `<p>Dear {user_name},</p>
-<p>A demonstration deposit record was created in the pre-deployment platform. No money was received or credited.</p>
-<p><strong>Demo Record:</strong><br/>
+<p>An internal funding record was created. No money was received or credited.</p>
+<p><strong>Account Record:</strong><br/>
 Amount: {amount} {currency}<br/>
 Transaction ID: {transaction_id}<br/>
 Account: {account_number}<br/>
 Date: {date}</p>
-<p>Any displayed balance is demonstration data and has no monetary value.</p>
-<p>Best regards,<br/>City Gate Capital Pre-deployment</p>`,
+<p>The displayed amount does not represent settled customer funds and has no monetary value.</p>
+<p>Best regards,<br/>City Gate Capital</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'withdrawal_approved',
-    name: 'Demo Withdrawal Updated',
-    description: 'Pre-deployment-only notification for a demonstration withdrawal record.',
+    name: 'Withdrawal Record Updated',
+    description: 'Notification for an internal withdrawal record that does not represent processed funds.',
     category: 'transaction',
     variables: ['{user_name}', '{amount}', '{currency}', '{date}', '{transaction_id}'],
-    subject: 'Demo Withdrawal Updated: {amount} {currency} — City Gate Capital Pre-deployment',
+    subject: 'Withdrawal Record Updated: {amount} {currency} — City Gate Capital',
     body: `<p>Dear {user_name},</p>
-<p>A demonstration withdrawal record was updated in the pre-deployment platform. No withdrawal was approved or processed.</p>
-<p><strong>Demo Record:</strong><br/>
+<p>An internal withdrawal record was updated. No withdrawal was approved or processed.</p>
+<p><strong>Account Record:</strong><br/>
 Amount: {amount} {currency}<br/>
 Transaction ID: {transaction_id}<br/>
 Date: {date}</p>
-<p>No funds will arrive because this environment cannot move money.</p>
-<p>Best regards,<br/>City Gate Capital Pre-deployment</p>`,
+<p>No funds will arrive because no approved payment provider executed this record.</p>
+<p>Best regards,<br/>City Gate Capital</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'transfer_sent',
-    name: 'Demo Transfer Created',
-    description: 'Pre-deployment-only notification for a demonstration outgoing transfer.',
+    name: 'Transfer Record Created',
+    description: 'Notification for an internal outgoing transfer record.',
     category: 'transaction',
     variables: ['{user_name}', '{amount}', '{currency}', '{recipient_name}', '{date}', '{transaction_id}'],
-    subject: 'Demo Transfer Created: {amount} {currency} — City Gate Capital Pre-deployment',
+    subject: 'Transfer Record Created: {amount} {currency} — City Gate Capital',
     body: `<p>Dear {user_name},</p>
-<p>A demonstration transfer record was created. No funds or assets were sent.</p>
-<p><strong>Demo Record:</strong><br/>
+<p>An internal transfer record was created. No funds or assets were sent by an external provider.</p>
+<p><strong>Transfer Record:</strong><br/>
 Amount: {amount} {currency}<br/>
 Recipient: {recipient_name}<br/>
 Transaction ID: {transaction_id}<br/>
 Date: {date}</p>
-<p>Best regards,<br/>City Gate Capital Pre-deployment</p>`,
+<p>Best regards,<br/>City Gate Capital</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
   {
     id: 'transfer_received',
-    name: 'Demo Incoming Transfer Created',
-    description: 'Pre-deployment-only notification for a demonstration incoming transfer.',
+    name: 'Incoming Transfer Record Created',
+    description: 'Notification for an internal incoming transfer record.',
     category: 'transaction',
     variables: ['{user_name}', '{amount}', '{currency}', '{sender_name}', '{date}', '{transaction_id}'],
-    subject: 'Demo Incoming Transfer: {amount} {currency} — City Gate Capital Pre-deployment',
+    subject: 'Incoming Transfer Record: {amount} {currency} — City Gate Capital',
     body: `<p>Dear {user_name},</p>
-<p>A demonstration incoming-transfer record was created. You did not receive real funds or assets.</p>
-<p><strong>Demo Record:</strong><br/>
+<p>An internal incoming-transfer record was created. You did not receive settled funds or assets from an external provider.</p>
+<p><strong>Transfer Record:</strong><br/>
 Amount: {amount} {currency}<br/>
 From: {sender_name}<br/>
 Transaction ID: {transaction_id}<br/>
 Date: {date}</p>
-<p>Best regards,<br/>City Gate Capital Pre-deployment</p>`,
+<p>Best regards,<br/>City Gate Capital</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },

@@ -287,9 +287,9 @@ export async function sendApprovalEmail(to: string, name: string) {
     date: new Date().toLocaleDateString('en-GB'),
     account_number: 'Available in your secure dashboard',
   }, {
-    subject: 'KYC Pre-deployment Review Complete — City Gate Capital',
-    title: 'KYC Pre-deployment Review Complete',
-    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>A demonstration KYC record was reviewed. This is not a real identity-verification or financial-account approval.</p>`,
+    subject: 'Identity Review Updated — City Gate Capital',
+    title: 'Identity Review Updated',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your identity-review record was updated. This notice does not by itself activate a financial account or regulated service; access remains subject to provider verification, eligibility, and applicable approvals.</p>`,
   });
   await send({ to, ...content });
 }
@@ -300,9 +300,9 @@ export async function sendRejectionEmail(to: string, name: string, reason: strin
     rejection_reason: reason,
     date: new Date().toLocaleDateString('en-GB'),
   }, {
-    subject: 'City Gate Capital — KYC Pre-deployment Status Update',
-    title: 'KYC Pre-deployment Status Update',
-    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>A demonstration KYC record needs changes. This is not a real identity-verification decision.</p><p><strong>Pre-deployment note:</strong> ${escapeEmailHtml(reason)}</p>`,
+    subject: 'City Gate Capital — Identity Review Needs Information',
+    title: 'Identity Review Needs Information',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your identity-review workflow needs additional information. Submit information only through the secure onboarding workflow.</p><p><strong>Reviewer note:</strong> ${escapeEmailHtml(reason)}</p>`,
   });
   await send({ to, ...content });
 }
@@ -526,10 +526,10 @@ export async function sendBalanceAdjustmentEmail(  to: string,
 
   await send({
     to,
-    subject: `Demo Balance Updated — City Gate Capital Pre-deployment`,
-    html: emailWrapper('Demonstration Balance Updated',
+    subject: `Account Record Updated — City Gate Capital`,
+    html: emailWrapper('Account Record Updated',
       `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">A demonstration balance in the City Gate Capital pre-deployment platform has been updated. It is not real money and cannot be deposited, withdrawn, or transferred.</p>
+       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">An internal account record has been updated. It does not represent settled customer funds and cannot be deposited, withdrawn, or transferred.</p>
        <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:20px 24px;margin:24px 0;">
          <table style="width:100%;border-collapse:collapse;">
            <tr>
@@ -551,8 +551,8 @@ export async function sendBalanceAdjustmentEmail(  to: string,
          </table>
          ${note ? `<p style="color:rgba(255,255,255,0.4);font-size:12px;margin:12px 0 0;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">Note: ${note}</p>` : ''}
        </div>
-       <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.7;">If you have questions about this demonstration record, please contact our support team.</p>
-       <p style="margin:28px 0;">${goldButton('View Pre-deployment Platform', 'https://citygate.capital/dashboard')}</p>
+       <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.7;">If you have questions about this account record, please contact our support team.</p>
+       <p style="margin:28px 0;">${goldButton('View Your Account', 'https://citygate.capital/dashboard')}</p>
        <p style="color:rgba(255,255,255,0.4);font-size:13px;">For support: <a href="mailto:support@citygate.capital" style="color:#C9A84C;">support@citygate.capital</a></p>`
     ),
   });

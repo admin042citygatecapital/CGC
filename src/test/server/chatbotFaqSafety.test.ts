@@ -57,7 +57,7 @@ describe('chatbot FAQ safety', () => {
     const store = await import('../../server/lib/smartsuppStore.js');
     const [migrated] = store.getFaq();
     expect(migrated.id).toBe('legacy-transfer');
-    expect(migrated.answer).toContain('not available in this pre-deployment platform');
+    expect(migrated.answer).toContain('not currently available');
     expect(migrated.answer).not.toMatch(/typically settle/i);
     expect(fs.readFileSync(path.join(chatbotDir, 'faq.jsonl'), 'utf8')).not.toMatch(/typically settle/i);
   });
@@ -76,7 +76,7 @@ describe('chatbot FAQ safety', () => {
 
     const store = await import('../../server/lib/smartsuppStore.js');
     expect(store.initializeFaqSafety()).toBe(1);
-    expect(fs.readFileSync(path.join(chatbotDir, 'faq.jsonl'), 'utf8')).toContain('No payment card is issued');
+    expect(fs.readFileSync(path.join(chatbotDir, 'faq.jsonl'), 'utf8')).toContain('No payment card is currently issued');
   });
 
   it('rejects unsafe answers through the administration endpoint', async () => {

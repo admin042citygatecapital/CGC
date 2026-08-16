@@ -50,7 +50,7 @@ export function PlaidLinkCard({ token }: { token: string }) {
         onSuccess: async (publicToken, metadata) => {
           const exchange = await fetch('/api/users/plaid/exchange', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ publicToken, metadata }) });
           if (!exchange.ok) { setMessage('The institution connected, but account setup could not be completed.'); setBusy(false); return; }
-          sessionStorage.removeItem('cgc_plaid_link_token'); setMessage('Sandbox institution connected securely.'); await refresh(); setBusy(false);
+          sessionStorage.removeItem('cgc_plaid_link_token'); setMessage('Institution connection recorded securely.'); await refresh(); setBusy(false);
         },
         onExit: () => { setBusy(false); },
       });
@@ -71,8 +71,8 @@ export function PlaidLinkCard({ token }: { token: string }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#C9A84C]/10"><Building2 className="h-5 w-5 text-[#C9A84C]" /></div>
-          <div><div className="flex items-center gap-2"><h2 className="font-semibold text-white">Connected bank accounts</h2><span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-300">Sandbox</span></div>
-          <p className="mt-1 text-xs text-white/45">Securely test UK account linking through Plaid. No real funds or payments are enabled.</p></div>
+          <div><h2 className="font-semibold text-white">Connected bank accounts</h2>
+          <p className="mt-1 text-xs text-white/45">Connect an eligible UK account securely through Plaid. Connection does not by itself enable payments or move funds.</p></div>
         </div>
         <button disabled={busy} onClick={() => void connect()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9A84C] px-4 py-2.5 text-xs font-bold text-black disabled:opacity-50">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Connect account

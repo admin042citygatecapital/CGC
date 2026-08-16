@@ -120,32 +120,32 @@ export class UnsupportedFaqClaimError extends Error {
 
 const SAFE_FAQ_DEFAULTS: Array<Pick<FaqEntry, 'question' | 'answer' | 'category' | 'triggerKeywords'>> = [
   {
-    question: 'How do I create a pre-deployment profile?',
-    answer: 'Select "Create Pre-deployment Profile" and complete the registration form. This creates access to the product demonstration only; KYC and live financial accounts are not available.',
+    question: 'How do I create my profile?',
+    answer: 'Select "Open an Account" and complete the registration and onboarding workflow. Account activation remains subject to identity verification, eligibility, and the availability of an approved provider.',
     category: 'Account',
     triggerKeywords: ['open account', 'register', 'sign up', 'pre-deployment profile'],
   },
   {
     question: 'How do I transfer money internationally?',
-    answer: 'International transfers are not available in this pre-deployment platform. You may explore the proposed workflow, but no payment is submitted or settled and no real recipient banking details should be entered.',
+    answer: 'International transfers are not currently available. Payment submission and settlement require an approved payment provider, an eligible account, and an active corridor; do not enter recipient banking details until those controls are available for your account.',
     category: 'Transfers',
     triggerKeywords: ['transfer', 'wire', 'international', 'send money'],
   },
   {
     question: 'What are the withdrawal limits?',
-    answer: 'Withdrawals are not available in this pre-deployment platform because City Gate Capital does not accept or hold customer funds. Any displayed limits or balances are demonstration data only.',
+    answer: 'Withdrawals are not currently available because City Gate Capital does not accept or hold customer funds. Displayed account information is not a deposit and cannot be withdrawn.',
     category: 'Limits',
     triggerKeywords: ['withdrawal limit', 'how much', 'daily limit'],
   },
   {
     question: 'How do I freeze my card?',
-    answer: 'No payment card is issued in this pre-deployment platform. Card controls are illustrative only and cannot freeze, unfreeze, authorise, or block a real card.',
+    answer: 'No payment card is currently issued by City Gate Capital. Card controls become available only through an approved issuer or programme and cannot affect a card until that connection is active for the customer.',
     category: 'Cards',
     triggerKeywords: ['freeze card', 'lock card', 'lost card'],
   },
   {
     question: 'Is my money protected?',
-    answer: 'This pre-deployment platform does not accept customer money. Demonstration balances are not deposits and are not insured. Do not send funds or digital assets to any details shown in the pre-deployment.',
+    answer: 'City Gate Capital does not currently accept customer money. Displayed balances are not deposits and are not insured. Do not send funds or digital assets to any details unless the platform confirms an approved provider and an active account for you.',
     category: 'Security',
     triggerKeywords: ['safe', 'protected', 'insured', 'regulated'],
   },

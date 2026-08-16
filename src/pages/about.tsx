@@ -24,7 +24,7 @@ const values = [
 const milestones = [
   { year: '01', event: 'Defined the City Gate Capital product vision and premium global-finance experience.' },
   { year: '02', event: 'Built the responsive public website, authentication flows, and customer dashboard.' },
-  { year: '03', event: 'Added account, transfer, card, wallet, analytics and paper-trading interfaces.' },
+  { year: '03', event: 'Added account, transfer, card, wallet, analytics and market-planning interfaces.' },
   { year: '04', event: 'Built the administration workspace with role-based access and audit logging.' },
   { year: '05', event: 'Hardened sessions, CSRF controls, production configuration, and deployment checks.' },
   { year: 'Next', event: 'Complete legal approvals and contracted KYC, AML, payment, banking, and custody integrations before any live financial launch.' },

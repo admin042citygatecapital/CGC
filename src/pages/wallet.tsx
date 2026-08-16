@@ -476,10 +476,10 @@ export default function WalletPage() {
               </p>
               <div className="space-y-3">
                 {[
-                  'Illustrative market pricing',
+                  'Indicative market pricing',
                   'No live settlement',
                   'No customer assets accepted',
-                  'Prototype trading pairs',
+                  'Configured trading pairs',
                   'Provider integration required before launch',
                 ].map(f => (
                   <div key={f} className="flex items-center gap-3 text-sm text-foreground/60">

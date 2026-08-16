@@ -171,7 +171,7 @@ export default function CustomerTransfersPage() {
           <div className="flex-1">
             <p className="text-sm font-bold">Internal Transfers</p>
             <p className="text-[10px] text-white/30">
-              Customer-owned simulation ledger
+              Secure account-to-account activity
             </p>
           </div>
           <button
@@ -189,11 +189,11 @@ export default function CustomerTransfersPage() {
         <div className="rounded-2xl border border-primary/20 bg-primary/[0.05] p-4 mb-6 flex gap-3">
           <Shield className="text-primary shrink-0" size={18} />
           <div>
-            <p className="text-sm font-semibold">Balanced simulation only</p>
+            <p className="text-sm font-semibold">Controlled internal transfers</p>
             <p className="text-xs text-white/40 mt-1">
-              Transfers move synthetic value between your own active accounts.
-              No bank, payment provider, custody system or external recipient is
-              contacted.
+              Eligible transfers between your own active accounts are recorded
+              with balanced journal entries. External money movement remains
+              subject to an authorised provider and account eligibility.
             </p>
           </div>
         </div>
@@ -348,7 +348,7 @@ export default function CustomerTransfersPage() {
                         )}
                       </p>
                       <p className="text-[9px] uppercase text-emerald-400">
-                        {transfer.status} · simulation
+                        {transfer.status}
                       </p>
                     </div>
                   </article>
