@@ -10,7 +10,7 @@ import { motion } from 'motion/react';
 import {
   ArrowLeft, RefreshCw,
   ArrowLeftRight, Globe, Loader2, Clock,
-  ChevronDown,
+  Calculator, ChevronDown,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { useBackgroundSync } from '@/lib/backgroundSync';
@@ -54,6 +54,7 @@ export default function ExchangeRatesPage() {
   const [fromCcy, setFromCcy] = useState('USD');
   const [toCcy,   setToCcy]   = useState('EUR');
   const [amount,  setAmount]  = useState('1000');
+  const [calculationMessage, setCalculationMessage] = useState('');
 
   // Tab
   const [tab, setTab] = useState<'fiat' | 'crypto' | 'all'>('fiat');
@@ -207,13 +208,13 @@ export default function ExchangeRatesPage() {
                   <input
                     type="number"
                     value={amount}
-                    onChange={e => setAmount(e.target.value)}
+                    onChange={e => { setAmount(e.target.value); setCalculationMessage(''); }}
                     className="flex-1 bg-transparent text-sm font-bold text-foreground focus:outline-none min-w-0"
                     placeholder="0"
                   />
                   <CurrencyMark currency={fromCcy} size={25} />
                   <div className="relative">
-                    <select value={fromCcy} onChange={e => setFromCcy(e.target.value)}
+                    <select value={fromCcy} onChange={e => { setFromCcy(e.target.value); setCalculationMessage(''); }}
                       aria-label="Currency to exchange from"
                       className="appearance-none bg-transparent text-xs font-semibold text-foreground/70 focus:outline-none cursor-pointer pr-4 max-w-[92px]">
                       {availableCurrencies.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{currencyOptionLabel(c)}</option>)}
@@ -225,8 +226,11 @@ export default function ExchangeRatesPage() {
 
               {/* Swap */}
               <button
-                onClick={() => { setFromCcy(toCcy); setToCcy(fromCcy); }}
-                className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors mt-5 shrink-0">
+                type="button"
+                title="Swap currencies"
+                aria-label={`Swap ${fromCcy} and ${toCcy}`}
+                onClick={() => { setFromCcy(toCcy); setToCcy(fromCcy); setCalculationMessage(''); }}
+                className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary hover:bg-primary/20 hover:scale-105 transition-all mt-5 shrink-0">
                 <ArrowLeftRight size={14} />
               </button>
 
@@ -239,7 +243,7 @@ export default function ExchangeRatesPage() {
                   </span>
                   <CurrencyMark currency={toCcy} size={25} />
                   <div className="relative">
-                    <select value={toCcy} onChange={e => setToCcy(e.target.value)}
+                    <select value={toCcy} onChange={e => { setToCcy(e.target.value); setCalculationMessage(''); }}
                       aria-label="Currency to exchange to"
                       className="appearance-none bg-transparent text-xs font-semibold text-foreground/70 focus:outline-none cursor-pointer pr-4 max-w-[92px]">
                       {availableCurrencies.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{currencyOptionLabel(c)}</option>)}
@@ -257,10 +261,26 @@ export default function ExchangeRatesPage() {
               </p>
             )}
 
-            <button type="button" disabled
-              className="w-full mt-4 py-3 rounded-xl border border-white/8 bg-white/[0.03] text-xs font-semibold text-foreground/35 cursor-not-allowed">
-              Exchange execution becomes available after regulated FX providers are approved
+            <button type="button"
+              onClick={() => {
+                const numericAmount = Number(amount);
+                if (!Number.isFinite(numericAmount) || numericAmount <= 0 || convertedAmount === null) {
+                  setCalculationMessage('Enter a valid amount and select currencies with an available rate.');
+                  return;
+                }
+                setCalculationMessage(`Conversion calculated: ${numericAmount.toLocaleString('en-US')} ${fromCcy} equals ${fmtConverted(convertedAmount, toCcy)} at the current indicative rate.`);
+              }}
+              className="w-full mt-4 py-3 rounded-xl bg-primary text-black text-xs font-bold flex items-center justify-center gap-2 hover:brightness-110 transition-all">
+              <Calculator size={14} /> Calculate Conversion
             </button>
+            {calculationMessage && (
+              <p role="status" className="mt-3 rounded-xl border border-primary/20 bg-primary/[0.06] px-3 py-2.5 text-[11px] leading-relaxed text-foreground/65">
+                {calculationMessage}
+              </p>
+            )}
+            <p className="mt-3 text-[10px] leading-relaxed text-foreground/30">
+              Calculation only. No funds are moved. Exchange execution will be offered only through an approved regulated FX provider.
+            </p>
           </motion.div>
 
           {/* ── Rate table ─────────────────────────────────────────────── */}

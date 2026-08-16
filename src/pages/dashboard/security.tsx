@@ -29,6 +29,7 @@ ShieldCheck,
 Smartphone
 } from 'lucide-react';
 import { AnimatePresence,motion } from 'motion/react';
+import QRCode from 'qrcode';
 import { useEffect,useMemo,useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 
@@ -142,8 +143,24 @@ export default function DashboardSecurityPage() {
     try {
       const res = await fetch('/api/users/2fa/setup', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json().catch(() => ({}));
-      if (res.ok) { setTotpSecret(data.secret); setTotpQr(data.qrUrl ?? null); }
-      else setTotpMsg({ text: data.error ?? 'Failed to generate 2FA secret.', ok: false });
+      if (res.ok) {
+        setTotpSecret(data.secret);
+        if (typeof data.qrUrl === 'string' && data.qrUrl.startsWith('otpauth://totp/')) {
+          try {
+            const qrDataUrl = await QRCode.toDataURL(data.qrUrl, {
+              errorCorrectionLevel: 'M',
+              margin: 1,
+              width: 256,
+              color: { dark: '#000000', light: '#FFFFFF' },
+            });
+            setTotpQr(qrDataUrl);
+          } catch {
+            setTotpQr(null);
+          }
+        } else {
+          setTotpQr(null);
+        }
+      } else setTotpMsg({ text: data.error ?? 'Failed to generate 2FA secret.', ok: false });
     } catch { setTotpMsg({ text: 'Network error.', ok: false }); }
     finally { setTotpLoading(false); }
   }
