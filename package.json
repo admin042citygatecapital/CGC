@@ -125,7 +125,8 @@
     "vaul": "^1.1.2",
     "ws": "^8.21.0",
     "zod": "^3.25.76",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "qrcode": "^1.5.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
@@ -169,7 +170,8 @@
     "tsx": "^4.20.6",
     "typescript": "^5.7.2",
     "vite": "^6.4.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "@types/qrcode": "^1.4.3"
   },
   "engines": {
     "node": ">=22"
