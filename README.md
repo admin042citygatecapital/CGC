@@ -81,6 +81,3 @@ Production startup fails when critical configuration is absent. At minimum confi
 
 Configure an email provider before enabling public registration and password resets. Never deploy the local demo account or flat-file persistence as a live banking environment.
 
-## Operational note
-
-The software is a banking-platform codebase, not regulatory authorization to accept deposits, custody assets, issue cards, or move real customer funds. Legal, licensing, compliance, provider, reconciliation, monitoring, incident-response, and penetration-testing requirements must be completed for every jurisdiction before any real-money launch.
