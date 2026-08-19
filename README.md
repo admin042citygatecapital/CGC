@@ -1,83 +1,82 @@
 # City Gate Capital
 
-City Gate Capital is a full-stack financial-technology platform with a corporate website, a separately labelled `/demo` workspace, customer authentication and dashboard interfaces, KYC workflows, transfers, multi-currency exchange, card and trading demonstrations, support tools, and a role-aware administration console.
+A full-stack digital banking platform: customer-facing accounts, cards, transfers, and trading, plus an internal admin panel for KYC, compliance, and support. Vite + React SSR frontend, Express backend, Drizzle ORM over Supabase Postgres.
 
-## Technology
+## Tech Stack
 
-- React 19, TypeScript, Vite, Tailwind CSS, and React Router
-- Express 5 with server-side rendering and WebSocket market updates
-- PostgreSQL through Drizzle ORM and a provider-neutral pooled driver
-- Argon2id password hashing, encrypted card data, bounded sessions, audit logging, and request-rate controls
-- Vitest, ESLint, and production client/server builds
+- **Frontend**: React 18, TypeScript, Vite 6, React Router (data mode), Tailwind CSS, Radix UI
+- **Backend**: Express (custom SSR server, `src/server/entry.ts`), Node.js
+- **Database**: Supabase Postgres via [`postgres`](https://github.com/porsager/postgres) (postgres.js) + [Drizzle ORM](https://orm.drizzle.team/)
+- **Auth/Storage/Realtime**: Supabase (`src/lib/supabaseClient.ts` for the browser, `src/server/lib/supabaseStorage.ts` for server-side Storage)
+- **Email**: Zoho Mail HTTP API (primary) with Resend HTTP API as queue fallback — no raw SMTP
+- **Testing**: Vitest
 
-## Local development
+The app runs with **flat-file (JSONL) storage as a dev-only fallback** when `DATABASE_URL` is unset — see `isDatabaseConfigured()` in `src/server/db/db.ts`. Production always requires Supabase.
 
-Requirements: Node.js 22 or newer.
+## Getting Started
 
 ```bash
 npm install
-copy env.example .env
+cp .env.example .env   # fill in your Supabase project's values
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173`. Local development can use the flat-file fallback; production cannot.
+The dev server runs on `http://localhost:5173` (configurable via `PORT`).
 
-To create the guarded local dashboard account:
+## Environment Variables
 
-```bash
-set ENABLE_LOCAL_DEMO_USER=1
-npx tsx scripts/create-local-demo-user.ts
+See [`.env.example`](.env.example) for the full list with descriptions. At minimum, production needs:
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Supabase Postgres connection string (Project Settings → Database) |
+| `SUPABASE_URL` / `VITE_SUPABASE_URL` | Supabase project URL (server / client) |
+| `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_ANON_KEY` | Public anon/publishable key |
+| `SUPABASE_SECRET_KEY` | Server-only service-role key — never expose to the client |
+
+This is a **Vite app, not Next.js** — client-exposed env vars use the `VITE_` prefix (see `envPrefix` in `vite.config.ts`), not `NEXT_PUBLIC_`.
+
+## Available Scripts
+
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Start the dev server |
+| `npm run build` | Production build (client + SSR bundles) |
+| `npm run preview` | Preview the production build locally |
+| `npm test` | Run the Vitest suite |
+| `npm run lint` / `lint:fix` | ESLint |
+| `npm run type-check` | `tsc --noEmit` |
+| `npm run db:migrate` | Apply pending SQL migrations (`src/server/db/migrations/`) |
+| `npm run db:import` | One-time import of flat-file data into Postgres |
+| `npm run db:validate` | Validate migrated data integrity |
+| `npm run db:rollback` | Drop CGC tables/enums (destructive — see script header) |
+
+## Project Structure
+
+```
+src/
+├── pages/               # Route content components (public site, dashboard, admin)
+├── layouts/              # Shared layout wrappers
+├── components/           # Reusable UI components
+├── lib/                  # Client-side utilities (incl. supabaseClient.ts)
+├── server/
+│   ├── entry.ts           # Express app + SSR entrypoint (default export)
+│   ├── api/                # File-based API routes (src/server/api/**/METHOD.ts)
+│   ├── db/                  # Drizzle schema, db.ts connection, migrations/
+│   └── lib/                  # Server-side business logic (auth, stores, email, etc.)
+└── test/                 # Vitest setup + specs
 ```
 
-The script refuses to run in production or while a database connection is configured.
+## Deployment
 
-## Quality gates
+Deployed on Vercel. The Express app in `src/server/entry.ts` calls `httpServer.listen(port)`, which matches Vercel's native Node.js server auto-detection — no `vercel.json` is required for routing. The build command (`npm run build`) produces `dist/client/` (static assets) and `dist/server.bundle.mjs` (SSR server).
 
-```bash
-npm run type-check
-npm run lint
-npm test -- --run
-npm run build
-```
+Set all variables from `.env.example` in the Vercel project's Environment Variables (Production) before deploying — the app falls back to local flat-file storage silently if `DATABASE_URL` is missing, so a deployment can succeed while running in a degraded, non-persistent mode if secrets aren't configured.
 
-Run every gate with `npm run verify`.
-
-## Database
-
-Set `DATABASE_URL` to a PostgreSQL pooler connection string, then apply and validate migrations:
+## Testing
 
 ```bash
-npm run db:migrate
-npm run db:validate
+npm test
 ```
 
-Legacy flat-file data can be checked and imported with `db:import:dry` and `db:import`. Back up both the database and `/private` data before migration.
-
-The Operations Inbox uses PostgreSQL in production and imports its legacy JSONL data idempotently. Daily checksummed operational snapshots are enabled by the Render blueprint; see [`docs/BACKUP-RECOVERY.md`](docs/BACKUP-RECOVERY.md). These local snapshots do not replace provider-managed off-site database backups.
-
-## Production
-
-This application requires a persistent Node.js service because it hosts Express APIs, server-side rendering, background email processing, and WebSockets. Deploy it to a container or long-running Node platform rather than a static-only host.
-
-The checked-in deployment publishes a partnership-led corporate website at `/` and isolates the non-transactional product experience under `/demo`. Demo routes are `noindex`; legacy public product URLs redirect into that boundary. Money-moving, card-lifecycle and live-trading endpoints remain fail-closed, and authenticated screens retain disclosures wherever demonstration balances or transactions appear. `PUBLIC_SITE_PUBLISHED` controls publication and indexing only; it cannot enable financial operations. Do not switch `PLATFORM_MODE` to `live` or enable financial operations until banking/custody partners, regulatory approvals, legal copy, and production integrations have been independently verified.
-
-The provider-specific release sequence and required secrets are documented in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
-
-```bash
-npm ci
-npm run verify
-npm start
-```
-
-Production startup fails when critical configuration is absent. At minimum configure:
-
-- `NODE_ENV=production`
-- `APP_URL`
-- `DATABASE_URL`
-- `SESSION_SECRET`
-- `CARD_ENCRYPTION_KEY`
-- `ADMIN_PASSWORD_HASH`
-- `ADMIN_EMAIL`
-
-Configure an email provider before enabling public registration and password resets. Never deploy the local demo account or flat-file persistence as a live banking environment.
-
+Server-side auth, session, and security logic is covered under `src/test/server/`.
