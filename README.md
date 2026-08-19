@@ -1,82 +1,206 @@
-# City Gate Capital
+# Deployment Pre-Flight Checklist
 
-A full-stack digital banking platform: customer-facing accounts, cards, transfers, and trading, plus an internal admin panel for KYC, compliance, and support. Vite + React SSR frontend, Express backend, Drizzle ORM over Supabase Postgres.
+**Do not deploy to production without completing this checklist.**
 
-## Tech Stack
+This document ensures all technical, compliance, legal, and operational requirements are met before a real-money banking platform goes live.
 
-- **Frontend**: React 18, TypeScript, Vite 6, React Router (data mode), Tailwind CSS, Radix UI
-- **Backend**: Express (custom SSR server, `src/server/entry.ts`), Node.js
-- **Database**: Supabase Postgres via [`postgres`](https://github.com/porsager/postgres) (postgres.js) + [Drizzle ORM](https://orm.drizzle.team/)
-- **Auth/Storage/Realtime**: Supabase (`src/lib/supabaseClient.ts` for the browser, `src/server/lib/supabaseStorage.ts` for server-side Storage)
-- **Email**: Zoho Mail HTTP API (primary) with Resend HTTP API as queue fallback — no raw SMTP
-- **Testing**: Vitest
+---
 
-The app runs with **flat-file (JSONL) storage as a dev-only fallback** when `DATABASE_URL` is unset — see `isDatabaseConfigured()` in `src/server/db/db.ts`. Production always requires Supabase.
+## 1. Legal & Regulatory ⚖️
 
-## Getting Started
+- [ ] Legal team has reviewed the platform architecture and data handling
+- [ ] Jurisdiction-specific banking/fintech regulations identified
+- [ ] Consumer protection law compliance assessed
+- [ ] Anti-money laundering (AML) / Know Your Customer (KYC) framework established
+- [ ] Terms of Service (ToS) and Privacy Policy reviewed by legal counsel
+- [ ] Data residency and GDPR/privacy regulations requirements confirmed
+- [ ] Liability waiver and disclaimers properly documented
 
-```bash
-npm install
-cp .env.example .env   # fill in your Supabase project's values
-npm run dev
-```
+**Guidance**: See [`docs/compliance/`](./compliance/) for jurisdiction-specific requirements.
 
-The dev server runs on `http://localhost:5173` (configurable via `PORT`).
+---
 
-## Environment Variables
+## 2. Licensing & Authorization 📜
 
-See [`.env.example`](.env.example) for the full list with descriptions. At minimum, production needs:
+- [ ] Money transmitter license obtained (if required in jurisdiction)
+- [ ] Banking charter or equivalent regulatory approval secured
+- [ ] Payment processor partnerships established and contracts signed
+- [ ] Card network partnerships (Visa, Mastercard) approved
+- [ ] E-money institution license (if EU/UK regulated)
+- [ ] All regulatory filing deadlines met
+- [ ] Regulatory approval letters/permits filed safely
 
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | Supabase Postgres connection string (Project Settings → Database) |
-| `SUPABASE_URL` / `VITE_SUPABASE_URL` | Supabase project URL (server / client) |
-| `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_ANON_KEY` | Public anon/publishable key |
-| `SUPABASE_SECRET_KEY` | Server-only service-role key — never expose to the client |
+---
 
-This is a **Vite app, not Next.js** — client-exposed env vars use the `VITE_` prefix (see `envPrefix` in `vite.config.ts`), not `NEXT_PUBLIC_`.
+## 3. KYC/AML Compliance 🔍
 
-## Available Scripts
+- [ ] KYC workflow implemented and tested end-to-end
+- [ ] Identity verification provider(s) integrated (e.g., Onfido, Jumio)
+- [ ] Document verification process live and auditable
+- [ ] Sanctions screening integrated (OFAC, EU, UN lists)
+- [ ] Transaction monitoring rules defined and deployed
+- [ ] Suspicious activity reporting (SAR) procedures documented
+- [ ] Customer risk segmentation framework active
+- [ ] Audit logs capture all KYC decisions with timestamps
 
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Start the dev server |
-| `npm run build` | Production build (client + SSR bundles) |
-| `npm run preview` | Preview the production build locally |
-| `npm test` | Run the Vitest suite |
-| `npm run lint` / `lint:fix` | ESLint |
-| `npm run type-check` | `tsc --noEmit` |
-| `npm run db:migrate` | Apply pending SQL migrations (`src/server/db/migrations/`) |
-| `npm run db:import` | One-time import of flat-file data into Postgres |
-| `npm run db:validate` | Validate migrated data integrity |
-| `npm run db:rollback` | Drop CGC tables/enums (destructive — see script header) |
+---
 
-## Project Structure
+## 4. Database & Infrastructure 🗄️
 
-```
-src/
-├── pages/               # Route content components (public site, dashboard, admin)
-├── layouts/              # Shared layout wrappers
-├── components/           # Reusable UI components
-├── lib/                  # Client-side utilities (incl. supabaseClient.ts)
-├── server/
-│   ├── entry.ts           # Express app + SSR entrypoint (default export)
-│   ├── api/                # File-based API routes (src/server/api/**/METHOD.ts)
-│   ├── db/                  # Drizzle schema, db.ts connection, migrations/
-│   └── lib/                  # Server-side business logic (auth, stores, email, etc.)
-└── test/                 # Vitest setup + specs
-```
+- [ ] `DATABASE_URL` configured in production (Supabase Postgres)
+- [ ] Flat-file (JSONL) storage disabled in production
+- [ ] Database backups automated and tested (restore drills)
+- [ ] Read replicas configured for high availability
+- [ ] Point-in-time recovery (PITR) enabled
+- [ ] All Supabase credentials stored in Vercel Secrets (never in `.env`)
+- [ ] SSL/TLS enforced for all database connections
+- [ ] Row-level security (RLS) policies reviewed and tested
 
-## Deployment
+---
 
-Deployed on Vercel. The Express app in `src/server/entry.ts` calls `httpServer.listen(port)`, which matches Vercel's native Node.js server auto-detection — no `vercel.json` is required for routing. The build command (`npm run build`) produces `dist/client/` (static assets) and `dist/server.bundle.mjs` (SSR server).
+## 5. Authentication & Security 🔐
 
-Set all variables from `.env.example` in the Vercel project's Environment Variables (Production) before deploying — the app falls back to local flat-file storage silently if `DATABASE_URL` is missing, so a deployment can succeed while running in a degraded, non-persistent mode if secrets aren't configured.
+- [ ] Multi-factor authentication (MFA) enabled for customer accounts
+- [ ] TOTP setup tested and documented
+- [ ] Session timeouts configured (recommend 15–30 minutes)
+- [ ] Password requirements enforced (min length, complexity)
+- [ ] Password reset flow secured with email verification
+- [ ] Login rate limiting deployed to prevent brute force
+- [ ] OAuth/SSO providers integrated (if applicable)
+- [ ] API authentication token rotation implemented
+- [ ] Server-side session validation working end-to-end
 
-## Testing
+---
 
-```bash
-npm test
-```
+## 6. Data Protection 🛡️
 
-Server-side auth, session, and security logic is covered under `src/test/server/`.
+- [ ] PII encryption at rest (database-level)
+- [ ] Encryption in transit (TLS 1.2+)
+- [ ] Sensitive data (card numbers, SSNs) tokenized or masked
+- [ ] Data minimization review completed
+- [ ] Data retention policies documented and enforced
+- [ ] GDPR "right to be forgotten" workflow implemented
+- [ ] Customer data export functionality working
+- [ ] Audit logs immutable and monitored
+
+---
+
+## 7. Email & Communications 📧
+
+- [ ] Email provider configured (Zoho Mail + Resend fallback)
+- [ ] SMTP credentials secured in Vercel Secrets
+- [ ] Transactional email templates reviewed (KYC, alerts, resets)
+- [ ] Email delivery monitoring active
+- [ ] SMS alerts configured (if applicable)
+- [ ] Email rate limiting implemented
+- [ ] Unsubscribe mechanisms working
+
+---
+
+## 8. Financial Operations 💰
+
+- [ ] Payment processor integration tested with real transactions
+- [ ] Card provisioning workflow tested
+- [ ] Fund transfer mechanisms audited
+- [ ] Transaction reconciliation logic verified
+- [ ] Reserve account(s) established with banking partner
+- [ ] Daily settlement process automated and monitored
+- [ ] Disputed transaction workflow documented
+- [ ] Chargeback procedures in place
+- [ ] Foreign exchange rates updated automatically
+- [ ] Transaction fee calculation audited
+
+---
+
+## 9. Monitoring & Alerting 📊
+
+- [ ] Application error tracking (Sentry/similar) live
+- [ ] Database performance monitoring enabled
+- [ ] API response time thresholds configured
+- [ ] Transaction anomaly detection active
+- [ ] Fraud scoring rules deployed
+- [ ] Daily compliance reports generated
+- [ ] Alert escalation procedures documented
+- [ ] On-call rotation established
+
+---
+
+## 10. Incident Response & Disaster Recovery 🚨
+
+- [ ] Incident response playbook documented and team trained
+- [ ] Security breach notification procedures defined
+- [ ] Regulatory incident reporting procedures documented
+- [ ] Backup restoration tested in staging
+- [ ] Disaster recovery time/recovery point objectives (RTO/RPO) defined
+- [ ] Communication templates for customer notifications ready
+- [ ] Third-party vendor breach procedures established
+
+---
+
+## 11. Penetration Testing & Security Assessment 🔬
+
+- [ ] Third-party security assessment scheduled (pre-launch)
+- [ ] Penetration testing conducted on APIs and frontend
+- [ ] Findings remediated and verified
+- [ ] Code review completed by external security firm
+- [ ] OWASP Top 10 checklist verified
+- [ ] Dependency scanning for known vulnerabilities active
+- [ ] Annual security assessment budgeted
+
+---
+
+## 12. Testing & QA 🧪
+
+- [ ] End-to-end tests passing in staging
+- [ ] Load testing completed (expected capacity + 50%)
+- [ ] Database migration tested in staging
+- [ ] Rollback procedures tested
+- [ ] All critical user flows tested on production-equivalent setup
+- [ ] KYC workflow tested with edge cases
+- [ ] Payment processing tested with test merchants
+
+---
+
+## 13. Documentation 📚
+
+- [ ] API documentation complete and tested
+- [ ] Runbook created for common operational tasks
+- [ ] Compliance documentation compiled (for regulators)
+- [ ] Internal audit procedures documented
+- [ ] Staff training materials prepared
+- [ ] Customer support playbooks written
+
+---
+
+## 14. Stakeholder Sign-Off ✅
+
+- [ ] Legal approval obtained
+- [ ] Compliance team sign-off
+- [ ] Security team sign-off
+- [ ] Operations team ready
+- [ ] Executive approval to launch
+
+---
+
+## Launch Day ✈️
+
+- [ ] Final systems check (all services healthy)
+- [ ] On-call team briefed and standing by
+- [ ] Customer communications draft ready
+- [ ] Monitoring dashboards live
+- [ ] Incident response contacts verified
+- [ ] **Proceed to production deployment**
+
+---
+
+## Post-Launch 📋
+
+- [ ] Monitor error rates and performance continuously
+- [ ] KYC queue and approval rates tracked
+- [ ] Daily compliance reporting running
+- [ ] Weekly security review meetings scheduled
+- [ ] Quarterly regulatory audits scheduled
+
+---
+
+**For jurisdiction-specific requirements, see [`docs/compliance/`](./compliance/).**
