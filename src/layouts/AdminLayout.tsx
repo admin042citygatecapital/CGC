@@ -77,7 +77,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: 'Operations',
     items: [
-      { label: 'Dashboard',    href: '/admin',              icon: LayoutDashboard, badge: null, desc: 'Platform overview & KPIs' },
+      { label: 'Control Center', href: '/admin',             icon: LayoutDashboard, badge: null, desc: 'Platform overview, health & operational controls' },
       { label: 'Operations Inbox', href: '/admin/operations', icon: Inbox,          badge: null, desc: 'All customer submissions & approvals' },
       { label: 'Users',        href: '/admin/users',        icon: Users,           badge: null, desc: 'Customer accounts & management' },
       { label: 'Customer Relations', href: '/admin/customer-relationships', icon: Link2, badge: null, desc: 'Create, select and edit customer relationships' },
@@ -86,6 +86,8 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Legal Entity', href: '/admin/legal-entity', icon: Scale, badge: null, desc: 'Entity and beneficial ownership verification' },
       { label: 'Transactions', href: '/admin/transactions', icon: CreditCard,      badge: null, desc: 'All platform transactions' },
       { label: 'Accounts',     href: '/admin/accounts',     icon: WalletCards,     badge: null, desc: 'Structured customer account controls' },
+      { label: 'Cards',        href: '/admin/cards',        icon: CreditCard,      badge: null, desc: 'Card records, controls, limits & lifecycle requests' },
+      { label: 'Wallets',      href: '/admin/wallets',      icon: WalletCards,     badge: null, desc: 'Controlled wallet records and ledger-backed operations' },
       { label: 'Crypto',       href: '/admin/crypto',       icon: Bitcoin,         badge: null, desc: 'Crypto holdings & wallets' },
       { label: 'Trading',      href: '/admin/trading',      icon: BarChart2,       badge: null, desc: 'Positions, orders & risk' },
     ],

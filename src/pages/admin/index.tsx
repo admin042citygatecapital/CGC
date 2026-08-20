@@ -1,5 +1,5 @@
 /**
- * /admin — City Gate Capital Executive Dashboard
+ * /admin — City Gate Capital Super-Admin Control Center
  *
  * Administration command centre:
  *  ① Customer KPIs      — Total / Active / Suspended / Pending KYC
@@ -637,12 +637,12 @@ export default function AdminDashboard() {
   return (
     <>
       <Helmet>
-        <title>Executive Dashboard — City Gate Capital Admin</title>
-        <meta name="description" content="City Gate Capital pre-deployment administration dashboard for customers, synthetic records, readiness and system health." />
+        <title>Control Center — City Gate Capital Admin</title>
+        <meta name="description" content="City Gate Capital super-administration control center for customers, operations, content, security, integrations and system health." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/admin" />
       </Helmet>
-      <AdminLayout title="Executive Dashboard">
+      <AdminLayout title="Control Center">
 
         {/* ── Page header ── */}
         <div className="flex items-start justify-between mb-6">
