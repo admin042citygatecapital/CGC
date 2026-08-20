@@ -72,6 +72,7 @@ const DashboardNotifications = lazy(() => import('./pages/dashboard/notification
 const DashboardProfile   = lazy(() => import('./pages/dashboard/profile'));
 const DashboardSettings  = lazy(() => import('./pages/dashboard/settings'));
 const DashboardStatements    = lazy(() => import('./pages/dashboard/statements'));
+const DashboardTransactions  = lazy(() => import('./pages/dashboard/transactions'));
 const DashboardDevices       = lazy(() => import('./pages/dashboard/devices'));
 const DashboardBeneficiaries = lazy(() => import('./pages/dashboard/beneficiaries'));
 const DashboardSupport       = lazy(() => import('./pages/dashboard/support'));
@@ -179,7 +180,7 @@ export const routes: RouteObject[] = [
   { path: '/dashboard/profile',       element: <CustomerOnly><DashboardProfile /></CustomerOnly> },
   { path: '/dashboard/settings',      element: <CustomerOnly><DashboardSettings /></CustomerOnly> },
   { path: '/dashboard/statements',    element: <CustomerOnly><FeatureOnly feature="statements"><DashboardStatements /></FeatureOnly></CustomerOnly> },
-  { path: '/dashboard/transactions',  element: <CustomerOnly><FeatureOnly feature="statements"><DashboardStatements /></FeatureOnly></CustomerOnly> },
+  { path: '/dashboard/transactions',  element: <CustomerOnly><FeatureOnly feature="statements"><DashboardTransactions /></FeatureOnly></CustomerOnly> },
   { path: '/dashboard/devices',       element: <CustomerOnly><DashboardDevices /></CustomerOnly> },
   { path: '/dashboard/beneficiaries', element: <CustomerOnly><FeatureOnly feature="beneficiaries"><DashboardBeneficiaries /></FeatureOnly></CustomerOnly> },
   { path: '/dashboard/support',       element: <CustomerOnly><FeatureOnly feature="support"><DashboardSupport /></FeatureOnly></CustomerOnly> },

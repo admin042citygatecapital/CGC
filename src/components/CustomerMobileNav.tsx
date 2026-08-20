@@ -1,7 +1,7 @@
 import { usePlatformFeatures } from '@/lib/platformFeatures';
 import type { PlatformFeatureKey } from '@/shared/platformFeatures';
 import { AnimatePresence, motion } from 'motion/react';
-import { BarChart3, Bell, CreditCard, FileText, FileWarning, Gift, HelpCircle, Home, Landmark, Menu, MessageCircle, ReceiptText, Search, Send, Settings, Shield, Target, TrendingUp, User, Users, WalletCards, X } from 'lucide-react';
+import { Activity, BarChart3, Bell, CreditCard, FileText, FileWarning, Gift, HelpCircle, Home, Landmark, Menu, MessageCircle, ReceiptText, Search, Send, Settings, Shield, Target, TrendingUp, User, Users, WalletCards, X } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -21,6 +21,7 @@ const more: NavItem[] = [
   { label: 'Goals', href: '/dashboard/goals', icon: Target, feature: 'savingsGoals' },
   { label: 'Bills & Payments', href: '/dashboard/bills', icon: ReceiptText, feature: 'payments' },
   { label: 'Beneficiaries', href: '/dashboard/beneficiaries', icon: Users, feature: 'beneficiaries' },
+  { label: 'Transactions', href: '/dashboard/transactions', icon: Activity, feature: 'statements' },
   { label: 'Statements', href: '/dashboard/statements', icon: FileText, feature: 'statements' },
   { label: 'Notifications', href: '/dashboard/notifications', icon: Bell, feature: 'notifications' },
   { label: 'Disputes', href: '/dashboard/disputes', icon: FileWarning },

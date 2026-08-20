@@ -30,9 +30,10 @@ See [`.env.example`](.env.example) for the full list with descriptions. At minim
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` | Supabase Postgres connection string (Project Settings → Database) |
-| `SUPABASE_URL` / `VITE_SUPABASE_URL` | Supabase project URL (server / client) |
-| `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_ANON_KEY` | Public anon/publishable key |
-| `SUPABASE_SECRET_KEY` | Server-only service-role key — never expose to the client |
+| `SUPABASE_URL` | Supabase project URL used by the server |
+| `SUPABASE_ANON_KEY` / `SUPABASE_PUBLISHABLE_KEY` | Public anon/publishable key (server-side configuration unless browser access is deliberately adopted) |
+| `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SECRET_KEY` | Server-only privileged key — never expose through `VITE_` variables or client code |
+| `SUPABASE_STORAGE_BUCKET` | Managed Storage bucket name; defaults to `cgc-media` |
 
 This is a **Vite app, not Next.js** — client-exposed env vars use the `VITE_` prefix (see `envPrefix` in `vite.config.ts`), not `NEXT_PUBLIC_`.
 

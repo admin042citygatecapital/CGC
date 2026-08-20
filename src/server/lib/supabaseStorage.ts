@@ -8,7 +8,8 @@
  *
  * Required secrets (all optional — falls back to local storage if absent):
  *   SUPABASE_URL              — e.g. https://xxxx.supabase.co
- *   SUPABASE_SECRET_KEY       — service_role key (server-side only)
+ *   SUPABASE_SERVICE_ROLE_KEY — service_role key (server-side only)
+ *   SUPABASE_SECRET_KEY       — newer server secret key alias
  *   SUPABASE_STORAGE_BUCKET   — bucket name (default: cgc-media)
  *
  * The bucket must exist in Supabase Dashboard → Storage.
@@ -32,7 +33,11 @@ interface StorageConfig {
 
 function getStorageConfig(): StorageConfig | null {
   const supabaseUrl    = String(getSecret('SUPABASE_URL')          || '').trim();
-  const serviceRoleKey = String(getSecret('SUPABASE_SECRET_KEY')   || '').trim();
+  const serviceRoleKey = String(
+    getSecret('SUPABASE_SERVICE_ROLE_KEY') ||
+    getSecret('SUPABASE_SECRET_KEY') ||
+    '',
+  ).trim();
   const rawBucket      = String(getSecret('SUPABASE_STORAGE_BUCKET') || 'cgc-media').trim();
 
   // Normalise: if the secret was accidentally set to a full URL
@@ -96,7 +101,7 @@ export async function uploadToSupabase(
   bucketOverride?: string,
 ): Promise<{ url: string; key: string }> {
   const ctx = getSupabaseClient();
-  if (!ctx) throw new Error('Supabase Storage not configured — set SUPABASE_URL and SUPABASE_SECRET_KEY');
+  if (!ctx) throw new Error('Supabase Storage not configured — set SUPABASE_URL and a server-side Supabase secret key');
 
   const { client } = ctx;
   const bucket = bucketOverride ?? ctx.bucket;

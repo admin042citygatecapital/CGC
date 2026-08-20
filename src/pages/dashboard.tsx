@@ -1855,6 +1855,7 @@ export default function DashboardPage() {
                   { icon: TrendingUp, label: 'Transfers',          href: '/dashboard/transfers',     sub: 'Send & receive' },
                   { icon: Activity,   label: 'Analytics',          href: '/dashboard/analytics',     sub: 'Spending insights' },
                   { icon: Shield,     label: 'Security',           href: '/dashboard/security',      sub: 'Sessions & alerts' },
+                  { icon: Activity,   label: 'Transactions',       href: '/dashboard/transactions',  sub: 'Search account activity' },
                   { icon: FileText,   label: 'Statements',         href: '/dashboard/statements',    sub: 'Export PDF / CSV' },
                   { icon: Users,      label: 'Beneficiaries',      href: '/dashboard/beneficiaries', sub: 'Saved recipients' },
                   { icon: Globe,      label: 'Currency Exchange',  href: '/dashboard/exchange',      sub: 'Flags, rates & converter' },

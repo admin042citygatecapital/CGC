@@ -113,8 +113,11 @@ export const env = {
   // ── Supabase ──────────────────────────────────────────────────────────────
   supabase: {
     url:            s('SUPABASE_URL'),
-    publishableKey: s('SUPABASE_PUBLISHABLE_KEY'),
-    secretKey:      s('SUPABASE_SECRET_KEY'),
+    // Accept both the legacy JWT key names used by existing deployments and
+    // the newer publishable/secret key names. Neither server key is ever
+    // exposed through a VITE_ variable.
+    publishableKey: s('SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY'),
+    secretKey:      s('SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY'),
     jwksUrl:        s('SUPABASE_JWKS_URL'),
     storageBucket:  s('SUPABASE_STORAGE_BUCKET') || 'cgc-media',
   },
