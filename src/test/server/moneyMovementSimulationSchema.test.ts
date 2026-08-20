@@ -1,19 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import path from "node:path";
 
 const migration = readFileSync(
-  new URL(
-    "../../server/db/migrations/0031_money_movement_simulation.sql",
-    import.meta.url,
+  path.resolve(
+    process.cwd(),
+    "src/server/db/migrations/0031_money_movement_simulation.sql",
   ),
   "utf8",
 );
 const api = readFileSync(
-  new URL("../../server/api/admin/financial-sandbox/POST.ts", import.meta.url),
+  path.resolve(
+    process.cwd(),
+    "src/server/api/admin/financial-sandbox/POST.ts",
+  ),
   "utf8",
 );
 const page = readFileSync(
-  new URL("../../pages/admin/financial-sandbox.tsx", import.meta.url),
+  path.resolve(process.cwd(), "src/pages/admin/financial-sandbox.tsx"),
   "utf8",
 );
 

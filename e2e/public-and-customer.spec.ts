@@ -193,7 +193,7 @@ test('account, transaction, beneficiary and support views remain usable on mobil
   await expect(page).toHaveURL(/\/dashboard$/);
 
   for (const [path, heading] of [
-    ['/dashboard/accounts', 'My Wallets'],
+    ['/dashboard/accounts', 'My Accounts'],
     ['/dashboard/transactions', 'Statements'],
     ['/dashboard/beneficiaries', 'Beneficiaries'],
     ['/dashboard/support', 'Support centre'],

@@ -1,9 +1,10 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { contentPlugin } from './export-plugins/content-plugin/index';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [contentPlugin(), react()],
   test: {
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     environment: 'jsdom',

@@ -114,7 +114,7 @@ export default function CustomerAccountsPage() {
             <ArrowLeft size={16} />
           </Link>
           <div className="flex-1">
-            <p className="text-sm font-bold">My Accounts</p>
+            <h1 className="text-sm font-bold">My Accounts</h1>
             <p className="text-[10px] text-white/30">
               Structured account overview
             </p>
