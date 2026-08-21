@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { LIVE_PROVIDER_ADAPTERS_IMPLEMENTED } from '../../server/lib/platformMode.js';
 
 const GUARDED_ADMIN_MUTATIONS = [
-  'src/server/api/admin/balance/adjust/POST.ts',
   'src/server/api/admin/transactions/approve/POST.ts',
   'src/server/api/admin/transactions/create/POST.ts',
   'src/server/api/admin/wallets/PATCH.ts',
@@ -19,6 +18,15 @@ describe('production admin financial lock coverage', () => {
       expect(source, file).toContain('requireFinancialOperations(res)');
     }
     expect(LIVE_PROVIDER_ADAPTERS_IMPLEMENTED).toBe(false);
+  });
+
+  it('posts controlled balance adjustments through the isolated double-entry ledger', () => {
+    const source = readFileSync('src/server/api/admin/balance/adjust/POST.ts', 'utf8');
+    expect(source).toContain('postCustomerControlledAdjustment');
+    expect(source).toContain('idempotencyKey');
+    expect(source).toContain('balancesDerivedFromLedger');
+    expect(source).not.toContain('updateUser');
+    expect(source).not.toContain('createTransaction');
   });
 
   it('does not render invented crypto holdings or deposit addresses in the admin workspace', () => {

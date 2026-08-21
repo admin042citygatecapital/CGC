@@ -31,17 +31,27 @@ const ROLES_CONFIG_KEY = 'security_center_roles';
 export type PermissionKey =
   | 'dashboard.view'
   | 'users.view' | 'users.create' | 'users.edit' | 'users.delete' | 'users.kyc'
+  | 'accounts.view' | 'accounts.manage' | 'ledger.adjust'
   | 'cards.view' | 'cards.manage'
   | 'transactions.view' | 'transactions.approve' | 'transactions.reverse'
+  | 'transfers.view' | 'transfers.manage'
+  | 'wallets.view' | 'wallets.manage'
+  | 'trading.view' | 'trading.manage'
   | 'compliance.view' | 'compliance.manage'
   | 'reports.view' | 'reports.export'
   | 'email.view' | 'email.send'
   | 'cms.view' | 'cms.edit'
+  | 'media.view' | 'media.manage'
   | 'support.view' | 'support.respond' | 'support.close'
   | 'security.view' | 'security.manage'
-  | 'config.view' | 'config.edit'
+  | 'rates.view' | 'rates.manage'
+  | 'integrations.view' | 'integrations.manage'
+  | 'features.view' | 'features.manage'
+  | 'config.view' | 'config.edit' | 'health.view'
+  | 'operations.view' | 'operations.manage'
+  | 'reconciliation.view' | 'reconciliation.manage'
   | 'audit.view'
-  | 'admin.create' | 'admin.delete';
+  | 'admin.create' | 'admin.delete' | 'admin.roles.manage';
 
 export interface Role {
   id:          string;
@@ -60,17 +70,24 @@ const SYSTEM_ROLES: Role[] = [
     id: 'role_super_admin', name: 'SUPER_ADMIN', label: 'Super Admin',
     description: 'Full unrestricted access to all platform features and configuration.',
     permissions: ['dashboard.view','users.view','users.create','users.edit','users.delete','users.kyc',
-      'cards.view','cards.manage','transactions.view','transactions.approve','transactions.reverse',
+      'accounts.view','accounts.manage','ledger.adjust','cards.view','cards.manage',
+      'transactions.view','transactions.approve','transactions.reverse','transfers.view','transfers.manage',
+      'wallets.view','wallets.manage','trading.view','trading.manage',
       'compliance.view','compliance.manage','reports.view','reports.export','email.view','email.send',
-      'cms.view','cms.edit','support.view','support.respond','support.close',
-      'security.view','security.manage','config.view','config.edit','audit.view','admin.create','admin.delete'],
+      'cms.view','cms.edit','media.view','media.manage','support.view','support.respond','support.close',
+      'security.view','security.manage','rates.view','rates.manage','integrations.view','integrations.manage',
+      'features.view','features.manage','config.view','config.edit','health.view',
+      'operations.view','operations.manage','reconciliation.view','reconciliation.manage',
+      'audit.view','admin.create','admin.delete','admin.roles.manage'],
     isSystem: true, color: '#EF4444', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z',
   },
   {
     id: 'role_finance_admin', name: 'FINANCE_ADMIN', label: 'Finance Admin',
     description: 'Access to transactions, reports, and financial operations. Cannot modify users or security settings.',
-    permissions: ['dashboard.view','transactions.view','transactions.approve','transactions.reverse',
-      'reports.view','reports.export','users.view','cards.view'],
+    permissions: ['dashboard.view','users.view','accounts.view','accounts.manage','ledger.adjust',
+      'transactions.view','transactions.approve','transactions.reverse','transfers.view','transfers.manage',
+      'cards.view','wallets.view','trading.view','trading.manage','rates.view','rates.manage',
+      'reports.view','reports.export','reconciliation.view','reconciliation.manage','audit.view'],
     isSystem: true, color: '#F59E0B', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z',
   },
   {
@@ -93,6 +110,31 @@ const SYSTEM_ROLES: Role[] = [
     permissions: ['dashboard.view','users.view','users.kyc','compliance.view','compliance.manage',
       'reports.view','reports.export','audit.view','transactions.view'],
     isSystem: true, color: '#10B981', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'role_content_admin', name: 'CONTENT_ADMIN', label: 'Content Admin',
+    description: 'Manages website content, media, navigation, and customer communications without financial access.',
+    permissions: ['dashboard.view','cms.view','cms.edit','media.view','media.manage','email.view',
+      'features.view','config.view'],
+    isSystem: true, color: '#EC4899', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'role_operations_admin', name: 'OPERATIONS_ADMIN', label: 'Operations Admin',
+    description: 'Runs customer, account, transfer, support, and platform operations without security-policy control.',
+    permissions: ['dashboard.view','users.view','users.edit','accounts.view','accounts.manage','cards.view','cards.manage',
+      'transactions.view','transfers.view','transfers.manage','wallets.view','wallets.manage','trading.view',
+      'support.view','support.respond','support.close','reports.view','rates.view','integrations.view',
+      'features.view','config.view','health.view','operations.view','operations.manage','audit.view'],
+    isSystem: true, color: '#06B6D4', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'role_auditor', name: 'AUDITOR', label: 'Auditor',
+    description: 'Read-only access to operational records, controls, reports, health, and immutable audit history.',
+    permissions: ['dashboard.view','users.view','accounts.view','cards.view','transactions.view','transfers.view',
+      'wallets.view','trading.view','compliance.view','reports.view','email.view','cms.view','media.view',
+      'support.view','security.view','rates.view','integrations.view','features.view','config.view','health.view',
+      'operations.view','audit.view'],
+    isSystem: true, color: '#94A3B8', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z',
   },
 ];
 
@@ -166,6 +208,10 @@ export const PERMISSION_CATALOGUE: PermissionDef[] = [
   { key: 'users.edit',              label: 'Edit Customers',           description: 'Modify customer profile data, status, and tier.',                        group: 'Customers',     risk: 'medium' },
   { key: 'users.delete',            label: 'Delete Customers',         description: 'Permanently delete customer accounts and associated data.',              group: 'Customers',     risk: 'critical' },
   { key: 'users.kyc',               label: 'Manage KYC',               description: 'Approve, reject, or request re-submission of KYC documents.',           group: 'Customers',     risk: 'high' },
+  // Accounts and ledger
+  { key: 'accounts.view',           label: 'View Accounts',            description: 'Read customer account configuration and ledger-derived balances.',       group: 'Accounts',      risk: 'low' },
+  { key: 'accounts.manage',         label: 'Manage Accounts',          description: 'Manage account status, controls, and restrictions.',                     group: 'Accounts',      risk: 'high' },
+  { key: 'ledger.adjust',           label: 'Post Ledger Adjustments',  description: 'Post a reasoned, balanced and audited controlled ledger adjustment.',    group: 'Accounts',      risk: 'critical' },
   // Cards
   { key: 'cards.view',              label: 'View Cards',               description: 'View virtual card details and transaction history.',                     group: 'Cards',         risk: 'low' },
   { key: 'cards.manage',            label: 'Manage Cards',             description: 'Issue, freeze, replace, and set limits on virtual cards.',               group: 'Cards',         risk: 'high' },
@@ -173,6 +219,12 @@ export const PERMISSION_CATALOGUE: PermissionDef[] = [
   { key: 'transactions.view',       label: 'View Transactions',        description: 'Read transaction records and history.',                                  group: 'Transactions',  risk: 'low' },
   { key: 'transactions.approve',    label: 'Approve Transactions',     description: 'Approve pending or flagged transactions.',                               group: 'Transactions',  risk: 'high' },
   { key: 'transactions.reverse',    label: 'Reverse Transactions',     description: 'Reverse or refund completed transactions.',                              group: 'Transactions',  risk: 'critical' },
+  { key: 'transfers.view',          label: 'View Transfers',           description: 'Read transfer instructions, states, and beneficiary controls.',          group: 'Transfers',     risk: 'low' },
+  { key: 'transfers.manage',        label: 'Manage Transfers',         description: 'Review, cancel, or advance eligible controlled transfers.',              group: 'Transfers',     risk: 'high' },
+  { key: 'wallets.view',            label: 'View Wallets',             description: 'Read masked wallet records and activity.',                               group: 'Wallets',       risk: 'low' },
+  { key: 'wallets.manage',          label: 'Manage Wallets',           description: 'Manage wallet status and permitted metadata.',                           group: 'Wallets',       risk: 'high' },
+  { key: 'trading.view',            label: 'View Trading',             description: 'Read configured market data, orders, positions, and activity.',          group: 'Trading',       risk: 'low' },
+  { key: 'trading.manage',          label: 'Manage Trading',           description: 'Manage eligible trading configuration and controlled orders.',           group: 'Trading',       risk: 'high' },
   // Compliance
   { key: 'compliance.view',         label: 'View Compliance',          description: 'Access AML flags, KYC queue, and regulatory checklists.',               group: 'Compliance',    risk: 'low' },
   { key: 'compliance.manage',       label: 'Manage Compliance',        description: 'Resolve AML flags, update compliance status, and file reports.',        group: 'Compliance',    risk: 'high' },
@@ -185,6 +237,8 @@ export const PERMISSION_CATALOGUE: PermissionDef[] = [
   // CMS
   { key: 'cms.view',                label: 'View CMS',                 description: 'Read website content, banners, and SEO settings.',                     group: 'CMS',           risk: 'low' },
   { key: 'cms.edit',                label: 'Edit CMS',                 description: 'Modify website content, banners, navigation, and SEO settings.',       group: 'CMS',           risk: 'medium' },
+  { key: 'media.view',              label: 'View Media',               description: 'Read media metadata and assignments.',                                   group: 'Media',         risk: 'low' },
+  { key: 'media.manage',            label: 'Manage Media',             description: 'Upload, replace, assign, and remove validated media assets.',            group: 'Media',         risk: 'medium' },
   // Support
   { key: 'support.view',            label: 'View Support',             description: 'Read support tickets, messages, and feedback.',                         group: 'Support',       risk: 'low' },
   { key: 'support.respond',         label: 'Respond to Support',       description: 'Reply to tickets and customer messages.',                               group: 'Support',       risk: 'medium' },
@@ -192,14 +246,26 @@ export const PERMISSION_CATALOGUE: PermissionDef[] = [
   // Security
   { key: 'security.view',           label: 'View Security',            description: 'Access security logs, alerts, and session data.',                      group: 'Security',      risk: 'low' },
   { key: 'security.manage',         label: 'Manage Security',          description: 'Modify IP lists, rate limits, 2FA policy, and terminate sessions.',    group: 'Security',      risk: 'critical' },
+  { key: 'rates.view',              label: 'View Rates',               description: 'Read rate and fee configuration and history.',                           group: 'Rates',         risk: 'low' },
+  { key: 'rates.manage',            label: 'Manage Rates',             description: 'Change controlled rate and fee configuration.',                          group: 'Rates',         risk: 'high' },
+  { key: 'integrations.view',       label: 'View Integrations',        description: 'Read integration status without revealing credentials.',                 group: 'Integrations',  risk: 'low' },
+  { key: 'integrations.manage',     label: 'Manage Integrations',      description: 'Change approved server-side integration configuration.',                 group: 'Integrations',  risk: 'critical' },
+  { key: 'features.view',           label: 'View Feature Flags',       description: 'Read customer and operations feature availability.',                    group: 'Features',      risk: 'low' },
+  { key: 'features.manage',         label: 'Manage Feature Flags',     description: 'Enable or disable eligible presentation and workflow features.',        group: 'Features',      risk: 'high' },
   // Config
   { key: 'config.view',             label: 'View Configuration',       description: 'Read platform configuration and feature flags.',                       group: 'Configuration', risk: 'low' },
   { key: 'config.edit',             label: 'Edit Configuration',       description: 'Modify platform configuration, feature flags, and exchange rates.',    group: 'Configuration', risk: 'high' },
+  { key: 'health.view',             label: 'View System Health',       description: 'Read redacted service, database, storage, and email health.',            group: 'Configuration', risk: 'low' },
+  { key: 'operations.view',         label: 'View Operations',          description: 'Read operational queues, status, and workload.',                         group: 'Operations',    risk: 'low' },
+  { key: 'operations.manage',       label: 'Manage Operations',        description: 'Assign and update controlled operational work.',                        group: 'Operations',    risk: 'high' },
+  { key: 'reconciliation.view',     label: 'View Reconciliation',      description: 'Read reconciliation runs, breaks, and evidence.',                       group: 'Reconciliation', risk: 'low' },
+  { key: 'reconciliation.manage',   label: 'Manage Reconciliation',    description: 'Run or resolve controlled reconciliation workflows.',                   group: 'Reconciliation', risk: 'high' },
   // Audit
   { key: 'audit.view',              label: 'View Audit Log',           description: 'Access the full admin audit trail.',                                   group: 'Audit',         risk: 'medium' },
   // Admin management
   { key: 'admin.create',            label: 'Create Admins',            description: 'Create new admin accounts and assign roles.',                          group: 'Admin Mgmt',    risk: 'critical' },
   { key: 'admin.delete',            label: 'Delete Admins',            description: 'Remove admin accounts.',                                               group: 'Admin Mgmt',    risk: 'critical' },
+  { key: 'admin.roles.manage',      label: 'Manage Admin Roles',       description: 'Change system-role permission assignments.',                            group: 'Admin Mgmt',    risk: 'critical' },
 ];
 
 // ─── Rate Limit Config ────────────────────────────────────────────────────────

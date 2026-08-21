@@ -30,7 +30,7 @@ export default async function handler(req: Request, res: Response) {
   }
 
   const normalised = email.trim().toLowerCase();
-  const admin = findAdminByEmail(normalised);
+  const admin = await findAdminByEmail(normalised);
 
   if (admin) {
     // Issue token and send email — fire-and-forget so timing is not leaked

@@ -12,6 +12,7 @@ export interface AdminUser {
   name: string;
   role: string;
   avatar: string;
+  permissions: string[];
 }
 
 interface AdminAuthCtx {

@@ -73,12 +73,6 @@ export async function requireAdminAuth(req: Request, res: Response, next: NextFu
     return;
   }
 
-  if (session.role !== 'SUPER_ADMIN') {
-    res.clearCookie(COOKIE_NAME, { path: COOKIE_PATH });
-    res.status(403).json({ error: 'This administration is restricted to the super-administrator.', code: 'SUPER_ADMIN_REQUIRED' });
-    return;
-  }
-
   req.adminSession = session;
   req.adminToken   = token;
   next();
@@ -95,5 +89,5 @@ export async function resolveAdminSession(req: Request): Promise<Session | null>
   const ip = req.ip ?? 'unknown';
   const ua = req.headers['user-agent'] ?? '';
   const session = await getSession(token, { ip, ua });
-  return session?.role === 'SUPER_ADMIN' ? session : null;
+  return session;
 }

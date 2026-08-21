@@ -15,6 +15,7 @@
 import type { Request, Response } from 'express';
 import crypto from 'node:crypto';
 import { findAdminByEmail, verifyPassword } from '../../../../lib/adminCredentials.js';
+import { permissionsForAdminRole } from '../../../../lib/adminAuthorizationMiddleware.js';
 import { createSession } from '../../../../lib/sessionStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 import { appendLoginEvent } from '../../../../lib/loginLog.js';
@@ -46,7 +47,7 @@ export default async function handler(req: Request, res: Response) {
   }
 
   // ── Credential verification ──────────────────────────────────────────────
-  const admin = findAdminByEmail(email);
+  const admin = await findAdminByEmail(email);
 
   // Always run a password verification path to reduce timing-based user enumeration.
   const hashToCheck = admin?.passwordHash ?? '$2a$12$invalidhashpaddingtomakethiswork00000000000000000000000';
@@ -59,12 +60,6 @@ export default async function handler(req: Request, res: Response) {
     appendAudit({ event: 'login_failed', email, ip, reason, meta: { failCount } });
     await appendLoginEvent({ actor: 'admin', email, result: 'failed', ip, ua, reason });
     return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'superadmin') {
-    appendAudit({ event: 'login_blocked', adminId: admin.id, email, ip, reason: 'super_admin_only' });
-    await appendLoginEvent({ actor: 'admin', email, userId: admin.id, result: 'failed', ip, ua, reason: 'super_admin_only' });
-    return res.status(403).json({ error: 'This administration is restricted to the super-administrator.', code: 'SUPER_ADMIN_REQUIRED' });
   }
 
   const trustedDeviceToken = (req.cookies as Record<string, string> | undefined)?.[DEVICE_COOKIE];
@@ -104,7 +99,7 @@ export default async function handler(req: Request, res: Response) {
   await createSession(sessionToken, {
     adminId:   admin.id,
     email:     admin.email,
-    role:      'SUPER_ADMIN',
+    role:      admin.role,
     createdAt: new Date().toISOString(),
     ip,
     ua,
@@ -123,8 +118,9 @@ export default async function handler(req: Request, res: Response) {
   // Set HttpOnly session cookie
   res.cookie(COOKIE_NAME, sessionToken, sessionCookieOptions(SESSION_MAX_MS));
 
+  const permissions = await permissionsForAdminRole(admin.role);
   return res.json({
     ok:    true,
-    admin: { id: admin.id, email: admin.email, name: admin.name, role: 'SUPER_ADMIN', avatar: admin.avatar },
+    admin: { id: admin.id, email: admin.email, name: admin.name, role: admin.role, avatar: admin.avatar, permissions },
   });
 }

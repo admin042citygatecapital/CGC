@@ -17,6 +17,7 @@ import type { Request, Response } from 'express';
 import crypto from 'node:crypto';
 import { verifyOtp, getChallengeEmail } from '../../../../../lib/otpStore.js';
 import { findAdminByEmail } from '../../../../../lib/adminCredentials.js';
+import { permissionsForAdminRole } from '../../../../../lib/adminAuthorizationMiddleware.js';
 import { createSession } from '../../../../../lib/sessionStore.js';
 import { appendAudit } from '../../../../../lib/auditLog.js';
 import { appendLoginEvent } from '../../../../../lib/loginLog.js';
@@ -62,15 +63,10 @@ export default async function handler(req: Request, res: Response) {
   }
 
   // OTP verified — look up admin
-  const admin = findAdminByEmail(email);
+  const admin = await findAdminByEmail(email);
   if (!admin) {
     return res.status(500).json({ error: 'Admin account not found' });
   }
-  if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'superadmin') {
-    appendAudit({ event: 'login_blocked', adminId: admin.id, email, ip, reason: 'super_admin_only' });
-    return res.status(403).json({ error: 'This administration is restricted to the super-administrator.', code: 'SUPER_ADMIN_REQUIRED' });
-  }
-
   await recordLoginSuccess(email, ip);
 
   // Create session
@@ -78,7 +74,7 @@ export default async function handler(req: Request, res: Response) {
   await createSession(sessionToken, {
     adminId:   admin.id,
     email:     admin.email,
-    role:      'SUPER_ADMIN',
+    role:      admin.role,
     createdAt: new Date().toISOString(),
     ip,
     ua,
@@ -112,9 +108,10 @@ export default async function handler(req: Request, res: Response) {
   // Fire-and-forget login alert
   sendAdminLoginAlertEmail(admin.email, admin.name, ip, ua, undefined, false).catch(() => {});
 
+  const permissions = await permissionsForAdminRole(admin.role);
   return res.json({
     ok:    true,
     deviceRegistered,
-    admin: { id: admin.id, email: admin.email, name: admin.name, role: 'SUPER_ADMIN', avatar: admin.avatar },
+    admin: { id: admin.id, email: admin.email, name: admin.name, role: admin.role, avatar: admin.avatar, permissions },
   });
 }

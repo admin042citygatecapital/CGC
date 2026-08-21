@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { NextFunction, Request, Response } from 'express';
 
-const { appendAudit } = vi.hoisted(() => ({ appendAudit: vi.fn() }));
-vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit }));
+const { appendAudit, appendCriticalAudit } = vi.hoisted(() => ({ appendAudit: vi.fn(), appendCriticalAudit: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit, appendCriticalAudit }));
 
 import { auditAdminMutation } from '../../server/lib/adminMutationAuditMiddleware.js';
 
@@ -29,7 +29,7 @@ describe('admin mutation audit middleware', () => {
     expect(next).toHaveBeenCalledOnce();
   });
 
-  it('records metadata after an authenticated write finishes', () => {
+  it('records intent before execution and metadata after an authenticated write finishes', async () => {
     appendAudit.mockClear();
     const next = vi.fn() as NextFunction;
     let finish: (() => void) | undefined;
@@ -38,10 +38,11 @@ describe('admin mutation audit middleware', () => {
       once: vi.fn((_event: string, callback: () => void) => { finish = callback; }),
     } as unknown as Response;
 
-    auditAdminMutation(adminRequest('POST'), response, next);
+    await auditAdminMutation(adminRequest('POST'), response, next);
     finish?.();
 
     expect(next).toHaveBeenCalledOnce();
+    expect(appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_api_mutation_intent', adminId: 'admin-1' }));
     expect(appendAudit).toHaveBeenCalledWith(expect.objectContaining({
       event: 'admin_api_mutation',
       adminId: 'admin-1',

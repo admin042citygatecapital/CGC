@@ -15,7 +15,30 @@ const INACTIVITY_MS          = (parseInt(process.env.SESSION_TIMEOUT_MINUTES ?? 
 const ABSOLUTE_TTL_MS        = (parseInt(process.env.SESSION_MAX_HOURS        ?? '8',  10)) * 3_600_000;
 const MAX_SESSIONS_PER_ADMIN = 5;
 
-export type AdminRole = 'SUPER_ADMIN' | 'FINANCE_ADMIN' | 'SECURITY_ADMIN' | 'SUPPORT_ADMIN' | 'COMPLIANCE_ADMIN';
+export type AdminRole =
+  | 'SUPER_ADMIN'
+  | 'FINANCE_ADMIN'
+  | 'COMPLIANCE_ADMIN'
+  | 'SECURITY_ADMIN'
+  | 'SUPPORT_ADMIN'
+  | 'CONTENT_ADMIN'
+  | 'OPERATIONS_ADMIN'
+  | 'AUDITOR';
+
+export const ADMIN_ROLES: readonly AdminRole[] = [
+  'SUPER_ADMIN',
+  'FINANCE_ADMIN',
+  'COMPLIANCE_ADMIN',
+  'SECURITY_ADMIN',
+  'SUPPORT_ADMIN',
+  'CONTENT_ADMIN',
+  'OPERATIONS_ADMIN',
+  'AUDITOR',
+] as const;
+
+export function isAdminRole(value: unknown): value is AdminRole {
+  return typeof value === 'string' && (ADMIN_ROLES as readonly string[]).includes(value);
+}
 
 export interface Session {
   adminId:    string;

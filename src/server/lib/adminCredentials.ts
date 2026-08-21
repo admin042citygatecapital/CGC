@@ -13,12 +13,16 @@ import {
   hashPassword as hashSecurePassword,
   verifyPassword as verifySecurePassword,
 } from './passwordHash.js';
+import { eq } from 'drizzle-orm';
+import { getDb, isDatabaseConfigured } from '../db/db.js';
+import { admins } from '../db/schema.js';
+import { isAdminRole, type AdminRole } from './sessionStore.js';
 
 export interface AdminRecord {
   id:           string;
   email:        string;
   name:         string;
-  role:         string;
+  role:         AdminRole;
   avatar:       string;
   passwordHash: string;
 }
@@ -28,7 +32,7 @@ const ADMIN_STATIC: Omit<AdminRecord, 'passwordHash'>[] = [
     id:     'admin_001',
     email:  'admin@citygate.capital',
     name:   'Super Admin',
-    role:   'superadmin',
+    role:   'SUPER_ADMIN',
     avatar: 'SA',
   },
 ];
@@ -55,8 +59,16 @@ export function getAdminUsers(): AdminRecord[] {
   }));
 }
 
-export function findAdminByEmail(email: string): AdminRecord | undefined {
-  return getAdminUsers().find(u => u.email.toLowerCase() === email.toLowerCase());
+export async function findAdminByEmail(email: string): Promise<AdminRecord | undefined> {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (isDatabaseConfigured()) {
+    const row = (await getDb().select().from(admins).where(eq(admins.email, normalizedEmail)).limit(1))[0];
+    if (row?.isActive && isAdminRole(row.role)) {
+      const initials = row.name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase();
+      return { id: row.id, email: row.email, name: row.name, role: row.role, avatar: initials || 'A', passwordHash: row.passwordHash };
+    }
+  }
+  return getAdminUsers().find(user => user.email.toLowerCase() === normalizedEmail);
 }
 
 /** Create new administrator hashes using the platform's Argon2id policy. */

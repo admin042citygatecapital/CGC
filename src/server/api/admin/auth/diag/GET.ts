@@ -33,7 +33,7 @@ export default async function handler(req: Request, res: Response) {
     }
   }
 
-  const admin = findAdminByEmail('admin@citygate.capital');
+  const admin = await findAdminByEmail('admin@citygate.capital');
   if (!admin) {
     return res.json({ ok: false, error: 'Admin record not found in ADMIN_USERS' });
   }

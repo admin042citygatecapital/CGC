@@ -42,7 +42,16 @@ export const txStatusEnum = pgEnum('tx_status', ['pending', 'completed', 'failed
 
 export const txCurrencyEnum = pgEnum('tx_currency', ['USD', 'EUR', 'GBP', 'BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'CHF', 'JPY', 'CAD', 'AUD', 'SGD', 'AED', 'NGN']);
 
-export const adminRoleEnum = pgEnum('admin_role', ['SUPER_ADMIN', 'FINANCE_ADMIN', 'SECURITY_ADMIN', 'SUPPORT_ADMIN', 'COMPLIANCE_ADMIN']);
+export const adminRoleEnum = pgEnum('admin_role', [
+  'SUPER_ADMIN',
+  'FINANCE_ADMIN',
+  'SECURITY_ADMIN',
+  'SUPPORT_ADMIN',
+  'COMPLIANCE_ADMIN',
+  'CONTENT_ADMIN',
+  'OPERATIONS_ADMIN',
+  'AUDITOR',
+]);
 
 export const orderSideEnum = pgEnum('order_side', ['buy', 'sell']);
 export const orderTypeEnum = pgEnum('order_type', ['market', 'limit', 'stop', 'stop_limit']);
