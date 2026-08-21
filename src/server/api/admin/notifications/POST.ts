@@ -2,11 +2,27 @@ import crypto from 'node:crypto';
 import type { Request, Response } from 'express';
 import { getQueryClient, isDatabaseConfigured } from '../../../db/db.js';
 import { appendCriticalAudit } from '../../../lib/auditLog.js';
+import { requireIdempotency } from '../../../lib/idempotency.js';
 import { createNotification } from '../../../lib/notificationStore.js';
 import { loadAllUsers } from '../../../lib/userStore.js';
 
 const CATEGORIES = new Set(['customer', 'security', 'maintenance', 'service', 'support']);
 const TARGETS = new Set(['customer', 'group', 'all']);
+
+interface ExistingDispatch {
+  id: string;
+  requestFingerprint: string;
+  status: string;
+  recipientCount: number;
+  deliveredCount: number;
+  failedCount: number;
+}
+
+function replayHttpStatus(status: string): number {
+  if (status === 'pending') return 202;
+  if (status === 'failed') return 502;
+  return 200;
+}
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -26,6 +42,33 @@ export default async function handler(req: Request, res: Response) {
   if (targetType === 'customer' && !userId) return res.status(400).json({ ok: false, error: 'A customer is required.' });
   if (targetType !== 'customer' && confirmation !== 'CONFIRM BULK SEND') return res.status(409).json({ ok: false, error: 'Type CONFIRM BULK SEND to authorize this bulk communication.' });
 
+  const normalizedRequest = { category, targetType, userId, title, message, link, reason, group };
+  const idempotency = requireIdempotency(req, res, 'admin-notification', normalizedRequest);
+  if (!idempotency) return;
+
+  const readExisting = async (): Promise<ExistingDispatch | undefined> => {
+    if (!isDatabaseConfigured()) return undefined;
+    const rows = await getQueryClient()<ExistingDispatch[]>`
+      SELECT id, request_fingerprint AS "requestFingerprint", status,
+             recipient_count AS "recipientCount", delivered_count AS "deliveredCount",
+             failed_count AS "failedCount"
+        FROM admin_notification_dispatches
+       WHERE idempotency_key = ${idempotency.key}
+       LIMIT 1
+    `;
+    return rows[0];
+  };
+  const existing = await readExisting();
+  if (existing) {
+    if (existing.requestFingerprint !== idempotency.fingerprint) {
+      return res.status(409).json({ ok: false, error: 'This idempotency key was already used for a different notification dispatch.' });
+    }
+    return res.status(replayHttpStatus(existing.status)).json({
+      ok: existing.status !== 'failed', replayed: true, dispatchId: existing.id, status: existing.status,
+      recipientCount: existing.recipientCount, delivered: existing.deliveredCount, failed: existing.failedCount,
+    });
+  }
+
   const users = (await loadAllUsers()).filter(user => {
     if (targetType === 'customer') return user.id === userId;
     if (targetType === 'all') return true;
@@ -44,10 +87,22 @@ export default async function handler(req: Request, res: Response) {
   });
 
   if (isDatabaseConfigured()) {
-    await getQueryClient()`INSERT INTO admin_notification_dispatches
-      (id, category, target_type, target_spec, title, message, link, reason, status, created_by, recipient_count)
-      VALUES (${dispatchId}, ${category}, ${targetType}, ${JSON.stringify({ userId: userId || undefined, group })}::jsonb,
-              ${title}, ${message}, ${link || null}, ${reason}, 'pending', ${session.adminId}, ${users.length})`;
+    try {
+      await getQueryClient()`INSERT INTO admin_notification_dispatches
+        (id, idempotency_key, request_fingerprint, category, target_type, target_spec, title, message, link, reason, status, created_by, recipient_count)
+        VALUES (${dispatchId}, ${idempotency.key}, ${idempotency.fingerprint}, ${category}, ${targetType}, ${JSON.stringify({ userId: userId || undefined, group })}::jsonb,
+                ${title}, ${message}, ${link || null}, ${reason}, 'pending', ${session.adminId}, ${users.length})`;
+    } catch (error) {
+      const raced = await readExisting();
+      if (!raced) throw error;
+      if (raced.requestFingerprint !== idempotency.fingerprint) {
+        return res.status(409).json({ ok: false, error: 'This idempotency key was already used for a different notification dispatch.' });
+      }
+      return res.status(replayHttpStatus(raced.status)).json({
+        ok: raced.status !== 'failed', replayed: true, dispatchId: raced.id, status: raced.status,
+        recipientCount: raced.recipientCount, delivered: raced.deliveredCount, failed: raced.failedCount,
+      });
+    }
   }
 
   let delivered = 0;
@@ -76,4 +131,3 @@ export default async function handler(req: Request, res: Response) {
   });
   return res.status(failed === users.length ? 502 : 201).json({ ok: failed !== users.length, dispatchId, status, recipientCount: users.length, delivered, failed });
 }
-

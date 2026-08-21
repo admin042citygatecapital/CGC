@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Bell, RefreshCw, Send, ShieldCheck } from 'lucide-react';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import AdminLayout from '@/layouts/AdminLayout';
@@ -10,20 +10,30 @@ export default function AdminNotifications() {
   const [dispatches, setDispatches] = useState<Dispatch[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const idempotencyKey = useRef(crypto.randomUUID());
   const [form, setForm] = useState({ category:'customer', targetType:'customer', userId:'', title:'', message:'', link:'', reason:'', confirmation:'', status:'', country:'', accountTier:'' });
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/notifications', { credentials:'same-origin', headers:authHeaders() });
     if (res.ok) setDispatches((await res.json()).dispatches ?? []);
   }, []);
   useEffect(() => { void load(); }, [load]);
-  const set = (key:string, value:string) => setForm(current => ({ ...current, [key]:value }));
+  const set = (key:string, value:string) => {
+    idempotencyKey.current = crypto.randomUUID();
+    setForm(current => ({ ...current, [key]:value }));
+  };
   const submit = async () => {
     setBusy(true); setNotice('');
     try {
-      const res = await fetch('/api/admin/notifications', { method:'POST', credentials:'same-origin', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:JSON.stringify({ ...form, group:{ status:form.status, country:form.country, accountTier:form.accountTier } }) });
+      const res = await fetch('/api/admin/notifications', {
+        method:'POST',
+        credentials:'same-origin',
+        headers:{ ...authHeaders(), 'Content-Type':'application/json', 'Idempotency-Key':`notification:${idempotencyKey.current}` },
+        body:JSON.stringify({ ...form, group:{ status:form.status, country:form.country, accountTier:form.accountTier } }),
+      });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? 'Notification dispatch failed.');
       setNotice(`Dispatch ${body.dispatchId} completed: ${body.delivered} delivered, ${body.failed} failed.`);
+      idempotencyKey.current = crypto.randomUUID();
       setForm(current => ({ ...current, title:'', message:'', link:'', reason:'', confirmation:'' }));
       await load();
     } catch (error) { setNotice(error instanceof Error ? error.message : 'Dispatch failed.'); }
