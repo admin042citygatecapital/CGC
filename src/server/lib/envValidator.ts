@@ -33,10 +33,13 @@ export interface EnvVarSpec {
   validate?: (value: string) => string | null;
 }
 
-function validateBcryptHash(value: string): string | null {
-  return /^\$2[aby]\$1[012]\$[./A-Za-z0-9]{53}$/.test(value)
+function validateAdminHash(value: string): string | null {
+  const isArgon2id = value.startsWith('$argon2id$');
+  const isLegacyBcrypt = /^\$2[aby]\$1[012]\$[./A-Za-z0-9]{53}$/.test(value);
+  const isLegacyPbkdf2 = /^\d+:[0-9a-f]+:[0-9a-f]+$/i.test(value);
+  return isArgon2id || isLegacyBcrypt || isLegacyPbkdf2
     ? null
-    : 'Must be a valid bcrypt hash with cost 10-12.';
+    : 'Must be an Argon2id hash or a supported legacy bcrypt/PBKDF2 hash.';
 }
 
 function validateSessionSecret(value: string): string | null {
@@ -75,10 +78,10 @@ const REGISTRY: EnvVarSpec[] = [
   {
     name:        'ADMIN_PASSWORD_HASH',
     aliases:     ['ADMIN_PASSWORD_HASH_V2'],
-    level:       'CRITICAL',
+    level:       'INFO',
     service:     'Admin Authentication',
-    validate:     validateBcryptHash,
-    description: 'bcrypt hash (cost 12) of the admin password. Generate with: node -e "const b=require(\'bcryptjs\'); console.log(b.hashSync(\'PASS\',12))"',
+    validate:     validateAdminHash,
+    description: 'Development-only administrator fallback hash. Production administrator credentials are database-backed.',
   },
   {
     name:        'ADMIN_EMAIL',

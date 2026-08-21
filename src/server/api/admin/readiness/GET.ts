@@ -29,7 +29,9 @@ import { verifyResendProvider } from '../../../lib/smtpTransport.js';
 import { getEmailLogs } from '../../../lib/emailQueue.js';
 import { assessResendHealth } from '../../../lib/emailProviderHealth.js';
 import { getRecentResendDeliveryEvents } from '../../../lib/resendWebhook.js';
-import { isDatabaseConfigured, testConnection } from '../../../db/db.js';
+import { getDb, isDatabaseConfigured, testConnection } from '../../../db/db.js';
+import { admins } from '../../../db/schema.js';
+import { eq } from 'drizzle-orm';
 import { getOperationalBackupStatus } from '../../../lib/operationalBackup.js';
 import { privateSubdirectory } from '../../../lib/storagePaths.js';
 import {
@@ -93,14 +95,49 @@ async function timed<T>(fn: () => Promise<T>): Promise<{ result: T; ms: number }
 
 // ── Individual checks ─────────────────────────────────────────────────────────
 
-function checkAdminAuth(): ReadinessCheck {
-  const hash = s('ADMIN_PASSWORD_HASH', 'ADMIN_PASSWORD_HASH_V2');
+async function checkAdminAuth(): Promise<ReadinessCheck> {
+  if (isDatabaseConfigured()) {
+    try {
+      const rows = await getDb()
+        .select({ id: admins.id, role: admins.role, isActive: admins.isActive })
+        .from(admins)
+        .where(eq(admins.email, 'admin@citygate.capital'))
+        .limit(1);
+      const admin = rows[0];
+      if (!admin) {
+        return {
+          id: 'admin_auth', name: 'Admin Authentication', subsystem: 'Authentication',
+          status: 'FAIL', critical: true,
+          message: 'The canonical database-backed SUPER_ADMIN account is missing.',
+        };
+      }
+      if (!admin.isActive || admin.role !== 'SUPER_ADMIN') {
+        return {
+          id: 'admin_auth', name: 'Admin Authentication', subsystem: 'Authentication',
+          status: 'FAIL', critical: true,
+          message: 'The canonical administrator is not an active SUPER_ADMIN.',
+        };
+      }
+      return {
+        id: 'admin_auth', name: 'Admin Authentication', subsystem: 'Authentication',
+        status: 'PASS', critical: true,
+        message: 'Database-backed SUPER_ADMIN authentication is configured.',
+      };
+    } catch {
+      return {
+        id: 'admin_auth', name: 'Admin Authentication', subsystem: 'Authentication',
+        status: 'FAIL', critical: true,
+        message: 'The canonical administrator credential store is unavailable.',
+      };
+    }
+  }
+
+  const hash = s('ADMIN_PASSWORD_HASH_V2', 'ADMIN_PASSWORD_HASH');
   if (!hash) {
     return {
       id: 'admin_auth', name: 'Admin Authentication', subsystem: 'Authentication',
       status: 'FAIL', critical: true,
-      message: 'ADMIN_PASSWORD_HASH secret is missing.',
-      detail: 'Admin login will fail. Add ADMIN_PASSWORD_HASH in Settings → Secrets.',
+      message: 'The development administrator fallback hash is missing.',
     };
   }
   const valid = hash.startsWith('$argon2') || hash.startsWith('$2a$') ||
@@ -109,15 +146,14 @@ function checkAdminAuth(): ReadinessCheck {
     return {
       id: 'admin_auth', name: 'Admin Authentication', subsystem: 'Authentication',
       status: 'FAIL', critical: true,
-      message: 'ADMIN_PASSWORD_HASH is not in a supported secure format.',
+      message: 'The development administrator fallback hash is not in a supported secure format.',
       detail: 'Use Argon2id. Legacy bcrypt and PBKDF2 hashes remain accepted for migration.',
     };
   }
   return {
     id: 'admin_auth', name: 'Admin Authentication', subsystem: 'Authentication',
     status: 'PASS', critical: true,
-    message: 'Admin password hash is present and securely formatted.',
-    detail: `Hash prefix: ${hash.slice(0, 7)}…`,
+    message: 'Development administrator fallback authentication is securely formatted.',
   };
 }
 
@@ -476,13 +512,14 @@ export default async function handler(_req: Request, res: Response): Promise<voi
   const t0 = Date.now();
 
   // Run async checks in parallel, sync checks inline
-  const [emailCheck, dbCheck] = await Promise.all([
+  const [adminAuthCheck, emailCheck, dbCheck] = await Promise.all([
+    checkAdminAuth(),
     checkEmailDelivery(),
     checkDatabase(),
   ]);
 
   const checks: ReadinessCheck[] = [
-    checkAdminAuth(),
+    adminAuthCheck,
     checkCustomerAuth(),
     emailCheck,
     checkSmartsupp(),

@@ -72,31 +72,42 @@ export async function verifyPassword(plain: string, stored: string): Promise<Ver
 
   // ── Legacy bcrypt path (transparent upgrade) ──────────────────────────────
   if (stored.startsWith('$2a$') || stored.startsWith('$2b$') || stored.startsWith('$2y$')) {
-    const bcrypt = await import('bcryptjs');
-    const ok = await bcrypt.compare(plain, stored);
-    if (!ok) return { ok: false };
-    const rehash = await hashPassword(plain);
-    return { ok: true, rehash };
+    try {
+      const bcrypt = await import('bcryptjs');
+      const ok = await bcrypt.compare(plain, stored);
+      if (!ok) return { ok: false };
+      const rehash = await hashPassword(plain);
+      return { ok: true, rehash };
+    } catch {
+      return { ok: false };
+    }
   }
 
   // ── PBKDF2 path (adminCredentials.ts legacy format: "100000:salt:hash") ───
   if (stored.includes(':') && !stored.startsWith('$')) {
-    const [iterStr, saltB64, hashB64] = stored.split(':');
-    if (!iterStr || !saltB64 || !hashB64) return { ok: false };
-    const iterations = parseInt(iterStr, 10);
-    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
-    const enc  = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw', enc.encode(plain), 'PBKDF2', false, ['deriveBits']
-    );
-    const derived = await crypto.subtle.deriveBits(
-      { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
-      keyMaterial, 256
-    );
-    const ok = btoa(String.fromCharCode(...new Uint8Array(derived))) === hashB64;
-    if (!ok) return { ok: false };
-    const rehash = await hashPassword(plain);
-    return { ok: true, rehash };
+    try {
+      const [iterStr, saltB64, hashB64] = stored.split(':');
+      if (!iterStr || !saltB64 || !hashB64) return { ok: false };
+      const iterations = parseInt(iterStr, 10);
+      if (!Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > 2_000_000) {
+        return { ok: false };
+      }
+      const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+      const enc  = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw', enc.encode(plain), 'PBKDF2', false, ['deriveBits']
+      );
+      const derived = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+        keyMaterial, 256
+      );
+      const ok = btoa(String.fromCharCode(...new Uint8Array(derived))) === hashB64;
+      if (!ok) return { ok: false };
+      const rehash = await hashPassword(plain);
+      return { ok: true, rehash };
+    } catch {
+      return { ok: false };
+    }
   }
 
   return { ok: false };

@@ -84,7 +84,6 @@ export default async function handler(req: Request, res: Response) {
   await appendLoginEvent({
     actor: 'admin', email: admin.email, userId: admin.id,
     result: 'success', ip, ua,
-    sessionId: sessionToken.slice(0, 8),
   });
 
   // Set session cookie

@@ -1,8 +1,8 @@
 /**
  * Secure administrator credential store.
  *
- * The password hash is loaded from the ADMIN_PASSWORD_HASH environment secret.
- * Hashes are resolved at request time via env — never at module-load time.
+ * Production credentials are loaded from PostgreSQL. An environment-backed
+ * identity is retained only for database-free local development.
  *
  * New hashes use Argon2id. Legacy bcrypt/PBKDF2 hashes remain verifiable so
  * existing installations can migrate without an emergency password reset.
@@ -17,6 +17,7 @@ import { eq } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { admins } from '../db/schema.js';
 import { isAdminRole, type AdminRole } from './sessionStore.js';
+import { isProd } from './envConfig.js';
 
 export interface AdminRecord {
   id:           string;
@@ -67,7 +68,12 @@ export async function findAdminByEmail(email: string): Promise<AdminRecord | und
       const initials = row.name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase();
       return { id: row.id, email: row.email, name: row.name, role: row.role, avatar: initials || 'A', passwordHash: row.passwordHash };
     }
+    // A configured database is the production source of truth. Do not fall
+    // through to an environment-backed identity when a row is absent,
+    // inactive, suspended, or has an invalid role.
+    return undefined;
   }
+  if (isProd) return undefined;
   return getAdminUsers().find(user => user.email.toLowerCase() === normalizedEmail);
 }
 

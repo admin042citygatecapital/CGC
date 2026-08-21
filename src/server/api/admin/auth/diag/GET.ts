@@ -52,14 +52,15 @@ export default async function handler(req: Request, res: Response) {
       email:      admin.email,
       name:       admin.name,
       role:       admin.role,
-      hashPrefix: admin.passwordHash.slice(0, 7),
-      hashLength: admin.passwordHash.length,
+      hashAlgorithm: admin.passwordHash.startsWith('$argon2id$') ? 'argon2id'
+        : admin.passwordHash.startsWith('$2') ? 'bcrypt'
+          : admin.passwordHash.startsWith('pbkdf2:') ? 'pbkdf2'
+            : 'unsupported',
     },
     sessions: {
       total:  sessions.length,
       active: activeSessions.length,
       list:   activeSessions.map(s => ({
-        tokenPrefix: s.token.slice(0, 8) + '...',
         email:       s.email,
         role:        s.role,
         createdAt:   s.createdAt,

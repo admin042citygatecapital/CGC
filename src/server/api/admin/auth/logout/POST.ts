@@ -16,7 +16,7 @@ export default async function handler(req: Request, res: Response) {
 
   if (token && token.length === 64) {
     await deleteSession(token);
-    appendAudit({ event: 'logout', ip: req.ip ?? 'unknown', meta: { tokenPrefix: token.slice(0, 8) } });
+    appendAudit({ event: 'logout', ip: req.ip ?? 'unknown' });
   }
 
   // Always clear the cookie regardless of whether a token was found

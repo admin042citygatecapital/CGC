@@ -8,8 +8,12 @@
  * - all: true — terminate ALL sessions (nuclear option)
  */
 import type { Request, Response } from 'express';
+import crypto from 'node:crypto';
 import { deleteSession, deleteAllSessionsForAdmin, listSessions } from '../../../../lib/sessionStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
+function sessionReference(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 export default async function handler(req: Request, res: Response) {
   const { token, adminId, all } = req.body as { token?: string; adminId?: string; all?: boolean };
   const ip = req.ip ?? 'unknown';
@@ -33,8 +37,11 @@ export default async function handler(req: Request, res: Response) {
   }
 
   if (token) {
-    await deleteSession(token);
-    appendAudit({ event: 'admin_session_terminated', ip, meta: { token: token.slice(0, 8) + '...' } });
+    const sessions = await listSessions();
+    const matchingSession = sessions.find(session => sessionReference(session.token) === token);
+    if (!matchingSession) return res.status(404).json({ error: 'Session not found' });
+    await deleteSession(matchingSession.token);
+    appendAudit({ event: 'admin_session_terminated', ip });
     return res.json({ ok: true, message: 'Session terminated' });
   }
 

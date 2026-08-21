@@ -39,6 +39,7 @@
     "db:import:dry": "npx tsx src/server/db/importFlatFiles.ts --dry-run",
     "db:validate": "npx tsx src/server/db/validateMigration.ts",
     "db:rollback": "npx tsx src/server/db/rollback.ts",
+    "admin:rotate-password": "npx tsx scripts/rotate-super-admin-password.ts",
     "backup:operations": "npx tsx scripts/backup-operations.ts",
     "data:quarantine": "npx tsx scripts/quarantine-production-test-data.ts",
     "operations:quarantine": "npx tsx scripts/quarantine-operations-inbox.ts",

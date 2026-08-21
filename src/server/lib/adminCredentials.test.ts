@@ -20,4 +20,11 @@ describe('administrator password compatibility', () => {
     await expect(verifyPassword(password, hash)).resolves.toBe(true);
     await expect(verifyPassword('wrong-password', hash)).resolves.toBe(false);
   });
+
+  it('rejects malformed hashes without throwing', async () => {
+    await expect(verifyPassword('Any-Password-2026!', '$argon2id$malformed')).resolves.toBe(false);
+    await expect(verifyPassword('Any-Password-2026!', '$2b$12$malformed')).resolves.toBe(false);
+    await expect(verifyPassword('Any-Password-2026!', '100000:not-base64:not-base64')).resolves.toBe(false);
+    await expect(verifyPassword('Any-Password-2026!', 'not-a-supported-hash')).resolves.toBe(false);
+  });
 });
