@@ -128,6 +128,8 @@ import admin_newsletter_campaigns_send_post_77 from "./api/admin/newsletter/camp
 import admin_newsletter_subscribers_import_post_78 from "./api/admin/newsletter/subscribers/import/POST";
 import admin_newsletter_subscribers_unsubscribe_post_79 from "./api/admin/newsletter/subscribers/unsubscribe/POST";
 import admin_notifications_send_post_80 from "./api/admin/notifications/send/POST";
+import admin_notifications_get from "./api/admin/notifications/GET";
+import admin_notifications_post from "./api/admin/notifications/POST";
 import admin_rates_get_81 from "./api/admin/rates/GET";
 import admin_rates_fee_history_get_82 from "./api/admin/rates/fee-history/GET";
 import admin_rates_fx_markup_post_83 from "./api/admin/rates/fx-markup/POST";
@@ -725,6 +727,8 @@ app.post("/api/admin/newsletter/campaigns/send", admin_newsletter_campaigns_send
 app.post("/api/admin/newsletter/subscribers/import", admin_newsletter_subscribers_import_post_78);
 app.post("/api/admin/newsletter/subscribers/unsubscribe", admin_newsletter_subscribers_unsubscribe_post_79);
 app.post("/api/admin/notifications/send", admin_notifications_send_post_80);
+app.get("/api/admin/notifications", admin_notifications_get);
+app.post("/api/admin/notifications", admin_notifications_post);
 app.get("/api/admin/rates", admin_rates_get_81);
 app.get("/api/admin/rates/fee-history", admin_rates_fee_history_get_82);
 app.post("/api/admin/rates/fx-markup", admin_rates_fx_markup_post_83);

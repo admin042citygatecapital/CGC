@@ -99,6 +99,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Customer Success',
     items: [
       { label: 'Support',      href: '/admin/support',      icon: HeadphonesIcon,  badge: null, desc: 'Tickets & live chat' },
+      { label: 'Notifications', href: '/admin/notifications', icon: Bell,           badge: null, desc: 'Customer and service communications' },
       { label: 'Contacts',     href: '/admin/contacts',     icon: MessageSquare,   badge: null, desc: 'Contact form submissions' },
     ],
   },
@@ -134,7 +135,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Rates & Fees',     href: '/admin/rates',         icon: BarChart2,          badge: null, desc: 'Fee matrix & FX markup' },
       { label: 'API Docs',         href: '/admin/documentation', icon: BookOpen,           badge: null, desc: 'Internal API reference' },
       { label: 'Readiness',        href: '/admin/readiness',     icon: CheckSquare,        badge: null, desc: 'Deployment health checks' },
-      { label: 'System Health',    href: '/admin',               icon: Activity,           badge: null, desc: 'Database, email, API and service health' },
+      { label: 'System Health',    href: '/admin/system',        icon: Activity,           badge: null, desc: 'Database, email, API and service health' },
       { label: 'Sponsor Readiness', href: '/admin/sponsor-readiness', icon: ShieldCheck, badge: null, desc: 'UK sponsor controls and provider pack' },
       { label: 'Provider Sandbox', href: '/admin/provider-sandbox', icon: Beaker, badge: null, desc: 'Synthetic KYC, FX, payments & reconciliation' },
       { label: 'Financial Sandbox', href: '/admin/financial-sandbox', icon: Activity, badge: null, desc: 'Synthetic accounts, transfers, crypto & ledger adjustments' },

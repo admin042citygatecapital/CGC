@@ -19,7 +19,7 @@ function AdminOnly({ children }: { children: ReactNode }) {
     if (!loading && !admin) navigate('/admin/login', { replace: true });
   }, [admin, loading, navigate]);
   if (loading || !admin) return null;
-  return <><div className="pb-16 md:pb-0">{children}</div><CustomerMobileNav /></>;
+  return <>{children}</>;
 }
 
 /** Redirect to /login if not authenticated as customer */
@@ -30,7 +30,7 @@ function CustomerOnly({ children }: { children: ReactNode }) {
     if (!loading && !customer) navigate('/login?reason=session_expired', { replace: true });
   }, [customer, loading, navigate]);
   if (loading || !customer) return null;
-  return <>{children}</>;
+  return <><div className="pb-16 md:pb-0">{children}</div><CustomerMobileNav /></>;
 }
 
 function FeatureOnly({ feature, children }: { feature: PlatformFeatureKey; children: ReactNode }) {
@@ -127,6 +127,8 @@ const AdminDisputes = lazy(() => import('./pages/admin/disputes'));
 const AdminAssuranceExercises = lazy(() => import('./pages/admin/assurance-exercises'));
 const AdminLegalEntity = lazy(() => import('./pages/admin/legal-entity'));
 const AdminDeveloper       = lazy(() => import('./pages/admin/developer'));
+const AdminNotifications   = lazy(() => import('./pages/admin/notifications'));
+const AdminSystem          = lazy(() => import('./pages/admin/system'));
 const AdminEmailCenter     = lazy(() => import('./pages/admin/email'));
 const AdminAudit           = lazy(() => import('./pages/admin/audit'));
 const AdminReports         = lazy(() => import('./pages/admin/reports'));
@@ -244,6 +246,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/assurance-exercises', element: <AdminOnly><AdminAssuranceExercises /></AdminOnly> },
   { path: '/admin/legal-entity', element: <AdminOnly><AdminLegalEntity /></AdminOnly> },
   { path: '/admin/developer',       element: <AdminOnly><AdminDeveloper /></AdminOnly> },
+  { path: '/admin/notifications',   element: <AdminOnly><AdminNotifications /></AdminOnly> },
   { path: '/admin/audit',           element: <AdminOnly><AdminAudit /></AdminOnly> },
   { path: '/admin/email',           element: <AdminOnly><AdminEmailCenter /></AdminOnly> },
   { path: '/admin/reports',         element: <AdminOnly><AdminReports /></AdminOnly> },
@@ -253,6 +256,6 @@ export const routes: RouteObject[] = [
   { path: '/admin/configuration',   element: <AdminOnly><AdminConfig /></AdminOnly> },
   { path: '/admin/integrations',    element: <AdminOnly><AdminIntegrations /></AdminOnly> },
   { path: '/admin/trading',         element: <AdminOnly><AdminTrading /></AdminOnly> },
-  { path: '/admin/system',          element: <AdminOnly><AdminReadiness /></AdminOnly> },
+  { path: '/admin/system',          element: <AdminOnly><AdminSystem /></AdminOnly> },
   { path: '*', element: <NotFoundPage /> },
 ];

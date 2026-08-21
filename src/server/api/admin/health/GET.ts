@@ -16,6 +16,8 @@ interface DatabaseSummary {
   newsletterSubscribers: number;
   homepageVersions: number;
   mediaAssets: number;
+  emailQueuePending: number;
+  emailQueueFailed: number;
   operationsUpdatedAt: Date | null;
   homepageUpdatedAt: Date | null;
   mediaUpdatedAt: Date | null;
@@ -34,6 +36,8 @@ const emptySummary: DatabaseSummary = {
   newsletterSubscribers: 0,
   homepageVersions: 0,
   mediaAssets: 0,
+  emailQueuePending: 0,
+  emailQueueFailed: 0,
   operationsUpdatedAt: null,
   homepageUpdatedAt: null,
   mediaUpdatedAt: null,
@@ -54,6 +58,8 @@ async function getDatabaseSummary(): Promise<DatabaseSummary> {
       (SELECT count(*)::int FROM subscribers) AS "newsletterSubscribers",
       (SELECT count(*)::int FROM homepage_content_versions) AS "homepageVersions",
       (SELECT count(*)::int FROM media_assets) AS "mediaAssets",
+      (SELECT count(*)::int FROM email_queue WHERE status IN ('queued', 'sending')) AS "emailQueuePending",
+      (SELECT count(*)::int FROM email_queue WHERE status = 'failed') AS "emailQueueFailed",
       (SELECT max(updated_at) FROM operations_items) AS "operationsUpdatedAt",
       (SELECT max(created_at) FROM homepage_content_versions) AS "homepageUpdatedAt",
       (SELECT max(updated_at) FROM media_assets) AS "mediaUpdatedAt"
@@ -120,6 +126,8 @@ export default async function handler(_req: Request, res: Response) {
     email: {
       configured: emailConfigured,
       provider: resendConfigured ? 'Resend' : zohoConfigured ? 'Zoho fallback' : 'Not configured',
+      queuePending: summary.emailQueuePending,
+      queueFailed: summary.emailQueueFailed,
     },
     checks: {
       api: 'PASS',
@@ -150,6 +158,13 @@ export default async function handler(_req: Request, res: Response) {
       platform: process.platform,
       arch: process.arch,
       pid: process.pid,
+    },
+    deployment: {
+      gitCommit: process.env.RENDER_GIT_COMMIT ?? 'local',
+      gitBranch: process.env.RENDER_GIT_BRANCH ?? 'local',
+      serviceIdConfigured: Boolean(process.env.RENDER_SERVICE_ID),
+      serviceName: process.env.RENDER_SERVICE_NAME ?? null,
+      instanceIdConfigured: Boolean(process.env.RENDER_INSTANCE_ID),
     },
     users: {
       total: summary.usersTotal,

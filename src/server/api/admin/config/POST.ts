@@ -23,11 +23,24 @@ const VALID_SECTIONS: ConfigSection[] = [
 
 export default async function handler(req: Request, res: Response) {
   try {
-    const { section, action, data } =
-      req.body as { section: ConfigSection; action?: string; data?: Record<string, unknown> };
+    const { section, action, data, reason, confirmation } =
+      req.body as { section: ConfigSection; action?: string; data?: Record<string, unknown>; reason?: string; confirmation?: string };
 
     if (!section || !VALID_SECTIONS.includes(section)) {
       return res.status(400).json({ error: `Invalid section. Must be one of: ${VALID_SECTIONS.join(', ')}` });
+    }
+
+    if (section === 'maintenanceMode') {
+      if (String(reason ?? '').trim().length < 8) return res.status(400).json({ error: 'A clear operational reason is required.' });
+      if (String(confirmation ?? '') !== 'CONFIRM MAINTENANCE MODE') return res.status(409).json({ error: 'Type CONFIRM MAINTENANCE MODE to continue.' });
+      await appendCriticalAudit({
+        event: 'admin_maintenance_mode_change_authorized',
+        adminId: req.adminSession?.adminId,
+        email: req.adminSession?.email,
+        ip: req.ip,
+        reason: String(reason),
+        meta: { enabled: Boolean(data?.enabled), requestId: String(req.get('X-Request-ID') ?? '') },
+      });
     }
 
     // ── Homepage: read/write the actual content JSON (virtual:content source of truth) ──
@@ -70,6 +83,13 @@ export default async function handler(req: Request, res: Response) {
     }
 
     const cfg = updateSection(section, data as any);
+    if (section === 'maintenanceMode') {
+      await appendCriticalAudit({
+        event: 'admin_maintenance_mode_changed', adminId: req.adminSession?.adminId,
+        email: req.adminSession?.email, ip: req.ip, reason: String(reason),
+        meta: { enabled: Boolean(data?.enabled) },
+      });
+    }
     const safe = { ...cfg, exchangeRates: { ...cfg.exchangeRates, apiKey: cfg.exchangeRates.apiKey ? '••••••••' : '' } };
     res.json({ ok: true, config: safe });
   } catch (err) {

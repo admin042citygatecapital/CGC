@@ -405,6 +405,8 @@ function ApiExplorer({ routes }: { routes: RouteEntry[] }) {
   );
 }
 
+export { ApiExplorer };
+
 // ─── Section: DB Diagnostics ──────────────────────────────────────────────────
 
 function DbDiagnostics({ data }: { data: DeveloperData['db'] }) {
@@ -874,7 +876,7 @@ export default function AdminDeveloper() {
     <>
       <Helmet>
         <title>Developer Center — City Gate Capital Admin</title>
-        <meta name="description" content="City Gate Capital developer tools — route explorer, API explorer, DB diagnostics, performance, dependencies, error monitor, build and deployment info." />
+        <meta name="description" content="City Gate Capital read-only developer diagnostics, route documentation, build information and service health." />
         <meta name="robots" content="noindex,nofollow" />
         <link rel="canonical" href="https://citygate.capital/admin/developer" />
       </Helmet>
@@ -888,7 +890,7 @@ export default function AdminDeveloper() {
                 <Terminal size={20} style={{ color: '#C9A84C' }} />
                 Developer Center
               </h1>
-              <p className="text-white/30 text-sm mt-0.5">Route explorer · API tester · DB diagnostics · Performance · Build info</p>
+              <p className="text-white/30 text-sm mt-0.5">Read-only route catalogue · DB diagnostics · Performance · Build info</p>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               {/* Health pills */}
@@ -935,10 +937,6 @@ export default function AdminDeveloper() {
 
               <SectionCard title="Route Explorer" subtitle={`${data.routes.total} registered routes across ${Object.keys(data.routes.byGroup).length} groups`} icon={Network} color="#C9A84C">
                 <RouteExplorer data={data.routes} />
-              </SectionCard>
-
-              <SectionCard title="API Explorer" subtitle="Send live requests to any endpoint" icon={Zap} color="#3B82F6" defaultOpen={false}>
-                <ApiExplorer routes={data.routes.catalogue} />
               </SectionCard>
 
               <SectionCard title="Database Diagnostics" subtitle={`${data.db.backend} · ${data.db.totalFiles} stores · ${data.db.healthy} healthy`} icon={Database} color="#8B5CF6">
