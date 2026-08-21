@@ -80,13 +80,13 @@ export async function sendMail(payload: MailPayload): Promise<SendResult> {
 
   if (!accountId) {
     const msg = 'email.skipped — ZOHO_ACCOUNT_ID not configured';
-    console.warn(msg, { to, subject });
+    console.warn(msg, { to });
     return { success: false, error: msg, attempts: 0, durationMs: 0 };
   }
 
   if (!authHeader) {
     const msg = 'email.skipped — no auth configured (add ZOHO_REFRESH_TOKEN + ZOHO_CLIENT_SECRET in Settings → Secrets)';
-    console.warn(msg, { to, subject });
+    console.warn(msg, { to });
     return { success: false, error: msg, attempts: 0, durationMs: 0 };
   }
 
@@ -105,7 +105,6 @@ export async function sendMail(payload: MailPayload): Promise<SendResult> {
   console.log(JSON.stringify({
     event:      'email.sending',
     to,
-    subject,
     contentBytes: Buffer.byteLength(body, 'utf8'),
   }));
 
@@ -137,7 +136,6 @@ export async function sendMail(payload: MailPayload): Promise<SendResult> {
         console.log(JSON.stringify({
           event:     'email.sent',
           to,
-          subject,
           attempt,
           messageId: messageId ?? 'n/a',
           durationMs: Date.now() - t0,
@@ -153,28 +151,28 @@ export async function sendMail(payload: MailPayload): Promise<SendResult> {
 
       // 401 — token expired or invalid: invalidate cache and retry once with fresh token
       if (res.status === 401) {
-        console.warn(JSON.stringify({ event: 'email.token_expired', to, subject, attempt }));
+        console.warn(JSON.stringify({ event: 'email.token_expired', to, attempt }));
         invalidateTokenCache();
         const freshToken = await resolveAuthHeader();
         if (freshToken) {
           authHeader = freshToken;
           continue; // retry immediately with fresh token, don't count as a retry
         }
-        console.error(JSON.stringify({ event: 'email.auth_error', to, subject, status: 401, body: responseText.slice(0, 400) }));
+        console.error(JSON.stringify({ event: 'email.auth_error', to, status: 401 }));
         return { success: false, error: lastError, attempts: attempt, durationMs: Date.now() - t0 };
       }
 
       // 403 — permission denied, won't recover
       if (res.status === 403) {
-        console.error(JSON.stringify({ event: 'email.auth_error', to, subject, status: res.status, body: responseText.slice(0, 400) }));
+        console.error(JSON.stringify({ event: 'email.auth_error', to, status: res.status }));
         return { success: false, error: lastError, attempts: attempt, durationMs: Date.now() - t0 };
       }
 
-      console.warn(JSON.stringify({ event: 'email.retry', to, subject, attempt, error: lastError }));
+      console.warn(JSON.stringify({ event: 'email.retry', to, attempt, error: lastError }));
 
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);
-      console.warn(JSON.stringify({ event: 'email.retry', to, subject, attempt, error: lastError }));
+      console.warn(JSON.stringify({ event: 'email.retry', to, attempt, error: lastError }));
     }
 
     // Exponential back-off before next attempt
@@ -183,7 +181,7 @@ export async function sendMail(payload: MailPayload): Promise<SendResult> {
     }
   }
 
-  console.error(JSON.stringify({ event: 'email.failed', to, subject, error: lastError, attempts: MAX_RETRIES, durationMs: Date.now() - t0 }));
+  console.error(JSON.stringify({ event: 'email.failed', to, error: lastError, attempts: MAX_RETRIES, durationMs: Date.now() - t0 }));
   return { success: false, error: lastError, attempts: MAX_RETRIES, durationMs: Date.now() - t0 };
 }
 
@@ -197,7 +195,6 @@ async function send(payload: MailPayload): Promise<void> {
     console.warn(JSON.stringify({
       event:   'email.queued_for_retry',
       to:      payload.to,
-      subject: payload.subject,
       error:   result.error,
     }));
   }
@@ -255,16 +252,16 @@ export async function sendVerificationEmail(to: string, name: string, token: str
   // the login page. Link directly to the registered API route so customers do
   // not land on the SPA 404 page.
   const url = `${baseUrl}/api/users/verify-email?token=${encodeURIComponent(token)}`;
-  await send({
-    to,
+  const content = configuredTemplate('email_verification', {
+    user_name: name,
+    verification_link: url,
+    expiry_time: '24 hours',
+  }, {
     subject: 'Verify Your Email — City Gate Capital',
-    html: emailWrapper('Verify Your Email Address',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Thank you for creating a City Gate Capital platform profile. Please verify your email address to continue. Registration does not open a bank or payment account.</p>
-       <p style="margin:28px 0;">${goldButton('Verify Email Address', url)}</p>
-       <p style="color:rgba(255,255,255,0.4);font-size:13px;">This link expires in 24 hours. If you did not register, please ignore this email.</p>`
-    ),
+    title: 'Verify Your Email Address',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>${goldButton('Verify Email Address', url)}</p>`,
   });
+  await send({ to, ...content });
 }
 
 export async function sendWelcomeEmail(to: string, name: string) {
@@ -470,6 +467,26 @@ export async function sendOtpEmail(to: string, name: string, otp: string) {
     subject: 'Your Verification Code — City Gate Capital',
     title: 'Your Verification Code',
     body: `<p>Hello ${escapeEmailHtml(name)},</p><p>Your verification code is <strong>${escapeEmailHtml(otp)}</strong>.</p>`,
+  });
+  await send({ to, ...content });
+}
+
+export async function sendSupportReplyEmail(
+  to: string,
+  name: string,
+  ticketSubject: string,
+  message: string,
+) {
+  const content = configuredTemplate('support_reply', {
+    user_name: name,
+    ticket_subject: ticketSubject,
+    reply_message: message.replace(/\r?\n/g, '<br/>'),
+    support_link: 'https://citygate.capital/dashboard/support',
+    date: new Date().toLocaleString('en-GB'),
+  }, {
+    subject: `Support Update — City Gate Capital`,
+    title: 'Support Update',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>${escapeEmailHtml(message)}</p>`,
   });
   await send({ to, ...content });
 }

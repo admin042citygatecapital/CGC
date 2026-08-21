@@ -29,6 +29,14 @@ export default async function handler(_req: Request, res: Response) {
   const providerHealthy = resendReady ? resendHealth.healthy : (
     smtp.mode === 'oauth' ? oauth.clientSecretValid && oauth.refreshTokenValid : !!(smtp.host && smtp.username && smtp.password)
   );
+  const mailboxes = {
+    noreply: String(getSecret('EMAIL_NOREPLY_ADDRESS') || 'noreply@citygate.capital'),
+    support: String(getSecret('EMAIL_SUPPORT_ADDRESS') || 'support@citygate.capital'),
+    security: String(getSecret('EMAIL_SECURITY_ADDRESS') || 'security@citygate.capital'),
+    compliance: String(getSecret('EMAIL_COMPLIANCE_ADDRESS') || 'compliance@citygate.capital'),
+    admin: String(getSecret('EMAIL_ADMIN_ADDRESS') || 'admin@citygate.capital'),
+    info: String(getSecret('EMAIL_INFO_ADDRESS') || 'info@citygate.capital'),
+  };
   return res.json({
     mode: resendReady ? 'resend' : smtp.mode,
     provider: resendReady ? 'resend' : (smtp.mode === 'oauth' ? 'zoho' : 'smtp'),
@@ -40,6 +48,7 @@ export default async function handler(_req: Request, res: Response) {
     healthDetail: resendReady ? resendHealth.detail : undefined,
     oauthReady: oauth.clientSecretValid && oauth.refreshTokenValid,
     manualReady: !!(smtp.host && smtp.username && smtp.password),
+    mailboxes,
     hasRefreshToken: oauth.hasRefreshToken,
     hasClientSecret: oauth.hasClientSecret,
     refreshTokenValid: oauth.refreshTokenValid,

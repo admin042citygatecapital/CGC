@@ -7,6 +7,7 @@ import type { Request, Response } from 'express';
 import { addMessage, updateConversationStatus } from '../../../../lib/supportDatabaseStore.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
+import { sendSupportReplyEmail } from '../../../../lib/emailService.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -33,6 +34,13 @@ export default async function handler(req: Request, res: Response) {
     'Support Reply',
     `Our team has replied to your support request: "${conv.subject}". Tap to view.`,
     '/support',
+  );
+
+  await sendSupportReplyEmail(
+    conv.userEmail,
+    conv.userName || 'Customer',
+    conv.subject,
+    String(message).trim(),
   );
 
   appendAudit({

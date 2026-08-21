@@ -19,10 +19,19 @@ export default async function handler(_req: Request, res: Response) {
   const resendReady = !!getSecret('RESEND_API_KEY');
   const senderEmail = String(getSecret('MAIL_FROM_ADDRESS') || cfg.senderEmail);
   const senderName  = String(getSecret('MAIL_FROM_NAME') || cfg.senderName);
+  const provider = resendReady ? 'resend' : (oauthReady ? 'zoho' : 'none');
+  const mailboxes = {
+    noreply: String(getSecret('EMAIL_NOREPLY_ADDRESS') || 'noreply@citygate.capital'),
+    support: String(getSecret('EMAIL_SUPPORT_ADDRESS') || 'support@citygate.capital'),
+    security: String(getSecret('EMAIL_SECURITY_ADDRESS') || 'security@citygate.capital'),
+    compliance: String(getSecret('EMAIL_COMPLIANCE_ADDRESS') || 'compliance@citygate.capital'),
+    admin: String(getSecret('EMAIL_ADMIN_ADDRESS') || 'admin@citygate.capital'),
+    info: String(getSecret('EMAIL_INFO_ADDRESS') || 'info@citygate.capital'),
+  };
 
   return res.json({
     mode:          cfg.mode,
-    provider:      resendReady ? 'resend' : 'none',
+    provider,
     resendReady,
     oauthReady,
     manualReady,
@@ -38,6 +47,7 @@ export default async function handler(_req: Request, res: Response) {
     manualPort:    cfg.port,
     senderEmail,
     senderName,
+    mailboxes,
     encryption:    cfg.encryption,
     updatedAt:     cfg.updatedAt,
     updatedBy:     cfg.updatedBy,

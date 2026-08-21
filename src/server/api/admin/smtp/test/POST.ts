@@ -114,7 +114,7 @@ export default async function handler(req: Request, res: Response) {
       : delivered
         ? `Test email delivered to ${to}`
         : result.success
-          ? `Test email accepted by Resend for ${to}; final status is ${deliveryStatus ?? 'pending'}`
+          ? `Test email accepted by ${result.transport} for ${to}; final status is ${deliveryStatus ?? 'pending'}`
           : (result.error ?? 'Delivery failed');
 
     return res.status(ok ? (delivered ? 200 : 202) : 502).json({

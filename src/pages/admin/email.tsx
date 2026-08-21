@@ -148,6 +148,7 @@ const TEST_TYPES = [
 
 const TEMPLATE_ICONS: Record<string, React.ElementType> = {
   welcome:              UserCheck,
+  email_verification:   UserCheck,
   kyc_approved:         CheckCircle,
   kyc_rejected:         XCircle,
   deposit_confirmed:    ArrowDownToLine,
@@ -157,6 +158,8 @@ const TEMPLATE_ICONS: Record<string, React.ElementType> = {
   password_reset:       Shield,
   two_fa_code:          Key,
   security_alert:       Bell,
+  login_alert:          Bell,
+  support_reply:        Mail,
 };
 
 const TEMPLATE_COLORS: Record<string, string> = {

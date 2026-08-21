@@ -3,7 +3,7 @@
  * Persistent store for admin-editable system email templates.
  * Stored in /private/email/templates.json
  *
- * Supports 10 system templates + variable substitution.
+ * Supports the complete transactional template catalogue + variable substitution.
  * Transactional templates (KYC, transfer, etc.) are always sent regardless
  * of newsletter subscription status.
  */
@@ -20,6 +20,7 @@ const CONFIG_KEY = 'email_templates';
 
 export type TemplateId =
   | 'welcome'
+  | 'email_verification'
   | 'kyc_approved'
   | 'kyc_rejected'
   | 'deposit_confirmed'
@@ -28,7 +29,9 @@ export type TemplateId =
   | 'transfer_received'
   | 'password_reset'
   | 'two_fa_code'
-  | 'security_alert';
+  | 'security_alert'
+  | 'login_alert'
+  | 'support_reply';
 
 export interface EmailTemplate {
   id: TemplateId;
@@ -61,6 +64,20 @@ Date Joined: {date}</p>
 <p>Financial services activate only after identity verification, eligibility review, and the availability of an approved provider for the relevant product. Upload identity information only through the secure onboarding workflow when requested.</p>
 <p>If you have a question, contact support@citygate.capital. No response-time guarantee is offered.</p>
 <p>Best regards,<br/>The City Gate Capital Team</p>`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  },
+  {
+    id: 'email_verification',
+    name: 'Email Verification',
+    description: 'Sent when a customer must verify their registered email address.',
+    category: 'auth',
+    variables: ['{user_name}', '{verification_link}', '{expiry_time}'],
+    subject: 'Verify Your Email — City Gate Capital',
+    body: `<p>Dear {user_name},</p>
+<p>Please verify your email address to continue your City Gate Capital registration.</p>
+<p><a href="{verification_link}" style="background:#C9A84C;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">Verify Email Address</a></p>
+<p>This link expires in {expiry_time}. If you did not register, you can ignore this email.</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
@@ -190,7 +207,7 @@ Date: {date}</p>
     description: 'Sent when a user requests a two-factor authentication code.',
     category: 'auth',
     variables: ['{user_name}', '{otp_code}', '{expiry_time}', '{date}'],
-    subject: 'Your City Gate Capital Verification Code: {otp_code}',
+    subject: 'Your Verification Code — City Gate Capital',
     body: `<p>Dear {user_name},</p>
 <p>Your one-time verification code is:</p>
 <p style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#C9A84C;text-align:center;">{otp_code}</p>
@@ -216,6 +233,36 @@ Date: {date}</p>
 <strong>Date:</strong> {date}</p>
 <p>If this was you, no action is needed. If you do not recognise this activity, please change your password immediately and contact our support team.</p>
 <p>Best regards,<br/>City Gate Capital Security Team</p>`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  },
+  {
+    id: 'login_alert',
+    name: 'Login Alert',
+    description: 'Sent after a successful login or when a new device is detected.',
+    category: 'security',
+    variables: ['{user_name}', '{ip_address}', '{device}', '{date}', '{security_link}'],
+    subject: 'New Login Recorded — City Gate Capital',
+    body: `<p>Dear {user_name},</p>
+<p>A successful login to your City Gate Capital account was recorded.</p>
+<p><strong>Time:</strong> {date}<br/><strong>IP Address:</strong> {ip_address}<br/><strong>Device:</strong> {device}</p>
+<p>If this was not you, review and revoke active sessions immediately.</p>
+<p><a href="{security_link}" style="color:#C9A84C;">Open Security Centre</a></p>`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  },
+  {
+    id: 'support_reply',
+    name: 'Support Reply',
+    description: 'Sent when the support team replies to a customer request.',
+    category: 'account',
+    variables: ['{user_name}', '{ticket_subject}', '{reply_message}', '{support_link}', '{date}'],
+    subject: 'Support Update: {ticket_subject} — City Gate Capital',
+    body: `<p>Dear {user_name},</p>
+<p>Our support team has replied to your request, <strong>{ticket_subject}</strong>.</p>
+<div style="border-left:3px solid #C9A84C;padding:12px 16px;margin:18px 0;">{reply_message}</div>
+<p><a href="{support_link}" style="color:#C9A84C;">View your support request</a></p>
+<p>Reply date: {date}</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
   },
