@@ -1,0 +1,16 @@
+# Versioned storage configuration for public City Gate Capital website media.
+# Sensitive KYC files remain in the separate private `kyc-documents` bucket.
+# Uploads are performed server-side; Supabase service credentials must never be
+# exposed to browser code or committed to source control.
+
+[storage.buckets.cgc-media]
+public = true
+file_size_limit = "10MiB"
+allowed_mime_types = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "video/mp4",
+  "application/pdf",
+]
