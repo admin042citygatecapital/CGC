@@ -6,11 +6,13 @@
 import type { Request, Response } from 'express';
 import { safeParseId, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
 import { CustomerSimulationLedgerError, postCustomerControlledAdjustment } from '../../../../lib/customerSimulationLedger.js';
+import { requireFinancialOperations } from '../../../../lib/platformMode.js';
 
 const DIRECTIONS = ['credit', 'debit'] as const;
 const REFERENCE_PATTERN = /^[A-Z0-9][A-Z0-9._/-]{5,63}$/i;
 
 export default async function handler(req: Request, res: Response) {
+  if (!requireFinancialOperations(res)) return;
   const body = req.body as Record<string, unknown>;
   const accountId = safeParseId(body.accountId);
   const direction = isOneOf(body.direction ?? body.type, DIRECTIONS);

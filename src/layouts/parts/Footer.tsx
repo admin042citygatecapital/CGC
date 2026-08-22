@@ -91,7 +91,7 @@ export default function Footer() {
             >
               <span className="flex items-center gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Mail size={19} /></span>
-                <span><span className="block text-sm font-semibold text-foreground">Market insights</span><span className="mt-1 block text-xs text-foreground/45">Receive selected updates on markets, currencies and financial technology.</span></span>
+                <span><span className="block text-sm font-semibold text-foreground">Market insights</span><span className="mt-1 block text-xs text-foreground/55">Receive selected updates on markets, currencies and financial technology.</span></span>
               </span>
               <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform ${newsletterOpen ? 'rotate-180' : ''}`}><ChevronDown size={17} /></span>
             </button>

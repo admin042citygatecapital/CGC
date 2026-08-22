@@ -45,14 +45,14 @@ test('public site renders the owned brand without unsupported banking claims', a
   await expect(page).toHaveTitle(/City Gate Capital/i);
   await expect(page.locator('body')).not.toContainText('FDIC insured');
   await expect(page.locator('body')).not.toContainText('FSCS protected');
-  await expect(page.getByRole('heading', { level: 1, name: /The Future of Banking is Here/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Explore Features' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: /Ready to Take Control/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Explore Digital Banking' })).toBeVisible();
   const logo = page.locator('img[alt*="City Gate" i]').first();
   await expect(logo).toBeVisible();
   const logoLoaded = await logo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0);
   expect(logoLoaded).toBe(true);
 
-  await page.getByRole('link', { name: 'Explore Features' }).click();
+  await page.getByRole('link', { name: 'Explore Digital Banking' }).click();
   await expect(page).toHaveURL(/\/digital-banking$/);
   await expect(page.getByText('Digital Banking', { exact: true })).toBeVisible();
 });
@@ -194,7 +194,7 @@ test('account, transaction, beneficiary and support views remain usable on mobil
 
   for (const [path, heading] of [
     ['/dashboard/accounts', 'My Accounts'],
-    ['/dashboard/transactions', 'Statements'],
+    ['/dashboard/transactions', 'Transactions'],
     ['/dashboard/beneficiaries', 'Beneficiaries'],
     ['/dashboard/support', 'Support centre'],
   ] as const) {

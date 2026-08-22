@@ -1073,7 +1073,7 @@ export function FaqSection() {
       >
         <span className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary"><HelpCircle size={20} /></span>
-          <span><span className="block text-sm font-semibold text-foreground">Frequently asked questions</span><span className="mt-1 block text-xs text-foreground/45">Find quick answers about accounts, security, pricing and transfers.</span></span>
+          <span><span className="block text-sm font-semibold text-foreground">Frequently asked questions</span><span className="mt-1 block text-xs text-foreground/55">Find quick answers about accounts, security, pricing and transfers.</span></span>
         </span>
         <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform ${panelOpen ? 'rotate-180' : ''}`}><ChevronDown size={17} /></span>
       </button>
