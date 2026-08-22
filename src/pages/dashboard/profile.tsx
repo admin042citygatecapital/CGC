@@ -83,11 +83,17 @@ export default function ProfilePage() {
             className="flex items-center gap-5 mb-6 p-5 rounded-2xl border border-white/6"
             style={{ background: 'rgba(255,255,255,0.02)' }}>
             <label className="relative cursor-pointer group shrink-0">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center text-xl font-bold text-black"
+              <div className="relative w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center text-xl font-bold text-black"
                 style={{ background: 'linear-gradient(135deg, #C9A84C, #F0D080)' }}>
-                {customer.avatarUrl
-                  ? <img src={customer.avatarUrl} alt={customer.name} className="w-full h-full object-cover" />
-                  : customer.name.charAt(0).toUpperCase()}
+                <span aria-hidden="true">{customer.name.charAt(0).toUpperCase()}</span>
+                {customer.avatarUrl && (
+                  <img
+                    src={customer.avatarUrl}
+                    alt={customer.name}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                  />
+                )}
               </div>
               <div className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Camera size={14} className="text-white" />
