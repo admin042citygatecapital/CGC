@@ -87,10 +87,10 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Onboarding Cases', href: '/admin/onboarding', icon: FileText,       badge: null, desc: 'KYC/KYB evidence and maker-checker decisions' },
       { label: 'Legal Entity', href: '/admin/legal-entity', icon: Scale, badge: null, desc: 'Entity and beneficial ownership verification' },
       { label: 'Transactions', href: '/admin/transactions', icon: CreditCard,      badge: null, desc: 'All platform transactions' },
-      { label: 'Transfers',    href: '/admin/banking',      icon: ArrowUpDown,     badge: null, desc: 'Transfer review, limits and controlled operations' },
+      { label: 'Transfers',    href: '/admin/transfers',    icon: ArrowUpDown,     badge: null, desc: 'Transfer review, limits and controlled operations' },
       { label: 'Accounts',     href: '/admin/accounts',     icon: WalletCards,     badge: null, desc: 'Structured customer account controls' },
       { label: 'Cards',        href: '/admin/cards',        icon: CreditCard,      badge: null, desc: 'Card records, controls, limits & lifecycle requests' },
-      { label: 'Wallets',      href: '/admin/wallets',      icon: WalletCards,     badge: null, desc: 'Controlled wallet records and ledger-backed operations' },
+      { label: 'Wallets',      href: '/admin/wallets',      icon: WalletCards,     badge: null, desc: 'Synthetic wallet records in the financial sandbox' },
       { label: 'Crypto',       href: '/admin/crypto',       icon: Bitcoin,         badge: null, desc: 'Crypto holdings & wallets' },
       { label: 'Trading',      href: '/admin/trading',      icon: BarChart2,       badge: null, desc: 'Positions, orders & risk' },
     ],
@@ -130,7 +130,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Configuration',
     items: [
       { label: 'Config Center',    href: '/admin/config',        icon: SlidersHorizontal,  badge: null, desc: 'App-wide configuration' },
-      { label: 'Feature Flags',    href: '/admin/settings',      icon: ToggleLeft,         badge: null, desc: 'Customer module availability and workflow controls' },
+      { label: 'Feature Flags',    href: '/admin/config?section=featureToggles', icon: ToggleLeft, badge: null, desc: 'Customer module availability and workflow controls' },
       { label: 'Integrations',     href: '/admin/integrations',  icon: Plug,               badge: null, desc: 'Third-party service connections' },
       { label: 'Rates & Fees',     href: '/admin/rates',         icon: BarChart2,          badge: null, desc: 'Fee matrix & FX markup' },
       { label: 'API Docs',         href: '/admin/documentation', icon: BookOpen,           badge: null, desc: 'Internal API reference' },
@@ -149,6 +149,19 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
 
 // Flat list for command palette
 const ALL_NAV = NAV_GROUPS.flatMap(g => g.items);
+
+function isNavItemActive(href: string, pathname: string, search: string): boolean {
+  const [hrefPath, hrefSearch = ''] = href.split('?');
+  const pathMatches = pathname === hrefPath || (hrefPath !== '/admin' && pathname.startsWith(`${hrefPath}/`));
+  if (!pathMatches) return false;
+
+  const querySiblings = ALL_NAV.filter(item => item.href.startsWith(`${hrefPath}?`));
+  if (!hrefSearch) return querySiblings.length === 0 || search.length === 0;
+
+  const currentParams = new URLSearchParams(search);
+  const expectedParams = new URLSearchParams(hrefSearch);
+  return [...expectedParams].every(([key, value]) => currentParams.get(key) === value);
+}
 
 interface Props { children: ReactNode; title?: string; }
 
@@ -202,7 +215,7 @@ function Sidebar({ mobile = false, collapsed = false, admin, navLive, location, 
               {group.items.map(item => {
                 const live = navLive.find(n => n.href === item.href);
                 const badge = live?.badge;
-                const active = location.pathname === item.href || (item.href !== '/admin' && location.pathname.startsWith(item.href));
+                const active = isNavItemActive(item.href, location.pathname, location.search);
                 return (
                   <Link key={item.href} to={item.href}
                     onClick={() => mobile && setSidebarOpen(false)}
@@ -446,7 +459,16 @@ export default function AdminLayout({ children, title }: Props) {
 
   const NAV_LIVE = ALL_NAV.map(item => ({ ...item, badge: liveBadges[item.href] ?? item.badge }));
 
-  async function handleLogout() { await logout(); navigate('/admin/login'); }
+  async function handleLogout() {
+    try {
+      await logout();
+      navigate('/admin/login');
+    } catch {
+      // Do not pretend the administrator has signed out when the server-side
+      // session could not be revoked. A subsequent retry can complete safely.
+      window.alert('Unable to sign out securely. Please check your connection and try again.');
+    }
+  }
 
   // Breadcrumb segments
   const segments = location.pathname.replace('/admin', '').split('/').filter(Boolean);

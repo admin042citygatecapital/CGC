@@ -328,8 +328,8 @@ export default function AdminDocumentation() {
             <p className="text-white/70 text-sm font-medium">Postman Import Tip</p>
             <p className="text-white/40 text-xs mt-1 leading-relaxed">
               Download the Postman collection, then in Postman: <strong className="text-white/50">File → Import → Upload Files</strong>.
-              Set the <code className="text-[#C9A84C]/70 bg-[#C9A84C]/5 px-1 rounded">adminToken</code> collection variable after logging in via{' '}
-              <code className="text-[#C9A84C]/70 bg-[#C9A84C]/5 px-1 rounded">POST /api/admin/auth/login</code> — the login request auto-saves it.
+              Administrator endpoints use a secure HttpOnly session cookie. Authenticate through the administration login flow in the same cookie-aware client;
+              no bearer token is returned or stored in a collection variable.
             </p>
           </div>
         </div>

@@ -21,6 +21,7 @@ function customer(overrides: Partial<UserRecord> = {}): UserRecord {
     amlNextReviewAt: new Date(Date.now() + 365 * 86_400_000).toISOString(),
     emailVerified: true,
     passwordHash: 'test-only',
+    credentialVersion: 1,
     loginAttempts: 0,
     createdAt: now,
     updatedAt: now,

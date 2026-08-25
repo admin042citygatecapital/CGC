@@ -7,8 +7,10 @@ import { hashPassword } from '../../../../lib/passwordHash.js';
 import { createUser, findUserByEmail } from '../../../../lib/userStore.js';
 import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { requireFinancialOperations } from '../../../../lib/platformMode.js';
+import { authorizeAdminRole } from '../../../../lib/rbacMiddleware.js';
 
 export default async function handler(req: Request, res: Response) {
+  if (!authorizeAdminRole(req, res, 'SUPER_ADMIN')) return;
   const session = req.adminSession!;
   const {
     name, email, phone, country, password,

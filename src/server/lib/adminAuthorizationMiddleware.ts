@@ -5,13 +5,14 @@ import { readRoles, type PermissionKey } from './securityCenterStore.js';
 
 const PUBLIC_ADMIN_PATHS = new Set([
   '/auth/login', '/auth/password-reset', '/auth/password-reset/confirm',
-  '/auth/otp/verify', '/auth/unlock', '/auth/diag', '/auth/verify',
+  '/auth/otp/verify', '/auth/otp/resend', '/auth/diag', '/auth/verify',
   '/zoho/oauth/callback', '/sponsor-readiness/external-review',
 ]);
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 interface PermissionRule { prefixes: readonly string[]; read: PermissionKey; write?: PermissionKey }
 const PERMISSION_RULES: readonly PermissionRule[] = [
   { prefixes: ['/auth/logout'], read: 'dashboard.view' },
+  { prefixes: ['/auth/unlock'], read: 'security.view', write: 'security.manage' },
   { prefixes: ['/auth/trusted-devices'], read: 'security.view', write: 'security.manage' },
   { prefixes: ['/security/roles'], read: 'security.view', write: 'admin.roles.manage' },
   { prefixes: ['/security'], read: 'security.view', write: 'security.manage' },

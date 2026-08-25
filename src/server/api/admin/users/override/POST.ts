@@ -15,6 +15,7 @@ import {
   sendApprovalEmail,
   sendWelcomeEmail,
 } from '../../../../lib/emailService.js';
+import { authorizeAdminRole } from '../../../../lib/rbacMiddleware.js';
 
 function baseUrl(req: Request): string {
   const env = process.env.PUBLIC_URL || process.env.SITE_URL;
@@ -26,6 +27,7 @@ const VALID_ACTIONS = ['resend_verification', 'approve', 'activate', 'resend_wel
 type OverrideAction = typeof VALID_ACTIONS[number];
 
 export default async function handler(req: Request, res: Response) {
+  if (!authorizeAdminRole(req, res, 'SUPER_ADMIN')) return;
   const session = req.adminSession!;
   const { userId, action } = req.body as { userId?: string; action?: OverrideAction };
 

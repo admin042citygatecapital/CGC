@@ -23,6 +23,7 @@ const PUBLIC_ADMIN_PATHS = new Set([
   '/api/admin/auth/password-reset',
   '/api/admin/auth/password-reset/confirm',
   '/api/admin/auth/otp/verify',
+  '/api/admin/auth/otp/resend',
   '/api/admin/auth/unlock',
   '/api/admin/auth/diag',
   '/api/admin/auth/verify',

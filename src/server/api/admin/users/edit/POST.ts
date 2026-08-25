@@ -20,6 +20,7 @@ import {
   stripDangerousKeys,
 } from '../../../../lib/inputValidator.js';
 import { requireFinancialOperations } from '../../../../lib/platformMode.js';
+import { authorizeAdminRole } from '../../../../lib/rbacMiddleware.js';
 
 // Fields the admin is allowed to patch
 const ALLOWED_FIELDS = new Set([
@@ -37,6 +38,7 @@ const TIER_VALUES      = ['personal','savings','business'] as const;
 const CURRENCY_VALUES  = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'] as const;
 
 export default async function handler(req: Request, res: Response) {
+  if (!authorizeAdminRole(req, res, 'SUPER_ADMIN')) return;
   const session = req.adminSession!;
   const rawBody = req.body as { userId?: unknown; patch?: unknown };
 

@@ -105,9 +105,9 @@ describe('admin read endpoint contracts', () => {
       passwordHash: 'must-not-leak',
       bankAccountNumber: 'must-not-leak',
       idDocumentUrl: 'must-not-leak',
-      sessionToken: 'must-not-leak',
       accountTier: 'business',
     });
+    await users.updateUser(user.id, { sessionToken: 'must-not-leak' });
 
     const handler = (await import('../../server/api/admin/users/[id]/GET.js')).default;
     const result = response();

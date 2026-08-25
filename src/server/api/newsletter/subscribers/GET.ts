@@ -1,7 +1,9 @@
 import type { Request, Response } from 'express';
 import { getAllSubscribers, getSubscriberStats } from '../../../lib/subscriberStore.js';
+import { authorizeAdminPermission } from '../../../lib/rbacMiddleware.js';
 
 export default async function handler(req: Request, res: Response) {
+  if (!(await authorizeAdminPermission(req, res, 'email.view'))) return;
   try {
     const page   = Math.max(1, Number(req.query.page ?? 1));
     const limit  = Math.min(100, Math.max(1, Number(req.query.limit ?? 50)));

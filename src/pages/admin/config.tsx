@@ -30,6 +30,7 @@ Wrench
 } from 'lucide-react';
 import { AnimatePresence,motion } from 'motion/react';
 import { useCallback,useEffect,useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 // ─── Types (mirrors configStore.ts) ──────────────────────────────────────────
 
@@ -72,6 +73,10 @@ const SECTIONS: { id: SectionKey | 'env'; label: string; icon: typeof Palette; d
   { id: 'timezone',             label: 'Timezone',            icon: Clock,          desc: 'Default TZ, business hours' },
   { id: 'env',                  label: 'Environment Vars',    icon: Shield,         desc: 'Secret status — no values shown' },
 ];
+
+function isSectionId(value: string | null): value is SectionKey | 'env' {
+  return value !== null && SECTIONS.some(section => section.id === value);
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -134,7 +139,11 @@ function SectionHeader({ title, desc, onReset, saving }: { title: string; desc: 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AdminConfigPage() {
-  const [activeSection, setActiveSection] = useState<SectionKey | 'env'>('branding');
+  const [searchParams] = useSearchParams();
+  const requestedSection = searchParams.get('section');
+  const [activeSection, setActiveSection] = useState<SectionKey | 'env'>(() =>
+    isSectionId(requestedSection) ? requestedSection : 'branding'
+  );
   const [config,   setConfig]   = useState<Record<string, any>>({});
   const [envVars,  setEnvVars]  = useState<EnvVar[]>([]);
   const [loading,  setLoading]  = useState(true);
@@ -144,6 +153,10 @@ export default function AdminConfigPage() {
   const [scopeKind, setScopeKind] = useState<FeatureScopeKind>('users');
   const [scopeIdentifier, setScopeIdentifier] = useState('');
   const [scopeFeature, setScopeFeature] = useState('accounts');
+
+  useEffect(() => {
+    if (isSectionId(requestedSection)) setActiveSection(requestedSection);
+  }, [requestedSection]);
 
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });

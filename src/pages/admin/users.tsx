@@ -967,11 +967,16 @@ export default function AdminUsers() {
   }
 
   async function confirmReset2fa(user: User) {
+    const reason = prompt(`Security reason for resetting 2FA for ${user.name}:`)?.trim();
+    if (!reason || reason.length < 8) {
+      showToast('A clear security reason is required.', false);
+      return;
+    }
     setAL(user.id + 'reset2fa');
     const res = await fetch('/api/admin/users/reset-2fa', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ userId: user.id }),
+      body: JSON.stringify({ userId: user.id, reason, confirmation: 'CONFIRM CUSTOMER 2FA RESET' }),
     });
     const d = await res.json();
     setAL(null);

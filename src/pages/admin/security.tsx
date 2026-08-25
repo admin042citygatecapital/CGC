@@ -173,7 +173,7 @@ interface AdminSession {
   createdAt: string; lastSeenAt: string; ip: string; ua: string;
 }
 interface TrustedDevice {
-  token: string; adminId: string; email: string; name: string;
+  id: string; adminId: string; email: string; name: string;
   ip: string; ua: string; createdAt: string; expiresAt: string; lastUsedAt: string;
 }
 interface LoginEvent {
@@ -400,18 +400,21 @@ export default function SecurityCenter() {
   }
 
   async function terminateSession(token: string) {
+    if (!confirm('Terminate this administrator session?')) return;
+    const reason = prompt('Security reason for revoking this session:')?.trim();
+    if (!reason || reason.length < 8) return;
     setTerminating(token);
     try {
-      await api('/api/admin/security/sessions', { method: 'DELETE', body: JSON.stringify({ token }) });
+      await api('/api/admin/security/sessions', { method: 'DELETE', body: JSON.stringify({ token, reason, confirmation: 'CONFIRM SESSION REVOCATION' }) });
       setSessions(prev => prev.filter(s => s.token !== token));
     } finally { setTerminating(null); }
   }
 
-  async function revokeDevice(token: string) {
-    setRevokingDev(token);
+  async function revokeDevice(deviceId: string) {
+    setRevokingDev(deviceId);
     try {
-      await api('/api/admin/security/devices', { method: 'DELETE', body: JSON.stringify({ token }) });
-      setDevices(prev => prev.filter(d => d.token !== token));
+      await api('/api/admin/security/devices', { method: 'DELETE', body: JSON.stringify({ deviceId }) });
+      setDevices(prev => prev.filter(d => d.id !== deviceId));
     } finally { setRevokingDev(null); }
   }
 
@@ -720,8 +723,10 @@ export default function SecurityCenter() {
                 <p className="text-white/40 text-sm">{sessions.length} active admin session{sessions.length !== 1 ? 's' : ''}</p>
                 <button onClick={() => {
                   if (confirm('Terminate ALL admin sessions? You will be logged out.')) {
-                    fetch('/api/admin/security/sessions', { method: 'DELETE', headers: ah(), body: JSON.stringify({ all: true }) })
-                      .then(() => setSessions([]));
+                    const reason = prompt('Security reason for revoking all other administrator sessions:')?.trim();
+                    if (!reason || reason.length < 8) return;
+                    fetch('/api/admin/security/sessions', { method: 'DELETE', headers: ah(), body: JSON.stringify({ all: true, reason, confirmation: 'CONFIRM SESSION REVOCATION' }) })
+                      .then(response => { if (response.ok) setSessions([]); });
                   }
                 }} className="text-red-400/70 hover:text-red-400 text-xs flex items-center gap-1.5 transition-colors">
                   <LogOut size={12} /> Terminate all
@@ -778,7 +783,7 @@ export default function SecurityCenter() {
               {devices.length === 0 ? <EmptyState icon={Smartphone} message="No trusted devices registered" /> : (
                 <div className="space-y-2">
                   {devices.map(d => (
-                    <Card key={d.token}>
+                    <Card key={d.id}>
                       <div className="flex items-start gap-4">
                         <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center shrink-0">
                           <Monitor size={16} className="text-white/40" />
@@ -792,9 +797,9 @@ export default function SecurityCenter() {
                             <span className="text-white/30 text-xs flex items-center gap-1"><Lock size={10} />Expires {fmtTime(d.expiresAt)}</span>
                           </div>
                         </div>
-                        <button onClick={() => revokeDevice(d.token)} disabled={revokingDev === d.token}
+                        <button onClick={() => revokeDevice(d.id)} disabled={revokingDev === d.id}
                           className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-red-400/70 hover:text-red-400 border border-red-400/15 hover:border-red-400/30 transition-all disabled:opacity-50">
-                          {revokingDev === d.token ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                          {revokingDev === d.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
                           Revoke
                         </button>
                       </div>

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { updateSection, resetSection } from '../../../lib/configStore.js';
 import { appendCriticalAudit } from '../../../lib/auditLog.js';
+import { authorizeRecentAdminStepUp } from '../../../lib/rbacMiddleware.js';
 import {
   defaultHomepageAdminView,
   homepageAdminView,
@@ -31,6 +32,7 @@ export default async function handler(req: Request, res: Response) {
     }
 
     if (section === 'maintenanceMode') {
+      if (!authorizeRecentAdminStepUp(req, res)) return;
       if (String(reason ?? '').trim().length < 8) return res.status(400).json({ error: 'A clear operational reason is required.' });
       if (String(confirmation ?? '') !== 'CONFIRM MAINTENANCE MODE') return res.status(409).json({ error: 'Type CONFIRM MAINTENANCE MODE to continue.' });
       await appendCriticalAudit({
@@ -74,7 +76,7 @@ export default async function handler(req: Request, res: Response) {
 
     // ── All other sections: configStore ──────────────────────────────────────
     if (action === 'reset') {
-      const cfg = resetSection(section);
+      const cfg = await resetSection(section);
       return res.json({ ok: true, config: cfg });
     }
 
@@ -82,7 +84,7 @@ export default async function handler(req: Request, res: Response) {
       return res.status(400).json({ error: 'data object required' });
     }
 
-    const cfg = updateSection(section, data as any);
+    const cfg = await updateSection(section, data as any);
     if (section === 'maintenanceMode') {
       await appendCriticalAudit({
         event: 'admin_maintenance_mode_changed', adminId: req.adminSession?.adminId,
