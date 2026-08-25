@@ -214,7 +214,9 @@ test('repeated customer login failures trigger per-account throttling', async ({
   const origin = new URL((await page.goto('/login'))!.url()).origin;
   const credentials = { email: 'rate-limit-probe@example.test', password: 'DefinitelyWrong!2026' };
 
-  for (let attempt = 0; attempt < 6; attempt += 1) {
+  // The canonical policy records a lock on the fifth generic failure. The
+  // next request observes that lock and is rejected before verification.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
     const response = await page.request.post('/api/users/login', {
       headers: { Origin: origin },
       data: credentials,

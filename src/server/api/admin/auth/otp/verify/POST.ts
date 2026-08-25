@@ -5,7 +5,7 @@
  *
  * Verifies the OTP issued by the login endpoint.
  * On success:
- *  - Creates a full session (HttpOnly cookie + Bearer token)
+ *  - Creates a full session in an HttpOnly cookie
  *  - Optionally registers a trusted device (30-day cookie)
  *  - Sends a login alert email
  *
@@ -43,13 +43,13 @@ export default async function handler(req: Request, res: Response) {
   }
 
   // Get the email before verifying (so we can record brute-force on failure)
-  const email = getChallengeEmail(challengeId);
+  const email = await getChallengeEmail(challengeId);
   if (!email) {
     return res.status(400).json({ error: 'Invalid or expired verification session. Please log in again.' });
   }
 
   // Verify OTP
-  const result = verifyOtp(challengeId, otp, { ip, ua });
+  const result = await verifyOtp(challengeId, otp, { ip, ua });
 
   if (!result.ok) {
     await recordLoginFailure(email, ip);
@@ -64,21 +64,26 @@ export default async function handler(req: Request, res: Response) {
 
   // OTP verified — look up admin
   const admin = await findAdminByEmail(email);
-  if (!admin) {
-    return res.status(500).json({ error: 'Admin account not found' });
+  if (!admin || result.adminId !== admin.id || result.credentialVersion !== admin.credentialVersion) {
+    return res.status(401).json({ error: 'Administrator credentials changed. Please log in again.' });
   }
   await recordLoginSuccess(email, ip);
 
   // Create session
   const sessionToken = crypto.randomBytes(32).toString('hex');
-  await createSession(sessionToken, {
+  const sessionCreated = await createSession(sessionToken, {
     adminId:   admin.id,
     email:     admin.email,
     role:      admin.role,
+    credentialVersion: admin.credentialVersion,
     createdAt: new Date().toISOString(),
     ip,
     ua,
   });
+  if (!sessionCreated) {
+    appendAudit({ event: 'otp_session_rejected', adminId: admin.id, email, ip, reason: 'credential_changed' });
+    return res.status(401).json({ error: 'Administrator credentials changed. Please log in again.' });
+  }
 
   appendAudit({ event: 'login_success', adminId: admin.id, email, ip });
   await appendLoginEvent({

@@ -83,24 +83,25 @@ export default async function handler(req: Request, res: Response) {
   const passwordHash = await hashPassword(password);
 
   const caseType = product.accountTier === 'business' ? 'business' : 'individual';
-  const { user, applicationReference } = await createUserWithRegistrationCase({
-    email,
-    name,
-    phone: phone || undefined,
-    country: country || undefined,
-    address,
-    city,
-    postalCode,
-    accountTier: product.accountTier,
-    requestedProduct: product.slug,
-    status: 'pending_verification',
-    kycStatus: 'not_submitted',
-    emailVerified: false,
-    emailVerifyToken: token,
-    emailVerifyExpiry: expiry,
-    passwordHash,
-    ip,
+  const created = await createUserWithRegistrationCase({
+      email,
+      name,
+      phone: phone || undefined,
+      country: country || undefined,
+      address,
+      city,
+      postalCode,
+      accountTier: product.accountTier,
+      requestedProduct: product.slug,
+      status: 'pending_verification',
+      kycStatus: 'not_submitted',
+      emailVerified: false,
+      emailVerifyToken: token,
+      emailVerifyExpiry: expiry,
+      passwordHash,
+      ip,
   }, caseType);
+  const { user, applicationReference } = created;
 
   appendAudit({
     event: 'user_registered',

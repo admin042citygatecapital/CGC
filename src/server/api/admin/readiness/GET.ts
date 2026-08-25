@@ -338,7 +338,7 @@ function checkAdminRouteProtection(): ReadinessCheck {
     id: 'admin_routes', name: 'Admin Route Protection', subsystem: 'Security',
     status: 'PASS', critical: true,
     message: 'Admin route protection middleware is registered. All /api/admin/* routes require auth.',
-    detail: 'Public exclusions: /auth/login, /auth/logout, /auth/password-reset, /auth/otp/verify, /auth/unlock, /auth/diag, /auth/verify, /zoho/oauth/callback',
+    detail: 'Public exclusions: /auth/login, /auth/logout, /auth/password-reset, /auth/otp/verify, /auth/otp/resend, /auth/diag, /auth/verify, /zoho/oauth/callback',
   };
 }
 

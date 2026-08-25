@@ -20,6 +20,7 @@ interface AdminAuthCtx {
   loading: boolean;
   login: (email: string, password: string) => Promise<AuthResult>;
   verifyOtp: (challengeId: string, otp: string, rememberDevice: boolean) => Promise<AuthResult>;
+  resendOtp: (challengeId: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
 }
 
@@ -29,6 +30,9 @@ export interface AuthResult {
   otpRequired?: boolean;
   challengeId?: string;
   expiresInSeconds?: number;
+  deliveryMode?: 'email' | 'local';
+  locked?: boolean;
+  expired?: boolean;
 }
 
 const Ctx = createContext<AdminAuthCtx | null>(null);
@@ -37,6 +41,16 @@ let csrfToken: string | null = null;
 
 function clearLegacyToken() {
   if (typeof window !== 'undefined') localStorage.removeItem(LEGACY_TOKEN_KEY);
+}
+
+async function readAuthResponse(response: Response): Promise<AuthResult & { admin?: AdminUser }> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.toLowerCase().includes('application/json')) return {};
+  try {
+    return await response.json() as AuthResult & { admin?: AdminUser };
+  } catch {
+    return {};
+  }
 }
 
 export async function refreshAdminCsrfToken(): Promise<string | null> {
@@ -49,6 +63,34 @@ export async function refreshAdminCsrfToken(): Promise<string | null> {
   } catch {
     csrfToken = null;
     return null;
+  }
+}
+
+/**
+ * Revoke the cookie-backed administrator session. A CSRF token has a shorter
+ * lifetime than the administrator session, so a stale token is refreshed once
+ * before the operation is considered failed. The caller must not clear local
+ * authentication state unless this returns true.
+ */
+export async function revokeAdminSession(): Promise<boolean> {
+  async function requestLogout(): Promise<Response> {
+    return fetch('/api/admin/auth/logout', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: authHeaders(),
+    });
+  }
+
+  try {
+    let response = await requestLogout();
+    if (response.status === 403) {
+      const refreshed = await refreshAdminCsrfToken();
+      if (!refreshed) return false;
+      response = await requestLogout();
+    }
+    return response.ok;
+  } catch {
+    return false;
   }
 }
 
@@ -96,8 +138,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      const data = await response.json() as AuthResult & { admin?: AdminUser };
-      if (!response.ok) return { error: data.error ?? 'Login failed' };
+      const data = await readAuthResponse(response);
+      if (!response.ok) return { ...data, error: data.error ?? 'Authentication service unavailable' };
       if (data.otpRequired && data.challengeId) return data;
       if (!data.admin) return { error: data.error ?? 'Login failed' };
 
@@ -118,8 +160,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ challengeId, otp, rememberDevice }),
       });
-      const data = await response.json() as AuthResult & { admin?: AdminUser };
-      if (!response.ok || !data.admin) return { error: data.error ?? 'Verification failed' };
+      const data = await readAuthResponse(response);
+      if (!response.ok || !data.admin) return { ...data, error: data.error ?? 'Verification failed' };
       clearLegacyToken();
       setAdmin(data.admin);
       await refreshAdminCsrfToken();
@@ -129,21 +171,31 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function logout() {
+  async function resendOtp(challengeId: string) {
     try {
-      await fetch('/api/admin/auth/logout', {
+      const response = await fetch('/api/admin/auth/otp/resend', {
         method: 'POST',
         credentials: 'same-origin',
-        headers: authHeaders(),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challengeId }),
       });
+      const data = await readAuthResponse(response);
+      if (!response.ok) return { ...data, error: data.error ?? 'Unable to request a new code' };
+      if (!data.otpRequired || !data.challengeId) return { error: 'Unable to request a new code' };
+      return data;
     } catch {
-      // Local sign-out still proceeds if the network is unavailable.
+      return { error: 'Network error — please check your connection' };
     }
+  }
+
+  async function logout() {
+    const revoked = await revokeAdminSession();
+    if (!revoked) throw new Error('Unable to securely end the administrator session');
     clearAuth();
   }
 
   return (
-    <Ctx.Provider value={{ admin, loading, login, verifyOtp, logout }}>
+    <Ctx.Provider value={{ admin, loading, login, verifyOtp, resendOtp, logout }}>
       {children}
     </Ctx.Provider>
   );

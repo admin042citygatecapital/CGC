@@ -50,6 +50,9 @@ test-results/
 # Publish temporary files
 .publish/
 
+# Locally generated review artifacts (PDF/image previews)
+artifacts/
+
 # OS generated files
 Thumbs.db
 

@@ -21,7 +21,8 @@
  * RESILIENCE
  *   • Retries up to MAX_RETRIES times with exponential back-off
  *   • 401 invalidates token cache and retries once with a fresh token
- *   • Never throws — logs and returns so callers are never broken
+ *   • Routine notifications never throw — failed sends are queued for retry
+ *   • Authentication codes fail closed unless explicit isolated E2E mode is active
  *   • Structured JSON logs: email.sent / email.retry / email.failed
  */
 
@@ -200,6 +201,24 @@ async function send(payload: MailPayload): Promise<void> {
   }
 }
 
+/**
+ * Deliver an authentication-critical message immediately.
+ *
+ * OTPs expire too quickly to be useful when delivered by the background retry
+ * queue. A failed immediate send must therefore reject so the login endpoint
+ * cannot claim that a code was sent when no provider accepted it.
+ */
+async function sendRequired(payload: MailPayload): Promise<void> {
+  const result = await smtpSend(payload);
+  if (result.success) return;
+
+  console.error(JSON.stringify({
+    event: 'email.required_delivery_failed',
+    attempts: result.attempts,
+  }));
+  throw new Error('Required email delivery failed');
+}
+
 // ─── HTML helpers ─────────────────────────────────────────────────────────────
 
 function goldButton(text: string, url: string): string {
@@ -344,9 +363,27 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
   await send({ to, ...content });
 }
 
-export async function sendAdminOtpEmail(to: string, name: string, otp: string, ip: string, ua: string) {
+export type AdminOtpDeliveryMode = 'email' | 'local';
+
+export async function sendAdminOtpEmail(
+  to: string,
+  name: string,
+  otp: string,
+  ip: string,
+  ua: string,
+): Promise<AdminOtpDeliveryMode> {
+  const isolatedE2e = process.env.NODE_ENV !== 'production'
+    && process.env.E2E_TEST_MODE === '1'
+    && /^\d{6}$/.test(process.env.E2E_ADMIN_OTP ?? '')
+    && otp === process.env.E2E_ADMIN_OTP;
+  if (isolatedE2e) return 'local';
+
   const deviceLabel = parseUaShort(ua);
-  await send({
+  const configuredTtlSeconds = Number.parseInt(process.env.OTP_TTL_SECONDS ?? '60', 10);
+  const ttlSeconds = Number.isFinite(configuredTtlSeconds) && configuredTtlSeconds > 0
+    ? configuredTtlSeconds
+    : 60;
+  await sendRequired({
     to,
     subject: '🔐 Admin Login Verification Code — City Gate Capital',
     html: emailWrapper('Your Admin Verification Code',
@@ -356,7 +393,7 @@ export async function sendAdminOtpEmail(to: string, name: string, otp: string, i
          <div style="display:inline-block;background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:24px 40px;">
            <p style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin:0 0 12px;">Verification Code</p>
            <p style="color:#C9A84C;font-size:42px;font-weight:800;letter-spacing:0.3em;margin:0;font-family:monospace;">${otp}</p>
-           <p style="color:rgba(255,255,255,0.3);font-size:12px;margin:12px 0 0;">Expires in 60 seconds</p>
+           <p style="color:rgba(255,255,255,0.3);font-size:12px;margin:12px 0 0;">Expires in ${ttlSeconds} seconds</p>
          </div>
        </div>
        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
@@ -375,6 +412,7 @@ export async function sendAdminOtpEmail(to: string, name: string, otp: string, i
        </p>`
     ),
   });
+  return 'email';
 }
 
 export async function sendAdminLoginAlertEmail(

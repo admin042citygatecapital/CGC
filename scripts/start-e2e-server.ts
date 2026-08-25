@@ -77,14 +77,15 @@ await createUser({
   passwordHash: unverifiedHash, balance: 0, primaryCurrency: 'GBP', accountTier: 'personal',
 });
 
-await createUser({
+const resetCustomer = await createUser({
   email: E2E_RESET_CUSTOMER.email, name: E2E_RESET_CUSTOMER.name,
   country: 'United Kingdom', status: 'active', kycStatus: 'approved', amlStatus: 'cleared',
   amlRiskLevel: 'low', emailVerified: true, passwordHash: resetHash,
-  passwordResetToken: E2E_RESET_CUSTOMER.token,
-  passwordResetExpiry: new Date(Date.now() + 60 * 60_000).toISOString(),
   balance: 0, primaryCurrency: 'GBP', accountTier: 'personal',
 });
+baseEnv.E2E_RESET_USER_ID = resetCustomer.id;
+baseEnv.E2E_RESET_TOKEN = E2E_RESET_CUSTOMER.token;
+baseEnv.E2E_RESET_EXPIRES_AT = new Date(Date.now() + 60 * 60_000).toISOString();
 
 await createUser({
   email: E2E_TWO_FACTOR_CUSTOMER.email, name: E2E_TWO_FACTOR_CUSTOMER.name,

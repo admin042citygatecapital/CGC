@@ -814,37 +814,13 @@ async function migrateAdminSessions() {
   const data = readJson<Record<string, Record<string, unknown>>>('/private/admin/sessions.json');
   if (!data) { console.log('\n📦 admin_sessions: no file found — skipping'); return; }
 
-  const rows = Object.entries(data);
-  r.found = rows.length;
-  console.log(`\n📦 admin_sessions: ${rows.length} records found`);
-
-  for (const [token, s] of rows) {
-    if (!token || !s.adminId) { r.errors.push(`Invalid session: ${token}`); continue; }
-    r.valid++;
-    if (DRY_RUN) { r.skipped++; continue; }
-
-    // Calculate expiry: createdAt + 8 hours
-    const createdAt = ts(s.createdAt as string) ?? new Date();
-    const expiresAt = new Date(createdAt.getTime() + 8 * 3600 * 1000);
-
-    try {
-      await sql`
-        INSERT INTO admin_sessions (token, admin_id, email, role, ip, ua, created_at, last_seen_at, expires_at)
-        VALUES (
-          ${token}, ${String(s.adminId)}, ${String(s.email || '')},
-          ${String(s.role || 'SUPER_ADMIN')},
-          ${String(s.ip || '')}, ${String(s.ua || '')},
-          ${createdAt},
-          ${ts(s.lastSeenAt as string) ?? createdAt},
-          ${expiresAt}
-        )
-        ON CONFLICT (token) DO NOTHING
-      `;
-      r.inserted++;
-    } catch (err) {
-      r.errors.push(`AdminSession ${token.slice(0, 8)}: ${String(err).slice(0, 200)}`);
-    }
-  }
+  // Active sessions are bearer credentials, not durable business records.
+  // Importing historical flat-file keys would either restore a live raw
+  // credential or make an obsolete credential look active again. Revoke them
+  // by omission and let administrators authenticate to create fresh sessions.
+  r.found = Object.keys(data).length;
+  r.skipped = r.found;
+  console.log(`\n📦 admin_sessions: ${r.found} ephemeral records found — securely skipped`);
 
   console.log(`  ✅ valid=${r.valid} inserted=${r.inserted} errors=${r.errors.length}`);
 }

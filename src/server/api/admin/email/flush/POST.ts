@@ -28,10 +28,12 @@ import {
   requeueEmail,
 } from '../../../../lib/emailQueue.js';
 import { sendEmail as smtpSendEmail } from '../../../../lib/smtpTransport.js';
+import { authorizeAdminRole } from '../../../../lib/rbacMiddleware.js';
 
 const MAX_ATTEMPTS = 5;
 
-export default async function handler(_req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
+  if (!authorizeAdminRole(req, res, 'SUPER_ADMIN')) return;
   const t0 = Date.now();
 
   // ── Step 1: Invalidate stale token cache ────────────────────────────────────

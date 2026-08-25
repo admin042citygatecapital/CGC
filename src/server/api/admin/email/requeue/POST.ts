@@ -11,8 +11,10 @@
  */
 import type { Request, Response } from 'express';
 import { getEmailLogs, requeueEmail, getQueueStats } from '../../../../lib/emailQueue.js';
+import { authorizeAdminRole } from '../../../../lib/rbacMiddleware.js';
 
 export default async function handler(req: Request, res: Response) {
+  if (!authorizeAdminRole(req, res, 'SUPER_ADMIN')) return;
   const { ids } = req.body as { ids?: string[] };
 
   let targetIds: string[];

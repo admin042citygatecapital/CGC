@@ -22,13 +22,14 @@ import { getQueryClient, isDatabaseConfigured, testConnection } from '../../../d
 
 const ROUTE_CATALOGUE: DeveloperRouteEntry[] = [
   // Auth
-  { method:'POST', path:'/api/admin/auth/login',                  group:'Admin Auth',       auth:'public',  description:'Admin login — bcrypt + session cookie' },
+  { method:'POST', path:'/api/admin/auth/login',                  group:'Admin Auth',       auth:'public',  description:'Admin credential verification and device-bound second factor' },
   { method:'POST', path:'/api/admin/auth/logout',                 group:'Admin Auth',       auth:'public',  description:'Destroy admin session' },
   { method:'GET',  path:'/api/admin/auth/verify',                 group:'Admin Auth',       auth:'public',  description:'Lightweight session check' },
   { method:'POST', path:'/api/admin/auth/otp/verify',             group:'Admin Auth',       auth:'public',  description:'Email OTP second-factor verification' },
+  { method:'POST', path:'/api/admin/auth/otp/resend',             group:'Admin Auth',       auth:'public',  description:'Rate-limited replacement of a device-bound OTP challenge' },
   { method:'POST', path:'/api/admin/auth/password-reset',         group:'Admin Auth',       auth:'public',  description:'Initiate admin password reset' },
   { method:'POST', path:'/api/admin/auth/password-reset/confirm', group:'Admin Auth',       auth:'public',  description:'Confirm admin password reset' },
-  { method:'POST', path:'/api/admin/auth/unlock',                 group:'Admin Auth',       auth:'public',  description:'Unlock brute-force locked account' },
+  { method:'POST', path:'/api/admin/auth/unlock',                 group:'Admin Auth',       auth:'admin',   description:'SUPER_ADMIN unlock with recent step-up verification' },
   { method:'GET',  path:'/api/admin/auth/trusted-devices',        group:'Admin Auth',       auth:'admin',   description:'List trusted devices for admin' },
   { method:'DELETE',path:'/api/admin/auth/trusted-devices',       group:'Admin Auth',       auth:'admin',   description:'Revoke a trusted device' },
   // Users

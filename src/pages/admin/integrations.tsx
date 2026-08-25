@@ -153,6 +153,41 @@ interface TestResult {
   testedAt:  string;
 }
 
+interface ApiErrorPayload {
+  error?: unknown;
+  message?: unknown;
+}
+
+async function readResponsePayload(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+function responseErrorMessage(response: Response, payload: unknown, fallback: string): string {
+  if (payload && typeof payload === 'object') {
+    const { error, message } = payload as ApiErrorPayload;
+    if (typeof error === 'string' && error.trim()) return error;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  return `${fallback} (HTTP ${response.status})`;
+}
+
+function caughtErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isTestResult(payload: unknown): payload is TestResult {
+  if (!payload || typeof payload !== 'object') return false;
+  const result = payload as Partial<TestResult>;
+  return typeof result.ok === 'boolean'
+    && typeof result.message === 'string'
+    && typeof result.latencyMs === 'number'
+    && typeof result.testedAt === 'string';
+}
+
 // ─── Category icon map ────────────────────────────────────────────────────────
 
 const INTEGRATION_ICONS: Record<string, React.ElementType> = {
@@ -205,7 +240,7 @@ function relativeTime(iso: string | null): string {
 interface CardProps {
   integration: Integration;
   onToggle:    (id: string, enabled: boolean) => void;
-  onSave:      (id: string, notes: string, config: Record<string, string>) => void;
+  onSave:      (id: string, notes: string, config: Record<string, string>) => Promise<boolean>;
   onTest:      (id: string) => void;
   testing:     boolean;
   testResult:  TestResult | null;
@@ -216,6 +251,7 @@ function IntegrationCard({ integration, onToggle, onSave, onTest, testing, testR
   const [notes,    setNotes]      = useState(integration.notes);
   const [config,   setConfig]     = useState<Record<string, string>>(integration.config);
   const [dirty,    setDirty]      = useState(false);
+  const [saving,   setSaving]     = useState(false);
 
   const Icon = INTEGRATION_ICONS[integration.id] ?? Settings2;
 
@@ -229,9 +265,14 @@ function IntegrationCard({ integration, onToggle, onSave, onTest, testing, testR
     setDirty(true);
   }
 
-  function handleSave() {
-    onSave(integration.id, notes, config);
-    setDirty(false);
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const saved = await onSave(integration.id, notes, config);
+      if (saved) setDirty(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   // Status dot pulse for connected
@@ -454,11 +495,12 @@ function IntegrationCard({ integration, onToggle, onSave, onTest, testing, testR
                 <div className="flex justify-end">
                   <button
                     onClick={handleSave}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-black transition-all"
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-black transition-all disabled:cursor-not-allowed disabled:opacity-60"
                     style={{ background: 'linear-gradient(135deg, #C9A84C, #F0D080)' }}
                   >
-                    <Save size={12} />
-                    Save Changes
+                    {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                    {saving ? 'Saving…' : 'Save Changes'}
                   </button>
                 </div>
               )}
@@ -476,6 +518,7 @@ export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState<string | null>(null);
+  const [actionError,  setActionError]  = useState<string | null>(null);
   const [refreshing,   setRefreshing]   = useState(false);
 
   // Per-integration test state
@@ -511,35 +554,49 @@ export default function IntegrationsPage() {
   // ── Toggle enabled ────────────────────────────────────────────────────────
 
   async function handleToggle(id: string, enabled: boolean) {
+    setActionError(null);
     try {
-      await fetch('/api/admin/integrations', {
+      const res = await fetch('/api/admin/integrations', {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, enabled }),
       });
-      setIntegrations(prev => prev.map(i => i.id === id ? { ...i, enabled, status: enabled ? i.status : 'disconnected' } : i));
-    } catch { /* silent */ }
+      const payload = await readResponsePayload(res) as { integration?: Integration } | null;
+      if (!res.ok) throw new Error(responseErrorMessage(res, payload, 'Unable to update integration'));
+      if (!payload?.integration) throw new Error('The server did not confirm the integration update.');
+      const confirmedIntegration = payload.integration;
+      setIntegrations(prev => prev.map(i => i.id === id ? confirmedIntegration : i));
+    } catch (error) {
+      setActionError(`Unable to update integration: ${caughtErrorMessage(error)}`);
+    }
   }
 
   // ── Save config ───────────────────────────────────────────────────────────
 
-  async function handleSave(id: string, notes: string, config: Record<string, string>) {
+  async function handleSave(id: string, notes: string, config: Record<string, string>): Promise<boolean> {
+    setActionError(null);
     try {
       const res = await fetch('/api/admin/integrations', {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, notes, config }),
       });
-      const data = await res.json() as { integration: Integration };
-      if (data.integration) {
-        setIntegrations(prev => prev.map(i => i.id === id ? data.integration : i));
-      }
-    } catch { /* silent */ }
+      const payload = await readResponsePayload(res) as { integration?: Integration } | null;
+      if (!res.ok) throw new Error(responseErrorMessage(res, payload, 'Unable to save integration'));
+      if (!payload?.integration) throw new Error('The server did not confirm the integration save.');
+      const confirmedIntegration = payload.integration;
+      setIntegrations(prev => prev.map(i => i.id === id ? confirmedIntegration : i));
+      return true;
+    } catch (error) {
+      setActionError(`Unable to save integration: ${caughtErrorMessage(error)}`);
+      return false;
+    }
   }
 
   // ── Test connection ───────────────────────────────────────────────────────
 
   async function handleTest(id: string) {
+    setActionError(null);
     setTesting(prev => ({ ...prev, [id]: true }));
     setTestResults(prev => ({ ...prev, [id]: null }));
     try {
@@ -548,14 +605,20 @@ export default function IntegrationsPage() {
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
-      const data = await res.json() as TestResult;
-      setTestResults(prev => ({ ...prev, [id]: data }));
+      const payload = await readResponsePayload(res);
+      if (!res.ok) {
+        const message = responseErrorMessage(res, payload, 'Unable to test integration');
+        setTestResults(prev => ({ ...prev, [id]: { ok: false, message, latencyMs: 0, testedAt: new Date().toISOString() } }));
+        return;
+      }
+      if (!isTestResult(payload)) throw new Error('The server returned an invalid integration test result.');
+      setTestResults(prev => ({ ...prev, [id]: payload }));
       // Refresh to pick up updated lastTestedAt
       await load(true);
       // Auto-clear result after 12s
       setTimeout(() => setTestResults(prev => ({ ...prev, [id]: null })), 12_000);
     } catch (e) {
-      setTestResults(prev => ({ ...prev, [id]: { ok: false, message: String(e), latencyMs: 0, testedAt: new Date().toISOString() } }));
+      setTestResults(prev => ({ ...prev, [id]: { ok: false, message: caughtErrorMessage(e), latencyMs: 0, testedAt: new Date().toISOString() } }));
     } finally {
       setTesting(prev => ({ ...prev, [id]: false }));
     }
@@ -687,6 +750,16 @@ export default function IntegrationsPage() {
             <span>Failed to load integrations: {error}</span>
             <button onClick={() => load()} className="ml-auto text-red-300/60 hover:text-red-300 transition-colors">
               <RefreshCw size={14} />
+            </button>
+          </div>
+        )}
+
+        {actionError && !loading && (
+          <div role="alert" className="flex items-center gap-3 p-4 rounded-2xl bg-red-400/8 border border-red-400/15 text-red-300 text-sm">
+            <AlertCircle size={16} className="shrink-0" />
+            <span>{actionError}</span>
+            <button onClick={() => setActionError(null)} className="ml-auto text-red-300/60 hover:text-red-300 transition-colors" aria-label="Dismiss integration error">
+              <XCircle size={14} />
             </button>
           </div>
         )}

@@ -1,8 +1,8 @@
 /**
  * trustedDeviceStore.ts — PostgreSQL-backed trusted device store.
  * ────────────────────────────────────────────────────────────────
- * Stores trusted device tokens in the `config` table under key
- * 'trusted_devices'. Falls back to in-memory Map when no DB.
+ * Stores SHA-256 trusted-device token digests in the `config` table under key
+ * 'trusted_devices'. Falls back to an in-memory map when no DB.
  *
  * Security properties (unchanged):
  *  - 256-bit cryptographically random device tokens
@@ -16,6 +16,7 @@ import crypto from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { config as configTable } from '../db/schema.js';
+import { digestFromPersistedTokenKey, persistedTokenKey } from './tokenDigest.js';
 
 const CONFIG_KEY  = 'trusted_devices';
 const TTL_MS      = (parseInt(process.env.TRUSTED_DEVICE_DAYS ?? '30', 10)) * 86_400_000;
@@ -24,6 +25,7 @@ const MAX_DEVICES = 10;
 export const DEVICE_COOKIE = 'cgc_trusted_device';
 
 export interface TrustedDevice {
+  id:         string;
   adminId:    string;
   email:      string;
   name:       string;
@@ -42,22 +44,22 @@ let _mem: Record<string, TrustedDevice> = {};
 
 async function loadDevices(): Promise<Record<string, TrustedDevice>> {
   if (!isDatabaseConfigured()) return _mem;
-  try {
-    const db   = getDb();
-    const rows = await db.select().from(configTable).where(eq(configTable.key, CONFIG_KEY));
-    if (!rows.length) return {};
-    return (rows[0].value as Record<string, TrustedDevice>) ?? {};
-  } catch { return {}; }
+  const db   = getDb();
+  const rows = await db.select().from(configTable).where(eq(configTable.key, CONFIG_KEY));
+  if (!rows.length) return {};
+  const stored = (rows[0].value as Record<string, TrustedDevice>) ?? {};
+  return Object.fromEntries(Object.entries(stored).filter(([key, device]) =>
+    digestFromPersistedTokenKey(key) !== null
+    && /^dev_[a-f0-9]{24}$/i.test(device?.id ?? '')
+  ));
 }
 
 async function saveDevices(devices: Record<string, TrustedDevice>): Promise<void> {
   if (!isDatabaseConfigured()) { _mem = devices; return; }
-  try {
-    const db = getDb();
-    await db.insert(configTable)
-      .values({ key: CONFIG_KEY, value: devices as unknown as Record<string, unknown>, updatedBy: 'system' })
-      .onConflictDoUpdate({ target: configTable.key, set: { value: devices as unknown as Record<string, unknown>, updatedAt: new Date() } });
-  } catch { /* non-fatal */ }
+  const db = getDb();
+  await db.insert(configTable)
+    .values({ key: CONFIG_KEY, value: devices as unknown as Record<string, unknown>, updatedBy: 'system' })
+    .onConflictDoUpdate({ target: configTable.key, set: { value: devices as unknown as Record<string, unknown>, updatedAt: new Date() } });
 }
 
 // ── UA label helper ───────────────────────────────────────────────────────────
@@ -105,7 +107,8 @@ export async function registerTrustedDevice(
   }
 
   const token = crypto.randomBytes(32).toString('hex');
-  devices[token] = {
+  devices[persistedTokenKey(token)] = {
+    id:         `dev_${crypto.randomBytes(12).toString('hex')}`,
     adminId,
     email,
     name:       parseUaLabel(ua),
@@ -122,33 +125,40 @@ export async function registerTrustedDevice(
 export async function validateTrustedDevice(token: string, adminId: string): Promise<TrustedDevice | null> {
   if (!token || token.length !== 64 || !/^[0-9a-f]+$/.test(token)) return null;
   const devices = await loadDevices();
-  const device  = devices[token];
+  const tokenKey = persistedTokenKey(token);
+  const device  = devices[tokenKey];
   if (!device) return null;
   if (device.adminId !== adminId) return null;
   if (new Date(device.expiresAt).getTime() < Date.now()) {
-    delete devices[token];
+    delete devices[tokenKey];
     await saveDevices(devices);
     return null;
   }
   device.lastUsedAt = new Date().toISOString();
-  devices[token] = device;
+  devices[tokenKey] = device;
   await saveDevices(devices);
   return device;
 }
 
-export async function listTrustedDevices(adminId: string): Promise<Array<TrustedDevice & { token: string }>> {
+export async function listTrustedDevices(adminId: string): Promise<TrustedDevice[]> {
   const devices = await loadDevices();
   const now     = Date.now();
   return Object.entries(devices)
     .filter(([, d]) => d.adminId === adminId && new Date(d.expiresAt).getTime() > now)
-    .map(([token, d]) => ({ token, ...d }))
+    .map(([, d]) => ({ ...d }))
     .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
 }
 
-export async function revokeTrustedDevice(token: string): Promise<void> {
+export async function revokeTrustedDevice(adminId: string, deviceId: string): Promise<boolean> {
+  if (!/^dev_[a-f0-9]{24}$/i.test(deviceId)) return false;
   const devices = await loadDevices();
-  delete devices[token];
+  const match = Object.entries(devices).find(([, device]) =>
+    device.adminId === adminId && device.id === deviceId
+  );
+  if (!match) return false;
+  delete devices[match[0]];
   await saveDevices(devices);
+  return true;
 }
 
 export async function revokeAllTrustedDevices(adminId: string): Promise<void> {

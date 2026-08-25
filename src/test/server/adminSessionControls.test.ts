@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const sessionStore = vi.hoisted(() => ({
   listSessions: vi.fn(),
-  deleteSession: vi.fn(),
+  deleteSessionByHash: vi.fn(),
   deleteAllSessionsForAdmin: vi.fn(),
 }));
 const audit = vi.hoisted(() => ({ appendAudit: vi.fn() }));
@@ -14,6 +14,7 @@ vi.mock('../../server/lib/auditLog.js', () => audit);
 
 import listSessions from '../../server/api/admin/security/sessions/GET.js';
 import deleteSession from '../../server/api/admin/security/sessions/DELETE.js';
+import patchSession from '../../server/api/admin/security/sessions/PATCH.js';
 
 function responseDouble() {
   const result = { status: 200, body: undefined as unknown };
@@ -25,19 +26,20 @@ function responseDouble() {
 }
 
 const rawToken = 'a'.repeat(64);
+const storedDigest = crypto.createHash('sha256').update(rawToken).digest('hex');
 const session = {
-  token: rawToken,
+  token: storedDigest,
   adminId: 'admin_001',
   email: 'admin@citygate.capital',
   role: 'SUPER_ADMIN',
-  createdAt: '2026-08-20T00:00:00.000Z',
+  createdAt: new Date().toISOString(),
   ip: '127.0.0.1',
   ua: 'Test Browser',
 };
 
 beforeEach(() => {
   sessionStore.listSessions.mockReset();
-  sessionStore.deleteSession.mockReset();
+  sessionStore.deleteSessionByHash.mockReset();
   sessionStore.deleteAllSessionsForAdmin.mockReset();
   audit.appendAudit.mockReset();
 });
@@ -48,20 +50,34 @@ describe('administrator session controls', () => {
     const response = responseDouble();
     await listSessions({} as Request, response.res);
 
-    const expectedReference = crypto.createHash('sha256').update(rawToken).digest('hex');
-    expect(response.result.body).toMatchObject({ sessions: [{ token: expectedReference }] });
+    expect(response.result.body).toMatchObject({ sessions: [{ token: storedDigest }] });
     expect(JSON.stringify(response.result.body)).not.toContain(rawToken);
   });
 
   it('revokes by the safe reference and does not put token material in the audit event', async () => {
     sessionStore.listSessions.mockResolvedValue([session]);
-    const reference = crypto.createHash('sha256').update(rawToken).digest('hex');
     const response = responseDouble();
-    await deleteSession({ body: { token: reference }, ip: '127.0.0.1', headers: {} } as Request, response.res);
+    await deleteSession({
+      body: { token: storedDigest, reason: 'Security investigation', confirmation: 'CONFIRM SESSION REVOCATION' },
+      ip: '127.0.0.1', headers: {}, adminSession: session,
+    } as unknown as Request, response.res);
 
-    expect(sessionStore.deleteSession).toHaveBeenCalledWith(rawToken);
-    expect(audit.appendAudit).toHaveBeenCalledWith({ event: 'admin_session_terminated', ip: '127.0.0.1' });
+    expect(sessionStore.deleteSessionByHash).toHaveBeenCalledWith(storedDigest);
+    expect(audit.appendAudit).toHaveBeenCalledWith(expect.objectContaining({
+      event: 'admin_session_terminated', ip: '127.0.0.1', adminId: 'admin_001', reason: 'Security investigation',
+    }));
     expect(JSON.stringify(audit.appendAudit.mock.calls)).not.toContain(rawToken.slice(0, 8));
     expect(response.result.body).toEqual({ ok: true, message: 'Session terminated' });
+  });
+
+  it('fails closed instead of claiming an existing privileged session was extended', async () => {
+    const response = responseDouble();
+    await patchSession({ body: { action: 'extend', token: storedDigest } } as Request, response.res);
+
+    expect(response.result.status).toBe(501);
+    expect(response.result.body).toEqual({
+      error: 'Session extension is not supported. Sign in again to start a new session.',
+    });
+    expect(audit.appendAudit).not.toHaveBeenCalled();
   });
 });

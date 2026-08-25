@@ -10,9 +10,10 @@ describe('Vercel runtime boundary', () => {
   it('does not start standalone lifecycle features in a Vercel function', () => {
     const entry = readFileSync('src/server/entry.ts', 'utf8');
     expect(entry).toContain("const isVercelRuntime = process.env.VERCEL === '1'");
-    expect(entry).toContain('if (isViteProductionBuild && !isVercelRuntime)');
-    expect(entry.indexOf('if (isViteProductionBuild && !isVercelRuntime)')).toBeLessThan(entry.indexOf('new WebSocketServer'));
-    expect(entry.indexOf('if (isViteProductionBuild && !isVercelRuntime)')).toBeLessThan(entry.indexOf('startOperationalBackupWorker()'));
+    expect(entry).toContain('const isStandaloneEntrypoint = Boolean(');
+    expect(entry).toContain('if (isStandaloneEntrypoint && !isVercelRuntime)');
+    expect(entry.indexOf('if (isStandaloneEntrypoint && !isVercelRuntime)')).toBeLessThan(entry.indexOf('new WebSocketServer'));
+    expect(entry.indexOf('if (isStandaloneEntrypoint && !isVercelRuntime)')).toBeLessThan(entry.indexOf('startOperationalBackupWorker()'));
   });
 
   it('builds the Vite client and preserves SPA deep links', () => {

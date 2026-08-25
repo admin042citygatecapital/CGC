@@ -3,18 +3,12 @@
  * Returns all active admin sessions with metadata.
  */
 import type { Request, Response } from 'express';
-import crypto from 'node:crypto';
 import { listSessions } from '../../../../lib/sessionStore.js';
-
-function sessionReference(token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex');
-}
 
 export default async function handler(_req: Request, res: Response) {
   const sessions = await listSessions();
-  const safeSessions = sessions.map(({ token, ...session }) => ({
-    ...session,
-    token: sessionReference(token),
-  }));
+  // listSessions returns only persisted SHA-256 references, never bearer
+  // credentials. Preserve the existing response field for API compatibility.
+  const safeSessions = sessions.map(({ token, ...session }) => ({ ...session, token }));
   return res.json({ sessions: safeSessions, total: safeSessions.length });
 }

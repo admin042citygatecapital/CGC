@@ -33,8 +33,8 @@ export default async function handler(req: Request, res: Response) {
 
   await updateUser(user.id, {
     emailVerified:     true,
-    emailVerifyToken:  undefined,
-    emailVerifyExpiry: undefined,
+    emailVerifyToken:  null,
+    emailVerifyExpiry: null,
     status:            'pending_kyc',
   });
 

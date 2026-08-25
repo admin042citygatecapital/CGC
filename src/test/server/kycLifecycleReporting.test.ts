@@ -28,6 +28,7 @@ function user(overrides: Partial<UserRecord> = {}): UserRecord {
     amlRiskLevel: 'unrated',
     emailVerified: true,
     passwordHash: 'not-used',
+    credentialVersion: 1,
     loginAttempts: 0,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',

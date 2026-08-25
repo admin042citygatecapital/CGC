@@ -1,7 +1,7 @@
 /**
  * POST /api/admin/auth/logout
  * Deletes the server-side session and clears the HttpOnly cookie.
- * Accepts token from cookie OR Authorization header.
+ * The browser session credential is accepted only from the HttpOnly cookie.
  */
 import type { Request, Response } from 'express';
 import { deleteSession } from '../../../../lib/sessionStore.js';
@@ -9,10 +9,7 @@ import { appendAudit } from '../../../../lib/auditLog.js';
 import { COOKIE_NAME, COOKIE_PATH } from '../../../../lib/adminAuthMiddleware.js';
 
 export default async function handler(req: Request, res: Response) {
-  // Resolve token from cookie first, then Bearer header
-  const cookieToken  = (req.cookies as Record<string, string> | undefined)?.[COOKIE_NAME];
-  const bearerToken  = req.headers.authorization?.replace('Bearer ', '').trim();
-  const token        = cookieToken ?? bearerToken;
+  const token = (req.cookies as Record<string, string> | undefined)?.[COOKIE_NAME];
 
   if (token && token.length === 64) {
     await deleteSession(token);

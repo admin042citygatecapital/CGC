@@ -162,7 +162,7 @@ describe('bruteForce', () => {
     const { recordLoginFailure, getFailCount } = await import('../../server/lib/bruteForce.js');
     const email = `test-${Date.now()}@example.com`;
     const ip = '10.0.0.1';
-    recordLoginFailure(email, ip);
+    await recordLoginFailure(email, ip);
     const count = await getFailCount(email);
     expect(count).toBeGreaterThanOrEqual(1);
   });
@@ -173,7 +173,7 @@ describe('bruteForce', () => {
     const ip = '10.0.0.2';
     // Record enough failures to trigger lockout (threshold is 4, locks on 5th)
     for (let i = 0; i < 6; i++) {
-      recordLoginFailure(email, ip);
+      await recordLoginFailure(email, ip);
     }
     const status = await checkLockout(email, ip);
     expect(status.blocked).toBe(true);
@@ -184,10 +184,10 @@ describe('bruteForce', () => {
     const email = `clear-${Date.now()}@example.com`;
     const ip = '10.0.0.3';
     for (let i = 0; i < 6; i++) {
-      recordLoginFailure(email, ip);
+      await recordLoginFailure(email, ip);
     }
     expect((await checkLockout(email, ip)).blocked).toBe(true);
-    recordLoginSuccess(email, ip);
+    await recordLoginSuccess(email, ip);
     expect((await checkLockout(email, ip)).blocked).toBe(false);
   });
 });

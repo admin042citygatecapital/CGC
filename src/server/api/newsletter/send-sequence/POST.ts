@@ -14,6 +14,7 @@ import { NURTURE_SEQUENCE } from '../../../lib/nurtureSequence.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { privateSubdirectory } from '../../../lib/storagePaths.js';
+import { authorizeAdminPermission } from '../../../lib/rbacMiddleware.js';
 
 const SEQUENCE_LOG_DIR = privateSubdirectory('newsletter');
 const STEP_LOG_FILE    = path.join(SEQUENCE_LOG_DIR, 'sequence-steps.json');
@@ -41,6 +42,7 @@ interface SendResult {
 }
 
 export default async function handler(req: Request, res: Response) {
+  if (!await authorizeAdminPermission(req, res, 'email.send')) return;
   try {
     const now     = Date.now();
     const stepMap = readStepMap();

@@ -36,7 +36,10 @@ export interface EnvVarSpec {
 function validateAdminHash(value: string): string | null {
   const isArgon2id = value.startsWith('$argon2id$');
   const isLegacyBcrypt = /^\$2[aby]\$1[012]\$[./A-Za-z0-9]{53}$/.test(value);
-  const isLegacyPbkdf2 = /^\d+:[0-9a-f]+:[0-9a-f]+$/i.test(value);
+  // The original administrator PBKDF2 implementation serialized a 16-byte
+  // salt and 32-byte SHA-256 digest with btoa(), so both fields use padded
+  // standard Base64 (not hexadecimal): `100000:<24 chars>:<44 chars>`.
+  const isLegacyPbkdf2 = /^100000:[A-Za-z0-9+/]{22}==:[A-Za-z0-9+/]{43}=$/.test(value);
   return isArgon2id || isLegacyBcrypt || isLegacyPbkdf2
     ? null
     : 'Must be an Argon2id hash or a supported legacy bcrypt/PBKDF2 hash.';

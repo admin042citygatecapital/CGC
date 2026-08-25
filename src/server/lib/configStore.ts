@@ -19,11 +19,12 @@ function readConfig(): AppConfig {
   return defaultConfig();
 }
 
-function writeConfig(cfg: AppConfig): void {
+async function writeConfig(cfg: AppConfig): Promise<void> {
+  // PostgreSQL is authoritative whenever it is configured. Do not publish a
+  // cache value until the durable write has completed: otherwise callers can
+  // report success while the database has rejected the change.
+  await persistConfig(cfg);
   _cache = cfg;
-  persistConfig(cfg).catch(err =>
-    console.error(JSON.stringify({ event: 'configStore.write.failed', error: String(err) }))
-  );
 }
 
 async function persistConfig(cfg: AppConfig): Promise<void> {
@@ -368,26 +369,32 @@ export function getSection<K extends keyof AppConfig>(section: K): AppConfig[K] 
   return readConfig()[section];
 }
 
-export function updateSection<K extends keyof Omit<AppConfig, 'updatedAt'>>(
+export async function updateSection<K extends keyof Omit<AppConfig, 'updatedAt'>>(
   section: K,
   patch: Partial<AppConfig[K]>
-): AppConfig {
-  const cfg = readConfig();
-  const next = { ...(cfg as any)[section], ...patch };
+): Promise<AppConfig> {
+  const current = readConfig();
+  const next = { ...(current as any)[section], ...patch };
   if (section === 'featureToggles') {
     next.featureAccess = normalizePlatformFeatureAccess(next.featureAccess);
   }
-  (cfg as any)[section] = next;
-  cfg.updatedAt = new Date().toISOString();
-  writeConfig(cfg);
+  const cfg = {
+    ...current,
+    [section]: next,
+    updatedAt: new Date().toISOString(),
+  } as AppConfig;
+  await writeConfig(cfg);
   return cfg;
 }
 
-export function resetSection<K extends keyof Omit<AppConfig, 'updatedAt'>>(section: K): AppConfig {
-  const cfg     = readConfig();
-  const def     = defaultConfig();
-  (cfg as any)[section] = (def as any)[section];
-  cfg.updatedAt = new Date().toISOString();
-  writeConfig(cfg);
+export async function resetSection<K extends keyof Omit<AppConfig, 'updatedAt'>>(section: K): Promise<AppConfig> {
+  const current = readConfig();
+  const def = defaultConfig();
+  const cfg = {
+    ...current,
+    [section]: (def as any)[section],
+    updatedAt: new Date().toISOString(),
+  } as AppConfig;
+  await writeConfig(cfg);
   return cfg;
 }

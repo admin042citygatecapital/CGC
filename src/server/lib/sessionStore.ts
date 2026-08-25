@@ -7,9 +7,10 @@
 
 import crypto from 'node:crypto';
 import { eq, lt } from 'drizzle-orm';
-import { getDb, isDatabaseConfigured } from '../db/db.js';
+import { getDb, getQueryClient, isDatabaseConfigured } from '../db/db.js';
 import { adminSessions } from '../db/schema.js';
 import type { AdminSession } from '../db/schema.js';
+import { digestOpaqueToken, isSha256Digest } from './tokenDigest.js';
 
 const INACTIVITY_MS          = (parseInt(process.env.SESSION_TIMEOUT_MINUTES ?? '60', 10)) * 60_000;
 const ABSOLUTE_TTL_MS        = (parseInt(process.env.SESSION_MAX_HOURS        ?? '8',  10)) * 3_600_000;
@@ -44,6 +45,7 @@ export interface Session {
   adminId:    string;
   email:      string;
   role:       AdminRole;
+  credentialVersion: number;
   createdAt:  string;
   lastSeenAt: string;
   ip:         string;
@@ -71,6 +73,7 @@ function toSession(r: AdminSession): Session {
     adminId:    r.adminId,
     email:      r.email,
     role:       r.role as AdminRole,
+    credentialVersion: r.credentialVersion,
     createdAt:  r.createdAt.toISOString(),
     lastSeenAt: r.lastSeenAt.toISOString(),
     ip:         r.ip,
@@ -83,36 +86,48 @@ function toSession(r: AdminSession): Session {
 export async function createSession(
   token: string,
   data: Omit<Session, 'lastSeenAt'>,
-): Promise<void> {
+): Promise<boolean> {
   if (!isDatabaseConfigured()) return (await ff()).createSession(token, data);
-  const db  = getDb();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + ABSOLUTE_TTL_MS);
+  const tokenHash = digestOpaqueToken(token);
+  const sql = getQueryClient();
 
-  // Enforce max sessions per admin — evict oldest if needed
-  const existing = await db.select({ token: adminSessions.token, createdAt: adminSessions.createdAt })
-    .from(adminSessions)
-    .where(eq(adminSessions.adminId, data.adminId))
-    .orderBy(adminSessions.createdAt);
+  // Password rotation and session issuance share this principal-scoped lock.
+  // A login that verified an older credential revision can never publish a
+  // session after the rotation transaction revoked the old sessions.
+  return sql.begin(async (tx) => {
+    await tx`SELECT pg_advisory_xact_lock(hashtext(${`admin-credential:${data.adminId}`}))`;
+    const [principal] = await tx<{ credential_version: number; is_active: boolean }[]>`
+      SELECT credential_version, is_active
+      FROM admins
+      WHERE id = ${data.adminId}
+    `;
+    if (!principal?.is_active || principal.credential_version !== data.credentialVersion) return false;
 
-  if (existing.length >= MAX_SESSIONS_PER_ADMIN) {
-    const toEvict = existing.slice(0, existing.length - MAX_SESSIONS_PER_ADMIN + 1);
-    for (const s of toEvict) {
-      await db.delete(adminSessions).where(eq(adminSessions.token, s.token));
-    }
-  }
-
-  await db.insert(adminSessions).values({
-    token,
-    adminId:    data.adminId,
-    email:      data.email,
-    role:       data.role as AdminSession['role'],
-    ip:         data.ip,
-    ua:         data.ua,
-    createdAt:  now,
-    lastSeenAt: now,
-    expiresAt,
-  }).onConflictDoNothing();
+    await tx`
+      DELETE FROM admin_sessions
+      WHERE token_hash IN (
+        SELECT token_hash
+        FROM admin_sessions
+        WHERE admin_id = ${data.adminId}
+        ORDER BY created_at ASC
+        OFFSET ${MAX_SESSIONS_PER_ADMIN - 1}
+      )
+    `;
+    const inserted = await tx<{ token_hash: string }[]>`
+      INSERT INTO admin_sessions (
+        token_hash, admin_id, email, role, credential_version,
+        ip, ua, created_at, last_seen_at, expires_at
+      ) VALUES (
+        ${tokenHash}, ${data.adminId}, ${data.email}, ${data.role}::admin_role,
+        ${data.credentialVersion}, ${data.ip}, ${data.ua}, ${now}, ${now}, ${expiresAt}
+      )
+      ON CONFLICT DO NOTHING
+      RETURNING token_hash
+    `;
+    return inserted.length === 1;
+  });
 }
 
 /**
@@ -133,49 +148,79 @@ export async function getSession(
     }
     return session;
   }
-  const db  = getDb();
   const now = new Date();
+  const tokenHash = digestOpaqueToken(token);
+  const sql = getQueryClient();
+  return sql.begin(async (tx) => {
+    const [identity] = await tx<{ admin_id: string }[]>`
+      SELECT admin_id FROM admin_sessions WHERE token_hash = ${tokenHash}
+    `;
+    if (!identity) return null;
+    await tx`SELECT pg_advisory_xact_lock(hashtext(${`admin-credential:${identity.admin_id}`}))`;
+    const [s] = await tx<{
+      admin_id: string;
+      email: string;
+      role: AdminRole;
+      credential_version: number;
+      ip: string;
+      ua: string;
+      created_at: Date;
+      last_seen_at: Date;
+      expires_at: Date;
+      current_credential_version: number;
+      is_active: boolean;
+    }[]>`
+      SELECT s.admin_id, s.email, s.role::text AS role, s.credential_version,
+             s.ip, s.ua, s.created_at, s.last_seen_at, s.expires_at,
+             a.credential_version AS current_credential_version, a.is_active
+      FROM admin_sessions s
+      JOIN admins a ON a.id = s.admin_id
+      WHERE s.token_hash = ${tokenHash}
+      FOR UPDATE OF s
+    `;
+    if (!s) return null;
 
-  const rows = await db.select().from(adminSessions).where(eq(adminSessions.token, token)).limit(1);
-  if (rows.length === 0) return null;
-  const s = rows[0];
-
-  // Check absolute TTL
-  if (s.expiresAt < now) {
-    await db.delete(adminSessions).where(eq(adminSessions.token, token));
-    return null;
-  }
-
-  // Check inactivity TTL
-  const inactivityDeadline = new Date(s.lastSeenAt.getTime() + INACTIVITY_MS);
-  if (inactivityDeadline < now) {
-    await db.delete(adminSessions).where(eq(adminSessions.token, token));
-    return null;
-  }
-
-  if (fingerprint && (s.ip !== fingerprint.ip || s.ua !== fingerprint.ua)) {
-    return null;
-  }
-
-  // Touch lastSeenAt
-  await db.update(adminSessions)
-    .set({ lastSeenAt: now })
-    .where(eq(adminSessions.token, token));
-
-  return toSession({ ...s, lastSeenAt: now });
+    const inactive = !s.is_active || s.credential_version !== s.current_credential_version;
+    const absoluteExpired = s.expires_at < now;
+    const inactivityExpired = new Date(s.last_seen_at.getTime() + INACTIVITY_MS) < now;
+    if (inactive || absoluteExpired || inactivityExpired) {
+      await tx`DELETE FROM admin_sessions WHERE token_hash = ${tokenHash}`;
+      return null;
+    }
+    if (fingerprint && (s.ip !== fingerprint.ip || s.ua !== fingerprint.ua)) return null;
+    await tx`UPDATE admin_sessions SET last_seen_at = ${now} WHERE token_hash = ${tokenHash}`;
+    return {
+      adminId: s.admin_id,
+      email: s.email,
+      role: s.role,
+      credentialVersion: s.credential_version,
+      createdAt: s.created_at.toISOString(),
+      lastSeenAt: now.toISOString(),
+      ip: s.ip,
+      ua: s.ua,
+    };
+  });
 }
 
 export async function deleteSession(token: string): Promise<void> {
   if (!isDatabaseConfigured()) return (await ff()).deleteSession(token);
   const db = getDb();
-  await db.delete(adminSessions).where(eq(adminSessions.token, token));
+  await db.delete(adminSessions).where(eq(adminSessions.tokenHash, digestOpaqueToken(token)));
+}
+
+/** Delete a session by its persisted digest (used by protected session controls). */
+export async function deleteSessionByHash(tokenHash: string): Promise<void> {
+  if (!isSha256Digest(tokenHash)) return;
+  if (!isDatabaseConfigured()) return (await ff()).deleteSessionByHash(tokenHash);
+  const db = getDb();
+  await db.delete(adminSessions).where(eq(adminSessions.tokenHash, tokenHash.toLowerCase()));
 }
 
 export async function listSessions(): Promise<Array<{ token: string } & Session>> {
   if (!isDatabaseConfigured()) return (await ff()).listSessions();
   const db   = getDb();
   const rows = await db.select().from(adminSessions).orderBy(adminSessions.createdAt);
-  return rows.map(r => ({ token: r.token, ...toSession(r) }));
+  return rows.map(r => ({ token: r.tokenHash, ...toSession(r) }));
 }
 
 export async function purgeAllSessions(): Promise<void> {
@@ -190,7 +235,7 @@ export async function purgeExpiredSessions(): Promise<number> {
   const now = new Date();
   const result = await db.delete(adminSessions)
     .where(lt(adminSessions.expiresAt, now))
-    .returning({ token: adminSessions.token });
+    .returning({ tokenHash: adminSessions.tokenHash });
   return result.length;
 }
 
@@ -200,14 +245,14 @@ export async function getSessionsByAdmin(adminId: string): Promise<Array<{ token
   const rows = await db.select().from(adminSessions)
     .where(eq(adminSessions.adminId, adminId))
     .orderBy(adminSessions.createdAt);
-  return rows.map(r => ({ token: r.token, ...toSession(r) }));
+  return rows.map(r => ({ token: r.tokenHash, ...toSession(r) }));
 }
 
 /** Delete all sessions belonging to a given admin (e.g. after password reset). */
 export async function deleteAllSessionsForAdmin(adminId: string): Promise<void> {
   if (!isDatabaseConfigured()) {
     const sessions = await (await ff()).getSessionsByAdmin(adminId);
-    for (const s of sessions) await deleteSession(s.token);
+    for (const s of sessions) await deleteSessionByHash(s.token);
     return;
   }
   const db = getDb();

@@ -12,8 +12,9 @@ import { getSecret } from '#runtime/secrets';
 import {
   hashPassword as hashSecurePassword,
   verifyPassword as verifySecurePassword,
+  type VerifyResult,
 } from './passwordHash.js';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { admins } from '../db/schema.js';
 import { isAdminRole, type AdminRole } from './sessionStore.js';
@@ -26,6 +27,7 @@ export interface AdminRecord {
   role:         AdminRole;
   avatar:       string;
   passwordHash: string;
+  credentialVersion: number;
 }
 
 const ADMIN_STATIC: Omit<AdminRecord, 'passwordHash'>[] = [
@@ -35,6 +37,7 @@ const ADMIN_STATIC: Omit<AdminRecord, 'passwordHash'>[] = [
     name:   'Super Admin',
     role:   'SUPER_ADMIN',
     avatar: 'SA',
+    credentialVersion: 1,
   },
 ];
 
@@ -66,7 +69,15 @@ export async function findAdminByEmail(email: string): Promise<AdminRecord | und
     const row = (await getDb().select().from(admins).where(eq(admins.email, normalizedEmail)).limit(1))[0];
     if (row?.isActive && isAdminRole(row.role)) {
       const initials = row.name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase();
-      return { id: row.id, email: row.email, name: row.name, role: row.role, avatar: initials || 'A', passwordHash: row.passwordHash };
+      return {
+        id: row.id,
+        email: row.email,
+        name: row.name,
+        role: row.role,
+        avatar: initials || 'A',
+        passwordHash: row.passwordHash,
+        credentialVersion: row.credentialVersion,
+      };
     }
     // A configured database is the production source of truth. Do not fall
     // through to an environment-backed identity when a row is absent,
@@ -85,4 +96,32 @@ export async function hashPassword(password: string): Promise<string> {
 /** Verify current Argon2id hashes and supported legacy bcrypt/PBKDF2 hashes. */
 export async function verifyPassword(plain: string, stored: string): Promise<boolean> {
   return (await verifySecurePassword(plain, stored)).ok;
+}
+
+/**
+ * Verify an administrator password and preserve the canonical rehash result.
+ * Callers that authenticate a real database administrator must persist a
+ * returned rehash before completing login.
+ */
+export async function verifyAdminPassword(plain: string, stored: string): Promise<VerifyResult> {
+  return verifySecurePassword(plain, stored);
+}
+
+/**
+ * Atomically upgrade one administrator hash after successful legacy-hash
+ * verification. The expected old hash prevents a concurrent password rotation
+ * from being overwritten by a stale login request.
+ */
+export async function upgradeAdminPasswordHash(
+  adminId: string,
+  expectedOldHash: string,
+  upgradedHash: string,
+): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false;
+  const updated = await getDb()
+    .update(admins)
+    .set({ passwordHash: upgradedHash, updatedAt: new Date() })
+    .where(and(eq(admins.id, adminId), eq(admins.passwordHash, expectedOldHash)))
+    .returning({ id: admins.id });
+  return updated.length === 1;
 }

@@ -11,8 +11,10 @@ import { getSecret } from '#runtime/secrets';
 import { verifyResendProvider } from '../../../../lib/smtpTransport.js';
 import { assessResendHealth } from '../../../../lib/emailProviderHealth.js';
 import { getRecentResendDeliveryEvents } from '../../../../lib/resendWebhook.js';
+import { authorizeAdminRole } from '../../../../lib/rbacMiddleware.js';
 
-export default async function handler(_req: Request, res: Response) {
+export default async function handler(req: Request, res: Response) {
+  if (!authorizeAdminRole(req, res, 'SUPER_ADMIN')) return;
   const oauth   = diagnoseOAuthCredentials();
   const smtp    = loadSmtpConfig();
   const resendReady = !!getSecret('RESEND_API_KEY');
