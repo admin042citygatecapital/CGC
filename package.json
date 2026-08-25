@@ -44,6 +44,7 @@
     "data:quarantine": "npx tsx scripts/quarantine-production-test-data.ts",
     "operations:quarantine": "npx tsx scripts/quarantine-operations-inbox.ts",
     "sponsor:evidence:drafts": "npx tsx scripts/prepare-sponsor-draft-evidence.ts",
+    "receipt:preview": "npx tsx scripts/generate-transaction-receipt-preview.ts",
     "preview:seed": "npx tsx scripts/seed-preview-user.ts",
     "audit": "better-npm-audit audit --level high --registry=https://registry.npmjs.org --exclude 1124282"
   },
@@ -109,7 +110,9 @@
     "lucide-react": "^0.454.0",
     "motion": "^12.29.2",
     "nodemailer": "^9.0.3",
+    "pdf-lib": "^1.17.1",
     "postgres": "^3.4.9",
+    "qrcode": "^1.5.1",
     "react": "^19.2.4",
     "react-day-picker": "^9.9.0",
     "react-dom": "^19.2.4",
@@ -126,8 +129,7 @@
     "vaul": "^1.1.2",
     "ws": "^8.21.0",
     "zod": "^3.25.76",
-    "zustand": "^5.0.2",
-    "qrcode": "^1.5.1"
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
@@ -147,6 +149,7 @@
     "@types/express": "^5.0.3",
     "@types/node": "^22.10.2",
     "@types/nodemailer": "^8.0.0",
+    "@types/qrcode": "^1.4.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.18.2",
@@ -171,8 +174,7 @@
     "tsx": "^4.20.6",
     "typescript": "^5.7.2",
     "vite": "^6.4.2",
-    "vitest": "^4.1.10",
-    "@types/qrcode": "^1.4.3"
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=22"

@@ -2,7 +2,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import { createServer } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { fileURLToPath } from "node:url";
-import { dirname, extname, join } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
 import { readFileSync } from "node:fs";
 // Security & performance middleware
 import { securityHeaders, enforceHttps, removeFingerprinting, requestSizeGuard, apiCacheHeaders } from "./lib/securityMiddleware";
@@ -14,6 +14,7 @@ import cookieParser from "cookie-parser";
 import compression from "compression";
 import { closeConnection } from "./db/db";
 import { requireEnabledCustomerFeature } from "./lib/platformFeatureControls";
+import { issueCustomerResetToken } from "./lib/customerResetTokenStore";
 import platform_features_get from "./api/platform/features/GET";
 import users_features_get from "./api/users/features/GET";
 import admin_features_get from "./api/admin/features/GET";
@@ -49,6 +50,7 @@ import admin_auth_diag_get_2 from "./api/admin/auth/diag/GET";
 import admin_auth_login_post_3 from "./api/admin/auth/login/POST";
 import admin_auth_logout_post_4 from "./api/admin/auth/logout/POST";
 import admin_auth_otp_verify_post_5 from "./api/admin/auth/otp/verify/POST";
+import admin_auth_otp_resend_post from "./api/admin/auth/otp/resend/POST";
 import admin_auth_password_reset_post_6 from "./api/admin/auth/password-reset/POST";
 import admin_auth_password_reset_confirm_post_7 from "./api/admin/auth/password-reset/confirm/POST";
 import admin_auth_trusted_devices_delete_8 from "./api/admin/auth/trusted-devices/DELETE";
@@ -353,6 +355,7 @@ import users_trading_summary_get_271 from "./api/users/trading/summary/GET";
 import users_trading_watchlist_get_272 from "./api/users/trading/watchlist/GET";
 import users_trading_watchlist_post_273 from "./api/users/trading/watchlist/POST";
 import users_transactions_get_274 from "./api/users/transactions/GET";
+import users_transactions_receipt_get from "./api/users/transactions/receipt/GET";
 import users_disputes_get from "./api/users/disputes/GET";
   import users_disputes_post from "./api/users/disputes/POST";
   import users_goals_get from "./api/users/goals/GET";
@@ -546,7 +549,7 @@ app.use('/api/admin', (req: Request, res: Response, next: NextFunction) => {
     '/auth/password-reset',
     '/auth/password-reset/confirm',
     '/auth/otp/verify',
-    '/auth/unlock',
+    '/auth/otp/resend',
     '/auth/diag',
     '/auth/verify',          // lightweight session check — used by login page
     '/zoho/oauth/callback',  // Zoho redirects here — no session yet
@@ -644,6 +647,7 @@ app.get("/api/admin/auth/diag", admin_auth_diag_get_2);
 app.post("/api/admin/auth/login", admin_auth_login_post_3);
 app.post("/api/admin/auth/logout", admin_auth_logout_post_4);
 app.post("/api/admin/auth/otp/verify", admin_auth_otp_verify_post_5);
+app.post("/api/admin/auth/otp/resend", admin_auth_otp_resend_post);
 app.post("/api/admin/auth/password-reset", admin_auth_password_reset_post_6);
 app.post("/api/admin/auth/password-reset/confirm", admin_auth_password_reset_confirm_post_7);
 app.delete("/api/admin/auth/trusted-devices", admin_auth_trusted_devices_delete_8);
@@ -962,6 +966,7 @@ app.get("/api/users/trading/summary", users_trading_summary_get_271);
 app.get("/api/users/trading/watchlist", users_trading_watchlist_get_272);
 app.post("/api/users/trading/watchlist", users_trading_watchlist_post_273);
 app.get("/api/users/transactions", users_transactions_get_274);
+app.get("/api/users/transactions/receipt", users_transactions_receipt_get);
 app.get("/api/users/disputes", users_disputes_get);
   app.post("/api/users/disputes", rateLimitMiddleware(
   (req) => `customer-dispute:${req.customerUser?.id ?? req.ip ?? 'unknown'}`,
@@ -1101,10 +1106,16 @@ app.get("/sitemap.xml", (req, res) => {
 // The bundled standalone server owns SSR, static files, WebSockets and
 // long-lived workers. Vercel imports the Express app as a request function;
 // those container lifecycle responsibilities must not start there.
-const isViteProductionBuild = typeof import.meta.env !== 'undefined' && import.meta.env.PROD;
 const isVercelRuntime = process.env.VERCEL === '1';
+// Start the long-lived HTTP/WebSocket server only when this module is the
+// process entrypoint. This standard ESM main-module check survives Vite's SSR
+// tree-shaking, unlike `import.meta.env.PROD`, and remains false when Vite's
+// development middleware, tests, or a serverless adapter import the app.
+const isStandaloneEntrypoint = Boolean(
+	process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url),
+);
 
-if (isViteProductionBuild && !isVercelRuntime) {
+if (isStandaloneEntrypoint && !isVercelRuntime) {
 	const __dirname = dirname(fileURLToPath(import.meta.url));
 	const clientDir = join(__dirname, "client");
 
@@ -1533,7 +1544,24 @@ if (isViteProductionBuild && !isVercelRuntime) {
 		wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
 	});
 
-	httpServer.listen(port, host, () => {
+	// The E2E server is a separate process from its fixture builder. Seed the
+	// reset-token digest inside this process so the password-reset handler and
+	// fixture share the same in-memory store. These variables are accepted only
+	// in the explicitly isolated E2E runtime and are never logged.
+	const seedE2EResetToken = async () => {
+		if (process.env.E2E_TEST_MODE !== '1') return;
+		const resetUserId = process.env.E2E_RESET_USER_ID;
+		const resetToken = process.env.E2E_RESET_TOKEN;
+		const resetExpiresAt = process.env.E2E_RESET_EXPIRES_AT;
+		if (resetUserId && resetToken && resetExpiresAt) {
+			const expiresAt = new Date(resetExpiresAt);
+			if (!Number.isNaN(expiresAt.getTime())) {
+				await issueCustomerResetToken(resetUserId, resetToken, expiresAt);
+			}
+		}
+	};
+
+	const startStandaloneServer = () => httpServer.listen(port, host, () => {
 		console.log(`Server listening on http://${host}:${port}`);
 		console.log(`WebSocket market feed on ws://${host}:${port}/ws/market`);
 
@@ -1564,6 +1592,15 @@ if (isViteProductionBuild && !isVercelRuntime) {
 		// ── Start WebSocket broadcast loop ──────────────────────────────────
 		startWsBroadcast();
 	});
+
+	void seedE2EResetToken()
+		.then(startStandaloneServer)
+		.catch((error) => {
+			console.error('e2e.reset-fixture.seed-failed', {
+				error: error instanceof Error ? error.name : 'UnknownError',
+			});
+			process.exit(1);
+		});
 
 	httpServer.on("error", (err: NodeJS.ErrnoException) => {
 		console.error("ssr.server.listen-failed", {
