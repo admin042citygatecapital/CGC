@@ -6,6 +6,11 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import type { Session } from './sessionStore.js';
 import { privateSubdirectory } from './storagePaths.js';
+import {
+  digestFromPersistedTokenKey,
+  persistedTokenKey,
+  persistedTokenKeyFromDigest,
+} from './tokenDigest.js';
 
 const SESSIONS_FILE   = path.join(privateSubdirectory('admin'), 'sessions.json');
 const INACTIVITY_MS   = (parseInt(process.env.SESSION_TIMEOUT_MINUTES ?? '60', 10)) * 60_000;
@@ -17,7 +22,14 @@ function load(): Record<string, Session> {
     if (!fs.existsSync(SESSIONS_FILE)) return {};
     const raw = fs.readFileSync(SESSIONS_FILE, 'utf8').trim();
     if (!raw) return {};
-    return JSON.parse(raw) as Record<string, Session>;
+    const parsed = JSON.parse(raw) as Record<string, Session>;
+    const safe = Object.fromEntries(
+      Object.entries(parsed).filter(([key]) => digestFromPersistedTokenKey(key) !== null),
+    );
+    // Raw legacy bearer-token keys cannot be converted safely. Revoke them on
+    // first load and rewrite the file with digest-only entries.
+    if (Object.keys(safe).length !== Object.keys(parsed).length) save(safe);
+    return safe;
   } catch { return {}; }
 }
 
@@ -33,7 +45,7 @@ export function generateSessionToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
-export function createSession(token: string, data: Omit<Session, 'lastSeenAt'>): void {
+export function createSession(token: string, data: Omit<Session, 'lastSeenAt'>): boolean {
   const sessions = load();
   const adminSessions = Object.entries(sessions).filter(([, s]) => s.adminId === data.adminId);
   if (adminSessions.length >= MAX_SESSIONS_PER_ADMIN) {
@@ -41,31 +53,44 @@ export function createSession(token: string, data: Omit<Session, 'lastSeenAt'>):
     const toEvict = adminSessions.slice(0, adminSessions.length - MAX_SESSIONS_PER_ADMIN + 1);
     for (const [t] of toEvict) delete sessions[t];
   }
-  sessions[token] = { ...data, lastSeenAt: new Date().toISOString() };
+  sessions[persistedTokenKey(token)] = { ...data, lastSeenAt: new Date().toISOString() };
   save(sessions);
+  return true;
 }
 
 export function getSession(token: string): Session | null {
   if (!token || token.length !== 64) return null;
   const sessions = load();
-  const s = sessions[token];
+  const key = persistedTokenKey(token);
+  const s = sessions[key];
   if (!s) return null;
   const now = Date.now();
-  if (now - new Date(s.lastSeenAt).getTime() > INACTIVITY_MS) { delete sessions[token]; save(sessions); return null; }
-  if (now - new Date(s.createdAt).getTime() > ABSOLUTE_TTL_MS) { delete sessions[token]; save(sessions); return null; }
-  sessions[token] = { ...s, lastSeenAt: new Date().toISOString() };
+  if (now - new Date(s.lastSeenAt).getTime() > INACTIVITY_MS) { delete sessions[key]; save(sessions); return null; }
+  if (now - new Date(s.createdAt).getTime() > ABSOLUTE_TTL_MS) { delete sessions[key]; save(sessions); return null; }
+  sessions[key] = { ...s, lastSeenAt: new Date().toISOString() };
   save(sessions);
-  return sessions[token];
+  return sessions[key];
 }
 
 export function deleteSession(token: string): void {
   const sessions = load();
-  delete sessions[token];
+  delete sessions[persistedTokenKey(token)];
+  save(sessions);
+}
+
+export function deleteSessionByHash(tokenHash: string): void {
+  const key = persistedTokenKeyFromDigest(tokenHash);
+  if (!key) return;
+  const sessions = load();
+  delete sessions[key];
   save(sessions);
 }
 
 export function listSessions(): Array<{ token: string } & Session> {
-  return Object.entries(load()).map(([token, s]) => ({ token, ...s }));
+  return Object.entries(load()).flatMap(([key, session]) => {
+    const token = digestFromPersistedTokenKey(key);
+    return token ? [{ token, ...session }] : [];
+  });
 }
 
 export function purgeAllSessions(): void {
@@ -73,5 +98,5 @@ export function purgeAllSessions(): void {
 }
 
 export function getSessionsByAdmin(adminId: string): Array<{ token: string } & Session> {
-  return Object.entries(load()).filter(([, s]) => s.adminId === adminId).map(([token, s]) => ({ token, ...s }));
+  return listSessions().filter(session => session.adminId === adminId);
 }

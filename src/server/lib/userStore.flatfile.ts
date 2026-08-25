@@ -7,8 +7,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { stripDangerousKeys } from './inputValidator.js';
-import type { CreateUserInput, UserRecord } from './userStore.js';
+import type { CreateUserInput, UserRecord, UserUpdatePatch } from './userStore.js';
 import { privateSubdirectory } from './storagePaths.js';
+import { digestFromPersistedTokenKey, persistedTokenKey } from './tokenDigest.js';
 
 const INACTIVITY_MS   = (parseInt(process.env.SESSION_CUSTOMER_TIMEOUT_MINUTES ?? '60', 10)) * 60_000;
 const ABSOLUTE_TTL_MS = (parseInt(process.env.SESSION_CUSTOMER_MAX_HOURS       ?? '8',  10)) * 3_600_000;
@@ -22,9 +23,28 @@ function ensureDir() {
 export function loadAllUsers(): UserRecord[] {
   try {
     if (!fs.existsSync(USERS_FILE)) return [];
-    return fs.readFileSync(USERS_FILE, 'utf8')
+    const users = fs.readFileSync(USERS_FILE, 'utf8')
       .split('\n').filter(Boolean)
       .map(l => JSON.parse(l) as UserRecord);
+
+    // Legacy flat-file records stored the bearer token itself. It cannot be
+    // converted after the fact without retaining the credential, so revoke it
+    // on first load and persist only digest-backed sessions going forward.
+    let revokedLegacySession = false;
+    const safeUsers = users.map(user => {
+      if (!user.sessionToken || digestFromPersistedTokenKey(user.sessionToken)) return user;
+      revokedLegacySession = true;
+      return {
+        ...user,
+        sessionToken: undefined,
+        sessionCreatedAt: undefined,
+        sessionLastSeenAt: undefined,
+        sessionExpiresAt: undefined,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+    if (revokedLegacySession) saveAllUsers(safeUsers);
+    return safeUsers;
   } catch { return []; }
 }
 
@@ -48,9 +68,24 @@ export function findUserByVerifyToken(token: string): UserRecord | undefined {
 export function findUserBySessionToken(token: string): UserRecord | undefined {
   if (!token) return undefined;
   const users = loadAllUsers();
-  const idx   = users.findIndex(u => u.sessionToken === token);
+  const tokenKey = persistedTokenKey(token);
+  const idx   = users.findIndex(u => u.sessionToken === tokenKey);
   if (idx === -1) return undefined;
   const user = users[idx];
+  const currentCredentialVersion = user.credentialVersion ?? 1;
+  if ((user.sessionCredentialVersion ?? 1) !== currentCredentialVersion) {
+    users[idx] = {
+      ...user,
+      sessionToken: undefined,
+      sessionCreatedAt: undefined,
+      sessionLastSeenAt: undefined,
+      sessionExpiresAt: undefined,
+      sessionCredentialVersion: undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    saveAllUsers(users);
+    return undefined;
+  }
   const now  = Date.now();
   const lastSeen = user.sessionLastSeenAt ?? user.sessionCreatedAt;
   if (lastSeen && now - new Date(lastSeen).getTime() > INACTIVITY_MS) {
@@ -74,6 +109,7 @@ export function createUser(data: CreateUserInput): UserRecord {
     ...data,
     id: 'usr_' + crypto.randomBytes(8).toString('hex'),
     loginAttempts: 0,
+    credentialVersion: 1,
     amlStatus: data.amlStatus ?? 'not_screened',
     amlRiskLevel: data.amlRiskLevel ?? 'unrated',
     createdAt: new Date().toISOString(),
@@ -84,12 +120,20 @@ export function createUser(data: CreateUserInput): UserRecord {
   return user;
 }
 
-export function updateUser(id: string, patch: Partial<UserRecord>): UserRecord | null {
+export function updateUser(id: string, patch: UserUpdatePatch): UserRecord | null {
   const users = loadAllUsers();
   const idx = users.findIndex(u => u.id === id);
   if (idx === -1) return null;
-  const safePatch = stripDangerousKeys(patch as Record<string, unknown>) as Partial<UserRecord>;
-  users[idx] = { ...users[idx], ...safePatch, updatedAt: new Date().toISOString() };
+  const safePatch = stripDangerousKeys(patch as Record<string, unknown>) as UserUpdatePatch;
+  const next = {
+    ...users[idx],
+    ...safePatch,
+    updatedAt: new Date().toISOString(),
+  } as UserRecord & Record<string, unknown>;
+  for (const [key, value] of Object.entries(safePatch)) {
+    if (value === null) delete next[key];
+  }
+  users[idx] = next;
   saveAllUsers(users);
   return users[idx];
 }

@@ -1,9 +1,10 @@
 /**
  * Admin authentication middleware.
  *
- * Token resolution order (dual-mode for backward compat):
- *   1. HttpOnly cookie  `cgc_admin_sid`  (preferred — XSS-safe)
- *   2. Authorization: Bearer <token>     (fallback — SPA localStorage)
+ * Administrator browser sessions are accepted only from the dedicated
+ * HttpOnly cookie `cgc_admin_sid`. Bearer-token fallback was removed so a
+ * token copied into browser storage or tooling cannot silently become a
+ * second production authentication path.
  *
  * Session fingerprinting is enforced: IP + UA must match the values recorded
  * at login. A mismatch returns 401 so the client re-authenticates.
@@ -37,18 +38,10 @@ export function sessionCookieOptions(maxAgeMs: number) {
   };
 }
 
-/** Resolve the raw token from cookie or Authorization header */
+/** Resolve the raw token from the dedicated HttpOnly cookie only. */
 function resolveToken(req: Request): string | null {
   const cookie = (req.cookies as Record<string, string> | undefined)?.[COOKIE_NAME];
-  if (cookie && cookie.length === 64) return cookie;
-
-  const authorization = req.headers.authorization ?? '';
-  if (authorization.startsWith('Bearer ')) {
-    const bearer = authorization.slice(7).trim();
-    if (/^[a-f0-9]{64}$/i.test(bearer)) return bearer;
-  }
-
-  return null;
+  return cookie && /^[a-f0-9]{64}$/i.test(cookie) ? cookie : null;
 }
 
 /**

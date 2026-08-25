@@ -1,9 +1,9 @@
 /**
  * DELETE /api/admin/auth/trusted-devices
- * Body: { token?: string; all?: boolean }
+ * Body: { deviceId?: string; all?: boolean }
  */
 import type { Request, Response } from 'express';
-import { revokeTrustedDevice, revokeAllTrustedDevices, listTrustedDevices, type TrustedDevice } from '../../../../lib/trustedDeviceStore.js';
+import { revokeTrustedDevice, revokeAllTrustedDevices, listTrustedDevices } from '../../../../lib/trustedDeviceStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 
 export default async function handler(req: Request, res: Response) {
@@ -12,7 +12,7 @@ export default async function handler(req: Request, res: Response) {
   const ip      = req.ip ?? 'unknown';
   if (!adminId) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { token, all } = req.body as { token?: string; all?: boolean };
+  const { deviceId, all } = req.body as { deviceId?: string; all?: boolean };
 
   if (all === true) {
     await revokeAllTrustedDevices(adminId);
@@ -20,14 +20,15 @@ export default async function handler(req: Request, res: Response) {
     return res.json({ ok: true, message: 'All trusted devices revoked' });
   }
 
-  if (token) {
+  if (deviceId) {
     const devices = await listTrustedDevices(adminId);
-    const match = devices.find((d: TrustedDevice & { token: string }) => d.token.startsWith(token.slice(0, 8)));
+    const match = devices.find(device => device.id === deviceId);
     if (!match) return res.status(404).json({ error: 'Device not found' });
-    await revokeTrustedDevice(match.token);
-    appendAudit({ event: 'trusted_device_revoked', adminId, email, ip, meta: { device: match.name } });
+    const revoked = await revokeTrustedDevice(adminId, deviceId);
+    if (!revoked) return res.status(404).json({ error: 'Device not found' });
+    appendAudit({ event: 'trusted_device_revoked', adminId, email, ip, meta: { deviceId, device: match.name } });
     return res.json({ ok: true, message: `Device "${match.name}" revoked` });
   }
 
-  return res.status(400).json({ error: 'Provide token or all:true' });
+  return res.status(400).json({ error: 'Provide deviceId or all:true' });
 }

@@ -9,7 +9,7 @@
  */
 
 import crypto from 'node:crypto';
-import { eq, sql as drizzleSql } from 'drizzle-orm';
+import { and, eq, sql as drizzleSql } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { onboardingCases, onboardingEvents, users } from '../db/schema.js';
 import type { User, NewUser } from '../db/schema.js';
@@ -41,6 +41,7 @@ export interface UserRecord {
   emailVerifyToken?: string;
   emailVerifyExpiry?: string;
   passwordHash: string;
+  credentialVersion: number;
   createdAt: string;
   updatedAt: string;
   approvedAt?: string;
@@ -82,6 +83,7 @@ export interface UserRecord {
   sessionCreatedAt?: string;
   sessionLastSeenAt?: string;
   sessionExpiresAt?: string;
+  sessionCredentialVersion?: number;
   primaryCurrency?: string;
   accountTier?: 'personal' | 'savings' | 'business';
   requestedProduct?: string;
@@ -98,8 +100,25 @@ export interface UserRecord {
 }
 
 export type CreateUserInput =
-  Omit<UserRecord, 'id' | 'createdAt' | 'updatedAt' | 'loginAttempts' | 'amlStatus' | 'amlRiskLevel'>
+  Omit<UserRecord,
+    | 'id' | 'createdAt' | 'updatedAt' | 'loginAttempts' | 'amlStatus' | 'amlRiskLevel'
+    | 'credentialVersion' | 'sessionToken' | 'sessionCreatedAt' | 'sessionLastSeenAt'
+    | 'sessionExpiresAt' | 'sessionCredentialVersion'>
   & Partial<Pick<UserRecord, 'amlStatus' | 'amlRiskLevel'>>;
+
+/**
+ * Nullable credential fields must be cleared explicitly. `undefined` means
+ * "leave the persisted value unchanged" in the PostgreSQL mapper, while
+ * `null` removes the value in both supported stores.
+ */
+type ExplicitlyClearableUserField =
+  | 'emailVerifyToken'
+  | 'emailVerifyExpiry'
+  | 'totpSecret';
+
+export type UserUpdatePatch =
+  Partial<Omit<UserRecord, ExplicitlyClearableUserField>>
+  & { [K in ExplicitlyClearableUserField]?: UserRecord[K] | null };
 
 // ── DB row → UserRecord ───────────────────────────────────────────────────────
 
@@ -122,6 +141,7 @@ function toRecord(u: User): UserRecord {
     emailVerifyToken:    u.emailVerifyToken ?? undefined,
     emailVerifyExpiry:   u.emailVerifyExpiry?.toISOString() ?? undefined,
     passwordHash:        u.passwordHash,
+    credentialVersion:   u.credentialVersion,
     loginAttempts:       u.loginAttempts,
     lastLoginAt:         u.lastLoginAt?.toISOString() ?? undefined,
     lastLoginIp:         u.lastLoginIp ?? undefined,
@@ -356,13 +376,13 @@ export async function createUserWithRegistrationCase(
   });
 }
 
-export async function updateUser(id: string, patch: Partial<UserRecord>): Promise<UserRecord | null> {
+export async function updateUser(id: string, patch: UserUpdatePatch): Promise<UserRecord | null> {
   if (!isDatabaseConfigured()) {
     const ff = await getFlatFile();
     return ff.updateUser(id, patch);
   }
   const db = getDb();
-  const safe = stripDangerousKeys(patch as Record<string, unknown>) as Partial<UserRecord>;
+  const safe = stripDangerousKeys(patch as Record<string, unknown>) as UserUpdatePatch;
 
   // Map camelCase patch → snake_case DB columns
   const dbPatch: Partial<NewUser> = {};
@@ -382,6 +402,7 @@ export async function updateUser(id: string, patch: Partial<UserRecord>): Promis
   if (safe.emailVerifyToken !== undefined)   dbPatch.emailVerifyToken   = safe.emailVerifyToken ?? null;
   if (safe.emailVerifyExpiry !== undefined)  dbPatch.emailVerifyExpiry  = safe.emailVerifyExpiry ? new Date(safe.emailVerifyExpiry) : null;
   if (safe.passwordHash !== undefined)       dbPatch.passwordHash       = safe.passwordHash;
+  if (safe.credentialVersion !== undefined)  dbPatch.credentialVersion  = safe.credentialVersion;
   if (safe.loginAttempts !== undefined)      dbPatch.loginAttempts      = safe.loginAttempts;
   if (safe.lastLoginAt !== undefined)        dbPatch.lastLoginAt        = safe.lastLoginAt ? new Date(safe.lastLoginAt) : null;
   if (safe.lastLoginIp !== undefined)        dbPatch.lastLoginIp        = safe.lastLoginIp ?? null;
@@ -441,6 +462,29 @@ export async function deleteUser(id: string): Promise<boolean> {
   const db = getDb();
   const rows = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
   return rows.length > 0;
+}
+
+/**
+ * Persist a canonical rehash only when the credential is still the one that
+ * was verified. This prevents a slow legacy-login request from overwriting a
+ * concurrent password reset with an equivalent hash of the old password.
+ */
+export async function upgradeCustomerPasswordHash(
+  userId: string,
+  expectedOldHash: string,
+  upgradedHash: string,
+): Promise<boolean> {
+  if (!isDatabaseConfigured()) {
+    const ff = await getFlatFile();
+    const current = ff.findUserById(userId);
+    if (!current || current.passwordHash !== expectedOldHash) return false;
+    return Boolean(ff.updateUser(userId, { passwordHash: upgradedHash }));
+  }
+  const updated = await getDb().update(users)
+    .set({ passwordHash: upgradedHash, updatedAt: new Date() })
+    .where(and(eq(users.id, userId), eq(users.passwordHash, expectedOldHash)))
+    .returning({ id: users.id });
+  return updated.length === 1;
 }
 
 export function generateVerifyToken(): { token: string; expiry: string } {

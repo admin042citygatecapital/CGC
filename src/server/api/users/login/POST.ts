@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
+import crypto from 'node:crypto';
 import { verifyPassword } from '../../../lib/passwordHash.js';
-import { findUserByEmail, updateUser } from '../../../lib/userStore.js';
+import { findUserByEmail, updateUser, upgradeCustomerPasswordHash } from '../../../lib/userStore.js';
 import { createCustomerSession } from '../../../lib/customerSessionStore.js';
 import { appendAudit } from '../../../lib/auditLog.js';
 import { appendLoginEvent } from '../../../lib/loginLog.js';
@@ -8,11 +9,12 @@ import { sanitizeString, isValidEmail } from '../../../lib/inputValidator.js';
 import { isRateLimited } from '../../../lib/rateLimiter.js';
 import { CUSTOMER_SESSION_COOKIE, customerSessionCookieOptions } from '../../../lib/customerSessionConfig.js';
 import { verifyTotp } from '../../../lib/totp.js';
-
-// Per-email brute-force lockout (separate from IP rate limit)
-const failMap = new Map<string, { count: number; lockedUntil: number }>();
-const MAX_ATTEMPTS = 6;
-const LOCKOUT_MS   = 15 * 60 * 1000;
+import {
+  checkLockout,
+  getFailCount,
+  recordLoginFailure,
+  recordLoginSuccess,
+} from '../../../lib/bruteForce.js';
 
 export default async function handler(req: Request, res: Response) {
   const ip = req.ip ?? 'unknown';
@@ -34,41 +36,32 @@ export default async function handler(req: Request, res: Response) {
     return res.status(429).json({ error: 'Too many login attempts from your network. Please wait 15 minutes.' });
   }
 
-  // Per-email lockout
-  const lockKey = `user_login:${email}`;
-  const fail = failMap.get(lockKey);
-  if (fail && fail.lockedUntil > Date.now()) {
-    const remaining = Math.ceil((fail.lockedUntil - Date.now()) / 60000);
+  // Durable per-account and per-network lockout. State is shared by every
+  // application instance and survives restarts.
+  const lockout = await checkLockout(email, ip, 'customer');
+  if (lockout.blocked) {
     appendAudit({ event: 'user_login_blocked', email, ip, reason: 'account_locked' });
     await appendLoginEvent({ actor: 'user', email, result: 'account_locked', ip, ua, reason: 'account_locked' });
-    return res.status(429).json({ error: `Too many failed attempts. Try again in ${remaining} minute(s).` });
+    return res.status(429).json({ error: `Too many failed attempts. Try again in ${lockout.remainingMin} minute(s).` });
   }
 
   const user = await findUserByEmail(email);
 
-  // Constant-time comparison even when user not found (prevents timing attacks)
+  // PostgreSQL is the single credential authority for customer authentication.
+  // Supabase Auth is not part of the production login path; the application
+  // stores canonical Argon2id hashes in the Supabase-hosted PostgreSQL users
+  // table and issues its own revocable, cookie-bound sessions.
   const dummyHash = '$argon2id$v=19$m=65536,t=3,p=1$dummysaltfortimingnormalization$dummyhashfortimingnormalization';
-  const hashToCheck = user?.passwordHash ?? dummyHash;
-  const { ok: passwordOk, rehash } = await verifyPassword(password, hashToCheck);
+  const { ok: passwordOk, rehash } = await verifyPassword(password, user?.passwordHash ?? dummyHash);
 
   if (!user || !passwordOk) {
-    const current = failMap.get(lockKey) ?? { count: 0, lockedUntil: 0 };
-    current.count += 1;
-    if (current.count >= MAX_ATTEMPTS) current.lockedUntil = Date.now() + LOCKOUT_MS;
-    failMap.set(lockKey, current);
+    await recordLoginFailure(email, ip, 'customer');
+    if (user) await updateUser(user.id, { loginAttempts: await getFailCount(email, 'customer') });
     const reason = user ? 'wrong_password' : 'user_not_found';
     appendAudit({ event: 'user_login_failed', email, ip, reason });
     await appendLoginEvent({ actor: 'user', email, result: 'failed', ip, ua, reason });
     // Generic message — don't reveal whether email exists
     return res.status(401).json({ error: 'Invalid email or password' });
-  }
-
-  // Reset fail counter
-  failMap.delete(lockKey);
-
-  // Transparent bcrypt → Argon2id upgrade: persist new hash if provided
-  if (rehash && user) {
-    await updateUser(user.id, { passwordHash: rehash });
   }
 
   // Account status checks
@@ -103,9 +96,20 @@ export default async function handler(req: Request, res: Response) {
       return res.status(401).json({ error: 'Enter the code from your authenticator app.', code: 'TWO_FACTOR_REQUIRED' });
     }
     if (!verifyTotp(user.totpSecret, otp)) {
+      await recordLoginFailure(email, ip, 'customer');
       appendAudit({ event: 'user_login_2fa_failed', userId: user.id, email, ip });
       await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'totp_failed', ip, ua, reason: 'invalid_totp' });
       return res.status(401).json({ error: 'Invalid or expired authentication code.', code: 'INVALID_TWO_FACTOR' });
+    }
+  }
+
+  // Transparent bcrypt/PBKDF2 → Argon2id upgrade. The hash is never returned
+  // to the client or written to logs.
+  if (rehash) {
+    const upgraded = await upgradeCustomerPasswordHash(user.id, user.passwordHash, rehash);
+    if (!upgraded) {
+      appendAudit({ event: 'user_password_rehash_failed', userId: user.id, email, ip, reason: 'credential_changed' });
+      return res.status(401).json({ error: 'Credentials changed. Please log in again.' });
     }
   }
 
@@ -113,15 +117,26 @@ export default async function handler(req: Request, res: Response) {
   // multiple-session support and ensures database mode applies expiry rules.
   const now              = new Date().toISOString();
 
+  await recordLoginSuccess(email, ip, 'customer');
+
   await updateUser(user.id, {
     lastLoginAt:       now,
     lastLoginIp:       ip,
     loginAttempts:     0,
   });
-  const sessionToken = await createCustomerSession(user.id, { ip, ua });
+  const sessionToken = await createCustomerSession(user.id, {
+    ip,
+    ua,
+    credentialVersion: user.credentialVersion,
+  });
+  if (!sessionToken) {
+    appendAudit({ event: 'user_login_session_rejected', userId: user.id, email, ip, reason: 'credential_changed' });
+    return res.status(401).json({ error: 'Credentials changed. Please log in again.' });
+  }
 
   appendAudit({ event: 'user_login_success', userId: user.id, email, ip, ua });
-  await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'success', ip, ua, sessionId: sessionToken.slice(0, 8) });
+  const sessionReference = crypto.createHash('sha256').update(sessionToken).digest('hex');
+  await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'success', ip, ua, sessionId: sessionReference });
 
   res.cookie(CUSTOMER_SESSION_COOKIE, sessionToken, customerSessionCookieOptions());
 

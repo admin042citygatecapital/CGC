@@ -4,8 +4,8 @@
  *
  * Tables:
  *   users                 — customer accounts
- *   admin_sessions        — admin session tokens
- *   customer_sessions     — customer session tokens (separate from user record)
+ *   admin_sessions        — admin session token digests
+ *   customer_sessions     — customer session token digests (separate from user record)
  *   transactions          — append-only financial ledger
  *   cards                 — virtual cards (PAN/CVV AES-256-GCM encrypted)
  *   card_activity         — card transaction log
@@ -97,6 +97,7 @@ export const users = pgTable(
     emailVerifyToken: text('email_verify_token'),
     emailVerifyExpiry: timestamp('email_verify_expiry', { withTimezone: true }),
     passwordHash: text('password_hash').notNull(),
+    credentialVersion: integer('credential_version').notNull().default(1),
     loginAttempts: integer('login_attempts').notNull().default(0),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
     lastLoginIp: text('last_login_ip'),
@@ -173,6 +174,7 @@ export const admins = pgTable('admins', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  credentialVersion: integer('credential_version').notNull().default(1),
   name: text('name').notNull(),
   role: adminRoleEnum('role').notNull(),
   isActive: boolean('is_active').notNull().default(true),
@@ -189,10 +191,11 @@ export type NewAdmin = typeof admins.$inferInsert;
 export const adminSessions = pgTable(
   'admin_sessions',
   {
-    token: text('token').primaryKey(),
+    tokenHash: text('token_hash').primaryKey(),
     adminId: text('admin_id').notNull(),
     email: text('email').notNull(),
     role: adminRoleEnum('role').notNull(),
+    credentialVersion: integer('credential_version').notNull().default(1),
     ip: text('ip').notNull(),
     ua: text('ua').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -202,15 +205,45 @@ export const adminSessions = pgTable(
   (t) => [index('admin_sessions_admin_id_idx').on(t.adminId), index('admin_sessions_expires_at_idx').on(t.expiresAt)],
 );
 
+// ── admin_otp_challenges ────────────────────────────────────────────────────
+// Short-lived, single-use administrator verification challenges. The raw
+// challenge identifier, OTP, IP address, and user-agent are never persisted.
+export const adminOtpChallenges = pgTable(
+  'admin_otp_challenges',
+  {
+    challengeIdHash: text('challenge_id_hash').primaryKey(),
+    adminId: text('admin_id')
+      .notNull()
+      .references(() => admins.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    credentialVersion: integer('credential_version').notNull(),
+    otpHash: text('otp_hash').notNull(),
+    ipHash: text('ip_hash').notNull(),
+    uaHash: text('ua_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    used: boolean('used').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    verifiedAt: timestamp('verified_at', { withTimezone: true }),
+    invalidatedAt: timestamp('invalidated_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('admin_otp_challenges_email_created_idx').on(t.email, t.createdAt),
+    index('admin_otp_challenges_admin_id_idx').on(t.adminId),
+    index('admin_otp_challenges_expires_at_idx').on(t.expiresAt),
+  ],
+);
+
 // ── customer_sessions ─────────────────────────────────────────────────────────
 
 export const customerSessions = pgTable(
   'customer_sessions',
   {
-    token: text('token').primaryKey(),
+    tokenHash: text('token_hash').primaryKey(),
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    credentialVersion: integer('credential_version').notNull().default(1),
     ip: text('ip'),
     ua: text('ua'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -218,6 +251,28 @@ export const customerSessions = pgTable(
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   },
   (t) => [index('customer_sessions_user_id_idx').on(t.userId), index('customer_sessions_expires_at_idx').on(t.expiresAt)],
+);
+
+// ── customer_password_reset_tokens ───────────────────────────────────────────
+// Raw recovery tokens are delivered to the customer only. PostgreSQL stores a
+// one-way fingerprint and consumes it atomically before changing a credential.
+
+export const customerPasswordResetTokens = pgTable(
+  'customer_password_reset_tokens',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    credentialVersion: integer('credential_version').notNull().default(1),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('customer_password_reset_tokens_user_id_idx').on(t.userId),
+    index('customer_password_reset_tokens_expires_at_idx').on(t.expiresAt),
+  ],
 );
 
 // ── transactions ──────────────────────────────────────────────────────────────

@@ -4,10 +4,11 @@
  */
 import type { Request, Response } from 'express';
 import { hashPassword } from '../../../../lib/passwordHash.js';
-import { loadAllUsers, updateUser } from '../../../../lib/userStore.js';
+import { findUserById, updateUser } from '../../../../lib/userStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 import { deleteAllCustomerSessions } from '../../../../lib/customerSessionStore.js';
 import { sanitizeString, validatePassword } from '../../../../lib/inputValidator.js';
+import { consumeCustomerResetToken } from '../../../../lib/customerResetTokenStore.js';
 
 export default async function handler(req: Request, res: Response) {
   const token    = sanitizeString(req.body?.token);
@@ -23,24 +24,12 @@ export default async function handler(req: Request, res: Response) {
     return res.status(400).json({ error: pwCheck.reason });
   }
 
-  const users = await loadAllUsers();
-  const user  = users.find(u => (u as never as Record<string, string>).passwordResetToken === token);
-
-  if (!user) {
-    return res.status(400).json({ error: 'Invalid or expired reset token' });
-  }
-
-  const expiry = (user as never as Record<string, string>).passwordResetExpiry;
-  if (!expiry || new Date(expiry) < new Date()) {
-    return res.status(400).json({ error: 'Reset token has expired. Please request a new one.' });
-  }
+  const userId = await consumeCustomerResetToken(token);
+  const user = userId ? await findUserById(userId) : undefined;
+  if (!user) return res.status(400).json({ error: 'Invalid or expired reset token' });
 
   const passwordHash = await hashPassword(password);
-  await updateUser(user.id, {
-    passwordHash,
-    passwordResetToken: undefined,
-    passwordResetExpiry: undefined,
-  } as never);
+  await updateUser(user.id, { passwordHash });
 
   // A recovered credential must invalidate every existing browser/device
   // session. Otherwise a stolen session would survive the password reset.

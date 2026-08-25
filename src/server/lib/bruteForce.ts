@@ -1,156 +1,175 @@
 /**
- * bruteForce.ts — Brute-force lockout, PostgreSQL-backed.
- * ─────────────────────────────────────────────────────────
- * State is stored in the `config` table under key 'brute_force'.
- * Falls back to in-memory Map when DATABASE_URL is not set.
+ * Durable brute-force protection for administrator and customer sign-in.
  *
- * Two independent axes:
- *   1. Per-email  — protects a specific account from credential stuffing
- *   2. Per-IP     — protects the endpoint from distributed spray attacks
- *
- * Lockout schedule (exponential backoff):
- *   Attempt 1-4  → no lockout
- *   Attempt 5    → 1 min
- *   Attempt 6    → 2 min
- *   Attempt 7    → 4 min
- *   Attempt 8    → 8 min
- *   Attempt 9+   → 15 min (cap)
+ * Production state lives in `brute_force_lockouts`, so restarts and multiple
+ * Render instances cannot reset or disagree about an account lockout. Only
+ * SHA-256 fingerprints of normalized identifiers are stored. A database-free
+ * local test/development process uses an in-memory fallback with the same
+ * semantics.
  */
 
-import { getDb, isDatabaseConfigured } from '../db/db.js';
-import { config as configTable } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import crypto from 'node:crypto';
+import { getQueryClient, isDatabaseConfigured } from '../db/db.js';
 
-const CONFIG_KEY      = 'brute_force';
 const BASE_LOCKOUT_MS = 60_000;
-const MAX_LOCKOUT_MS  = 15 * 60_000;
-const FAIL_THRESHOLD  = 4;
+const MAX_LOCKOUT_MS = 15 * 60_000;
+const FAIL_THRESHOLD = 4;
 const STALE_WINDOW_MS = 30 * 60_000;
 
+export type LockoutScope = 'admin' | 'customer';
+
 interface FailRecord {
-  count:       number;
+  count: number;
   lockedUntil: number;
-  lastFailAt:  number;
+  lastFailAt: number;
 }
 
-interface Store {
-  email: Record<string, FailRecord>;
-  ip:    Record<string, FailRecord>;
+const memory = new Map<string, FailRecord>();
+
+function fingerprint(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-// ── In-memory fallback (no DB) ────────────────────────────────────────────────
-
-const _mem: Store = { email: {}, ip: {} };
-
-// ── DB persistence ────────────────────────────────────────────────────────────
-
-async function loadStore(): Promise<Store> {
-  if (!isDatabaseConfigured()) return _mem;
-  try {
-    const db = getDb();
-    const rows = await db.select().from(configTable).where(eq(configTable.key, CONFIG_KEY));
-    if (!rows.length) return { email: {}, ip: {} };
-    return (rows[0].value as Store) ?? { email: {}, ip: {} };
-  } catch { return { email: {}, ip: {} }; }
+function keyFor(scope: LockoutScope, axis: 'email' | 'ip', value: string): string {
+  const normalized = axis === 'email' ? value.trim().toLowerCase() : value.trim();
+  return `${scope}:${axis}:${fingerprint(normalized || 'unknown')}`;
 }
-
-async function saveStore(store: Store): Promise<void> {
-  if (!isDatabaseConfigured()) {
-    Object.assign(_mem.email, store.email);
-    Object.assign(_mem.ip, store.ip);
-    return;
-  }
-  try {
-    const db = getDb();
-    await db.insert(configTable)
-      .values({ key: CONFIG_KEY, value: store as unknown as Record<string, unknown>, updatedBy: 'system' })
-      .onConflictDoUpdate({ target: configTable.key, set: { value: store as unknown as Record<string, unknown>, updatedAt: new Date() } });
-  } catch { /* non-fatal */ }
-}
-
-function pruneStale(store: Store): Store {
-  const now    = Date.now();
-  const cutoff = now - STALE_WINDOW_MS * 2;
-  for (const [k, v] of Object.entries(store.email)) {
-    if (v.lastFailAt < cutoff && v.lockedUntil < now) delete store.email[k];
-  }
-  for (const [k, v] of Object.entries(store.ip)) {
-    if (v.lastFailAt < cutoff && v.lockedUntil < now) delete store.ip[k];
-  }
-  return store;
-}
-
-// ── Core logic ────────────────────────────────────────────────────────────────
 
 function lockoutMs(count: number): number {
   if (count <= FAIL_THRESHOLD) return 0;
-  return Math.min(Math.pow(2, count - FAIL_THRESHOLD - 1) * BASE_LOCKOUT_MS, MAX_LOCKOUT_MS);
+  return Math.min(2 ** (count - FAIL_THRESHOLD - 1) * BASE_LOCKOUT_MS, MAX_LOCKOUT_MS);
 }
 
-function checkRecord(map: Record<string, FailRecord>, key: string): { blocked: boolean; remainingMs: number } {
-  const rec = map[key];
-  if (!rec) return { blocked: false, remainingMs: 0 };
-  if (rec.lockedUntil > Date.now()) return { blocked: true, remainingMs: rec.lockedUntil - Date.now() };
-  return { blocked: false, remainingMs: 0 };
+function statusFor(record?: FailRecord): LockoutStatus {
+  if (!record || record.lockedUntil <= Date.now()) {
+    return { blocked: false, remainingMs: 0, remainingMin: 0 };
+  }
+  const remainingMs = record.lockedUntil - Date.now();
+  return { blocked: true, remainingMs, remainingMin: Math.ceil(remainingMs / 60_000) };
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+async function readRecord(key: string): Promise<FailRecord | undefined> {
+  if (!isDatabaseConfigured()) return memory.get(key);
+  const sql = getQueryClient();
+  const rows = await sql<{ count: number; locked_until: Date | null; last_fail_at: Date }[]>`
+    SELECT count, locked_until, last_fail_at
+      FROM brute_force_lockouts
+     WHERE key = ${key}
+     LIMIT 1
+  `;
+  const row = rows[0];
+  if (!row) return undefined;
+  return {
+    count: Number(row.count),
+    lockedUntil: row.locked_until?.getTime() ?? 0,
+    lastFailAt: row.last_fail_at.getTime(),
+  };
+}
+
+async function incrementRecord(key: string): Promise<void> {
+  const now = Date.now();
+  if (!isDatabaseConfigured()) {
+    const current = memory.get(key);
+    const count = !current || now - current.lastFailAt > STALE_WINDOW_MS ? 1 : current.count + 1;
+    memory.set(key, { count, lastFailAt: now, lockedUntil: now + lockoutMs(count) });
+    return;
+  }
+
+  const sql = getQueryClient();
+  await sql.begin(async (transaction) => {
+    // Serialize updates for one identifier without locking unrelated accounts.
+    await transaction`SELECT pg_advisory_xact_lock(hashtext(${key}))`;
+    const rows = await transaction<{ count: number; last_fail_at: Date }[]>`
+      SELECT count, last_fail_at
+        FROM brute_force_lockouts
+       WHERE key = ${key}
+       FOR UPDATE
+    `;
+    const current = rows[0];
+    const count = !current || now - current.last_fail_at.getTime() > STALE_WINDOW_MS
+      ? 1
+      : Number(current.count) + 1;
+    const lockedUntil = lockoutMs(count) > 0 ? new Date(now + lockoutMs(count)) : null;
+    await transaction`
+      INSERT INTO brute_force_lockouts (key, count, locked_until, last_fail_at)
+      VALUES (${key}, ${count}, ${lockedUntil}, ${new Date(now)})
+      ON CONFLICT (key) DO UPDATE SET
+        count = EXCLUDED.count,
+        locked_until = EXCLUDED.locked_until,
+        last_fail_at = EXCLUDED.last_fail_at
+    `;
+  });
+}
+
+async function deleteKeys(keys: string[]): Promise<void> {
+  if (!isDatabaseConfigured()) {
+    for (const key of keys) memory.delete(key);
+    return;
+  }
+  const sql = getQueryClient();
+  await sql`DELETE FROM brute_force_lockouts WHERE key IN ${sql(keys)}`;
+}
 
 export interface LockoutStatus {
-  blocked:      boolean;
-  remainingMs:  number;
+  blocked: boolean;
+  remainingMs: number;
   remainingMin: number;
 }
 
-export async function checkLockout(email: string, ip: string): Promise<LockoutStatus> {
-  const store   = await loadStore();
-  const byEmail = checkRecord(store.email, email.toLowerCase());
-  const byIp    = checkRecord(store.ip, ip);
-
-  if (byEmail.blocked) return { blocked: true, remainingMs: byEmail.remainingMs, remainingMin: Math.ceil(byEmail.remainingMs / 60_000) };
-  if (byIp.blocked)    return { blocked: true, remainingMs: byIp.remainingMs,    remainingMin: Math.ceil(byIp.remainingMs / 60_000) };
-  return { blocked: false, remainingMs: 0, remainingMin: 0 };
+export async function checkLockout(
+  email: string,
+  ip: string,
+  scope: LockoutScope = 'admin',
+): Promise<LockoutStatus> {
+  const byEmail = statusFor(await readRecord(keyFor(scope, 'email', email)));
+  if (byEmail.blocked) return byEmail;
+  return statusFor(await readRecord(keyFor(scope, 'ip', ip)));
 }
 
-export async function recordLoginFailure(email: string, ip: string): Promise<void> {
-  const store = await loadStore();
-  const now   = Date.now();
+export async function recordLoginFailure(
+  email: string,
+  ip: string,
+  scope: LockoutScope = 'admin',
+): Promise<void> {
+  await incrementRecord(keyFor(scope, 'email', email));
+  await incrementRecord(keyFor(scope, 'ip', ip));
+}
 
-  for (const [map, key] of [[store.email, email.toLowerCase()], [store.ip, ip]] as [Record<string, FailRecord>, string][]) {
-    const rec = map[key] ?? { count: 0, lockedUntil: 0, lastFailAt: 0 };
-    if (now - rec.lastFailAt > STALE_WINDOW_MS) rec.count = 0;
-    rec.count      += 1;
-    rec.lastFailAt  = now;
-    rec.lockedUntil = now + lockoutMs(rec.count);
-    map[key] = rec;
+export async function recordLoginSuccess(
+  email: string,
+  ip: string,
+  scope: LockoutScope = 'admin',
+): Promise<void> {
+  await deleteKeys([
+    keyFor(scope, 'email', email),
+    keyFor(scope, 'ip', ip),
+    keyFor(scope, 'ip', '127.0.0.1'),
+    keyFor(scope, 'ip', '::1'),
+    keyFor(scope, 'ip', '::ffff:127.0.0.1'),
+  ]);
+}
+
+export async function getFailCount(
+  email: string,
+  scope: LockoutScope = 'admin',
+): Promise<number> {
+  return (await readRecord(keyFor(scope, 'email', email)))?.count ?? 0;
+}
+
+export async function clearAllLockouts(scope: LockoutScope = 'admin'): Promise<void> {
+  const prefix = `${scope}:%`;
+  if (!isDatabaseConfigured()) {
+    for (const key of memory.keys()) {
+      if (key.startsWith(`${scope}:`)) memory.delete(key);
+    }
+    return;
   }
-
-  await saveStore(store);
+  const sql = getQueryClient();
+  await sql`DELETE FROM brute_force_lockouts WHERE key LIKE ${prefix}`;
 }
 
-export async function recordLoginSuccess(email: string, ip: string): Promise<void> {
-  const store = await loadStore();
-  delete store.email[email.toLowerCase()];
-  delete store.ip[ip];
-  delete store.ip['127.0.0.1'];
-  delete store.ip['::1'];
-  delete store.ip['::ffff:127.0.0.1'];
-  await saveStore(store);
+/** Test-only reset for database-free unit tests. */
+export function resetMemoryLockoutsForTests(): void {
+  if (isDatabaseConfigured()) throw new Error('Memory lockouts are unavailable while DATABASE_URL is configured.');
+  memory.clear();
 }
-
-export async function getFailCount(email: string): Promise<number> {
-  const store = await loadStore();
-  return store.email[email.toLowerCase()]?.count ?? 0;
-}
-
-export async function clearAllLockouts(): Promise<void> {
-  await saveStore({ email: {}, ip: {} });
-}
-
-// ── Auto-cleanup every 30 min ─────────────────────────────────────────────────
-setInterval(async () => {
-  try {
-    const store = await loadStore();
-    await saveStore(pruneStale(store));
-  } catch { /* non-fatal */ }
-}, 30 * 60_000).unref();

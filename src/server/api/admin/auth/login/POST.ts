@@ -14,7 +14,11 @@
  */
 import type { Request, Response } from 'express';
 import crypto from 'node:crypto';
-import { findAdminByEmail, verifyPassword } from '../../../../lib/adminCredentials.js';
+import {
+  findAdminByEmail,
+  upgradeAdminPasswordHash,
+  verifyAdminPassword,
+} from '../../../../lib/adminCredentials.js';
 import { permissionsForAdminRole } from '../../../../lib/adminAuthorizationMiddleware.js';
 import { createSession } from '../../../../lib/sessionStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
@@ -22,7 +26,7 @@ import { appendLoginEvent } from '../../../../lib/loginLog.js';
 import { checkLockout, recordLoginFailure, recordLoginSuccess, getFailCount } from '../../../../lib/bruteForce.js';
 import { COOKIE_NAME, sessionCookieOptions } from '../../../../lib/adminAuthMiddleware.js';
 import { sendAdminLoginAlertEmail, sendAdminOtpEmail } from '../../../../lib/emailService.js';
-import { issueOtp } from '../../../../lib/otpStore.js';
+import { discardOtpChallenge, issueOtp } from '../../../../lib/otpStore.js';
 import { DEVICE_COOKIE, validateTrustedDevice } from '../../../../lib/trustedDeviceStore.js';
 
 const SESSION_MAX_MS = (parseInt(process.env.SESSION_MAX_HOURS ?? '8', 10)) * 3_600_000;
@@ -51,7 +55,8 @@ export default async function handler(req: Request, res: Response) {
 
   // Always run a password verification path to reduce timing-based user enumeration.
   const hashToCheck = admin?.passwordHash ?? '$2a$12$invalidhashpaddingtomakethiswork00000000000000000000000';
-  const passwordOk  = await verifyPassword(password, hashToCheck);
+  const passwordResult = await verifyAdminPassword(password, hashToCheck);
+  const passwordOk = passwordResult.ok;
 
   if (!admin || !passwordOk) {
     await recordLoginFailure(email, ip);
@@ -62,13 +67,31 @@ export default async function handler(req: Request, res: Response) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
+  if (passwordResult.rehash) {
+    try {
+      const upgraded = await upgradeAdminPasswordHash(admin.id, admin.passwordHash, passwordResult.rehash);
+      if (!upgraded) {
+        appendAudit({ event: 'admin_password_rehash_failed', adminId: admin.id, email, ip, reason: 'concurrent_or_unavailable' });
+        return res.status(503).json({ error: 'Administrator sign-in is temporarily unavailable. Please retry.' });
+      }
+      appendAudit({ event: 'admin_password_rehashed', adminId: admin.id, email, ip });
+    } catch {
+      appendAudit({ event: 'admin_password_rehash_failed', adminId: admin.id, email, ip, reason: 'database_error' });
+      return res.status(503).json({ error: 'Administrator sign-in is temporarily unavailable. Please retry.' });
+    }
+  }
+
   const trustedDeviceToken = (req.cookies as Record<string, string> | undefined)?.[DEVICE_COOKIE];
   const trustedDevice = trustedDeviceToken
     ? await validateTrustedDevice(trustedDeviceToken, admin.id)
     : null;
 
   if (!trustedDevice) {
-    const challenge = issueOtp(admin.email, ip, ua);
+    const challenge = await issueOtp({
+      adminId: admin.id,
+      email: admin.email,
+      credentialVersion: admin.credentialVersion,
+    }, ip, ua);
     if (!challenge.ok || !challenge.challengeId || !challenge.otp) {
       appendAudit({ event: 'otp_issue_failed', adminId: admin.id, email, ip, reason: challenge.error });
       return res.status(challenge.rateLimited ? 429 : 503).json({
@@ -76,9 +99,11 @@ export default async function handler(req: Request, res: Response) {
       });
     }
 
+    let deliveryMode: 'email' | 'local';
     try {
-      await sendAdminOtpEmail(admin.email, admin.name, challenge.otp, ip, ua);
+      deliveryMode = await sendAdminOtpEmail(admin.email, admin.name, challenge.otp, ip, ua);
     } catch {
+      await discardOtpChallenge(challenge.challengeId);
       appendAudit({ event: 'otp_delivery_failed', adminId: admin.id, email, ip });
       return res.status(503).json({ error: 'Unable to deliver the verification code. Please try again.' });
     }
@@ -89,6 +114,7 @@ export default async function handler(req: Request, res: Response) {
       otpRequired: true,
       challengeId: challenge.challengeId,
       expiresInSeconds: parseInt(process.env.OTP_TTL_SECONDS ?? '60', 10),
+      deliveryMode,
     });
   }
 
@@ -96,14 +122,19 @@ export default async function handler(req: Request, res: Response) {
   await recordLoginSuccess(email, ip);
 
   const sessionToken = crypto.randomBytes(32).toString('hex');
-  await createSession(sessionToken, {
+  const sessionCreated = await createSession(sessionToken, {
     adminId:   admin.id,
     email:     admin.email,
     role:      admin.role,
+    credentialVersion: admin.credentialVersion,
     createdAt: new Date().toISOString(),
     ip,
     ua,
   });
+  if (!sessionCreated) {
+    appendAudit({ event: 'login_session_rejected', adminId: admin.id, email, ip, reason: 'credential_changed' });
+    return res.status(401).json({ error: 'Administrator credentials changed. Please log in again.' });
+  }
 
   appendAudit({ event: 'login_success', adminId: admin.id, email, ip });
   await appendLoginEvent({

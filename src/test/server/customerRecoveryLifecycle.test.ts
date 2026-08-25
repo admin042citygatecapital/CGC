@@ -4,8 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const dependencies = vi.hoisted(() => ({
   findUserByVerifyToken: vi.fn(),
+  findUserById: vi.fn(),
   updateUser: vi.fn(),
-  loadAllUsers: vi.fn(),
+  consumeCustomerResetToken: vi.fn(),
   appendAudit: vi.fn(),
   sendWelcomeEmail: vi.fn().mockResolvedValue(undefined),
   hashPassword: vi.fn().mockResolvedValue('argon2-new-hash'),
@@ -14,8 +15,11 @@ const dependencies = vi.hoisted(() => ({
 
 vi.mock('../../server/lib/userStore.js', () => ({
   findUserByVerifyToken: dependencies.findUserByVerifyToken,
+  findUserById: dependencies.findUserById,
   updateUser: dependencies.updateUser,
-  loadAllUsers: dependencies.loadAllUsers,
+}));
+vi.mock('../../server/lib/customerResetTokenStore.js', () => ({
+  consumeCustomerResetToken: dependencies.consumeCustomerResetToken,
 }));
 vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit: dependencies.appendAudit }));
 vi.mock('../../server/lib/emailService.js', () => ({ sendWelcomeEmail: dependencies.sendWelcomeEmail }));
@@ -58,7 +62,10 @@ describe('customer verification and credential recovery lifecycle', () => {
 
     expect(result.state.redirect).toBe('/login?verified=success');
     expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, expect.objectContaining({
-      emailVerified: true, status: 'pending_kyc', emailVerifyToken: undefined,
+      emailVerified: true,
+      status: 'pending_kyc',
+      emailVerifyToken: null,
+      emailVerifyExpiry: null,
     }));
     expect(dependencies.appendAudit).toHaveBeenCalledWith(expect.objectContaining({
       event: 'email_verified', userId: user.id,
@@ -68,10 +75,9 @@ describe('customer verification and credential recovery lifecycle', () => {
   it('changes the password, consumes the reset token, and revokes all sessions', async () => {
     const user = {
       id: 'customer-reset-1', email: 'reset@example.test',
-      passwordResetToken: 'reset-token',
-      passwordResetExpiry: new Date(Date.now() + 60_000).toISOString(),
     };
-    dependencies.loadAllUsers.mockResolvedValue([user]);
+    dependencies.consumeCustomerResetToken.mockResolvedValue(user.id);
+    dependencies.findUserById.mockResolvedValue(user);
     const result = responseDouble();
 
     await confirmPasswordReset({
@@ -80,7 +86,7 @@ describe('customer verification and credential recovery lifecycle', () => {
 
     expect(result.state.status).toBe(200);
     expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, expect.objectContaining({
-      passwordHash: 'argon2-new-hash', passwordResetToken: undefined, passwordResetExpiry: undefined,
+      passwordHash: 'argon2-new-hash',
     }));
     expect(dependencies.deleteAllCustomerSessions).toHaveBeenCalledWith(user.id);
     expect(dependencies.appendAudit).toHaveBeenCalledWith(expect.objectContaining({
