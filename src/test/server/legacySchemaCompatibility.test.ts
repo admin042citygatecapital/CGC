@@ -12,6 +12,11 @@ const pendingAccessLogMigrationPath = path.resolve(
   'src/server/db/migrations/0002_access_log_brute_force.sql',
 );
 const pendingAccessLogMigration = fs.readFileSync(pendingAccessLogMigrationPath, 'utf8');
+const financialIntegrityMigrationPath = path.resolve(
+  process.cwd(),
+  'src/server/db/migrations/0004_financial_integrity.sql',
+);
+const financialIntegrityMigration = fs.readFileSync(financialIntegrityMigrationPath, 'utf8');
 
 describe('legacy schema compatibility migration', () => {
   it('runs before the initial schema and remains safe to repeat', () => {
@@ -51,5 +56,20 @@ describe('legacy schema compatibility migration', () => {
     expect(pendingAccessLogMigration).toContain('SET ua = user_agent');
     expect(pendingAccessLogMigration).not.toMatch(/\b(?:DROP|TRUNCATE)\b/i);
     expect(pendingAccessLogMigration).not.toMatch(/\bDELETE\s+FROM\b/i);
+  });
+
+  it('preserves the legacy customers view around the users.balance precision change', () => {
+    const captureView = financialIntegrityMigration.indexOf('pg_get_viewdef');
+    const dropView = financialIntegrityMigration.indexOf('DROP VIEW public.customers');
+    const alterBalance = financialIntegrityMigration.indexOf('ALTER COLUMN balance TYPE NUMERIC(20, 2)');
+    const recreateView = financialIntegrityMigration.indexOf('CREATE VIEW public.customers AS %s');
+
+    expect(captureView).toBeGreaterThan(-1);
+    expect(dropView).toBeGreaterThan(captureView);
+    expect(alterBalance).toBeGreaterThan(dropView);
+    expect(recreateView).toBeGreaterThan(alterBalance);
+    expect(financialIntegrityMigration).toContain('information_schema.role_table_grants');
+    expect(financialIntegrityMigration).toContain('security_invoker = true');
+    expect(financialIntegrityMigration).not.toMatch(/\b(?:TRUNCATE|DELETE\s+FROM)\b/i);
   });
 });
