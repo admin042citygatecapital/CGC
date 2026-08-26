@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { MarketDataRegistry } from '../../server/lib/market/registry.js';
 import { CoinbaseProvider, toCoinbaseProductId } from '../../server/lib/market/providers/coinbase.js';
 import { KrakenProvider } from '../../server/lib/market/providers/kraken.js';
+import { parseRestTicker } from '../../lib/useMarketWebSocket.js';
 import type { MarketDataProvider, ProviderCapabilities, Ticker } from '../../server/lib/market/types.js';
 
 const tickerCapabilities: ProviderCapabilities = {
@@ -91,5 +92,35 @@ describe('market provider fallbacks', () => {
     expect(ticker.symbol).toBe('BTCUSDT');
     expect(ticker.name).toBe('BTCUSDT');
     fetchMock.mockRestore();
+  });
+
+  it('normalizes Kraken XDG responses to the platform DOGE symbol', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      error: [],
+      result: {
+        XDGUSDT: {
+          c: ['0.12'], o: '0.10', h: ['0.13', '0.14'],
+          l: ['0.09', '0.08'], v: ['100', '200'],
+        },
+      },
+    }), { status: 200 }));
+
+    const [ticker] = await new KrakenProvider().getTicker(['DOGEUSDT']);
+
+    expect(ticker.symbol).toBe('DOGEUSDT');
+    expect(ticker.name).toBe('DOGEUSDT');
+    fetchMock.mockRestore();
+  });
+
+  it('uses the percentage move for the customer-facing REST ticker', () => {
+    const ticker = parseRestTicker({
+      symbol: 'BTCUSDT',
+      price: 79_000,
+      change24h: 427.3,
+      changePct24h: 0.54,
+    });
+
+    expect(ticker?.change24h).toBe(0.54);
+    expect(ticker?.changeStr).toBe('+0.54%');
   });
 });

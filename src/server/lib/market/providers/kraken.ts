@@ -37,7 +37,10 @@ function toKrakenPair(symbol: string): string {
 
 /** Translate Kraken's XBT code back to the platform's canonical BTC code. */
 function fromKrakenPair(symbol: string): string {
-  return symbol.toUpperCase().replace(/^XBT/, 'BTC');
+  return symbol
+    .toUpperCase()
+    .replace(/^XBT/, 'BTC')
+    .replace(/^XDG/, 'DOGE');
 }
 
 export class KrakenProvider implements MarketDataProvider {
