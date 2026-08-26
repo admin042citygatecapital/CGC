@@ -143,6 +143,42 @@ END $$;
 
 DO $$
 BEGIN
+  IF to_regclass('public.access_log') IS NOT NULL THEN
+    ALTER TABLE public.access_log
+      ADD COLUMN IF NOT EXISTS ts TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS duration INTEGER NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS ua TEXT NOT NULL DEFAULT '';
+
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'access_log' AND column_name = 'created_at'
+    ) THEN
+      UPDATE public.access_log SET ts = created_at
+      WHERE ts IS NULL AND created_at IS NOT NULL;
+    END IF;
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'access_log' AND column_name = 'duration_ms'
+    ) THEN
+      UPDATE public.access_log SET duration = duration_ms
+      WHERE duration_ms IS NOT NULL;
+    END IF;
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'access_log' AND column_name = 'user_agent'
+    ) THEN
+      UPDATE public.access_log SET ua = user_agent
+      WHERE user_agent IS NOT NULL AND ua = '';
+    END IF;
+
+    UPDATE public.access_log SET ts = NOW() WHERE ts IS NULL;
+    ALTER TABLE public.access_log ALTER COLUMN ts SET DEFAULT NOW();
+    ALTER TABLE public.access_log ALTER COLUMN ts SET NOT NULL;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
   IF to_regclass('public.transactions') IS NOT NULL THEN
     ALTER TABLE public.transactions
       ADD COLUMN IF NOT EXISTS wallet_address TEXT,

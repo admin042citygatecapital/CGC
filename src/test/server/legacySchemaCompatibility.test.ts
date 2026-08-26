@@ -17,6 +17,8 @@ describe('legacy schema compatibility migration', () => {
 
   it('bridges the legacy aliases required by the canonical schema', () => {
     expect(migration).toContain('SET ua = user_agent');
+    expect(migration).toContain('SET ts = created_at');
+    expect(migration).toContain('SET duration = duration_ms');
     expect(migration).toContain('SET target = resource_type');
     expect(migration).toContain('SET scheduled_at = created_at');
     expect(migration).toContain('SET wallet_address = crypto_address');
