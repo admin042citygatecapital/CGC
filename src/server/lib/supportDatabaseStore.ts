@@ -117,18 +117,26 @@ export function syncLegacySupportConversations(): Promise<number> {
         ON CONFLICT (id) DO NOTHING
       `;
     }
-    const routing = legacy.readRoutingConfig();
-    const notifications = legacy.readNotificationSettings();
-    await sql`
-      INSERT INTO config (key,value,updated_at,updated_by)
-      VALUES (${ROUTING_CONFIG_KEY},${sql.json(routing as unknown as Parameters<typeof sql.json>[0])},NOW(),'system:migration')
-      ON CONFLICT (key) DO NOTHING
+    const existingConfig = await sql<Array<{ key: string }>>`
+      SELECT key FROM config WHERE key IN (${ROUTING_CONFIG_KEY},${NOTIFICATION_CONFIG_KEY})
     `;
-    await sql`
-      INSERT INTO config (key,value,updated_at,updated_by)
-      VALUES (${NOTIFICATION_CONFIG_KEY},${sql.json(notifications as unknown as Parameters<typeof sql.json>[0])},NOW(),'system:migration')
-      ON CONFLICT (key) DO NOTHING
-    `;
+    const existingKeys = new Set(existingConfig.map(row => row.key));
+    if (!existingKeys.has(ROUTING_CONFIG_KEY)) {
+      const routing = legacy.readRoutingConfig();
+      await sql`
+        INSERT INTO config (key,value,updated_at,updated_by)
+        VALUES (${ROUTING_CONFIG_KEY},${sql.json(routing as unknown as Parameters<typeof sql.json>[0])},NOW(),'system:migration')
+        ON CONFLICT (key) DO NOTHING
+      `;
+    }
+    if (!existingKeys.has(NOTIFICATION_CONFIG_KEY)) {
+      const notifications = legacy.readNotificationSettings();
+      await sql`
+        INSERT INTO config (key,value,updated_at,updated_by)
+        VALUES (${NOTIFICATION_CONFIG_KEY},${sql.json(notifications as unknown as Parameters<typeof sql.json>[0])},NOW(),'system:migration')
+        ON CONFLICT (key) DO NOTHING
+      `;
+    }
     return data.length;
   })().catch(error => {
     legacySync = null;

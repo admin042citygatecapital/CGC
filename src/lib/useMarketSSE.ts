@@ -50,7 +50,11 @@ function formatChange(value: unknown): string {
 
 /** Normalise exchange-specific codes before they become map keys in the UI. */
 function normalizeTickerSymbol(value: unknown): string {
-  return String(value ?? '').trim().toUpperCase().replace(/^XBT/, 'BTC');
+  return String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/^XBT/, 'BTC')
+    .replace(/^XDG/, 'DOGE');
 }
 
 function parseTicker(raw: Record<string, unknown>): TickerData | null {

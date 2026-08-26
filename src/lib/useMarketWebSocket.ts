@@ -69,15 +69,24 @@ function formatChange(value: unknown): string {
 
 /** Keep provider-specific asset codes out of the customer-facing data model. */
 function normalizeTickerSymbol(value: unknown): string {
-  return String(value ?? '').trim().toUpperCase().replace(/^XBT/, 'BTC');
+  return String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/^XBT/, 'BTC')
+    .replace(/^XDG/, 'DOGE');
 }
 
 // Parse a raw REST ticker response into TickerData
-function parseRestTicker(raw: Record<string, unknown>): TickerData | null {
+export function parseRestTicker(raw: Record<string, unknown>): TickerData | null {
   const symbol = normalizeTickerSymbol(raw.symbol ?? raw.s);
   const price  = finiteNumber(raw.price ?? raw.p ?? raw.lastPrice, Number.NaN);
   if (!symbol || !Number.isFinite(price)) return null;
-  const change24h = finiteNumber(raw.change24h ?? raw.priceChangePercent ?? raw.changePercent);
+  // Provider responses include both an absolute 24-hour move (`change24h`)
+  // and its percentage (`changePct24h`). The ticker strip displays a percent,
+  // so prefer the percentage field and use legacy aliases only as fallbacks.
+  const change24h = finiteNumber(
+    raw.changePct24h ?? raw.priceChangePercent ?? raw.changePercent ?? raw.change24h
+  );
   return {
     symbol,
     price,
