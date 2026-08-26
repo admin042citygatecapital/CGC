@@ -32,10 +32,16 @@ describe('support configuration durability', () => {
 
   it('migrates disk-era configuration idempotently', () => {
     const store = readFileSync('src/server/lib/supportDatabaseStore.ts', 'utf8');
+    const defaults = readFileSync('src/server/db/migrations/0053_support_configuration_defaults.sql', 'utf8');
     expect(store).toContain('ON CONFLICT (id) DO NOTHING');
     expect(store).toContain('ON CONFLICT (key) DO NOTHING');
+    expect(store).toContain('existingKeys.has(ROUTING_CONFIG_KEY)');
+    expect(store).toContain('existingKeys.has(NOTIFICATION_CONFIG_KEY)');
     expect(store).toContain("const ROUTING_CONFIG_KEY = 'support_routing'");
     expect(store).toContain("const NOTIFICATION_CONFIG_KEY = 'support_notifications'");
+    expect(defaults).toContain("'support_routing'");
+    expect(defaults).toContain("'support_notifications'");
+    expect(defaults.match(/ON CONFLICT \(key\) DO NOTHING/g)).toHaveLength(2);
   });
 
   it('uses the PostgreSQL support source for administration reports', () => {
