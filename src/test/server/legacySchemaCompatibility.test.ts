@@ -7,6 +7,11 @@ const migrationPath = path.resolve(
   'src/server/db/migrations/0000_legacy_schema_compatibility.sql',
 );
 const migration = fs.readFileSync(migrationPath, 'utf8');
+const pendingAccessLogMigrationPath = path.resolve(
+  process.cwd(),
+  'src/server/db/migrations/0002_access_log_brute_force.sql',
+);
+const pendingAccessLogMigration = fs.readFileSync(pendingAccessLogMigrationPath, 'utf8');
 
 describe('legacy schema compatibility migration', () => {
   it('runs before the initial schema and remains safe to repeat', () => {
@@ -33,5 +38,18 @@ describe('legacy schema compatibility migration', () => {
   it('does not mutate balances or financial amounts', () => {
     expect(migration).not.toMatch(/SET\s+balance\s*=/i);
     expect(migration).not.toMatch(/SET\s+amount\s*=/i);
+  });
+
+  it('reconciles a legacy access_log before the pending canonical indexes run', () => {
+    const addTs = pendingAccessLogMigration.indexOf('ADD COLUMN IF NOT EXISTS ts');
+    const createTsIndex = pendingAccessLogMigration.indexOf('CREATE INDEX IF NOT EXISTS access_log_ts_idx');
+
+    expect(addTs).toBeGreaterThan(-1);
+    expect(createTsIndex).toBeGreaterThan(addTs);
+    expect(pendingAccessLogMigration).toContain('SET ts = created_at');
+    expect(pendingAccessLogMigration).toContain('SET duration = duration_ms');
+    expect(pendingAccessLogMigration).toContain('SET ua = user_agent');
+    expect(pendingAccessLogMigration).not.toMatch(/\b(?:DROP|TRUNCATE)\b/i);
+    expect(pendingAccessLogMigration).not.toMatch(/\bDELETE\s+FROM\b/i);
   });
 });
