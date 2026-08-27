@@ -194,7 +194,7 @@ export async function getSession(
       email: s.email,
       role: s.role,
       credentialVersion: s.credential_version,
-      createdAt: s.created_at.toISOString(),
+      createdAt: new Date(s.created_at).toISOString(),
       lastSeenAt: now.toISOString(),
       ip: s.ip,
       ua: s.ua,
