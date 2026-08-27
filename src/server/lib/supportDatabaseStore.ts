@@ -237,11 +237,11 @@ export async function createConversation(data: {
       INSERT INTO support_conversations
         (id,user_id,user_name,user_email,subject,category,priority,status,assigned_to,created_at,updated_at)
       VALUES
-        (${id},${data.userId},${data.userName},${data.userEmail.toLowerCase()},${data.subject},${data.category},${data.priority ?? 'medium'},'open',${defaultAssignment(data.category)},${now},${now})
+        (${id},${data.userId},${data.userName},${data.userEmail.toLowerCase()},${data.subject},${data.category},${data.priority ?? 'medium'},'open',${defaultAssignment(data.category)},${now.toISOString()},${now.toISOString()})
     `;
     await transaction`
       INSERT INTO support_messages (id,conversation_id,"from",text,ts)
-      VALUES (${messageId},${id},'customer',${data.message},${now})
+      VALUES (${messageId},${id},'customer',${data.message},${now.toISOString()})
     `;
   });
   const created = await getConversationById(id);
@@ -270,7 +270,7 @@ async function appendMessage(
     const now = new Date();
     await transaction`
       INSERT INTO support_messages (id,conversation_id,"from",text,admin_name,ts)
-      VALUES (${`msg_${crypto.randomBytes(6).toString('hex')}`},${conversationId},${from},${text},${adminName ?? null},${now})
+      VALUES (${`msg_${crypto.randomBytes(6).toString('hex')}`},${conversationId},${from},${text},${adminName ?? null},${now.toISOString()})
     `;
     const reopened = from === 'customer' && ['resolved', 'closed'].includes(conversations[0].status);
     await transaction`
@@ -281,10 +281,10 @@ async function appendMessage(
           ELSE status
         END,
         first_reply_at = CASE
-          WHEN ${from} = 'admin' AND first_reply_at IS NULL THEN ${now}
+          WHEN ${from} = 'admin' AND first_reply_at IS NULL THEN ${now.toISOString()}
           ELSE first_reply_at
         END,
-        updated_at = ${now}
+        updated_at = ${now.toISOString()}
       WHERE id = ${conversationId}
     `;
     return true;
