@@ -61,8 +61,8 @@ async function readRecord(key: string): Promise<FailRecord | undefined> {
   if (!row) return undefined;
   return {
     count: Number(row.count),
-    lockedUntil: row.locked_until?.getTime() ?? 0,
-    lastFailAt: row.last_fail_at.getTime(),
+    lockedUntil: row.locked_until ? new Date(row.locked_until).getTime() : 0,
+    lastFailAt: new Date(row.last_fail_at).getTime(),
   };
 }
 
@@ -86,7 +86,7 @@ async function incrementRecord(key: string): Promise<void> {
       FOR UPDATE
     `;
     const current = rows[0];
-    const count = !current || now - current.last_fail_at.getTime() > STALE_WINDOW_MS
+    const count = !current || now - new Date(current.last_fail_at).getTime() > STALE_WINDOW_MS
       ? 1
       : Number(current.count) + 1;
     const lockedUntil = lockoutMs(count) > 0 ? new Date(now + lockoutMs(count)).toISOString() : null;
