@@ -121,7 +121,7 @@ export async function createSession(
         ip, ua, created_at, last_seen_at, expires_at
       ) VALUES (
         ${tokenHash}, ${data.adminId}, ${data.email}, ${data.role}::admin_role,
-        ${data.credentialVersion}, ${data.ip}, ${data.ua}, ${now}, ${now}, ${expiresAt}
+        ${data.credentialVersion}, ${data.ip}, ${data.ua}, ${now.toISOString()}, ${now.toISOString()}, ${expiresAt.toISOString()}
       )
       ON CONFLICT DO NOTHING
       RETURNING token_hash
@@ -181,14 +181,14 @@ export async function getSession(
     if (!s) return null;
 
     const inactive = !s.is_active || s.credential_version !== s.current_credential_version;
-    const absoluteExpired = s.expires_at < now;
-    const inactivityExpired = new Date(s.last_seen_at.getTime() + INACTIVITY_MS) < now;
+    const absoluteExpired = new Date(s.expires_at) < now;
+    const inactivityExpired = new Date(new Date(s.last_seen_at).getTime() + INACTIVITY_MS) < now;
     if (inactive || absoluteExpired || inactivityExpired) {
       await tx`DELETE FROM admin_sessions WHERE token_hash = ${tokenHash}`;
       return null;
     }
     if (fingerprint && (s.ip !== fingerprint.ip || s.ua !== fingerprint.ua)) return null;
-    await tx`UPDATE admin_sessions SET last_seen_at = ${now} WHERE token_hash = ${tokenHash}`;
+    await tx`UPDATE admin_sessions SET last_seen_at = ${now.toISOString()} WHERE token_hash = ${tokenHash}`;
     return {
       adminId: s.admin_id,
       email: s.email,

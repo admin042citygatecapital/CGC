@@ -112,12 +112,12 @@ async function issuePersistentOtp(principal: AdminOtpPrincipal, ip: string, ua: 
       return { staleCredential: true, rateLimited: false } as const;
     }
     await tx`SELECT pg_advisory_xact_lock(hashtext(${`admin-otp:${digest(normalizedEmail)}`}))`;
-    await tx`DELETE FROM admin_otp_challenges WHERE created_at < ${rateWindowStart}`;
+    await tx`DELETE FROM admin_otp_challenges WHERE created_at < ${rateWindowStart.toISOString()}`;
 
     const [rate] = await tx<{ count: number }[]>`
       SELECT COUNT(*)::int AS count
       FROM admin_otp_challenges
-      WHERE email = ${normalizedEmail} AND created_at >= ${rateWindowStart}
+      WHERE email = ${normalizedEmail} AND created_at >= ${rateWindowStart.toISOString()}
     `;
     if (!isolatedE2eMode() && Number(rate?.count ?? 0) >= MAX_OTP_PER_WINDOW) {
       return { rateLimited: true } as const;
@@ -135,7 +135,7 @@ async function issuePersistentOtp(principal: AdminOtpPrincipal, ip: string, ua: 
       ) VALUES (
         ${challengeIdHash}, ${principal.adminId}, ${normalizedEmail}, ${principal.credentialVersion},
         ${digest(otp)}, ${digest(ip)}, ${digest(ua)},
-        ${expiresAt}, 0, FALSE, ${now}
+        ${expiresAt.toISOString()}, 0, FALSE, ${now.toISOString()}
       )
     `;
     return { rateLimited: false } as const;
