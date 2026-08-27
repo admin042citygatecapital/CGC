@@ -53,9 +53,9 @@ async function readRecord(key: string): Promise<FailRecord | undefined> {
   const sql = getQueryClient();
   const rows = await sql<{ count: number; locked_until: Date | null; last_fail_at: Date }[]>`
     SELECT count, locked_until, last_fail_at
-      FROM brute_force_lockouts
-     WHERE key = ${key}
-     LIMIT 1
+    FROM brute_force_lockouts
+    WHERE key = ${key}
+    LIMIT 1
   `;
   const row = rows[0];
   if (!row) return undefined;
@@ -81,18 +81,18 @@ async function incrementRecord(key: string): Promise<void> {
     await transaction`SELECT pg_advisory_xact_lock(hashtext(${key}))`;
     const rows = await transaction<{ count: number; last_fail_at: Date }[]>`
       SELECT count, last_fail_at
-        FROM brute_force_lockouts
-       WHERE key = ${key}
-       FOR UPDATE
+      FROM brute_force_lockouts
+      WHERE key = ${key}
+      FOR UPDATE
     `;
     const current = rows[0];
     const count = !current || now - current.last_fail_at.getTime() > STALE_WINDOW_MS
       ? 1
       : Number(current.count) + 1;
-    const lockedUntil = lockoutMs(count) > 0 ? new Date(now + lockoutMs(count)) : null;
+    const lockedUntil = lockoutMs(count) > 0 ? new Date(now + lockoutMs(count)).toISOString() : null;
     await transaction`
       INSERT INTO brute_force_lockouts (key, count, locked_until, last_fail_at)
-      VALUES (${key}, ${count}, ${lockedUntil}, ${new Date(now)})
+      VALUES (${key}, ${count}, ${lockedUntil}, ${new Date(now).toISOString()})
       ON CONFLICT (key) DO UPDATE SET
         count = EXCLUDED.count,
         locked_until = EXCLUDED.locked_until,
