@@ -515,7 +515,7 @@ export async function detectDuplicate(
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const recentFromIp = await db.select({ id: users.id })
       .from(users)
-      .where(drizzleSql`${users.ip} = ${ip} AND ${users.createdAt} > ${oneHourAgo}`)
+      .where(drizzleSql`${users.ip} = ${ip} AND ${users.createdAt} > ${oneHourAgo.toISOString()}`)
       .limit(3);
     if (recentFromIp.length >= 3) return { isDuplicate: true, reason: 'too_many_from_ip' };
   }
