@@ -208,12 +208,26 @@ function StatusTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
   const [status,   setStatus]   = useState<SmtpStatus | null>(null);
   const [loading,  setLoading]  = useState(true);
   const [retrying, setRetrying] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const r = await fetch('/api/admin/email/status', { headers: authHeaders() });
-    if (r.ok) setStatus(await r.json());
-    setLoading(false);
+    setLoadError(null);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12_000);
+    try {
+      const r = await fetch('/api/admin/email/status', { headers: authHeaders(), signal: controller.signal });
+      if (!r.ok) throw new Error(`Status request failed (${r.status})`);
+      setStatus(await r.json());
+    } catch (error) {
+      setStatus(null);
+      setLoadError(error instanceof DOMException && error.name === 'AbortError'
+        ? 'The email diagnostics request timed out. No delivery settings were changed.'
+        : error instanceof Error ? error.message : 'Email diagnostics are temporarily unavailable.');
+    } finally {
+      window.clearTimeout(timeout);
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -234,8 +248,12 @@ function StatusTab({ showToast }: { showToast: (m: string, ok?: boolean) => void
   );
 
   if (!status) return (
-    <div className="flex items-center gap-2 py-8 text-red-400 text-sm">
-      <AlertTriangle size={14} /> Failed to load status
+    <div role="alert" className="flex flex-wrap items-center gap-3 rounded-2xl border border-red-400/15 bg-red-400/5 p-4 text-red-300 text-sm">
+      <AlertTriangle size={14} />
+      <span>{loadError ?? 'Failed to load email diagnostics.'}</span>
+      <button type="button" onClick={load} className="ml-auto rounded-lg border border-red-300/20 px-3 py-1.5 text-xs font-semibold hover:bg-red-300/10">
+        Retry
+      </button>
     </div>
   );
 

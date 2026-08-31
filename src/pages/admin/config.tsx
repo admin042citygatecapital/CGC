@@ -80,14 +80,16 @@ function isSectionId(value: string | null): value is SectionKey | 'env' {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label?: string }) {
+function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <button type="button" onClick={() => onChange(!value)}
+      <button type="button" role="switch" aria-checked={value} aria-label={`${label}: ${value ? 'enabled' : 'disabled'}`} onClick={() => onChange(!value)}
         className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${value ? 'bg-primary' : 'bg-white/10'}`}>
         <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow ${value ? 'translate-x-5' : 'translate-x-0.5'}`} />
       </button>
-      {label && <span className={`text-xs font-medium transition-colors ${value ? 'text-white/70' : 'text-white/30'}`}>{label}</span>}
+      <span aria-hidden="true" className={`min-w-14 text-xs font-semibold transition-colors ${value ? 'text-emerald-300' : 'text-white/35'}`}>
+        {value ? 'Enabled' : 'Disabled'}
+      </span>
     </div>
   );
 }
@@ -350,14 +352,14 @@ export default function AdminConfigPage() {
                           <p className="text-white/70 text-sm font-medium">Animations</p>
                           <p className="text-white/30 text-xs">Enable UI motion effects</p>
                         </div>
-                        <Toggle value={s('theme').animationsEnabled ?? true} onChange={v => patch('theme','animationsEnabled',v)} />
+                        <Toggle label="Interface animations" value={s('theme').animationsEnabled ?? true} onChange={v => patch('theme','animationsEnabled',v)} />
                       </div>
                       <div className="flex items-center justify-between p-4 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                         <div>
                           <p className="text-white/70 text-sm font-medium">Collapsed Sidebar</p>
                           <p className="text-white/30 text-xs">Default sidebar state</p>
                         </div>
-                        <Toggle value={s('theme').sidebarCollapsed ?? false} onChange={v => patch('theme','sidebarCollapsed',v)} />
+                        <Toggle label="Collapsed sidebar" value={s('theme').sidebarCollapsed ?? false} onChange={v => patch('theme','sidebarCollapsed',v)} />
                       </div>
                     </div>
                   </>
@@ -459,7 +461,7 @@ export default function AdminConfigPage() {
                           ].map(([k, l]) => (
                             <div key={k} className="flex items-center justify-between p-3 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                               <p className="text-white/60 text-xs">{l}</p>
-                              <Toggle value={s('homepage')[k] ?? true} onChange={v => patch('homepage', k, v)} />
+                              <Toggle label={l} value={s('homepage')[k] ?? true} onChange={v => patch('homepage', k, v)} />
                             </div>
                           ))}
                         </div>
@@ -472,7 +474,7 @@ export default function AdminConfigPage() {
                             <p className="text-white/70 text-sm font-medium">Announcement Banner</p>
                             <p className="text-white/25 text-xs">Shown at the top of the homepage when enabled</p>
                           </div>
-                          <Toggle value={s('homepage').announcementBannerEnabled ?? false} onChange={v => patch('homepage','announcementBannerEnabled',v)} />
+                          <Toggle label="Announcement banner" value={s('homepage').announcementBannerEnabled ?? false} onChange={v => patch('homepage','announcementBannerEnabled',v)} />
                         </div>
                         {s('homepage').announcementBannerEnabled && (
                           <div className="space-y-3 pt-1">
@@ -519,7 +521,7 @@ export default function AdminConfigPage() {
                         ].map(([k, l]) => (
                           <div key={k} className="flex items-center justify-between p-3.5 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                             <p className="text-white/60 text-sm">{l}</p>
-                            <Toggle value={s('dashboardWidgets')[k] ?? true} onChange={v => patch('dashboardWidgets', k, v)} />
+                            <Toggle label={l} value={s('dashboardWidgets')[k] ?? true} onChange={v => patch('dashboardWidgets', k, v)} />
                           </div>
                         ))}
                       </div>
@@ -552,7 +554,7 @@ export default function AdminConfigPage() {
                             <p className="text-white/70 text-sm font-medium">{l}</p>
                             <p className="text-white/25 text-xs">{d}</p>
                           </div>
-                          <Toggle value={s('notificationSettings')[k] ?? false} onChange={v => patch('notificationSettings', k, v)} />
+                          <Toggle label={l} value={s('notificationSettings')[k] ?? false} onChange={v => patch('notificationSettings', k, v)} />
                         </div>
                       ))}
                       <SelectField label="Digest Frequency" value={s('notificationSettings').digestFrequency ?? 'realtime'} onChange={v => patch('notificationSettings','digestFrequency',v)}
@@ -572,7 +574,7 @@ export default function AdminConfigPage() {
                             <p className="text-white/80 font-semibold text-sm">Maintenance Mode</p>
                             <p className="text-white/30 text-xs mt-0.5">{s('maintenanceMode').enabled ? '⚠ Site is currently in maintenance mode' : 'Site is live and accessible'}</p>
                           </div>
-                          <Toggle value={s('maintenanceMode').enabled ?? false} onChange={v => patch('maintenanceMode','enabled',v)} />
+                          <Toggle label="Maintenance mode" value={s('maintenanceMode').enabled ?? false} onChange={v => patch('maintenanceMode','enabled',v)} />
                         </div>
                       </div>
                       <div>
@@ -584,11 +586,11 @@ export default function AdminConfigPage() {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="flex items-center justify-between p-3.5 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                           <p className="text-white/60 text-sm">Allow Admin Access</p>
-                          <Toggle value={s('maintenanceMode').allowAdminAccess ?? true} onChange={v => patch('maintenanceMode','allowAdminAccess',v)} />
+                          <Toggle label="Allow administrator access during maintenance" value={s('maintenanceMode').allowAdminAccess ?? true} onChange={v => patch('maintenanceMode','allowAdminAccess',v)} />
                         </div>
                         <div className="flex items-center justify-between p-3.5 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                           <p className="text-white/60 text-sm">Show Countdown</p>
-                          <Toggle value={s('maintenanceMode').showCountdown ?? false} onChange={v => patch('maintenanceMode','showCountdown',v)} />
+                          <Toggle label="Show maintenance countdown" value={s('maintenanceMode').showCountdown ?? false} onChange={v => patch('maintenanceMode','showCountdown',v)} />
                         </div>
                       </div>
                       <div>
@@ -614,7 +616,7 @@ export default function AdminConfigPage() {
                           {PLATFORM_MODULES.map(([key, label]) => (
                             <div key={key} className="flex items-center justify-between rounded-xl border border-white/5 bg-black/20 p-3">
                               <span className="text-sm font-medium text-white/60">{label}</span>
-                              <Toggle value={s('featureToggles').platformFeatures?.[key] ?? key !== 'rewards'} onChange={value => patchPlatformFeature(key, value)} />
+                              <Toggle label={label} value={s('featureToggles').platformFeatures?.[key] ?? key !== 'rewards'} onChange={value => patchPlatformFeature(key, value)} />
                             </div>
                           ))}
                         </div>
@@ -692,7 +694,7 @@ export default function AdminConfigPage() {
                               <p className="text-white/70 text-sm font-medium">{l}</p>
                               <p className="text-white/25 text-xs">{d}</p>
                             </div>
-                            <Toggle value={s('featureToggles')[k] ?? false} onChange={v => patch('featureToggles', k, v)} />
+                            <Toggle label={l} value={s('featureToggles')[k] ?? false} onChange={v => patch('featureToggles', k, v)} />
                           </div>
                         ))}
                       </div>
@@ -723,7 +725,7 @@ export default function AdminConfigPage() {
                       </div>
                       <div className="flex items-center justify-between p-3.5 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                         <p className="text-white/60 text-sm">Auto-Update Rates</p>
-                        <Toggle value={s('exchangeRates').autoUpdateEnabled ?? false} onChange={v => patch('exchangeRates','autoUpdateEnabled',v)} />
+                        <Toggle label="Automatic exchange-rate updates" value={s('exchangeRates').autoUpdateEnabled ?? false} onChange={v => patch('exchangeRates','autoUpdateEnabled',v)} />
                       </div>
                     </div>
                   </>
@@ -749,7 +751,7 @@ export default function AdminConfigPage() {
                       </div>
                       <div className="flex items-center justify-between p-3.5 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                         <p className="text-white/60 text-sm">RTL Support</p>
-                        <Toggle value={s('language').rtlEnabled ?? false} onChange={v => patch('language','rtlEnabled',v)} />
+                        <Toggle label="Right-to-left layout" value={s('language').rtlEnabled ?? false} onChange={v => patch('language','rtlEnabled',v)} />
                       </div>
                     </div>
                   </>
@@ -774,7 +776,7 @@ export default function AdminConfigPage() {
                       </div>
                       <div className="flex items-center justify-between p-3.5 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                         <p className="text-white/60 text-sm">Show Currency Code</p>
-                        <Toggle value={s('currency').showCurrencyCode ?? false} onChange={v => patch('currency','showCurrencyCode',v)} />
+                        <Toggle label="Show currency code" value={s('currency').showCurrencyCode ?? false} onChange={v => patch('currency','showCurrencyCode',v)} />
                       </div>
                     </div>
                   </>
@@ -811,7 +813,7 @@ export default function AdminConfigPage() {
                           <p className="text-white/70 text-sm font-medium">Use User Timezone</p>
                           <p className="text-white/25 text-xs">Display times in each user's local timezone</p>
                         </div>
-                        <Toggle value={s('timezone').useUserTimezone ?? true} onChange={v => patch('timezone','useUserTimezone',v)} />
+                        <Toggle label="Use customer timezone" value={s('timezone').useUserTimezone ?? true} onChange={v => patch('timezone','useUserTimezone',v)} />
                       </div>
                     </div>
                   </>

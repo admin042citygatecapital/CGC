@@ -29,7 +29,7 @@ Save,
 Settings2,
 Shield,
 Tag,
-Wifi,WifiOff,
+Wifi,
 XCircle,
 Zap
 } from 'lucide-react';
@@ -38,8 +38,9 @@ import { useCallback,useEffect,useState } from 'react';
 
 // ── Market Providers Panel ────────────────────────────────────────────────────
 
-function MarketProvidersPanel() {
-  const { providers, loading } = useProviders();
+type MarketProvider = ReturnType<typeof useProviders>['providers'][number];
+
+function MarketProvidersPanel({ providers, loading }: { providers: MarketProvider[]; loading: boolean }) {
   const PROVIDER_KEYS: Record<string, { key: string; label: string }[]> = {
     'alpha-vantage': [{ key: 'ALPHA_VANTAGE_API_KEY', label: 'Alpha Vantage API Key' }],
     'finnhub':       [{ key: 'FINNHUB_API_KEY',       label: 'Finnhub API Key' }],
@@ -535,6 +536,7 @@ export default function IntegrationsPage() {
   const [filterStatus,   setFilterStatus]   = useState<'all' | ConnectionStatus>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [search,         setSearch]         = useState('');
+  const { providers: marketProviders, loading: marketProvidersLoading } = useProviders();
 
   // ── Load ──────────────────────────────────────────────────────────────────
 
@@ -633,10 +635,10 @@ export default function IntegrationsPage() {
   // ── Derived stats ─────────────────────────────────────────────────────────
 
   const stats = {
-    total:        integrations.length,
+    managed:      integrations.length,
     connected:    integrations.filter(i => i.status === 'connected').length,
-    disconnected: integrations.filter(i => i.status === 'disconnected').length,
-    partial:      integrations.filter(i => i.status === 'partial').length,
+    attention:    integrations.filter(i => i.status === 'disconnected' || i.status === 'partial').length,
+    marketFeeds:  marketProviders.length,
   };
 
   const categories = ['all', ...Array.from(new Set(integrations.map(i => i.category)))];
@@ -685,10 +687,10 @@ export default function IntegrationsPage() {
         {/* ── Stats strip ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Total',        value: stats.total,        icon: Wifi,        color: 'text-white/60' },
-            { label: 'Connected',    value: stats.connected,    icon: CheckCircle2, color: 'text-emerald-400' },
-            { label: 'Disconnected', value: stats.disconnected, icon: WifiOff,     color: 'text-red-400' },
-            { label: 'Partial',      value: stats.partial,      icon: AlertCircle, color: 'text-amber-400' },
+            { label: 'Managed integrations', value: stats.managed,     icon: Wifi,         color: 'text-white/60' },
+            { label: 'Connected integrations', value: stats.connected, icon: CheckCircle2, color: 'text-emerald-400' },
+            { label: 'Needs attention', value: stats.attention,         icon: AlertCircle,  color: 'text-amber-400' },
+            { label: 'Active market feeds', value: marketProvidersLoading ? '—' : stats.marketFeeds, icon: BarChart2, color: 'text-sky-300' },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="rounded-2xl p-4 border"
               style={{ background: 'rgba(255,255,255,0.025)', borderColor: 'rgba(255,255,255,0.07)' }}>
@@ -814,7 +816,7 @@ export default function IntegrationsPage() {
 
       </div>
       {/* Market Data Providers panel */}
-      <MarketProvidersPanel />
+      <MarketProvidersPanel providers={marketProviders} loading={marketProvidersLoading} />
     </AdminLayout>
   );
 }

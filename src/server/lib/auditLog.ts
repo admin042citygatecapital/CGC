@@ -4,7 +4,7 @@
  */
 
 import crypto from 'node:crypto';
-import { desc, eq, and, gte } from 'drizzle-orm';
+import { desc, eq, and, gte, ilike, or, sql } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { auditLog } from '../db/schema.js';
 
@@ -164,4 +164,99 @@ export async function getAuditLog(
     ip:         r.ip ?? undefined,
     ts:         r.ts.toISOString(),
   }));
+}
+
+export type AuditSeverity = 'info' | 'warn' | 'critical';
+
+export interface AuditLogPageOptions {
+  page: number;
+  limit: number;
+  search?: string;
+  severity?: AuditSeverity;
+}
+
+/**
+ * Query one audit page in PostgreSQL. Filtering and counting deliberately live
+ * at the database boundary so the administration UI never loads the full
+ * immutable audit history into application memory.
+ */
+export async function getAuditLogPage(
+  opts: AuditLogPageOptions,
+): Promise<{ entries: AuditEntry[]; total: number }> {
+  const page = Math.max(1, opts.page);
+  const limit = Math.min(100, Math.max(1, opts.limit));
+  const offset = (page - 1) * limit;
+  const normalizedSearch = opts.search?.trim();
+
+  if (!isDatabaseConfigured()) {
+    const all = (await ff()).getAuditLog({ limit: Number.MAX_SAFE_INTEGER });
+    const filtered = all.filter((entry) => {
+      const details = entry.details ?? {};
+      const declared = String(details.severity ?? '').toLowerCase();
+      const derived: AuditSeverity = declared === 'critical' || declared === 'warn' || declared === 'info'
+        ? declared
+        : /(failed|denied|rejected|revoked|lockout|quarantine|security)/i.test(entry.action) ? 'warn' : 'info';
+      if (opts.severity && derived !== opts.severity) return false;
+      if (!normalizedSearch) return true;
+      const needle = normalizedSearch.toLowerCase();
+      return [entry.adminEmail, entry.adminId, entry.action, entry.target, entry.targetId, entry.ip]
+        .some((value) => String(value ?? '').toLowerCase().includes(needle));
+    });
+    return { entries: filtered.slice(offset, offset + limit), total: filtered.length };
+  }
+
+  const conditions = [];
+  if (normalizedSearch) {
+    const pattern = `%${normalizedSearch.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_')}%`;
+    conditions.push(or(
+      ilike(auditLog.adminEmail, pattern),
+      ilike(auditLog.adminId, pattern),
+      ilike(auditLog.action, pattern),
+      ilike(auditLog.target, pattern),
+      ilike(auditLog.targetId, pattern),
+      ilike(auditLog.ip, pattern),
+    ));
+  }
+
+  if (opts.severity === 'critical') {
+    conditions.push(sql`lower(coalesce(${auditLog.details}->>'severity', '')) = 'critical'`);
+  } else if (opts.severity === 'warn') {
+    conditions.push(sql`(
+      lower(coalesce(${auditLog.details}->>'severity', '')) = 'warn'
+      OR (
+        lower(coalesce(${auditLog.details}->>'severity', '')) NOT IN ('critical', 'warn', 'info')
+        AND ${auditLog.action} ~* '(failed|denied|rejected|revoked|lockout|quarantine|security)'
+      )
+    )`);
+  } else if (opts.severity === 'info') {
+    conditions.push(sql`(
+      lower(coalesce(${auditLog.details}->>'severity', '')) = 'info'
+      OR (
+        lower(coalesce(${auditLog.details}->>'severity', '')) NOT IN ('critical', 'warn', 'info')
+        AND ${auditLog.action} !~* '(failed|denied|rejected|revoked|lockout|quarantine|security)'
+      )
+    )`);
+  }
+
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+  const db = getDb();
+  const [rows, totals] = await Promise.all([
+    db.select().from(auditLog).where(where).orderBy(desc(auditLog.ts)).limit(limit).offset(offset),
+    db.select({ count: sql<number>`count(*)::int` }).from(auditLog).where(where),
+  ]);
+
+  return {
+    entries: rows.map((r) => ({
+      id: r.id,
+      adminId: r.adminId,
+      adminEmail: r.adminEmail,
+      action: r.action,
+      target: r.target ?? undefined,
+      targetId: r.targetId ?? undefined,
+      details: r.details as Record<string, unknown> | undefined,
+      ip: r.ip ?? undefined,
+      ts: r.ts.toISOString(),
+    })),
+    total: totals[0]?.count ?? 0,
+  };
 }

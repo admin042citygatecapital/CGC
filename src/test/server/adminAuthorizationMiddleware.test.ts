@@ -25,6 +25,10 @@ describe('admin authorization policy', () => {
     expect(requiredPermissionForAdminRequest('/kyc/queue', 'GET')).toBe('compliance.view');
     expect(requiredPermissionForAdminRequest('/balance/adjust', 'POST')).toBe('ledger.adjust');
     expect(requiredPermissionForAdminRequest('/security/roles', 'POST')).toBe('admin.roles.manage');
+    expect(requiredPermissionForAdminRequest('/administrators', 'GET')).toBe('security.view');
+    expect(requiredPermissionForAdminRequest('/administrators', 'POST')).toBe('admin.roles.manage');
+    expect(requiredPermissionForAdminRequest('/deployments', 'GET')).toBe('health.view');
+    expect(requiredPermissionForAdminRequest('/database', 'GET')).toBe('health.view');
   });
 
   it('maps authenticated session and security operations explicitly', () => {

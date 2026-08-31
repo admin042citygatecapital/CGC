@@ -45,6 +45,9 @@ import admin_onboarding_screening_get from "./api/admin/onboarding/screening/GET
 import admin_legal_entity_get from "./api/admin/legal-entity/GET";
 import admin_legal_entity_post from "./api/admin/legal-entity/POST";
 import admin_legal_entity_owners_post from "./api/admin/legal-entity/owners/POST";
+import admin_administrators_get from "./api/admin/administrators/GET";
+import admin_database_get from "./api/admin/database/GET";
+import admin_deployments_get from "./api/admin/deployments/GET";
 
 // <api-imports>
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
@@ -651,6 +654,9 @@ app.delete("/api/admin/auth/trusted-devices", admin_auth_trusted_devices_delete_
 app.get("/api/admin/auth/trusted-devices", admin_auth_trusted_devices_get_9);
 app.post("/api/admin/auth/unlock", admin_auth_unlock_post_10);
 app.get("/api/admin/auth/verify", admin_auth_verify_get_11);
+app.get("/api/admin/administrators", admin_administrators_get);
+app.get("/api/admin/database", admin_database_get);
+app.get("/api/admin/deployments", admin_deployments_get);
 app.post("/api/admin/balance/adjust", admin_balance_adjust_post_12);
 app.get("/api/admin/balance/history", admin_balance_history_get_13);
 app.get("/api/admin/cards", admin_cards_get_14);
