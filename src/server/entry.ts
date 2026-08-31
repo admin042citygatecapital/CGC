@@ -16,6 +16,7 @@ import compression from "compression";
 import { closeConnection } from "./db/db";
 import { requireEnabledCustomerFeature } from "./lib/platformFeatureControls";
 import { issueCustomerResetToken } from "./lib/customerResetTokenStore";
+import { ensurePrivateKycBucket } from "./lib/kycStorage";
 import platform_features_get from "./api/platform/features/GET";
 import users_features_get from "./api/users/features/GET";
 import admin_features_get from "./api/admin/features/GET";
@@ -1566,6 +1567,7 @@ if (isStandaloneEntrypoint && !isVercelRuntime) {
 		// ── Startup: load config from DB into in-memory cache ──────────────
 		Promise.all([
 			loadConfigFromDb().catch(e => console.warn('configStore.load.skipped', String(e))),
+			ensurePrivateKycBucket().catch(e => console.warn('kycStorage.initialization.skipped', e instanceof Error ? e.name : 'UnknownError')),
 			syncLegacySupportConversations().catch(e => console.warn('supportStore.migration.skipped', e instanceof Error ? e.name : 'UnknownError')),
 			loadSmtpConfigFromDb().catch(e => console.warn('smtpConfigStore.load.skipped', String(e))),
 			loadEmailBrandingFromDb().catch(e => console.warn('emailBranding.load.skipped', String(e))),
