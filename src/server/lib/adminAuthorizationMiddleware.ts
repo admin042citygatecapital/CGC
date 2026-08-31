@@ -32,7 +32,7 @@ const PERMISSION_RULES: readonly PermissionRule[] = [
   { prefixes: ['/cms', '/website'], read: 'cms.view', write: 'cms.edit' },
   { prefixes: ['/media'], read: 'media.view', write: 'media.manage' },
   { prefixes: ['/rates'], read: 'rates.view', write: 'rates.manage' },
-  { prefixes: ['/integrations', '/zoho', '/smtp', '/smartsupp', '/chatbot', '/social'], read: 'integrations.view', write: 'integrations.manage' },
+  { prefixes: ['/integrations', '/zoho', '/smtp', '/tawk', '/chatbot', '/social'], read: 'integrations.view', write: 'integrations.manage' },
   { prefixes: ['/features'], read: 'features.view', write: 'features.manage' },
   { prefixes: ['/config', '/settings'], read: 'config.view', write: 'config.edit' },
   { prefixes: ['/health', '/env-report'], read: 'health.view' },

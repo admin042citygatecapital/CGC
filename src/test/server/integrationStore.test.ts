@@ -37,10 +37,11 @@ describe('integration status reporting', () => {
 
     expect(byId.resend).toMatchObject({ name: 'Resend', status: 'connected', enabled: false });
     expect(byId.zoho_mail).toMatchObject({ status: 'connected', enabled: false });
-    expect(byId.smartsupp.status).toBe('disconnected');
+    expect(byId.tawk).toMatchObject({ name: 'tawk.to', status: 'connected', enabled: true });
+    expect(byId.tawk.secrets).toEqual([]);
     expect(byId.cloudflare).toBeUndefined();
     expect(byId.banking_api).toBeUndefined();
-    expect(Object.keys(byId).sort()).toEqual(['resend', 'smartsupp', 'zoho_mail']);
+    expect(Object.keys(byId).sort()).toEqual(['resend', 'tawk', 'zoho_mail']);
   });
 
   it('reports partial configuration when only some required secrets are present', async () => {
@@ -55,5 +56,20 @@ describe('integration status reporting', () => {
     await expect(updateIntegration('resend', { config: { fromEmail: 'noreply@citygate.capital' } })).resolves.toMatchObject({
       config: { fromEmail: 'noreply@citygate.capital' },
     });
+  });
+
+  it('persists only valid public tawk.to embed identifiers', async () => {
+    const { getTawkWidgetConfig, updateIntegration } = await import('../../server/lib/integrationStore.js');
+    await expect(updateIntegration('tawk', {
+      config: { propertyId: 'property123', widgetId: 'widget456' },
+    })).resolves.toMatchObject({ status: 'connected' });
+    await expect(getTawkWidgetConfig()).resolves.toEqual({
+      enabled: true,
+      propertyId: 'property123',
+      widgetId: 'widget456',
+    });
+    await expect(updateIntegration('tawk', {
+      config: { propertyId: '../invalid' },
+    })).rejects.toThrow('INVALID_INTEGRATION_SETTINGS');
   });
 });

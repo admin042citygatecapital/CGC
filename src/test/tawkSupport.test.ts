@@ -42,5 +42,7 @@ describe('product support widget routing', () => {
     expect(source).toContain('Chat with City Gate Capital support');
     expect(source).toContain('Never share passwords, authentication codes, card details, or recovery keys.');
     expect(source).not.toContain('MessageCircle');
+    expect(source).toContain("fetch('/api/config/tawk-widget'");
+    expect(source).toContain('config.enabled !== false');
   });
 });

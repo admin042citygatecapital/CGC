@@ -192,7 +192,7 @@ function isTestResult(payload: unknown): payload is TestResult {
 const INTEGRATION_ICONS: Record<string, React.ElementType> = {
   resend:             Mail,
   zoho_mail:          Mail,
-  smartsupp:          MessageSquare,
+  tawk:               MessageSquare,
   cloudflare:         Shield,
   google_analytics:   BarChart2,
   google_tag_manager: Tag,
@@ -339,13 +339,20 @@ function IntegrationCard({ integration, onToggle, onSave, onTest, testing, testR
             <Clock size={11} />
             <span>Synced: {relativeTime(integration.lastSyncAt)}</span>
           </div>
-          {/* Secret count */}
-          <div className={`flex items-center gap-1.5 text-[11px] ${allRequiredOk ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
-            <Key size={11} />
-            <span>
-              {integration.secrets.filter(s => s.present).length}/{integration.secrets.length} secrets
-            </span>
-          </div>
+          {/* Credential/configuration status */}
+          {integration.secrets.length > 0 ? (
+            <div className={`flex items-center gap-1.5 text-[11px] ${allRequiredOk ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
+              <Key size={11} />
+              <span>
+                {integration.secrets.filter(s => s.present).length}/{integration.secrets.length} secrets
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-400/70">
+              <Settings2 size={11} />
+              <span>No secret required</span>
+            </div>
+          )}
 
           {/* Spacer */}
           <div className="flex-1" />

@@ -9,7 +9,6 @@ const customerSources = [
   "src/pages/transfers.tsx",
   "src/pages/about.tsx",
   "src/lib/chatbot/chat-config.ts",
-  "src/server/lib/smartsuppStore.ts",
   "src/server/lib/emailTemplateStore.ts",
   "src/server/lib/emailService.ts",
   "src/server/lib/nurtureSequence.ts",

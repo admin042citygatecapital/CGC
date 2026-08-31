@@ -122,12 +122,11 @@ export const env = {
     storageBucket:  s('SUPABASE_STORAGE_BUCKET') || 'cgc-media',
   },
 
-  // ── Smartsupp live chat ───────────────────────────────────────────────────
-  // The Smartsupp key is a PUBLIC widget identifier (not a secret — it is
-  // embedded in client-side JS and visible in the browser). Stored as a
-  // secret so it is not hard-coded in source.
-  smartsupp: {
-    key: s('SMARTSUPP_KEY'),
+  // ── tawk.to live support ──────────────────────────────────────────────────
+  // These are public embed identifiers, never API credentials.
+  tawk: {
+    propertyId: s('TAWK_PROPERTY_ID', 'VITE_TAWK_PROPERTY_ID') || '6a773b21198d971d45c5ff66',
+    widgetId: s('TAWK_WIDGET_ID', 'VITE_TAWK_WIDGET_ID') || '1jvgrtvnn',
   },
 
   // ── SEO / Webmaster verification ─────────────────────────────────────────
