@@ -475,6 +475,13 @@ const REGISTRY: EnvVarSpec[] = [
     description: 'A 64-character hexadecimal key used for AES-256-GCM encryption of card PAN and CVV data.',
   },
   {
+    name:        'KYC_FIELD_ENCRYPTION_KEY',
+    level:       'WARNING',
+    service:     'Private KYC Onboarding',
+    validate:     validateCardKey,
+    description: 'A dedicated 64-character hexadecimal key used to encrypt identity-document numbers. KYC profile submission fails closed when missing.',
+  },
+  {
     name:        'ADMIN_UNLOCK_KEY',
     level:       'INFO',
     service:     'Admin Emergency Unlock',

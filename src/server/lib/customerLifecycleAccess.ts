@@ -23,9 +23,12 @@ const ONBOARDING_ROUTES = new Set([
   'GET /session',
   'POST /logout',
   'GET /onboarding',
+  'PUT /onboarding/profile',
+  'POST /onboarding/documents',
   'POST /onboarding/evidence',
   'POST /onboarding/submit',
-  'POST /kyc-document',
+  'GET /support',
+  'POST /support',
 ]);
 
 export function isOnboardingRouteAllowed(method: string, path: string): boolean {
@@ -36,7 +39,8 @@ export function isOnboardingRouteAllowed(method: string, path: string): boolean 
 /**
  * Enforce the registration lifecycle after the cookie has been authenticated.
  * Pending customers can inspect and complete onboarding, but cannot reach any
- * financial, support, profile, device, notification, or dashboard API.
+ * financial, device, notification, or dashboard API. The support and profile
+ * surface above is deliberately restricted to onboarding needs.
  */
 export function requireCustomerLifecycleAccess(req: Request, res: Response, next: NextFunction): void {
   const user = req.customerUser;

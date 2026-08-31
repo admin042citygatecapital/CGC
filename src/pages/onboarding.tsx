@@ -1,254 +1,78 @@
-import { Helmet } from "@dr.pogodin/react-helmet";
-import { ArrowLeft, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useCustomerAuth } from "@/lib/customerAuth";
+import { Helmet } from '@dr.pogodin/react-helmet';
+import { CheckCircle2, FileCheck2, Loader2, LogOut, ShieldCheck } from 'lucide-react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { useCustomerAuth } from '@/lib/customerAuth';
 
-type WorkflowStep = {
-  key: string;
-  label: string;
-  status: "complete" | "current" | "waiting" | "blocked";
-  href?: string;
+type DocumentKind = 'identity_front' | 'identity_back' | 'proof_of_address' | 'additional';
+type KycBundle = {
+  case: { id:string; status:string; version:number; customerInstructions?:string|null; requestedEvidenceKinds:DocumentKind[] };
+  profile: Record<string, unknown>|null;
+  documents: Array<{ id:string; kind:DocumentKind; originalName:string; version:number; byteSize:number; createdAt:string }>;
+  provider: { configured:boolean; identityAccepted:boolean; screeningClear:boolean };
 };
-type Bundle = {
-  case: { id: string; caseType: string; status: string };
-  intakePosition: number | null;
-  evidence: Array<{ id: string; kind: string; reference: string }>;
-  workflow: {
-    status: string;
-    queuePosition: number | null;
-    currentStep: string;
-    nextHref: string | null;
-    canContinue: boolean;
-    steps: WorkflowStep[];
-  };
+
+const labels: Record<string,string> = {
+  draft:'Incomplete', submitted:'Submitted', under_review:'Under Review', needs_info:'More Information Required',
+  approved:'Identity Review Approved — Final Activation Pending', rejected:'Rejected',
 };
+const blank = { legalName:'', dateOfBirth:'', nationality:'', residenceCountry:'', addressLine1:'', addressLine2:'', city:'', region:'', postalCode:'', documentType:'passport', issuingCountry:'', documentNumber:'', documentIssuedAt:'', documentExpiresAt:'', informationCertified:false, privacyAcknowledged:false };
+
 export default function OnboardingPage() {
-  const { customer, logout } = useCustomerAuth();
-  const [bundle, setBundle] = useState<Bundle | null>(null);
-  const [kind, setKind] = useState("identity");
-  const [reference, setReference] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const { logout } = useCustomerAuth();
+  const [bundle,setBundle] = useState<KycBundle|null>(null);
+  const [form,setForm] = useState<Record<string, string|boolean>>(blank);
+  const [busy,setBusy] = useState(false);
+  const [message,setMessage] = useState('');
+  const editable = bundle ? ['draft','needs_info'].includes(bundle.case.status) : false;
   async function load() {
-    setLoading(true);
-    try {
-      const r = await fetch("/api/users/onboarding");
-      const body = await r.json();
-      if (r.ok) {
-        setBundle(body);
-        setMessage("");
-      } else {
-        setBundle(null);
-        setMessage(body.error ?? "Registration progress is temporarily unavailable.");
-      }
-    } catch {
-      setBundle(null);
-      setMessage("Registration progress is temporarily unavailable.");
-    } finally {
-      setLoading(false);
-    }
+    const response = await fetch('/api/users/onboarding');
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || 'Identity onboarding is unavailable.');
+    setBundle(body);
+    if (body.profile) setForm(current => ({ ...current, ...body.profile, documentNumber:'' }));
   }
-  useEffect(() => {
-    void load();
-  }, []);
-  async function addEvidence() {
-    setBusy(true);
-    setMessage("");
-    const r = await fetch("/api/users/onboarding/evidence", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, referenceType: "provider", reference }),
-    });
-    const b = await r.json();
-    setMessage(r.ok ? "Evidence reference added." : b.error);
-    if (r.ok) {
-      setReference("");
-      await load();
-    }
-    setBusy(false);
+  useEffect(() => { void load().catch(error => setMessage(error.message)); }, []);
+  const requiredKinds = useMemo<DocumentKind[]>(() => form.documentType === 'passport' ? ['identity_front','proof_of_address'] : ['identity_front','identity_back','proof_of_address'], [form.documentType]);
+  function field(name:string,label:string,type='text',required=true) {
+    return <label className="text-sm font-medium">{label}<input name={name} type={type} required={required} disabled={!editable} value={String(form[name] ?? '')} onChange={event=>setForm({...form,[name]:event.target.value})} className="mt-2 block w-full rounded-xl border border-white/10 bg-white/5 p-3 disabled:opacity-60" /></label>;
+  }
+  async function saveProfile(event:FormEvent) {
+    event.preventDefault(); setBusy(true); setMessage('');
+    try {
+      const response = await fetch('/api/users/onboarding/profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)});
+      const body = await response.json(); if (!response.ok) throw new Error(body.error); setMessage('Identity profile saved securely.'); await load();
+    } catch(error) { setMessage(error instanceof Error ? error.message : 'Profile could not be saved.'); } finally { setBusy(false); }
+  }
+  async function upload(kind:DocumentKind,file:File|null) {
+    if (!file) return; setBusy(true); setMessage('');
+    try {
+      const response = await fetch('/api/users/onboarding/documents',{method:'POST',headers:{'Content-Type':file.type,'X-KYC-Document-Kind':kind,'X-KYC-File-Name':file.name},body:file});
+      const body = await response.json(); if (!response.ok) throw new Error(body.error); setMessage(`${kind.replaceAll('_',' ')} uploaded securely.`); await load();
+    } catch(error) { setMessage(error instanceof Error ? error.message : 'Document upload failed.'); } finally { setBusy(false); }
   }
   async function submit() {
-    setBusy(true);
-    const r = await fetch("/api/users/onboarding/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
-    const b = await r.json();
-    setMessage(r.ok ? "Case submitted for compliance review." : b.error);
-    await load();
-    setBusy(false);
+    if (!bundle) return; setBusy(true); setMessage('');
+    try {
+      const key = crypto.randomUUID().replaceAll('-','');
+      const response = await fetch('/api/users/onboarding/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({caseVersion:bundle.case.version,idempotencyKey:key})});
+      const body = await response.json(); if (!response.ok) throw new Error(body.error); setMessage('Your evidence was submitted once and is now locked for review.'); await load();
+    } catch(error) { setMessage(error instanceof Error ? error.message : 'Submission failed.'); } finally { setBusy(false); }
   }
-  return (
-    <main className="min-h-screen bg-background text-foreground p-6">
-      <Helmet>
-        <title>Registration Progress | City Gate Capital</title>
-      </Helmet>
-      <div className="max-w-2xl mx-auto space-y-6">
-        {customer?.accessMode === 'full' ? (
-          <Link to="/dashboard" className="inline-flex gap-2 text-sm text-foreground/50">
-            <ArrowLeft size={16} /> Dashboard
-          </Link>
-        ) : (
-          <button type="button" onClick={logout} className="inline-flex gap-2 text-sm text-foreground/50">
-            <ArrowLeft size={16} /> Sign out
-          </button>
-        )}
-        <div>
-          <h1 className="text-3xl font-bold">Registration progress</h1>
-          <p className="text-sm text-foreground/50 mt-2">
-            Follow each required step. Progress is stored securely on the server
-            and financial access remains unavailable until the controlled review
-            is complete.
-          </p>
-        </div>
-        {message && !bundle && !loading && (
-          <div role="status" className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-5 text-sm text-amber-100">
-            {message}
-          </div>
-        )}
-        {loading ? (
-          <Loader2 className="animate-spin" />
-        ) : bundle ? (
-          <>
-            <section className="rounded-2xl border border-primary/20 bg-primary/[0.035] p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-primary">
-                    Application workflow
-                  </p>
-                  <p className="mt-1 text-sm text-foreground/50">
-                    Reference {bundle.case.id} · Current step:{" "}
-                    {bundle.workflow.currentStep.replaceAll("_", " ")}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  {bundle.intakePosition && (
-                    <span className="rounded-full border border-white/10 px-3 py-1 text-[10px] text-foreground/55">
-                      Intake #{bundle.intakePosition}
-                    </span>
-                  )}
-                  {bundle.workflow.queuePosition && (
-                    <span className="rounded-full border border-primary/20 px-3 py-1 text-xs text-primary">
-                      Review queue #{bundle.workflow.queuePosition}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                {bundle.workflow.steps.map((step, index) => (
-                  <div
-                    key={step.key}
-                    className={`rounded-xl border p-3 ${step.status === "complete" ? "border-emerald-400/20 bg-emerald-400/[0.06]" : step.status === "current" ? "border-primary/30 bg-primary/[0.08]" : "border-white/8 bg-white/[0.02]"}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-xs">
-                        {step.status === "complete" ? "✓" : index + 1}
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold">{step.label}</p>
-                        <p className="text-[10px] uppercase text-foreground/40">
-                          {step.status}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {bundle.workflow.canContinue && bundle.workflow.nextHref && (
-                <Link
-                  to={bundle.workflow.nextHref}
-                  className="mt-4 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground"
-                >
-                  Go to next step
-                </Link>
-              )}
-            </section>
-            <div className="rounded-2xl border border-white/10 p-5">
-              <div className="flex justify-between">
-                <span className="font-semibold">
-                  {bundle.case.caseType} application
-                </span>
-                <span className="text-primary uppercase text-xs">
-                  {bundle.case.status.replace("_", " ")}
-                </span>
-              </div>
-            </div>
-            {["draft", "needs_info"].includes(bundle.case.status) && (
-              <div className="rounded-2xl border border-white/10 p-5 space-y-4">
-                <label className="text-sm">
-                  Evidence type
-                  <select
-                    value={kind}
-                    onChange={(e) => setKind(e.target.value)}
-                    className="block w-full mt-2 bg-white/5 border border-white/10 rounded-xl p-3"
-                  >
-                    <option value="identity">Identity</option>
-                    <option value="address">Address</option>
-                    <option value="selfie">Provider liveness check</option>
-                    {bundle.case.caseType === "business" && (
-                      <>
-                        <option value="company">Company</option>
-                        <option value="ownership">Beneficial ownership</option>
-                        <option value="authority">Authorised user</option>
-                      </>
-                    )}
-                  </select>
-                </label>
-                <label className="text-sm">
-                  Approved-provider reference
-                  <input
-                    value={reference}
-                    onChange={(e) => setReference(e.target.value)}
-                    className="block w-full mt-2 bg-white/5 border border-white/10 rounded-xl p-3"
-                    placeholder="provider-case-reference"
-                  />
-                </label>
-                <button
-                  disabled={busy || reference.length < 3}
-                  onClick={() => void addEvidence()}
-                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground"
-                >
-                  Add reference
-                </button>
-              </div>
-            )}
-            <div className="space-y-2">
-              {bundle.evidence.map((e) => (
-                <div
-                  key={e.id}
-                  className="rounded-xl bg-white/5 p-3 flex gap-3"
-                >
-                  <ShieldCheck className="text-primary" />
-                  <div>
-                    <div className="font-semibold text-sm">{e.kind}</div>
-                    <div className="text-xs text-foreground/45">
-                      {e.reference}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {["draft", "needs_info"].includes(bundle.case.status) && (
-              <button
-                disabled={busy || bundle.evidence.length === 0}
-                onClick={() => void submit()}
-                className="w-full py-3 rounded-xl bg-emerald-500/20 text-emerald-300 font-semibold"
-              >
-                Submit application
-              </button>
-            )}
-            {message && (
-              <p className="rounded-xl border border-white/10 p-3 text-sm flex gap-2">
-                <CheckCircle2 size={16} />
-                {message}
-              </p>
-            )}
-          </>
-        ) : null}
-      </div>
-    </main>
-  );
+  if (!bundle) return <main className="min-h-screen bg-background p-8 text-foreground"><Loader2 className="animate-spin"/><p className="mt-4">{message}</p></main>;
+  const uploaded = new Set(bundle.documents.map(item=>item.kind));
+  return <main className="min-h-screen bg-background p-4 text-foreground sm:p-8"><Helmet><title>Secure Identity Onboarding | City Gate Capital</title></Helmet>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <header className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-primary">Restricted onboarding session</p><h1 className="mt-2 text-3xl font-bold">Identity and compliance review</h1><p className="mt-2 text-sm text-foreground/55">Financial pages remain locked until provider screening and final SUPER_ADMIN activation are complete.</p></div><button onClick={logout} className="flex gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm"><LogOut size={16}/>Sign out</button></header>
+      <section className="rounded-2xl border border-primary/25 bg-primary/[.05] p-5"><div className="flex items-center gap-3"><ShieldCheck className="text-primary"/><div><p className="font-semibold">{labels[bundle.case.status] || bundle.case.status}</p><p className="text-xs text-foreground/55">Case {bundle.case.id} · version {bundle.case.version}</p></div></div>{bundle.case.customerInstructions && <div className="mt-4 rounded-xl border border-amber-400/25 bg-amber-400/[.06] p-4 text-sm"><strong>Reviewer instructions:</strong> {bundle.case.customerInstructions}</div>}</section>
+      {editable && <form onSubmit={saveProfile} className="space-y-5 rounded-2xl border border-white/10 p-5"><h2 className="text-xl font-semibold">1. Legal identity and residence</h2><div className="grid gap-4 md:grid-cols-2">{field('legalName','Legal name')}{field('dateOfBirth','Date of birth','date')}{field('nationality','Nationality')}{field('residenceCountry','Country of residence')}{field('addressLine1','Address')}{field('addressLine2','Address line 2','text',false)}{field('city','City')}{field('region','State / region','text',false)}{field('postalCode','Postal code')}
+        <label className="text-sm font-medium">Identity document type<select name="documentType" value={String(form.documentType)} onChange={event=>setForm({...form,documentType:event.target.value})} className="mt-2 block w-full rounded-xl border border-white/10 bg-background p-3"><option value="passport">Passport</option><option value="national_id">National ID</option><option value="drivers_license">Driver licence</option><option value="residence_permit">Residence permit</option></select></label>
+        {field('issuingCountry','Issuing country')}{field('documentNumber', form.documentNumber ? 'Document number' : 'Document number (enter again to save)')}{field('documentIssuedAt','Issue date','date',false)}{field('documentExpiresAt','Expiry date','date')}</div>
+        <label className="flex gap-3 text-sm"><input type="checkbox" checked={Boolean(form.informationCertified)} onChange={e=>setForm({...form,informationCertified:e.target.checked})}/>I certify this information is accurate.</label><label className="flex gap-3 text-sm"><input type="checkbox" checked={Boolean(form.privacyAcknowledged)} onChange={e=>setForm({...form,privacyAcknowledged:e.target.checked})}/>I understand the evidence will be processed for identity and compliance review.</label><button disabled={busy} className="rounded-xl bg-primary px-5 py-3 font-semibold text-primary-foreground">Save identity profile</button></form>}
+      <section className="space-y-4 rounded-2xl border border-white/10 p-5"><h2 className="text-xl font-semibold">2. Supporting evidence</h2><p className="text-sm text-foreground/55">JPEG, PNG or PDF only, maximum 5 MB. Use synthetic evidence for test accounts—never a real identity document.</p>{[...new Set([...requiredKinds,...bundle.case.requestedEvidenceKinds])].map(kind=><div key={kind} className="flex flex-col justify-between gap-3 rounded-xl bg-white/[.03] p-4 sm:flex-row sm:items-center"><div><p className="font-medium">{kind.replaceAll('_',' ')}</p><p className="text-xs text-foreground/50">{uploaded.has(kind)?'Uploaded and versioned':'Required'}</p></div>{editable && <input aria-label={`Upload ${kind}`} type="file" accept="image/jpeg,image/png,application/pdf" onChange={e=>void upload(kind,e.target.files?.[0]??null)}/>}</div>)}</section>
+      {editable && <section className="rounded-2xl border border-white/10 p-5"><h2 className="text-xl font-semibold">3. Review and submit</h2><p className="my-3 text-sm text-foreground/55">Submission is explicit, atomic and idempotent. Evidence is locked while under review.</p><button disabled={busy || requiredKinds.some(kind=>!uploaded.has(kind))} onClick={()=>void submit()} className="w-full rounded-xl bg-emerald-500/20 py-3 font-semibold text-emerald-300 disabled:opacity-40">Submit identity package once</button></section>}
+      <Link to="/onboarding/support" className="inline-flex rounded-xl border border-white/10 px-4 py-3 text-sm">Identity verification support</Link>
+      {message && <p role="status" className="flex gap-2 rounded-xl border border-white/10 p-4 text-sm"><CheckCircle2 size={17}/>{message}</p>}
+      {!bundle.provider.configured && <p className="rounded-xl border border-amber-400/20 p-4 text-sm text-amber-200"><FileCheck2 className="mr-2 inline" size={17}/>Provider verification is not configured. Evidence collection may proceed, but approval and activation remain blocked.</p>}
+    </div></main>;
 }

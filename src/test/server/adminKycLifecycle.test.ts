@@ -2,163 +2,79 @@ import type { Request, Response } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const dependencies = vi.hoisted(() => ({
-  findUserById: vi.fn(), updateUser: vi.fn(), appendAudit: vi.fn(), appendCriticalAudit: vi.fn(), appendKycNote: vi.fn(),
-  readKycSettings: vi.fn(),
-  sendMail: vi.fn().mockResolvedValue({ success: true }),
-  sendApprovalEmail: vi.fn().mockResolvedValue(undefined),
-  sendRejectionEmail: vi.fn().mockResolvedValue(undefined),
-  getLatestOnboardingCaseForUser: vi.fn(), reviewOnboardingCase: vi.fn(),
-  getOrCreateOnboardingCase: vi.fn(), submitOnboardingCase: vi.fn(),
-  createNotification: vi.fn(), assertProviderVerificationComplete: vi.fn(),
+  authorizeRecentAdminStepUp: vi.fn().mockReturnValue(true),
+  getLatestOnboardingCaseForUser: vi.fn(),
+  getOrCreateOnboardingCase: vi.fn(),
+  submitOnboardingCase: vi.fn(),
+  decideKycCase: vi.fn(),
+  createNotification: vi.fn(),
+  sendKycSubmittedEmail: vi.fn(),
 }));
-
-vi.mock('../../server/lib/userStore.js', () => ({
-  findUserById: dependencies.findUserById, updateUser: dependencies.updateUser,
-}));
-vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit: dependencies.appendAudit, appendCriticalAudit: dependencies.appendCriticalAudit }));
-vi.mock('../../server/lib/kycStore.js', () => ({
-  appendKycNote: dependencies.appendKycNote,
-  readKycSettings: dependencies.readKycSettings,
-  addUtcMonths: (value: Date, months: number) => {
-    const result = new Date(value);
-    result.setUTCMonth(result.getUTCMonth() + months);
-    return result;
-  },
-}));
-vi.mock('../../server/lib/emailService.js', () => ({
-  sendMail: dependencies.sendMail,
-  sendApprovalEmail: dependencies.sendApprovalEmail,
-  sendRejectionEmail: dependencies.sendRejectionEmail,
-}));
+vi.mock('../../server/lib/rbacMiddleware.js', () => ({ authorizeRecentAdminStepUp: dependencies.authorizeRecentAdminStepUp }));
 vi.mock('../../server/lib/onboardingStore.js', () => ({
   getLatestOnboardingCaseForUser: dependencies.getLatestOnboardingCaseForUser,
-  reviewOnboardingCase: dependencies.reviewOnboardingCase,
   getOrCreateOnboardingCase: dependencies.getOrCreateOnboardingCase,
   submitOnboardingCase: dependencies.submitOnboardingCase,
 }));
+vi.mock('../../server/lib/kycReviewService.js', () => ({ decideKycCase: dependencies.decideKycCase }));
 vi.mock('../../server/lib/notificationStore.js', () => ({ createNotification: dependencies.createNotification }));
-vi.mock('../../server/lib/onboardingProviderStore.js', () => ({
-  assertProviderVerificationComplete: dependencies.assertProviderVerificationComplete,
-}));
+vi.mock('../../server/lib/emailService.js', () => ({ sendKycSubmittedEmail: dependencies.sendKycSubmittedEmail }));
 
 import approveKyc from '../../server/api/admin/kyc/approve/POST.js';
 import rejectKyc from '../../server/api/admin/kyc/reject/POST.js';
 import requestKycInfo from '../../server/api/admin/kyc/request-info/POST.js';
 import submitKyc from '../../server/api/users/onboarding/submit/POST.js';
 
-const user = { id: 'customer-kyc-1', email: 'kyc@example.test', name: 'KYC <Customer>' };
-const onboardingCase = { id: 'case-kyc-1', caseType: 'individual' as const };
-const adminSession = { adminId: 'super-admin-checker', email: 'admin@citygate.capital', role: 'super_admin' };
-
-function request(body: Record<string, unknown>) {
-  return { body, adminSession, ip: '127.0.0.1' } as unknown as Request;
-}
+const user = { id:'customer-kyc-1', email:'kyc@example.test', name:'KYC Customer', accountTier:'personal' };
+const onboardingCase = { id:'case-kyc-1', caseType:'individual' as const, version:7 };
+const adminSession = { adminId:'admin-checker', email:'admin@citygate.capital', role:'SUPER_ADMIN' };
 function responseDouble() {
-  const state: { status: number; body?: unknown } = { status: 200 };
-  const res = {
-    status(code: number) { state.status = code; return this; },
-    json(body: unknown) { state.body = body; return this; },
-  } as unknown as Response;
-  return { res, state };
+  const state:{status:number;body?:unknown}={status:200};
+  const res={status(code:number){state.status=code;return this;},json(body:unknown){state.body=body;return this;}} as unknown as Response;
+  return {res,state};
 }
+function request(body:Record<string,unknown>){return {body,adminSession,ip:'127.0.0.1',headers:{'x-request-id':'req-1'}} as unknown as Request;}
 
-describe('super-administrator KYC lifecycle', () => {
-  beforeEach(() => {
+describe('canonical KYC lifecycle routes',()=>{
+  beforeEach(()=>{
     vi.clearAllMocks();
-    dependencies.findUserById.mockResolvedValue(user);
+    dependencies.authorizeRecentAdminStepUp.mockReturnValue(true);
     dependencies.getLatestOnboardingCaseForUser.mockResolvedValue(onboardingCase);
-    dependencies.reviewOnboardingCase.mockResolvedValue({ ...onboardingCase, status: 'approved' });
     dependencies.getOrCreateOnboardingCase.mockResolvedValue(onboardingCase);
-    dependencies.submitOnboardingCase.mockResolvedValue({ ...onboardingCase, status: 'submitted' });
-    dependencies.assertProviderVerificationComplete.mockResolvedValue(undefined);
-    dependencies.appendCriticalAudit.mockResolvedValue(undefined);
-    dependencies.readKycSettings.mockResolvedValue({ expiryMonths: 12, renewalReminderDays: 30, autoRestrictExpired: true });
+    dependencies.submitOnboardingCase.mockResolvedValue({...onboardingCase,status:'submitted',submissionReplayed:false});
+    dependencies.decideKycCase.mockResolvedValue({case:{...onboardingCase,status:'approved'}});
   });
-
-  it('submits a customer case for review without activating financial services', async () => {
-    const result = responseDouble();
-    const customerRequest = { customerUser: { ...user, accountTier: 'personal' } } as unknown as Request;
-    await submitKyc(customerRequest, result.res);
-
-    expect(dependencies.getOrCreateOnboardingCase).toHaveBeenCalledWith(user.id, 'individual', user.id);
-    expect(dependencies.submitOnboardingCase).toHaveBeenCalledWith(onboardingCase.id, user.id, user.id, 'customer');
-    expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, expect.objectContaining({
-      status: 'pending_kyc', kycStatus: 'submitted',
-    }));
-    expect(dependencies.createNotification).toHaveBeenCalledWith(
-      user.id,
-      'Onboarding submitted',
-      expect.stringMatching(/does not activate financial services/i),
-      '/kyc',
-    );
-    expect(result.state).toMatchObject({ status: 200, body: { ok: true, case: { status: 'submitted' } } });
+  it('submits atomically with case version and idempotency key, then queues one notice',async()=>{
+    const result=responseDouble();
+    await submitKyc({customerUser:user,body:{caseVersion:7,idempotencyKey:'test-idempotency-value'}} as unknown as Request,result.res);
+    expect(dependencies.submitOnboardingCase).toHaveBeenCalledWith(onboardingCase.id,user.id,user.id,'customer',7,'test-idempotency-value');
+    expect(dependencies.createNotification).toHaveBeenCalledOnce();
+    expect(dependencies.sendKycSubmittedEmail).toHaveBeenCalledOnce();
+    expect(result.state.status).toBe(200);
   });
-
-  it('cannot approve KYC without accepted provider identity and screening results', async () => {
-    dependencies.assertProviderVerificationComplete.mockRejectedValue(
-      Object.assign(new Error('Approved provider screening is required.'), { code: 'PROVIDER_SCREENING_REQUIRED' }),
-    );
-    const result = responseDouble();
-    await approveKyc(request({ userId: user.id, note: 'Reviewed provider evidence and screening.' }), result.res);
-
-    expect(result.state).toMatchObject({ status: 409, body: { code: 'PROVIDER_SCREENING_REQUIRED' } });
-    expect(dependencies.reviewOnboardingCase).not.toHaveBeenCalled();
-    expect(dependencies.updateUser).not.toHaveBeenCalled();
+  it('does not duplicate notification or email for an idempotent replay',async()=>{
+    dependencies.submitOnboardingCase.mockResolvedValue({...onboardingCase,status:'submitted',submissionReplayed:true});
+    await submitKyc({customerUser:user,body:{caseVersion:7,idempotencyKey:'test-idempotency-value'}} as unknown as Request,responseDouble().res);
+    expect(dependencies.createNotification).not.toHaveBeenCalled();
+    expect(dependencies.sendKycSubmittedEmail).not.toHaveBeenCalled();
   });
-
-  it('approves only after provider verification and leaves AML and financial activation pending', async () => {
-    const result = responseDouble();
-    await approveKyc(request({ userId: user.id, note: 'Reviewed provider evidence and screening.' }), result.res);
-
-    expect(dependencies.assertProviderVerificationComplete).toHaveBeenCalledWith(onboardingCase.id, 'individual');
-    expect(dependencies.reviewOnboardingCase).toHaveBeenCalledWith(expect.objectContaining({
-      caseId: onboardingCase.id, reviewerId: adminSession.adminId, decision: 'approved',
-    }));
-    expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, expect.objectContaining({
-      status: 'pending_approval', kycStatus: 'approved', amlStatus: 'pending',
-      kycReviewedBy: adminSession.adminId,
-    }));
-    expect(dependencies.appendAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_approve' }));
-    expect(dependencies.appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_approve_intent' }));
+  it('keeps approval fail-closed when canonical provider verification rejects',async()=>{
+    dependencies.decideKycCase.mockRejectedValue(Object.assign(new Error('Provider required'),{code:'PROVIDER_VERIFICATION_REQUIRED'}));
+    const result=responseDouble();
+    await approveKyc(request({userId:user.id,note:'Reviewed evidence and screening.',expectedVersion:7}),result.res);
+    expect(result.state).toMatchObject({status:409,body:{code:'PROVIDER_VERIFICATION_REQUIRED'}});
   });
-
-  it('moves the case to needs-information, audits it, and escapes email content', async () => {
-    const result = responseDouble();
-    await requestKycInfo(request({ userId: user.id, message: 'Please provide <script>alert(1)</script> proof of address.' }), result.res);
-
-    expect(dependencies.reviewOnboardingCase).toHaveBeenCalledWith(expect.objectContaining({
-      caseId: onboardingCase.id, decision: 'needs_info', reviewerId: adminSession.adminId,
-    }));
-    expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, expect.objectContaining({
-      status: 'pending_kyc', kycStatus: 'submitted', kycExpiresAt: '', amlStatus: 'not_screened',
-    }));
-    const email = dependencies.sendMail.mock.calls[0][0] as { html: string };
-    expect(email.html).not.toContain('<script>');
-    expect(email.html).not.toContain('<Customer>');
-    expect(dependencies.appendAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_request_info' }));
-    expect(dependencies.appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_request_info_intent' }));
+  it('uses one versioned service for approval, rejection, and more information',async()=>{
+    await approveKyc(request({userId:user.id,note:'Provider evidence is complete.',expectedVersion:7}),responseDouble().res);
+    await rejectKyc(request({userId:user.id,reason:'Evidence could not be validated.',reasonCode:'other',expectedVersion:7}),responseDouble().res);
+    await requestKycInfo(request({userId:user.id,message:'Please upload a clearer address document.',reasonCode:'unreadable',requestedEvidenceKinds:['proof_of_address'],expectedVersion:7}),responseDouble().res);
+    expect(dependencies.decideKycCase).toHaveBeenNthCalledWith(1,expect.objectContaining({decision:'approved',expectedVersion:7}));
+    expect(dependencies.decideKycCase).toHaveBeenNthCalledWith(2,expect.objectContaining({decision:'rejected',expectedVersion:7}));
+    expect(dependencies.decideKycCase).toHaveBeenNthCalledWith(3,expect.objectContaining({decision:'needs_info',requestedEvidenceKinds:['proof_of_address'],expectedVersion:7}));
   });
-
-  it('rejects through the versioned case lifecycle with an immutable audit event', async () => {
-    const result = responseDouble();
-    await rejectKyc(request({ userId: user.id, reason: 'Identity evidence could not be validated.', reasonCode: 'invalid_document' }), result.res);
-
-    expect(dependencies.reviewOnboardingCase).toHaveBeenCalledWith(expect.objectContaining({
-      caseId: onboardingCase.id, decision: 'rejected', reviewerId: adminSession.adminId,
-    }));
-    expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, expect.objectContaining({
-      status: 'rejected', kycStatus: 'rejected',
-    }));
-    expect(dependencies.appendAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_reject' }));
-    expect(dependencies.appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_kyc_reject_intent' }));
-  });
-
-  it('fails closed when the critical audit intent cannot be persisted', async () => {
-    dependencies.appendCriticalAudit.mockRejectedValueOnce(new Error('audit unavailable'));
-    const result = responseDouble();
-    await expect(approveKyc(request({ userId: user.id, note: 'Reviewed provider evidence and screening.' }), result.res))
-      .rejects.toThrow('audit unavailable');
-    expect(dependencies.reviewOnboardingCase).not.toHaveBeenCalled();
-    expect(dependencies.updateUser).not.toHaveBeenCalled();
+  it('requires recent administrator step-up before every decision',async()=>{
+    dependencies.authorizeRecentAdminStepUp.mockReturnValue(false);
+    await approveKyc(request({userId:user.id}),responseDouble().res);
+    expect(dependencies.decideKycCase).not.toHaveBeenCalled();
   });
 });

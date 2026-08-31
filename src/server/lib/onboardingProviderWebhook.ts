@@ -32,6 +32,11 @@ export function providerWebhookSecret(providerCode: string, environment = proces
   return String(environment[key] ?? '').trim();
 }
 
+export function onboardingProviderConfigured(environment = process.env): boolean {
+  const providers = approvedOnboardingProviders(environment);
+  return providers.length > 0 && providers.every(provider => providerWebhookSecret(provider, environment).length >= 32);
+}
+
 export function assertApprovedProvider(providerCode: string, environment = process.env): string {
   const normalized = providerCode.trim().toLowerCase();
   if (!approvedOnboardingProviders(environment).includes(normalized)) {

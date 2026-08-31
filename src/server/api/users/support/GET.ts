@@ -17,7 +17,10 @@ export default async function handler(req: Request, res: Response) {
   }
 
   try {
-    const conversations = await getConversationsForUser(user.id);
+    const conversations = (await getConversationsForUser(user.id)).filter(conversation =>
+      req.customerAccessMode !== 'onboarding'
+      || ['Identity Verification', 'Account Access', 'Technical Support'].includes(conversation.category),
+    );
     return res.json({ conversations });
   } catch {
     return res.status(503).json({

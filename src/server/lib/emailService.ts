@@ -310,6 +310,46 @@ export async function sendApprovalEmail(to: string, name: string) {
   await send({ to, ...content });
 }
 
+export async function sendKycSubmittedEmail(to: string, name: string) {
+  await send({
+    to,
+    subject: 'Identity Evidence Submitted — City Gate Capital',
+    html: emailWrapper('Identity Evidence Submitted', `<p>Dear ${escapeEmailHtml(name)},</p><p>Your identity evidence was submitted securely and is awaiting review. Submission does not activate financial services.</p>`),
+  });
+}
+
+export async function sendKycMoreInformationEmail(to: string, name: string, instructions: string) {
+  await send({
+    to,
+    subject: 'More Identity Information Required — City Gate Capital',
+    html: emailWrapper('More Information Required', `<p>Dear ${escapeEmailHtml(name)},</p><p>Please return to the secure onboarding area and provide the requested evidence.</p><p><strong>Reviewer instructions:</strong> ${escapeEmailHtml(instructions)}</p>`),
+  });
+}
+
+export async function sendKycRejectedEmail(to: string, name: string, reason: string) {
+  await send({
+    to,
+    subject: 'Identity Review Decision — City Gate Capital',
+    html: emailWrapper('Identity Review Decision', `<p>Dear ${escapeEmailHtml(name)},</p><p>Your current identity-review case was not approved.</p><p>${escapeEmailHtml(reason)}</p>`),
+  });
+}
+
+export async function sendKycReviewApprovedEmail(to: string, name: string) {
+  await send({
+    to,
+    subject: 'Identity Review Approved — Final Activation Pending',
+    html: emailWrapper('Identity Review Approved', `<p>Dear ${escapeEmailHtml(name)},</p><p>Your identity and provider screening review is complete. Final account activation remains pending and financial services are not yet available.</p>`),
+  });
+}
+
+export async function sendFinalActivationEmail(to: string, name: string) {
+  await send({
+    to,
+    subject: 'Account Access Activated — City Gate Capital',
+    html: emailWrapper('Account Access Activated', `<p>Dear ${escapeEmailHtml(name)},</p><p>Your platform account has been activated. Please sign in again to start a new full-access session. Provider-backed services remain subject to their displayed availability.</p>`),
+  });
+}
+
 export async function sendRejectionEmail(to: string, name: string, reason: string) {
   const content = configuredTemplate('kyc_rejected', {
     user_name: name,

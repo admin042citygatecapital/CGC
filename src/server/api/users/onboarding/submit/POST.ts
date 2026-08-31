@@ -1,31 +1,24 @@
 import type { Request, Response } from 'express';
 import { createNotification } from '../../../../lib/notificationStore.js';
 import { getOrCreateOnboardingCase, submitOnboardingCase } from '../../../../lib/onboardingStore.js';
-import { updateUser } from '../../../../lib/userStore.js';
+import { sendKycSubmittedEmail } from '../../../../lib/emailService.js';
 
 export default async function handler(req: Request, res: Response) {
   const user = req.customerUser!;
   try {
     const record = await getOrCreateOnboardingCase(user.id, user.accountTier === 'business' ? 'business' : 'individual', user.id);
-    const submitted = await submitOnboardingCase(record.id, user.id, user.id, 'customer');
-    await updateUser(user.id, {
-      status: 'pending_kyc',
-      kycStatus: 'submitted',
-      kycSubmittedAt: new Date().toISOString(),
-      kycApprovedAt: '',
-      kycExpiresAt: '',
-      kycReviewedBy: '',
-      kycReviewReason: '',
-      kycRejectedAt: '',
-      kycRejectionReason: '',
-      amlStatus: 'not_screened',
-      amlRiskLevel: 'unrated',
-      amlReviewedAt: '',
-      amlReviewedBy: '',
-      amlReviewReason: '',
-      amlNextReviewAt: '',
-    });
-    await createNotification(user.id, 'Onboarding submitted', 'Your onboarding case has been submitted for compliance review. This does not activate financial services.', '/kyc');
+    const submitted = await submitOnboardingCase(
+      record.id,
+      user.id,
+      user.id,
+      'customer',
+      Number(req.body?.caseVersion),
+      String(req.body?.idempotencyKey ?? ''),
+    );
+    if (!submitted.submissionReplayed) {
+      await createNotification(user.id, 'Onboarding submitted', 'Your onboarding case has been submitted for identity and compliance review. This does not activate financial services.', '/kyc');
+      await sendKycSubmittedEmail(user.email, user.name);
+    }
     return res.json({ ok: true, case: submitted });
   } catch (error) {
     const typed = error as Error & { code?: string };

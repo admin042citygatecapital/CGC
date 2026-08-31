@@ -10,18 +10,11 @@
  *  - all free-text fields sanitized and length-capped
  */
 import type { Request, Response } from 'express';
-import fs from 'node:fs';
-import path from 'node:path';
 import { findUserBySessionToken, updateUser } from '../../../lib/userStore.js';
 import {
   sanitizeString,
-  isOneOf,
   safeWalletAddress,
 } from '../../../lib/inputValidator.js';
-import { privateSubdirectory } from '../../../lib/storagePaths.js';
-
-const KYC_DOC_DIR = privateSubdirectory('kyc-documents');
-const VALID_ID_TYPES = ['passport','national_id','drivers_license','residence_permit'] as const;
 
 export default async function handler(req: Request, res: Response) {
   const auth  = req.headers.authorization ?? '';
@@ -83,55 +76,7 @@ export default async function handler(req: Request, res: Response) {
   const hasKycData = kycFields.some(f => f !== undefined);
 
   if (hasKycData) {
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(503).json({
-        error: 'Identity-document collection is unavailable until an approved KYC provider is integrated.',
-        code: 'KYC_PROVIDER_REQUIRED',
-      });
-    }
-    if (user.kycStatus === 'approved') {
-      return res.status(400).json({ error: 'KYC is already approved and cannot be resubmitted.' });
-    }
-
-    if (dateOfBirth !== undefined) patch.dateOfBirth = sanitizeString(dateOfBirth, 20);
-    if (address     !== undefined) patch.address     = sanitizeString(address, 300);
-    if (city        !== undefined) patch.city        = sanitizeString(city, 100);
-    if (postalCode  !== undefined) patch.postalCode  = sanitizeString(postalCode, 20);
-    if (idType      !== undefined) {
-      const safeIdType = isOneOf(idType, VALID_ID_TYPES);
-      if (!safeIdType) return res.status(400).json({ error: `idType must be one of: ${VALID_ID_TYPES.join(', ')}` });
-      patch.idType = safeIdType;
-    }
-    if (idNumber    !== undefined) patch.idNumber    = sanitizeString(idNumber, 50);
-
-    // Handle ID document upload
-    if (idDocumentBase64) {
-      const match = String(idDocumentBase64).match(/^data:(image\/(?:jpeg|png|gif|webp|pdf));base64,(.+)$/);
-      if (!match) return res.status(400).json({ error: 'Invalid document format.' });
-      const [, mimeType, b64data] = match;
-      const ext = mimeType.split('/')[1].replace('jpeg', 'jpg');
-      const byteSize = Math.ceil(b64data.length * 0.75);
-      if (byteSize > 5 * 1024 * 1024) return res.status(400).json({ error: 'Document too large. Max 5MB.' });
-
-      try {
-        if (!fs.existsSync(KYC_DOC_DIR)) fs.mkdirSync(KYC_DOC_DIR, { recursive: true });
-        const filename = `${user.id}-id-profile.${ext}`;
-        for (const oldFile of fs.readdirSync(KYC_DOC_DIR).filter(file => file.startsWith(`${user.id}-id-`))) {
-          fs.unlinkSync(path.join(KYC_DOC_DIR, oldFile));
-        }
-        fs.writeFileSync(path.join(KYC_DOC_DIR, filename), Buffer.from(b64data, 'base64'), { mode: 0o600 });
-        patch.idDocumentUrl = `/api/admin/kyc/document?userId=${encodeURIComponent(user.id)}&kind=id`;
-      } catch (err) {
-        return res.status(500).json({ error: 'Failed to save document: ' + String(err) });
-      }
-    }
-
-    // If all required KYC fields are present, set status to submitted
-    const merged = { ...user, ...patch };
-    if (merged.dateOfBirth && merged.address && merged.idType && merged.idNumber) {
-      patch.kycStatus = 'submitted';
-      patch.kycSubmittedAt = new Date().toISOString();
-    }
+    return res.status(410).json({ error: 'Use the secure identity onboarding workflow.', code: 'KYC_WORKFLOW_REQUIRED', href: '/kyc' });
   }
 
   if (Object.keys(patch).length === 0) {

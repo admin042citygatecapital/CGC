@@ -907,6 +907,9 @@ export const onboardingCases = pgTable(
     reviewedBy: text('reviewed_by'),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
     reviewReason: text('review_reason'),
+    requestedEvidenceKinds: jsonb('requested_evidence_kinds').$type<Array<'identity_front' | 'identity_back' | 'proof_of_address' | 'additional'>>().notNull().default([]),
+    customerInstructions: text('customer_instructions'),
+    submissionIdempotencyKey: text('submission_idempotency_key'),
     screeningStatus: text('screening_status').$type<'not_run' | 'clear' | 'review' | 'match' | 'overdue'>().notNull().default('not_run'),
     lastScreenedAt: timestamp('last_screened_at', { withTimezone: true }),
     nextScreeningAt: timestamp('next_screening_at', { withTimezone: true }),
@@ -914,6 +917,60 @@ export const onboardingCases = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('onboarding_cases_status_updated_idx').on(t.status, t.updatedAt), index('onboarding_cases_user_idx').on(t.userId)],
+);
+
+export const kycProfiles = pgTable(
+  'kyc_profiles',
+  {
+    userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+    caseId: text('case_id').notNull().unique().references(() => onboardingCases.id, { onDelete: 'cascade' }),
+    legalName: text('legal_name').notNull(),
+    dateOfBirth: date('date_of_birth').notNull(),
+    nationality: text('nationality').notNull(),
+    residenceCountry: text('residence_country').notNull(),
+    addressLine1: text('address_line1').notNull(),
+    addressLine2: text('address_line2'),
+    city: text('city').notNull(),
+    region: text('region'),
+    postalCode: text('postal_code').notNull(),
+    documentType: text('document_type').$type<'passport' | 'national_id' | 'drivers_license' | 'residence_permit'>().notNull(),
+    issuingCountry: text('issuing_country').notNull(),
+    documentNumberCiphertext: text('document_number_ciphertext').notNull(),
+    documentNumberLast4: text('document_number_last4').notNull(),
+    documentIssuedAt: date('document_issued_at'),
+    documentExpiresAt: date('document_expires_at').notNull(),
+    informationCertified: boolean('information_certified').notNull().default(false),
+    privacyAcknowledged: boolean('privacy_acknowledged').notNull().default(false),
+    version: integer('version').notNull().default(1),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('kyc_profiles_case_id_idx').on(t.caseId)],
+);
+
+export const kycDocuments = pgTable(
+  'kyc_documents',
+  {
+    id: text('id').primaryKey(),
+    caseId: text('case_id').notNull().references(() => onboardingCases.id, { onDelete: 'restrict' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+    kind: text('kind').$type<'identity_front' | 'identity_back' | 'proof_of_address' | 'additional'>().notNull(),
+    storageKey: text('storage_key').notNull().unique(),
+    mimeType: text('mime_type').$type<'image/jpeg' | 'image/png' | 'application/pdf'>().notNull(),
+    byteSize: integer('byte_size').notNull(),
+    sha256: text('sha256').notNull(),
+    state: text('state').$type<'active' | 'superseded' | 'rejected'>().notNull().default('active'),
+    retentionClassification: text('retention_classification').notNull().default('regulated_identity_evidence_pending_policy'),
+    version: integer('version').notNull(),
+    originalName: text('original_name').notNull(),
+    supersededAt: timestamp('superseded_at', { withTimezone: true }),
+    supersededBy: text('superseded_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('kyc_documents_case_created_idx').on(t.caseId, t.createdAt),
+    index('kyc_documents_user_created_idx').on(t.userId, t.createdAt),
+  ],
 );
 
 export const onboardingEvidence = pgTable(

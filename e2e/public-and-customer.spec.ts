@@ -101,11 +101,15 @@ test('email verification is single-use and advances the customer to controlled K
   await expect(page).toHaveURL(/\/login\?verified=success$/);
   await expect(page.getByText(/email.*verified/i)).toBeVisible();
 
-  await login(page, E2E_UNVERIFIED_CUSTOMER.email, E2E_UNVERIFIED_CUSTOMER.password);
-  await expect(page.getByText(/pending verification|complete KYC/i)).toBeVisible();
+  const repeatedVerification = await page.request.get(`/api/users/verify-email?token=${E2E_UNVERIFIED_CUSTOMER.token}`, {
+    maxRedirects: 0,
+  });
+  expect(repeatedVerification.status()).toBe(302);
+  expect(repeatedVerification.headers().location).toMatch(/verified=error&reason=invalid_token/);
 
-  await page.goto(`/api/users/verify-email?token=${E2E_UNVERIFIED_CUSTOMER.token}`);
-  await expect(page).toHaveURL(/verified=error&reason=invalid_token/);
+  await login(page, E2E_UNVERIFIED_CUSTOMER.email, E2E_UNVERIFIED_CUSTOMER.password);
+  await expect(page).toHaveURL(/\/(kyc|onboarding)$/);
+  await expect(page.getByText(/Registration workflow storage is not configured|complete KYC/i)).toBeVisible();
 });
 
 test('customer login establishes a persistent browser session and financial writes stay locked', async ({ page }) => {

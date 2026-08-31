@@ -4,7 +4,7 @@
  * Body: { subject, category, message } or { conversationId, message } (to reply)
  */
 import type { Request, Response } from 'express';
-import { createConversation, addCustomerMessage } from '../../../lib/supportDatabaseStore.js';
+import { createConversation, addCustomerMessage, getConversationById } from '../../../lib/supportDatabaseStore.js';
 import { createNotification } from '../../../lib/notificationStore.js';
 import { createOperationsItem } from '../../../lib/operationsInboxStore.js';
 import { requireIntakeEnabled } from '../../../lib/operationalControls.js';
@@ -31,6 +31,12 @@ export default async function handler(req: Request, res: Response) {
   if (conversationId) {
     const cleanId = String(conversationId).trim();
     if (!/^sup_[a-f0-9]{16}$/i.test(cleanId)) return res.status(400).json({ error: 'Invalid conversation ID' });
+    if (req.customerAccessMode === 'onboarding') {
+      const existing = await getConversationById(cleanId);
+      if (!existing || existing.userId !== user.id || !['Identity Verification', 'Account Access', 'Technical Support'].includes(existing.category)) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+    }
     const conv = await addCustomerMessage(cleanId, user.id, cleanMessage);
     if (!conv) return res.status(404).json({ error: 'Conversation not found' });
     return res.json({ ok: true, conversation: conv });
@@ -46,6 +52,9 @@ export default async function handler(req: Request, res: Response) {
   if (cleanSubject.length > 200) return res.status(400).json({ error: 'Subject must be 200 characters or fewer' });
   if (!allowedCategories.has(cleanCategory)) return res.status(400).json({ error: 'Invalid support category' });
   if (!allowedPriorities.has(cleanPriority)) return res.status(400).json({ error: 'Invalid priority' });
+  if (req.customerAccessMode === 'onboarding' && !new Set(['Account Access', 'Identity Verification', 'Technical Support']).has(cleanCategory)) {
+    return res.status(403).json({ error: 'Restricted onboarding support is limited to identity and account-access help.', code: 'ONBOARDING_SUPPORT_ONLY' });
+  }
 
   const conv = await createConversation({
     userId:    user.id,

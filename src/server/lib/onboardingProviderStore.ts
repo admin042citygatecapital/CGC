@@ -35,6 +35,10 @@ export async function recordOnboardingProviderEvent(input: RecordedProviderEvent
   const cases = await db.select().from(onboardingCases).where(eq(onboardingCases.id, input.caseId)).limit(1);
   const current = cases[0];
   if (!current) throw new OnboardingProviderError('Onboarding case was not found.', 'CASE_NOT_FOUND', 404);
+  const customerRows = await db.select({ dataClassification: users.dataClassification }).from(users).where(eq(users.id, current.userId)).limit(1);
+  if (customerRows[0]?.dataClassification === 'synthetic_test') {
+    throw new OnboardingProviderError('Production provider events are blocked for synthetic test customers.', 'SYNTHETIC_PROVIDER_CALL_BLOCKED', 409);
+  }
   const approvedRescreen = current.status === 'approved' && input.kind === 'screening' && input.purpose === 'rescreen';
   if (['approved', 'rejected', 'expired'].includes(current.status) && !approvedRescreen) throw new OnboardingProviderError('A finalised onboarding case cannot accept this provider event.', 'CASE_FINALISED', 409);
   if (input.purpose === 'rescreen' && current.status !== 'approved') throw new OnboardingProviderError('Rescreen events require an approved onboarding case.', 'CASE_NOT_APPROVED', 409);

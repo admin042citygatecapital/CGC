@@ -28,7 +28,7 @@ export default async function handler(_req: Request, res: Response) {
   const now = Date.now();
 
   // ── Users ─────────────────────────────────────────────────────────────────
-  const users = (await loadAllUsers()).filter(user => user.dataClassification !== 'quarantined_test');
+  const users = (await loadAllUsers()).filter(user => !['quarantined_test', 'synthetic_test'].includes(user.dataClassification ?? 'customer'));
   const totalUsers           = users.length;
   const activeAccounts       = users.filter(u => u.status === 'active').length;
   const pendingVerifications = users.filter(u => u.kycStatus === 'submitted').length;

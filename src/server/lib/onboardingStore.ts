@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../db/db.js';
-import { onboardingCases, onboardingEvidence, onboardingEvents } from '../db/schema.js';
+import { onboardingCases, onboardingEvidence, onboardingEvents, users } from '../db/schema.js';
 import { getOnboardingProviderSummary } from './onboardingProviderStore.js';
+import { getKycCompletion } from './kycPrivateStore.js';
 
 export type OnboardingStatus = 'draft' | 'submitted' | 'under_review' | 'needs_info' | 'approved' | 'rejected' | 'expired';
 export type OnboardingCaseType = 'individual' | 'business';
@@ -91,25 +92,54 @@ export async function addOnboardingEvidence(input: {
   return rows[0];
 }
 
-export async function submitOnboardingCase(caseId: string, userId: string, actorId: string, actorType: 'customer' | 'admin') {
+export async function submitOnboardingCase(
+  caseId: string,
+  userId: string,
+  actorId: string,
+  actorType: 'customer' | 'admin',
+  expectedVersion: number,
+  idempotencyKey: string,
+) {
+  if (!/^[A-Za-z0-9_-]{16,100}$/.test(idempotencyKey)) {
+    throw Object.assign(new Error('A valid submission idempotency key is required.'), { code: 'INVALID_IDEMPOTENCY_KEY' });
+  }
   const db = getDb();
   const rows = await db.select().from(onboardingCases).where(eq(onboardingCases.id, caseId)).limit(1);
   const current = rows[0];
   if (!current || current.userId !== userId) throw Object.assign(new Error('Onboarding case not found.'), { code: 'NOT_FOUND' });
+  const idempotencyHash = crypto.createHash('sha256').update(`${userId}:${idempotencyKey}`).digest('hex');
+  if (current.status === 'submitted' && current.submissionIdempotencyKey === idempotencyHash) return { ...current, submissionReplayed: true };
   if (!['draft', 'needs_info'].includes(current.status)) throw Object.assign(new Error('Case cannot be submitted from its current status.'), { code: 'INVALID_TRANSITION' });
-  const evidence = await db.select({ id: onboardingEvidence.id }).from(onboardingEvidence).where(eq(onboardingEvidence.caseId, caseId));
-  if (evidence.length === 0) throw Object.assign(new Error('At least one secure evidence reference is required.'), { code: 'EVIDENCE_REQUIRED' });
+  if (!Number.isInteger(expectedVersion) || expectedVersion !== current.version) {
+    throw Object.assign(new Error('The registration workflow changed. Refresh it before continuing.'), { code: 'WORKFLOW_CONFLICT' });
+  }
+  const completion = await getKycCompletion(userId, caseId);
+  if (!completion.profileComplete) throw Object.assign(new Error('Complete and certify the identity profile before submission.'), { code: 'KYC_PROFILE_REQUIRED' });
+  const requested = current.requestedEvidenceKinds ?? [];
+  const uploaded = new Set(completion.documentKinds);
+  const missing = [...new Set([...completion.missingKinds, ...requested.filter(kind => !uploaded.has(kind))])];
+  if (missing.length > 0) throw Object.assign(new Error(`Required evidence is missing: ${missing.join(', ')}.`), { code: 'EVIDENCE_REQUIRED' });
   const now = new Date();
   const nextVersion = current.version + 1;
   return db.transaction(async tx => {
-    const updated = await tx.update(onboardingCases).set({ status: 'submitted', submittedBy: actorId, submittedAt: now, lastEditedBy: actorId, version: nextVersion, updatedAt: now })
+    const updated = await tx.update(onboardingCases).set({
+      status: 'submitted', submittedBy: actorId, submittedAt: now, lastEditedBy: actorId,
+      version: nextVersion, submissionIdempotencyKey: idempotencyHash,
+      requestedEvidenceKinds: [], customerInstructions: null, updatedAt: now,
+    })
       .where(and(eq(onboardingCases.id, caseId), eq(onboardingCases.status, current.status), eq(onboardingCases.version, current.version))).returning();
     if (!updated[0]) throw Object.assign(new Error('The registration workflow changed. Refresh it before continuing.'), { code: 'WORKFLOW_CONFLICT' });
     await tx.insert(onboardingEvents).values({
       id: `oe_${crypto.randomBytes(10).toString('hex')}`, caseId, userId, action: 'case_submitted', actorId, actorType,
-      fromStatus: current.status, toStatus: 'submitted', details: { previousVersion: current.version, version: nextVersion, evidenceCount: evidence.length }, createdAt: now,
+      fromStatus: current.status, toStatus: 'submitted', details: { previousVersion: current.version, version: nextVersion, requiredEvidenceKinds: completion.requiredKinds }, createdAt: now,
     });
-    return updated[0];
+    await tx.update(users).set({
+      status: 'pending_kyc', kycStatus: 'submitted', kycSubmittedAt: now,
+      kycApprovedAt: null, kycExpiresAt: null, kycReviewedBy: null, kycReviewReason: null,
+      kycRejectedAt: null, kycRejectionReason: null, amlStatus: 'not_screened', amlRiskLevel: 'unrated',
+      amlReviewedAt: null, amlReviewedBy: null, amlReviewReason: null, amlNextReviewAt: null, updatedAt: now,
+    }).where(eq(users.id, userId));
+    return { ...updated[0], submissionReplayed: false };
   });
 }
 

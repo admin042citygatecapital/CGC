@@ -9,7 +9,8 @@ async function loginAdmin(page: import('@playwright/test').Page) {
   await page.getByLabel('Verification code').fill(E2E_ADMIN.otp);
   await page.getByRole('button', { name: /verify and continue/i }).click();
   await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
-  await expect(page.getByText('Pre-deployment administration')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Good (morning|afternoon|evening), Super/i })).toBeVisible();
+  await expect(page.getByText('Financial data safeguards')).toBeVisible();
 }
 
 test('protected sponsor workspace redirects unauthenticated administrators', async ({ page }) => {
@@ -32,26 +33,11 @@ test('API reference downloads are not publicly accessible', async ({ request }) 
   expect((await request.get('/api/zoho/status')).status()).toBe(401);
 });
 
-test('Developer Center reports the running route registry and current auth boundaries', async ({ page }) => {
+test('development surfaces stay outside the production administration API', async ({ page }) => {
   await loginAdmin(page);
   const response = await page.request.get('/api/admin/developer');
-  expect(response.status()).toBe(200);
-  const data = await response.json() as {
-    routes: { total: number; catalogue: Array<{ method: string; path: string; auth: string; description: string }> };
-  };
-
-  expect(data.routes.total).toBeGreaterThan(250);
-  expect(data.routes.catalogue).not.toContainEqual(expect.objectContaining({ path: '/api/test-email' }));
-  expect(data.routes.catalogue).toContainEqual(expect.objectContaining({
-    method: 'POST',
-    path: '/api/analytics/event',
-    auth: 'public',
-  }));
-  expect(data.routes.catalogue).toContainEqual(expect.objectContaining({
-    method: 'POST',
-    path: '/api/users/withdraw',
-    auth: 'customer',
-  }));
+  expect(response.status()).toBe(404);
+  expect((await page.request.get('/api/admin/env-report')).status()).toBe(404);
 });
 
 test('admin login reaches pre-deployment controls and authenticated money mutations remain locked', async ({ page }) => {

@@ -143,6 +143,7 @@ export const env = {
     // Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
     // REQUIRED in production — if absent, a dev-only fallback key is used (NOT safe for prod).
     cardEncryptionKey: s('CARD_ENCRYPTION_KEY'),
+    kycFieldEncryptionKey: s('KYC_FIELD_ENCRYPTION_KEY'),
   },
 } as const;
 

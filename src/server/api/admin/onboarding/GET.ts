@@ -3,6 +3,7 @@ import { getOnboardingCaseBundle, getOnboardingQueuePosition, getRegistrationInt
 import { buildRegistrationWorkflow } from '../../../lib/registrationWorkflow.js';
 import { findUserById } from '../../../lib/userStore.js';
 import { ONBOARDING_COMPLIANCE_MAP } from '../../../lib/onboardingComplianceMap.js';
+import { getKycProfile, listKycDocuments } from '../../../lib/kycPrivateStore.js';
 
 const STATUSES = new Set(['draft', 'submitted', 'under_review', 'needs_info', 'approved', 'rejected', 'expired']);
 export default async function handler(req: Request, res: Response) {
@@ -11,12 +12,19 @@ export default async function handler(req: Request, res: Response) {
     const bundle = await getOnboardingCaseBundle(caseId);
     if (!bundle) return res.status(404).json({ error: 'Onboarding case not found.' });
     const user = await findUserById(bundle.case.userId);
-    const [queuePosition, intakePosition] = await Promise.all([
+    const [queuePosition, intakePosition, profile, documents] = await Promise.all([
       getOnboardingQueuePosition(bundle.case.id),
       getRegistrationIntakePosition(bundle.case.id),
+      getKycProfile(bundle.case.userId),
+      listKycDocuments(bundle.case.id, true),
     ]);
     return res.json({
-      ...bundle,
+      case: bundle.case,
+      evidence: bundle.evidence.map(item => ({ id: item.id, kind: item.kind, referenceType: item.referenceType, sha256: item.sha256, createdAt: item.createdAt })),
+      events: bundle.events,
+      providerVerifications: bundle.providerVerifications,
+      profile,
+      documents,
       workflow: user ? buildRegistrationWorkflow(user, bundle.case, bundle.evidence.length, queuePosition) : null,
       intakePosition,
       customer: user ? {

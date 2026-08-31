@@ -27,7 +27,7 @@ function CustomerOnly({ children }: { children: ReactNode }) {
   const { customer, loading } = useCustomerAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const onboardingRoute = location.pathname === '/kyc' || location.pathname === '/onboarding';
+  const onboardingRoute = location.pathname === '/kyc' || location.pathname === '/onboarding' || location.pathname === '/onboarding/support';
   useEffect(() => {
     if (!loading && !customer) navigate('/login?reason=session_expired', { replace: true });
     else if (!loading && customer?.accessMode === 'onboarding' && !onboardingRoute) navigate('/kyc', { replace: true });
@@ -122,8 +122,8 @@ const AdminChatbot         = lazy(() => import('./pages/admin/chatbot'));
 const AdminLinks           = lazy(() => import('./pages/admin/links'));
 const AdminWebsite         = lazy(() => import('./pages/admin/website'));
 const AdminRates           = lazy(() => import('./pages/admin/rates'));
-const AdminKyc             = lazy(() => import('./pages/admin/kyc'));
 const AdminOnboarding      = lazy(() => import('./pages/admin/onboarding'));
+const AdminSponsorReadiness = lazy(() => import('./pages/admin/sponsor-readiness'));
 const AdminReadiness       = lazy(() => import('./pages/admin/readiness'));
 const AdminReconciliation = lazy(() => import('./pages/admin/reconciliation'));
 const AdminDisputes = lazy(() => import('./pages/admin/disputes'));
@@ -206,6 +206,7 @@ export const routes: RouteObject[] = [
   { path: '/dashboard/trading/trades',    element: <CustomerOnly><FeatureOnly feature="investments"><DashboardTradingTrades /></FeatureOnly></CustomerOnly> },
   { path: '/kyc',                     element: <CustomerOnly><FeatureOnly feature="kyc"><OnboardingPage /></FeatureOnly></CustomerOnly> },
   { path: '/onboarding',              element: <CustomerOnly><FeatureOnly feature="kyc"><OnboardingPage /></FeatureOnly></CustomerOnly> },
+  { path: '/onboarding/support',      element: <CustomerOnly><DashboardSupport /></CustomerOnly> },
   // Admin routes (no RootLayout wrapper — AdminLayout handles its own chrome)
   { path: '/admin/login',             element: <AdminLoginPage /> },
   { path: '/admin/forgot-password',   element: <AdminForgotPasswordPage /> },
@@ -235,8 +236,9 @@ export const routes: RouteObject[] = [
   { path: '/admin/links',        element: <AdminOnly><AdminLinks /></AdminOnly> },
   { path: '/admin/website',      element: <AdminOnly><AdminWebsite /></AdminOnly> },
   { path: '/admin/rates',        element: <AdminOnly><AdminRates /></AdminOnly> },
-  { path: '/admin/kyc',             element: <AdminOnly><AdminKyc /></AdminOnly> },
+  { path: '/admin/kyc',             element: <AdminOnly><AdminOnboarding /></AdminOnly> },
   { path: '/admin/onboarding',      element: <AdminOnly><AdminOnboarding /></AdminOnly> },
+  { path: '/admin/sponsor-readiness', element: <AdminOnly><AdminSponsorReadiness /></AdminOnly> },
   { path: '/admin/readiness',       element: <AdminOnly><AdminReadiness /></AdminOnly> },
   { path: '/admin/reconciliation', element: <AdminOnly><AdminReconciliation /></AdminOnly> },
   { path: '/admin/disputes', element: <AdminOnly><AdminDisputes /></AdminOnly> },

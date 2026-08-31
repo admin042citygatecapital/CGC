@@ -9,14 +9,13 @@ describe('customer upload durability', () => {
     expect(source).not.toContain("error: 'Failed to save avatar: ' + String(err)");
   });
 
-  it('keeps identity-document collection disabled in production until a provider exists', () => {
-    for (const file of [
-      'src/server/api/users/kyc-document/POST.ts',
-      'src/server/api/users/me/PATCH.ts',
-    ]) {
-      const source = readFileSync(file, 'utf8');
-      expect(source, file).toContain("process.env.NODE_ENV === 'production'");
-      expect(source, file).toContain("code: 'KYC_PROVIDER_REQUIRED'");
-    }
+  it('retires legacy plaintext and local-file identity-document writes', () => {
+    const profile = readFileSync('src/server/api/users/me/PATCH.ts', 'utf8');
+    const legacyUpload = readFileSync('src/server/api/users/kyc-document/POST.ts', 'utf8');
+    expect(profile).toContain("code: 'KYC_WORKFLOW_REQUIRED'");
+    expect(profile).not.toContain('writeFileSync');
+    expect(profile).not.toContain('patch.idNumber');
+    expect(legacyUpload).toContain('status(410)');
+    expect(legacyUpload).not.toContain('writeFileSync');
   });
 });

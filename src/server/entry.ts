@@ -36,6 +36,8 @@ import admin_onboarding_monitoring_post from "./api/admin/onboarding/monitoring/
 import users_onboarding_get from "./api/users/onboarding/GET";
 import users_onboarding_evidence_post from "./api/users/onboarding/evidence/POST";
 import users_onboarding_submit_post from "./api/users/onboarding/submit/POST";
+import users_onboarding_profile_put from "./api/users/onboarding/profile/PUT";
+import users_onboarding_documents_post from "./api/users/onboarding/documents/POST";
 import providers_onboarding_webhook_post from "./api/providers/onboarding/webhook/POST";
 import resend_webhook_post from "./api/webhooks/resend/POST";
 import admin_onboarding_screening_get from "./api/admin/onboarding/screening/GET";
@@ -246,6 +248,7 @@ import admin_transactions_reject_post_178 from "./api/admin/transactions/reject/
 import admin_users_get_179 from "./api/admin/users/GET";
 import admin_users_action_post_180 from "./api/admin/users/action/POST";
 import admin_users_approve_post_181 from "./api/admin/users/approve/POST";
+import admin_users_synthetic_test_post from "./api/admin/users/synthetic-test/POST";
 import admin_users_create_post_182 from "./api/admin/users/create/POST";
 import admin_users_currency_post_183 from "./api/admin/users/currency/POST";
 import admin_users_delete_post_184 from "./api/admin/users/delete/POST";
@@ -471,7 +474,10 @@ app.use(compression({
 app.use(cookieParser());
 
 // ── Body parsing ────────────────────────────────────────────────────────────
-app.use(requestSizeGuard(512));
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const limitKb = req.path === '/api/users/onboarding/documents' ? 5120 : 512;
+  return requestSizeGuard(limitKb)(req, res, next);
+});
 app.use(express.json({
   limit: '512kb',
   verify: (req, _res, buffer) => {
@@ -486,10 +492,13 @@ app.use(express.urlencoded({ extended: true, limit: '512kb' }));
 // ── HTTP access logger (after body parsing, before routes) ──────────────────
 app.use(httpLogger);
 
-// ── Global API rate limit (200 req/min per IP) ──────────────────────────────
+// ── Global API rate limit (200 req/min per IP in production) ───────────────
+// The isolated browser audit intentionally visits the complete route catalogue
+// in under a minute and may raise this ceiling without changing production.
+const globalApiRateLimitMax = process.env.E2E_TEST_MODE === '1' ? 1_000 : 200;
 app.use('/api', rateLimitMiddleware(
   req => `global:${req.ip}`,
-  { windowMs: 60_000, max: 200 },
+  { windowMs: 60_000, max: globalApiRateLimitMax },
   'Rate limit exceeded. Please slow down.',
 ));
 // ── API cache headers (no-store for all /api routes) ────────────────────────
@@ -836,6 +845,7 @@ app.post("/api/admin/transactions/reject", admin_transactions_reject_post_178);
 app.get("/api/admin/users", admin_users_get_179);
 app.post("/api/admin/users/action", admin_users_action_post_180);
 app.post("/api/admin/users/approve", admin_users_approve_post_181);
+app.post("/api/admin/users/synthetic-test", admin_users_synthetic_test_post);
 app.post("/api/admin/users/create", admin_users_create_post_182);
 app.post("/api/admin/users/currency", admin_users_currency_post_183);
 app.post("/api/admin/users/delete", admin_users_delete_post_184);
@@ -904,6 +914,12 @@ app.get("/api/users/devices", users_devices_get_239);
 app.post("/api/users/devices/revoke", users_devices_revoke_post_240);
 app.post("/api/users/kyc-document", users_kyc_document_post_241);
 app.get("/api/users/onboarding", users_onboarding_get);
+app.put("/api/users/onboarding/profile", users_onboarding_profile_put);
+app.post(
+  "/api/users/onboarding/documents",
+  express.raw({ type: ['image/jpeg', 'image/png', 'application/pdf'], limit: '5mb' }),
+  users_onboarding_documents_post,
+);
 app.post("/api/users/onboarding/evidence", users_onboarding_evidence_post);
 app.post("/api/users/onboarding/submit", users_onboarding_submit_post);
 app.post("/api/users/login", users_login_post_242);

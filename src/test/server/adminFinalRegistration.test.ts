@@ -1,81 +1,53 @@
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const dependencies = vi.hoisted(() => ({
-  findUserById: vi.fn(), updateUser: vi.fn(), appendAudit: vi.fn(), appendCriticalAudit: vi.fn(),
-  sendApprovalEmail: vi.fn(), evaluateFinancialAccess: vi.fn(), getLatestOnboardingCaseForUser: vi.fn(),
-  assertProviderVerificationComplete: vi.fn(),
+const dependencies=vi.hoisted(()=>({
+  authorizeRecentAdminStepUp:vi.fn().mockReturnValue(true),
+  getLatestOnboardingCaseForUser:vi.fn(),
+  activateCustomerAfterKyc:vi.fn(),
+  sendFinalActivationEmail:vi.fn(),
 }));
-
-vi.mock('../../server/lib/userStore.js', () => ({ findUserById: dependencies.findUserById, updateUser: dependencies.updateUser }));
-vi.mock('../../server/lib/auditLog.js', () => ({ appendAudit: dependencies.appendAudit, appendCriticalAudit: dependencies.appendCriticalAudit }));
-vi.mock('../../server/lib/emailService.js', () => ({ sendApprovalEmail: dependencies.sendApprovalEmail }));
-vi.mock('../../server/lib/complianceGate.js', () => ({ evaluateFinancialAccess: dependencies.evaluateFinancialAccess }));
-vi.mock('../../server/lib/onboardingStore.js', () => ({ getLatestOnboardingCaseForUser: dependencies.getLatestOnboardingCaseForUser }));
-vi.mock('../../server/lib/onboardingProviderStore.js', () => ({ assertProviderVerificationComplete: dependencies.assertProviderVerificationComplete }));
-
+vi.mock('../../server/lib/rbacMiddleware.js',()=>({authorizeRecentAdminStepUp:dependencies.authorizeRecentAdminStepUp}));
+vi.mock('../../server/lib/onboardingStore.js',()=>({getLatestOnboardingCaseForUser:dependencies.getLatestOnboardingCaseForUser}));
+vi.mock('../../server/lib/finalCustomerActivation.js',()=>({activateCustomerAfterKyc:dependencies.activateCustomerAfterKyc}));
+vi.mock('../../server/lib/emailService.js',()=>({sendFinalActivationEmail:dependencies.sendFinalActivationEmail}));
 import handler from '../../server/api/admin/users/approve/POST.js';
 
-const admin = { adminId: 'only-super-admin', email: 'admin@example.test', role: 'SUPER_ADMIN' };
-const user = {
-  id: 'usr-test', name: 'Test Customer', email: 'customer@example.test', status: 'pending_approval',
-  kycStatus: 'approved', amlStatus: 'cleared', emailVerified: true,
-  kycReviewedBy: admin.adminId, amlReviewedBy: admin.adminId,
-};
-const onboardingCase = { id: 'oc-test', caseType: 'individual' as const };
+const admin={adminId:'super-1',email:'admin@example.test',role:'SUPER_ADMIN'};
+const onboardingCase={id:'oc-test',caseType:'individual' as const,version:9};
+function response(){const res={status:vi.fn(),json:vi.fn()};res.status.mockReturnValue(res);res.json.mockReturnValue(res);return res;}
+function request(role='SUPER_ADMIN'){return {body:{userId:'usr-test',reason:'All provider controls were reviewed.',expectedCaseVersion:9},ip:'127.0.0.1',headers:{'x-request-id':'req-final'},adminSession:{...admin,role}};}
 
-function response() {
-  const res = { status: vi.fn(), json: vi.fn() };
-  res.status.mockReturnValue(res); res.json.mockReturnValue(res);
-  return res;
-}
-function request() {
-  return { body: { userId: user.id, reason: 'All provider-backed controls reviewed.' }, ip: '127.0.0.1', adminSession: admin };
-}
-
-describe('single-super-admin final registration', () => {
-  beforeEach(() => {
+describe('controlled final customer activation',()=>{
+  beforeEach(()=>{
     vi.clearAllMocks();
-    dependencies.findUserById.mockResolvedValue(user);
-    dependencies.updateUser.mockResolvedValue({ ...user, status: 'active' });
-    dependencies.evaluateFinancialAccess.mockResolvedValue({ allowed: true, code: 'ALLOWED', message: 'Allowed' });
+    dependencies.authorizeRecentAdminStepUp.mockReturnValue(true);
     dependencies.getLatestOnboardingCaseForUser.mockResolvedValue(onboardingCase);
-    dependencies.assertProviderVerificationComplete.mockResolvedValue(undefined);
-    dependencies.appendCriticalAudit.mockResolvedValue(undefined);
-    dependencies.sendApprovalEmail.mockResolvedValue(undefined);
+    dependencies.activateCustomerAfterKyc.mockResolvedValue({customer:{id:'usr-test',email:'customer@example.test',name:'Test Customer'},revokedSessionCount:4,credentialVersion:2});
   });
-
-  it('uses signed provider evidence as the independent maker instead of inventing a second admin account', async () => {
-    const res = response();
-    await handler(request() as never, res as never);
-
-    expect(dependencies.assertProviderVerificationComplete).toHaveBeenCalledWith(onboardingCase.id, 'individual');
-    expect(dependencies.appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin_user_approve_intent' }));
-    expect(dependencies.updateUser).toHaveBeenCalledWith(user.id, expect.objectContaining({ status: 'active', approvedBy: admin.adminId }));
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: true }));
+  it('requires SUPER_ADMIN and recent step-up',async()=>{
+    const wrong=response();await handler(request('COMPLIANCE_ADMIN') as never,wrong as never);expect(wrong.status).toHaveBeenCalledWith(403);
+    dependencies.authorizeRecentAdminStepUp.mockReturnValue(false);
+    await handler(request() as never,response() as never);expect(dependencies.activateCustomerAfterKyc).not.toHaveBeenCalled();
   });
-
-  it('does not activate a profile without current independent provider evidence', async () => {
-    dependencies.assertProviderVerificationComplete.mockRejectedValueOnce(Object.assign(new Error('Provider screening required'), { code: 'PROVIDER_SCREENING_REQUIRED' }));
-    const res = response();
-
-    await handler(request() as never, res as never);
-
+  it('activates through the transaction service and sends email only after commit',async()=>{
+    const res=response();await handler(request() as never,res as never);
+    expect(dependencies.activateCustomerAfterKyc).toHaveBeenCalledWith(expect.objectContaining({userId:'usr-test',caseId:'oc-test',caseType:'individual',expectedCaseVersion:9,adminRole:'SUPER_ADMIN'}));
+    expect(dependencies.sendFinalActivationEmail).toHaveBeenCalledWith('customer@example.test','Test Customer');
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ok:true,revokedSessionCount:4}));
+  });
+  it('does not queue final email when activation fails closed',async()=>{
+    dependencies.activateCustomerAfterKyc.mockRejectedValue(Object.assign(new Error('Provider required'),{code:'PROVIDER_VERIFICATION_REQUIRED'}));
+    const res=response();await handler(request() as never,res as never);
     expect(res.status).toHaveBeenCalledWith(409);
-    expect(dependencies.appendCriticalAudit).not.toHaveBeenCalled();
-    expect(dependencies.updateUser).not.toHaveBeenCalled();
+    expect(dependencies.sendFinalActivationEmail).not.toHaveBeenCalled();
   });
-
-  it('fails closed before activation when the critical audit intent cannot persist', async () => {
-    dependencies.appendCriticalAudit.mockRejectedValueOnce(new Error('audit unavailable'));
-
-    await expect(handler(request() as never, response() as never)).rejects.toThrow('audit unavailable');
-    expect(dependencies.updateUser).not.toHaveBeenCalled();
-  });
-
-  it('migrates a distinct KYC reviewer identity instead of overloading final approval ownership', () => {
-    const migration = readFileSync('src/server/db/migrations/0018_kyc_reviewer_identity.sql', 'utf8');
-    expect(migration).toContain('kyc_reviewed_by');
-    expect(migration).toContain('kyc_review_reason');
+  it('keeps activation, credential invalidation, session revocation and audit in one database transaction',()=>{
+    const source=readFileSync('src/server/lib/finalCustomerActivation.ts','utf8');
+    const body=source.slice(source.indexOf('getDb().transaction'));
+    expect(body).toContain('tx.update(users)');
+    expect(body).toContain('tx.delete(customerSessions)');
+    expect(body).toContain('tx.insert(onboardingEvents)');
+    expect(body).toContain('tx.insert(auditLog)');
   });
 });

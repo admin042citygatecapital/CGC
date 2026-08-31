@@ -24,15 +24,17 @@ describe('customer registration lifecycle access', () => {
   it('allows only the narrow registration endpoints during onboarding', () => {
     expect(isOnboardingRouteAllowed('GET', '/session')).toBe(true);
     expect(isOnboardingRouteAllowed('GET', '/onboarding')).toBe(true);
-    expect(isOnboardingRouteAllowed('POST', '/onboarding/evidence')).toBe(true);
+    expect(isOnboardingRouteAllowed('PUT', '/onboarding/profile')).toBe(true);
+    expect(isOnboardingRouteAllowed('POST', '/onboarding/documents')).toBe(true);
     expect(isOnboardingRouteAllowed('POST', '/onboarding/submit')).toBe(true);
-    expect(isOnboardingRouteAllowed('POST', '/kyc-document')).toBe(true);
+    expect(isOnboardingRouteAllowed('POST', '/kyc-document')).toBe(false);
     expect(isOnboardingRouteAllowed('POST', '/logout')).toBe(true);
     expect(isOnboardingRouteAllowed('GET', '/balance')).toBe(false);
     expect(isOnboardingRouteAllowed('GET', '/transactions')).toBe(false);
     expect(isOnboardingRouteAllowed('POST', '/transfer')).toBe(false);
     expect(isOnboardingRouteAllowed('GET', '/wallet-overview')).toBe(false);
-    expect(isOnboardingRouteAllowed('GET', '/support')).toBe(false);
+    expect(isOnboardingRouteAllowed('GET', '/support')).toBe(true);
+    expect(isOnboardingRouteAllowed('POST', '/support')).toBe(true);
   });
 
   it('does not classify identity-document upload as a public customer route', async () => {
