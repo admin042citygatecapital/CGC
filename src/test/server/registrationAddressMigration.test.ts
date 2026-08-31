@@ -16,6 +16,14 @@ describe('legacy customer address compatibility migration', () => {
   it('preserves existing values and does not delete customer data', () => {
     expect(migration).toContain("WHEN address IS NULL THEN NULL");
     expect(migration).toContain("ELSE address::text");
-    expect(migration).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE)\b/i);
+    expect(migration).not.toMatch(/\b(?:TRUNCATE|DELETE)\b/i);
+  });
+
+  it('preserves the dependent legacy customers view transactionally', () => {
+    expect(migration).toContain("pg_get_viewdef(c.oid, true)");
+    expect(migration).toContain('DROP VIEW public.customers');
+    expect(migration).toContain('CREATE VIEW public.customers AS %s');
+    expect(migration).toContain('customers_view_grants');
+    expect(migration).toContain('customers_view_comment');
   });
 });
