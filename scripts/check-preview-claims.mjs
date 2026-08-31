@@ -25,7 +25,6 @@ const publicCopyFiles = [
   'src/server/lib/homepageCmsStore.ts',
   'src/server/lib/configStore.ts',
   'src/server/lib/supportStore.ts',
-  'src/server/lib/smartsuppStore.ts',
   'src/lib/chatbot/chat-config.ts',
   'src/lib/site-meta.ts',
 ];

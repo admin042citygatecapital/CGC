@@ -307,20 +307,22 @@ const REGISTRY: EnvVarSpec[] = [
     defaultVal:  '/api',
   },
 
-  // ── Smartsupp ──────────────────────────────────────────────────────────────
+  // ── tawk.to ────────────────────────────────────────────────────────────────
   {
-    name:        'SMARTSUPP_KEY',
+    name:        'TAWK_PROPERTY_ID',
     level:       'INFO',
-    service:     'Smartsupp Live Chat',
-    description: 'Smartsupp widget key (public identifier — visible in browser JS)',
+    service:     'tawk.to Live Support',
+    description: 'tawk.to property ID (public identifier visible in the embed URL)',
     isPublic:    true,
-    defaultVal:  undefined,
+    defaultVal:  '6a773b21198d971d45c5ff66',
   },
   {
-    name:        'SMARTSUPP_API_KEY',
+    name:        'TAWK_WIDGET_ID',
     level:       'INFO',
-    service:     'Smartsupp Live Chat',
-    description: 'Smartsupp REST API key for server-side conversation management',
+    service:     'tawk.to Live Support',
+    description: 'tawk.to widget ID (public identifier visible in the embed URL)',
+    isPublic:    true,
+    defaultVal:  '1jvgrtvnn',
   },
 
   // ── Cloudflare ─────────────────────────────────────────────────────────────

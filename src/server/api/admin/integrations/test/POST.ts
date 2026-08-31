@@ -7,7 +7,11 @@
  */
 import type { Request, Response } from 'express';
 import { getSecret } from '#runtime/secrets';
-import { recordTestResult, type IntegrationId } from '../../../../lib/integrationStore.js';
+import {
+  getTawkWidgetConfig,
+  recordTestResult,
+  type IntegrationId,
+} from '../../../../lib/integrationStore.js';
 
 function s(...names: string[]): string {
   for (const n of names) {
@@ -70,20 +74,15 @@ async function testResend(): Promise<{ ok: boolean; message: string }> {
   }
 }
 
-async function testSmartsuppApi(): Promise<{ ok: boolean; message: string }> {
-  const apiKey = s('SMARTSUPP_API_KEY');
-  const widgetKey = s('SMARTSUPP_KEY');
-  if (!apiKey) {
-    if (widgetKey) return { ok: true, message: 'Widget key present — API key not configured (read-only mode)' };
-    return { ok: false, message: 'SMARTSUPP_KEY not configured' };
-  }
+async function testTawkWidget(): Promise<{ ok: boolean; message: string }> {
+  const config = await getTawkWidgetConfig();
+  if (!config.enabled) return { ok: false, message: 'tawk.to support is disabled by an administrator' };
   try {
-    const resp = await fetch('https://api.smartsupp.com/v2/account', {
-      headers: { Authorization: `Bearer ${apiKey}` },
+    const resp = await fetch(`https://embed.tawk.to/${config.propertyId}/${config.widgetId}`, {
       signal: AbortSignal.timeout(6000),
     });
-    if (resp.ok) return { ok: true, message: 'Smartsupp API reachable — account verified' };
-    return { ok: false, message: `API returned HTTP ${resp.status}` };
+    if (resp.ok) return { ok: true, message: 'tawk.to widget is configured and the embed is reachable' };
+    return { ok: false, message: `tawk.to embed returned HTTP ${resp.status}` };
   } catch (e) {
     return { ok: false, message: `Network error: ${e instanceof Error ? e.message : String(e)}` };
   }
@@ -250,7 +249,7 @@ async function testBankingApi(): Promise<{ ok: boolean; message: string }> {
 const TESTERS: Record<IntegrationId, () => Promise<{ ok: boolean; message: string }>> = {
   resend:              testResend,
   zoho_mail:           testZohoMail,
-  smartsupp:           testSmartsuppApi,
+  tawk:                testTawkWidget,
   cloudflare:          testCloudflare,
   google_analytics:    testGoogleAnalytics,
   google_tag_manager:  testGTM,

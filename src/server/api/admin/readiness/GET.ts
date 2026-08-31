@@ -8,7 +8,7 @@
  *  1. Admin authentication      — password hash present + bcrypt-format valid
  *  2. Customer authentication   — user store readable + session config present
  *  3. Zoho SMTP                 — credentials present + token exchange attempt
- *  4. Smartsupp chat            — key present (client-side load cannot be verified server-side)
+ *  4. tawk.to chat              — public widget identifiers configured
  *  5. Database (flat-file)      — /private/ directories readable + writable
  *  6. Admin route protection    — middleware registered (structural check)
  *  7. HTTPS enforcement         — enforceHttps middleware active in production
@@ -250,21 +250,19 @@ async function checkEmailDelivery(): Promise<ReadinessCheck> {
   }
 }
 
-function checkSmartsupp(): ReadinessCheck {
-  const key = s('SMARTSUPP_KEY');
-  if (!key) {
-    return {
-      id: 'smartsupp', name: 'Optional Smartsupp Live Chat', subsystem: 'Chat Widget',
-      status: 'PASS', critical: false,
-      message: 'Optional Smartsupp widget is intentionally inactive.',
-      detail: 'Customer support remains available through the support centre. Configure SMARTSUPP_KEY only if this optional channel is re-enabled.',
-    };
-  }
+function checkTawk(): ReadinessCheck {
+  const propertyId = s('TAWK_PROPERTY_ID', 'VITE_TAWK_PROPERTY_ID') || '6a773b21198d971d45c5ff66';
+  const widgetId = s('TAWK_WIDGET_ID', 'VITE_TAWK_WIDGET_ID') || '1jvgrtvnn';
+  const valid = /^[a-z0-9]+$/i.test(propertyId) && /^[a-z0-9]+$/i.test(widgetId);
   return {
-    id: 'smartsupp', name: 'Smartsupp Live Chat', subsystem: 'Chat Widget',
-    status: 'PASS', critical: false,
-    message: 'Smartsupp key is configured. Widget will load client-side.',
-    detail: `Key: ${key.slice(0, 8)}…${key.slice(-4)} (public identifier)`,
+    id: 'tawk', name: 'tawk.to Customer Support', subsystem: 'Chat Widget',
+    status: valid ? 'PASS' : 'WARN', critical: false,
+    message: valid
+      ? 'tawk.to public widget identifiers are configured.'
+      : 'tawk.to widget identifiers are invalid.',
+    detail: valid
+      ? 'The privacy-conscious customer launcher loads the tawk.to embed only after a visitor requests support.'
+      : 'Review the Property ID and Widget ID in Admin → Integrations.',
   };
 }
 
@@ -522,7 +520,7 @@ export default async function handler(_req: Request, res: Response): Promise<voi
     adminAuthCheck,
     checkCustomerAuth(),
     emailCheck,
-    checkSmartsupp(),
+    checkTawk(),
     dbCheck,
     checkAdminRouteProtection(),
     checkHttpsEnforcement(),

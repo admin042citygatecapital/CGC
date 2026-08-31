@@ -18,10 +18,38 @@ import {
   type TawkAvailability,
 } from '@/lib/tawkSupport';
 
-const PROPERTY_ID = (import.meta.env.VITE_TAWK_PROPERTY_ID || '6a773b21198d971d45c5ff66').trim();
-const WIDGET_ID = (import.meta.env.VITE_TAWK_WIDGET_ID || '1jvgrtvnn').trim();
+const FALLBACK_PROPERTY_ID = '6a773b21198d971d45c5ff66';
+const FALLBACK_WIDGET_ID = '1jvgrtvnn';
 const EMBED_ID_PATTERN = /^[a-z0-9]+$/i;
 const SCRIPT_ID = 'city-gate-tawk-widget';
+
+interface TawkWidgetConfig {
+  enabled: boolean;
+  propertyId: string;
+  widgetId: string;
+}
+
+const fallbackConfig: TawkWidgetConfig = {
+  enabled: true,
+  propertyId: (import.meta.env.VITE_TAWK_PROPERTY_ID || FALLBACK_PROPERTY_ID).trim(),
+  widgetId: (import.meta.env.VITE_TAWK_WIDGET_ID || FALLBACK_WIDGET_ID).trim(),
+};
+
+async function loadWidgetConfig(): Promise<TawkWidgetConfig> {
+  try {
+    const response = await fetch('/api/config/tawk-widget', { credentials: 'same-origin' });
+    if (!response.ok) return fallbackConfig;
+    const config = await response.json() as Partial<TawkWidgetConfig>;
+    const propertyId = String(config.propertyId ?? '').trim();
+    const widgetId = String(config.widgetId ?? '').trim();
+    if (!EMBED_ID_PATTERN.test(propertyId) || !EMBED_ID_PATTERN.test(widgetId)) {
+      return { ...fallbackConfig, enabled: false };
+    }
+    return { enabled: config.enabled !== false, propertyId, widgetId };
+  } catch {
+    return fallbackConfig;
+  }
+}
 
 type TawkStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -46,8 +74,10 @@ declare global {
   }
 }
 
-function validConfiguration(): boolean {
-  return EMBED_ID_PATTERN.test(PROPERTY_ID) && EMBED_ID_PATTERN.test(WIDGET_ID);
+function validConfiguration(config: TawkWidgetConfig): boolean {
+  return config.enabled
+    && EMBED_ID_PATTERN.test(config.propertyId)
+    && EMBED_ID_PATTERN.test(config.widgetId);
 }
 
 function safely(action: () => void): void {
@@ -64,9 +94,18 @@ export default function TawkWidget() {
   const [status, setStatus] = useState<TawkStatus>('idle');
   const [availability, setAvailability] = useState<TawkAvailability>('offline');
   const [chatOpen, setChatOpen] = useState(false);
+  const [widgetConfig, setWidgetConfig] = useState<TawkWidgetConfig | null>(null);
   const pendingOpen = useRef(false);
   const chatOpenRef = useRef(false);
-  const showLauncher = shouldOfferBankingSupport(location.pathname);
+  const showLauncher = Boolean(widgetConfig?.enabled) && shouldOfferBankingSupport(location.pathname);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadWidgetConfig().then(config => {
+      if (!cancelled) setWidgetConfig(config);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const applyContext = useCallback(() => {
     const attributes = getTawkContextAttributes(location.pathname, Boolean(customer));
@@ -119,7 +158,7 @@ export default function TawkWidget() {
   }, [applyContext, openLoadedWidget]);
 
   const injectWidget = useCallback(() => {
-    if (!validConfiguration()) {
+    if (!widgetConfig || !validConfiguration(widgetConfig)) {
       setStatus('error');
       return;
     }
@@ -135,7 +174,7 @@ export default function TawkWidget() {
     script.id = SCRIPT_ID;
     script.async = true;
     script.charset = 'UTF-8';
-    script.src = `https://embed.tawk.to/${PROPERTY_ID}/${WIDGET_ID}`;
+    script.src = `https://embed.tawk.to/${widgetConfig.propertyId}/${widgetConfig.widgetId}`;
     script.setAttribute('crossorigin', '*');
     script.onload = () => {
       let attempts = 0;
@@ -168,7 +207,7 @@ export default function TawkWidget() {
       console.warn('[Tawk] Product support could not be loaded.');
     };
     document.head.appendChild(script);
-  }, [applyContext, configureCallbacks, openLoadedWidget]);
+  }, [applyContext, configureCallbacks, openLoadedWidget, widgetConfig]);
 
   const openSupport = useCallback(() => {
     if (status === 'ready') {

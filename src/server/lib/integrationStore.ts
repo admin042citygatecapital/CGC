@@ -21,7 +21,7 @@ const FILE = path.join(DIR, 'integrations.json');
 export type IntegrationId =
   | 'resend'
   | 'zoho_mail'
-  | 'smartsupp'
+  | 'tawk'
   | 'cloudflare'
   | 'google_analytics'
   | 'google_tag_manager'
@@ -48,15 +48,28 @@ export type IntegrationStore = Record<IntegrationId, IntegrationRecord>;
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
+const DEFAULT_TAWK_PROPERTY_ID = '6a773b21198d971d45c5ff66';
+const DEFAULT_TAWK_WIDGET_ID = '1jvgrtvnn';
+const TAWK_ID_PATTERN = /^[a-z0-9]+$/i;
+
 function defaultRecord(id: IntegrationId): IntegrationRecord {
-  return { id, enabled: false, notes: '', lastTestedAt: null, lastSyncAt: null, config: {} };
+  return {
+    id,
+    enabled: id === 'tawk',
+    notes: '',
+    lastTestedAt: null,
+    lastSyncAt: null,
+    config: id === 'tawk'
+      ? { propertyId: DEFAULT_TAWK_PROPERTY_ID, widgetId: DEFAULT_TAWK_WIDGET_ID }
+      : {},
+  };
 }
 
 // Keep the production administration inventory limited to integrations that
 // are part of the approved operating model. Historical/speculative provider
 // records remain readable from durable storage but are not presented as live
 // configuration work for administrators.
-const ALL_IDS: IntegrationId[] = ['resend', 'zoho_mail', 'smartsupp'];
+const ALL_IDS: IntegrationId[] = ['resend', 'zoho_mail', 'tawk'];
 
 function defaultStore(): IntegrationStore {
   return Object.fromEntries(ALL_IDS.map(id => [id, defaultRecord(id)])) as IntegrationStore;
@@ -153,18 +166,15 @@ const META: Record<IntegrationId, IntegrationMeta> = {
       { key: 'replyTo',    label: 'Reply-To',    placeholder: 'support@citygate.capital' },
     ],
   },
-  smartsupp: {
-    name:        'Smartsupp',
+  tawk: {
+    name:        'tawk.to',
     category:    'Live Chat',
-    description: 'Live chat widget and visitor tracking. Embedded on the customer-facing site for real-time support.',
-    docsUrl:     'https://docs.smartsupp.com/',
-    secretSpecs: [
-      { name: 'SMARTSUPP_KEY',        label: 'Widget Key',  required: true  },
-      { name: 'SMARTSUPP_API_KEY',    label: 'API Key',     required: false },
-    ],
+    description: 'Privacy-conscious customer support chat. The widget loads only after a visitor opens support.',
+    docsUrl:     'https://help.tawk.to/',
+    secretSpecs: [],
     configFields: [
-      { key: 'widgetColor', label: 'Widget Color', placeholder: '#C9A84C', hint: 'Hex color for the chat bubble' },
-      { key: 'position',    label: 'Position',     placeholder: 'bottom-right' },
+      { key: 'propertyId', label: 'Property ID', placeholder: DEFAULT_TAWK_PROPERTY_ID, hint: 'Public identifier from the tawk.to embed code' },
+      { key: 'widgetId',   label: 'Widget ID',   placeholder: DEFAULT_TAWK_WIDGET_ID, hint: 'Public widget identifier from the tawk.to embed code' },
     ],
   },
   cloudflare: {
@@ -303,6 +313,13 @@ const META: Record<IntegrationId, IntegrationMeta> = {
 // ─── Derive connection status from secrets ────────────────────────────────────
 
 function deriveStatus(id: IntegrationId, _record: IntegrationRecord): ConnectionStatus {
+  if (id === 'tawk') {
+    const propertyId = _record.config.propertyId?.trim() ?? '';
+    const widgetId = _record.config.widgetId?.trim() ?? '';
+    return TAWK_ID_PATTERN.test(propertyId) && TAWK_ID_PATTERN.test(widgetId)
+      ? 'connected'
+      : 'disconnected';
+  }
   const specs = META[id].secretSpecs;
   const required = specs.filter(s => s.required);
   const optional = specs.filter(s => !s.required);
@@ -351,6 +368,22 @@ export async function getIntegration(id: IntegrationId): Promise<IntegrationStat
   return all.find(i => i.id === id) ?? null;
 }
 
+export interface TawkWidgetConfig {
+  enabled: boolean;
+  propertyId: string;
+  widgetId: string;
+}
+
+export async function getTawkWidgetConfig(): Promise<TawkWidgetConfig> {
+  const store = await readStore();
+  const record = store.tawk ?? defaultRecord('tawk');
+  return {
+    enabled: record.enabled,
+    propertyId: record.config.propertyId?.trim() || DEFAULT_TAWK_PROPERTY_ID,
+    widgetId: record.config.widgetId?.trim() || DEFAULT_TAWK_WIDGET_ID,
+  };
+}
+
 export async function updateIntegration(
   id: IntegrationId,
   patch: { enabled?: boolean; notes?: string; config?: Record<string, string> },
@@ -363,6 +396,14 @@ export async function updateIntegration(
     const allowed = new Set(META[id].configFields.map(field => field.key));
     for (const [key, value] of Object.entries(patch.config)) {
       if (!allowed.has(key) || typeof value !== 'string' || value.length > 500) throw new Error('INVALID_INTEGRATION_SETTINGS');
+    }
+    if (id === 'tawk') {
+      const current = await getTawkWidgetConfig();
+      const propertyId = patch.config.propertyId?.trim() || current.propertyId;
+      const widgetId = patch.config.widgetId?.trim() || current.widgetId;
+      if (!TAWK_ID_PATTERN.test(propertyId) || !TAWK_ID_PATTERN.test(widgetId)) {
+        throw new Error('INVALID_INTEGRATION_SETTINGS');
+      }
     }
   }
   const store = await readStore();

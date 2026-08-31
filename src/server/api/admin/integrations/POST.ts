@@ -9,7 +9,7 @@ import { updateIntegration, type IntegrationId } from '../../../lib/integrationS
 import { appendCriticalAudit } from '../../../lib/auditLog.js';
 
 const VALID_IDS = new Set<IntegrationId>([
-  'resend', 'zoho_mail', 'smartsupp', 'cloudflare', 'google_analytics',
+  'resend', 'zoho_mail', 'tawk', 'cloudflare', 'google_analytics',
   'google_tag_manager', 'google_maps', 'stripe', 'paypal',
   'twilio', 'whatsapp_business', 'banking_api',
 ]);
