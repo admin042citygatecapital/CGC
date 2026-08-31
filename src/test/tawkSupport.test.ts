@@ -20,8 +20,8 @@ describe('product support widget routing', () => {
     expect(getSupportSection('/login')).toBe('authentication');
     expect(getSupportSection('/dashboard/transfers')).toBe('customer_dashboard');
     expect(getSupportSection('/dashboard/trading/orders')).toBe('trading');
-    expect(getSupportSection('/accounts')).toBe('accounts_demo');
-    expect(getSupportSection('/demo/accounts')).toBe('accounts_demo');
+    expect(getSupportSection('/accounts')).toBe('account_options');
+    expect(getSupportSection('/demo/accounts')).toBe('account_options');
     expect(getSupportSection('/demo/support')).toBe('demo_support');
   });
 

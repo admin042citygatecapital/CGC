@@ -4,6 +4,12 @@ export const E2E_CUSTOMER = {
   name: 'Preview Browser Customer',
 } as const;
 
+export const E2E_ROUTE_AUDIT_CUSTOMER = {
+  email: 'route-audit.e2e@example.test',
+  password: 'Preview-E2E-Route-Audit-42!',
+  name: 'Route Audit Browser Customer',
+} as const;
+
 export const E2E_ADMIN = {
   email: 'admin@citygate.capital',
   password: 'Preview-E2E-Admin-42!',

@@ -731,10 +731,10 @@ export default function WalletsPage() {
             {/* WS status */}
             <div className="hidden sm:flex items-center gap-1.5 ml-2">
               {isLive
-                ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /><span className="text-[10px] text-emerald-400 font-semibold">Live</span></>
+                ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /><span className="text-[10px] text-emerald-400 font-semibold">Prices current</span></>
                 : wsStatus === 'connecting'
-                  ? <><RefreshCw className="w-3 h-3 text-amber-400 animate-spin" /><span className="text-[10px] text-amber-400 font-semibold">Connecting</span></>
-                  : <><WifiOff className="w-3 h-3 text-white/20" /><span className="text-[10px] text-white/20 font-semibold">Polling</span></>
+                  ? <><RefreshCw className="w-3 h-3 text-amber-400 animate-spin" /><span className="text-[10px] text-amber-400 font-semibold">Refreshing market data</span></>
+                  : <><WifiOff className="w-3 h-3 text-white/20" /><span className="text-[10px] text-white/30 font-semibold">Latest available prices</span></>
               }
             </div>
 

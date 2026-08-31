@@ -205,7 +205,9 @@ export default function AdminLoginPage() {
                         <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                         <input
                           id="admin-email"
+                          name="email"
                           type="email"
+                          autoComplete="email"
                           required
                           value={email}
                           onChange={e => setEmail(e.target.value)}
@@ -224,7 +226,9 @@ export default function AdminLoginPage() {
                         <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                         <input
                           id="admin-password"
+                          name="password"
                           type={showPw ? 'text' : 'password'}
+                          autoComplete="current-password"
                           required
                           value={password}
                           onChange={e => setPassword(e.target.value)}
@@ -348,6 +352,7 @@ export default function AdminLoginPage() {
                       </label>
                       <input
                         id="admin-otp"
+                        name="otp"
                         inputMode="numeric"
                         autoComplete="one-time-code"
                         required
@@ -359,7 +364,7 @@ export default function AdminLoginPage() {
                       />
                     </div>
                     <label className="flex items-center gap-2 text-xs text-white/40">
-                      <input type="checkbox" checked={rememberDevice} onChange={e => setRememberDevice(e.target.checked)} />
+                      <input name="rememberDevice" type="checkbox" checked={rememberDevice} onChange={e => setRememberDevice(e.target.checked)} />
                       Trust this device for 30 days
                     </label>
                     {error && <div className="p-3 rounded-xl bg-red-500/8 border border-red-500/20 text-red-400 text-sm">{error}</div>}

@@ -33,7 +33,7 @@ export const seoRoutes: SeoRoute[] = [
   { path: "/", changefreq: "weekly", priority: 1.0, lastmod: "2026-08-11" },
   { path: "/about", changefreq: "monthly", priority: 0.8, lastmod: "2026-08-15" },
   { path: "/digital-banking", changefreq: "monthly", priority: 0.8, lastmod: "2026-08-11" },
-  { path: "/accounts", changefreq: "monthly", priority: 0.8, lastmod: "2026-08-11" },
+  { path: "/accounts", changefreq: "monthly", priority: 0.8, lastmod: "2026-08-30" },
   { path: "/support", changefreq: "monthly", priority: 0.6, lastmod: "2026-08-11" },
   // Legacy /demo paths redirect to their canonical public equivalents.
   // /wallet and /transfers are auth-gated (CustomerOnly) — excluded from sitemap

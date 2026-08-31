@@ -110,8 +110,12 @@ function BeneficiaryForm({
           { label: 'Reference', key: 'reference', placeholder: 'Payment reference' },
         ].map(f => (
           <div key={f.key} className="flex flex-col gap-1.5">
-            <label className="text-[10px] text-foreground/40 font-medium">{f.label}</label>
+            <label htmlFor={`beneficiary-${f.key}`} className="text-[10px] text-foreground/40 font-medium">{f.label}</label>
             <input
+              id={`beneficiary-${f.key}`}
+              name={f.key}
+              required={f.key === 'name'}
+              autoComplete={f.key === 'email' ? 'email' : f.key === 'name' ? 'name' : 'off'}
               value={(form as Record<string, string>)[f.key]}
               onChange={e => set(f.key, e.target.value)}
               placeholder={f.placeholder}
@@ -122,8 +126,8 @@ function BeneficiaryForm({
 
         {/* Currency */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] text-foreground/40 font-medium">Currency</label>
-          <select value={form.currency} onChange={e => set('currency', e.target.value)}
+          <label htmlFor="beneficiary-currency" className="text-[10px] text-foreground/40 font-medium">Currency</label>
+          <select id="beneficiary-currency" name="currency" value={form.currency} onChange={e => set('currency', e.target.value)}
             className="bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2 text-xs text-foreground/80 focus:outline-none cursor-pointer appearance-none">
             {CURRENCIES.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{CURRENCY_FLAGS[c] ?? ''} {c}</option>)}
           </select>
@@ -131,8 +135,8 @@ function BeneficiaryForm({
 
         {/* Country */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] text-foreground/40 font-medium">Country</label>
-          <select value={form.country} onChange={e => set('country', e.target.value)}
+          <label htmlFor="beneficiary-country" className="text-[10px] text-foreground/40 font-medium">Country</label>
+          <select id="beneficiary-country" name="country" value={form.country} onChange={e => set('country', e.target.value)}
             className="bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2 text-xs text-foreground/80 focus:outline-none cursor-pointer appearance-none">
             {COUNTRIES.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{c}</option>)}
           </select>
@@ -334,8 +338,9 @@ export default function BeneficiariesPage() {
             <label htmlFor="beneficiary-step-up" className="text-[10px] text-foreground/40 font-medium uppercase tracking-wider">
               Security verification · {customer.totpEnabled ? 'Authenticator code' : 'Current password'}
             </label>
-            <input id="beneficiary-step-up" type={customer.totpEnabled ? 'text' : 'password'}
+            <input id="beneficiary-step-up" name="stepUpVerification" type={customer.totpEnabled ? 'text' : 'password'}
               inputMode={customer.totpEnabled ? 'numeric' : undefined} autoComplete={customer.totpEnabled ? 'one-time-code' : 'current-password'}
+              maxLength={customer.totpEnabled ? 6 : 256}
               value={stepUp} onChange={e => setStepUp(customer.totpEnabled ? e.target.value.replace(/\D/g, '').slice(0, 6) : e.target.value)}
               placeholder={customer.totpEnabled ? '6-digit code' : 'Required to add, edit, favorite, or remove'}
               className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-xs text-foreground/70 placeholder-foreground/20 focus:outline-none focus:border-primary/40 transition-colors" />
@@ -344,6 +349,9 @@ export default function BeneficiariesPage() {
           {/* Search */}
           {beneficiaries.length > 3 && (
             <input
+              name="beneficiarySearch"
+              aria-label="Search beneficiaries"
+              autoComplete="off"
               value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search beneficiaries…"
               className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-xs text-foreground/70 placeholder-foreground/20 focus:outline-none focus:border-primary/40 transition-colors"

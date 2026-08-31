@@ -19,7 +19,7 @@ export default function BillsPage() {
   const { customer, loading } = useCustomerAuth(); const navigate = useNavigate();
   const [bills, setBills] = useState<Bill[]>([]); const [fetching, setFetching] = useState(true); const [saving, setSaving] = useState(false); const [form, setForm] = useState<Form | null>(null); const [message, setMessage] = useState('');
   useEffect(() => { if (!loading && !customer) navigate('/login?reason=session_expired', { replace: true }); }, [customer, loading, navigate]);
-  async function load() { setFetching(true); try { const response = await fetch('/api/users/bills', { credentials: 'same-origin' }); if (response.ok) setBills((await response.json()).bills ?? []); } finally { setFetching(false); } }
+  async function load() { setFetching(true); try { const response = await fetch('/api/users/bills', { credentials: 'same-origin' }); const body = await response.json().catch(() => ({})); if (response.ok) { setBills(body.bills ?? []); setMessage(''); } else { setMessage(body.error ?? 'Bill schedules are temporarily unavailable.'); } } finally { setFetching(false); } }
   useEffect(() => { if (customer) void load(); }, [customer]);
   const scheduled = useMemo(() => bills.filter(bill => bill.status === 'scheduled'), [bills]);
   function edit(bill: Bill) { setForm({ id: bill.id, payee: bill.payee, category: bill.category, currency: bill.currency, amount: major(bill.amount_minor), frequency: bill.frequency, nextDueDate: bill.next_due_date.slice(0, 10), reminderDays: String(bill.reminder_days), status: bill.status }); }

@@ -71,8 +71,9 @@ test('admin login reaches pre-deployment controls and authenticated money mutati
 });
 
 test('sponsor-readiness remains an authenticated workspace and reports its database dependency', async ({ page }) => {
+  test.setTimeout(60_000);
   await loginAdmin(page);
-  await page.goto('/admin/sponsor-readiness');
+  await page.goto('/admin/sponsor-readiness', { waitUntil: 'domcontentloaded' });
   await expect(page.getByText('UK sponsor-readiness workspace')).toBeVisible();
   await expect(page.getByText('Financial operations remain locked')).toBeVisible();
   await expect(page.getByText('Sponsor readiness requires PostgreSQL.')).toBeVisible();

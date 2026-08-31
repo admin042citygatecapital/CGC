@@ -111,7 +111,7 @@ export default function LoginPage() {
 
             {/* Error banner */}
             {error && (
-              <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 mb-6">
+              <div id="login-error" role="alert" className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 mb-6">
                 <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
                 <p className="text-sm text-red-300">{error}</p>
               </div>
@@ -127,8 +127,11 @@ export default function LoginPage() {
                   <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
                   <input
                     id="email"
+                    name="email"
                     type="email"
                     autoComplete="email"
+                    required
+                    aria-describedby={error ? 'login-error' : undefined}
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="you@example.com"
@@ -151,8 +154,11 @@ export default function LoginPage() {
                   <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
                   <input
                     id="password"
+                    name="password"
                     type={showPw ? 'text' : 'password'}
                     autoComplete="current-password"
+                    required
+                    aria-describedby={error ? 'login-error' : undefined}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -176,9 +182,9 @@ export default function LoginPage() {
                   </label>
                   <div className="relative">
                     <ShieldCheck size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
-                    <input id="otp" type="text" inputMode="numeric" autoComplete="one-time-code"
+                    <input id="otp" name="otp" type="text" inputMode="numeric" autoComplete="one-time-code" required pattern="[0-9]{6}"
                       value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="000000" maxLength={6}
+                      placeholder="000000" minLength={6} maxLength={6} aria-describedby={error ? 'login-error' : undefined}
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm tracking-[0.35em] placeholder:text-foreground/25 focus:outline-none focus:border-primary/50" />
                   </div>
                 </div>

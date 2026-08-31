@@ -4,6 +4,25 @@ import { getAuditLog } from '../../../lib/auditLog.js';
 import { queryTransactions } from '../../../lib/transactionStore.js';
 import { readRatesConfig } from '../../../lib/ratesStore.js';
 import { queryConversations } from '../../../lib/supportDatabaseStore.js';
+import { isDatabaseConfigured } from '../../../db/db.js';
+
+async function supportTicketMetrics(): Promise<{ openTickets: number; resolvedThisMonth: number }> {
+  if (isDatabaseConfigured()) {
+    const [{ total: openTickets }, { total: resolvedThisMonth }] = await Promise.all([
+      queryConversations({ status: 'open', limit: 1 }),
+      queryConversations({ status: 'resolved', dateRange: '30d', limit: 1 }),
+    ]);
+    return { openTickets, resolvedThisMonth };
+  }
+
+  // Local preview/E2E uses the documented private flat-file store. Production
+  // still fails closed at startup when DATABASE_URL is absent.
+  const legacy = await import('../../../lib/supportStore.js');
+  return {
+    openTickets: legacy.queryConversations({ status: 'open', limit: 1 }).total,
+    resolvedThisMonth: legacy.queryConversations({ status: 'resolved', dateRange: '30d', limit: 1 }).total,
+  };
+}
 
 export default async function handler(_req: Request, res: Response) {
   const now = Date.now();
@@ -118,8 +137,7 @@ export default async function handler(_req: Request, res: Response) {
     .reduce((s, t) => s + Number(t.amount ?? 0) * (TO_USD[t.currency] ?? 1), 0);
 
   // ── Open support tickets ──────────────────────────────────────────────────
-  const { total: openTickets } = await queryConversations({ status: 'open', limit: 1 });
-  const { total: resolvedThisMonth } = await queryConversations({ status: 'resolved', dateRange: '30d', limit: 1 });
+  const { openTickets, resolvedThisMonth } = await supportTicketMetrics();
   const ticketChange = resolvedThisMonth > 0 ? -(resolvedThisMonth) : 0;
 
   // ── Daily activity (last 30 days) — fee records and activity counts ───────

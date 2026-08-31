@@ -1,8 +1,15 @@
 import type { Request, Response } from 'express';
+import { isDatabaseConfigured } from '../../../db/db.js';
 import { getOnboardingCaseBundle, getOnboardingQueuePosition, getOrCreateOnboardingCase, getRegistrationIntakePosition } from '../../../lib/onboardingStore.js';
 import { buildRegistrationWorkflow } from '../../../lib/registrationWorkflow.js';
 
 export default async function handler(req: Request, res: Response) {
+  if (!isDatabaseConfigured()) {
+    return res.status(503).json({
+      error: 'Registration workflow storage is not configured.',
+      code: 'ONBOARDING_STORAGE_UNAVAILABLE',
+    });
+  }
   const user = req.customerUser!;
   const caseType = user.accountTier === 'business' ? 'business' : 'individual';
   const record = await getOrCreateOnboardingCase(user.id, caseType, user.id);

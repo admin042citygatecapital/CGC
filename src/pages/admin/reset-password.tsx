@@ -209,8 +209,11 @@ export default function AdminResetPasswordPage() {
                       <div className="relative">
                         <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                         <input
+                          name="newPassword"
                           type={showNew ? 'text' : 'password'}
                           required
+                          minLength={12}
+                          maxLength={256}
                           value={newPw}
                           onChange={e => setNewPw(e.target.value)}
                           className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-10 pr-10 py-3 text-white placeholder:text-white/15 focus:outline-none focus:border-primary/40 transition-colors text-sm"
@@ -235,8 +238,11 @@ export default function AdminResetPasswordPage() {
                       <div className="relative">
                         <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                         <input
+                          name="confirmPassword"
                           type={showConfirm ? 'text' : 'password'}
                           required
+                          minLength={12}
+                          maxLength={256}
                           value={confirmPw}
                           onChange={e => setConfirmPw(e.target.value)}
                           className={`w-full bg-white/[0.04] border rounded-xl pl-10 pr-10 py-3 text-white placeholder:text-white/15 focus:outline-none transition-colors text-sm ${

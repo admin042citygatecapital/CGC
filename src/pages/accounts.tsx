@@ -1,394 +1,216 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
-  CheckCircle, Shield, Fingerprint, Camera,
-  FileText, User, DollarSign, Zap,
-  ArrowRight, Star, CreditCard, Globe, Lock, ChevronRight
+  ArrowRight, BadgeCheck, BriefcaseBusiness, Building2, CheckCircle2,
+  CircleDollarSign, Fingerprint, Globe2, Landmark, LockKeyhole,
+  ShieldCheck, Sparkles, UserRound, WalletCards,
 } from 'lucide-react';
-import { trackConversion } from '@/lib/useAnalytics';
 import AccountOpeningModal from '@/components/AccountOpeningModal';
-import { HomepageContentProvider } from '@/lib/homepageContentContext';
-import { DashboardPreview, FeaturesGrid } from '@/sections/BankingModule';
 
-const kycSteps = [
-  { icon: User,        step: '01', title: 'Create Your Profile',      desc: 'Enter your email and set a secure password to access the platform workspace.',                       color: '#C9A84C' },
-  { icon: Camera,      step: '02', title: 'Verify Your Identity',     desc: 'Complete the required identity and eligibility review for your selected account.',                  color: '#627EEA' },
-  { icon: Fingerprint, step: '03', title: 'Set Security Preferences', desc: 'Configure available account protection and sign-in controls.',                                       color: '#10B981' },
-  { icon: DollarSign,  step: '04', title: 'Manage Your Accounts',     desc: 'View balances, transactions and available financial tools from one secure dashboard.',               color: '#9945FF' },
-];
+const accountOptions = [
+  {
+    icon: UserRound,
+    title: 'Personal',
+    description: 'A connected account experience for everyday financial organisation, account activity and secure access.',
+    features: ['Account overview', 'Statements and activity', 'Security controls'],
+  },
+  {
+    icon: CircleDollarSign,
+    title: 'Savings',
+    description: 'Goal-led tools designed to help you organise savings objectives and follow progress over time.',
+    features: ['Savings goals', 'Progress insights', 'Account history'],
+  },
+  {
+    icon: BriefcaseBusiness,
+    title: 'Business',
+    description: 'Operational visibility for business finances, team access and structured account administration.',
+    features: ['Team access', 'Approval workflows', 'Business reporting'],
+  },
+  {
+    icon: Globe2,
+    title: 'Multi-Currency',
+    description: 'A unified view of supported currencies, with availability determined by eligibility and provider coverage.',
+    features: ['Supported currencies', 'FX information', 'Consolidated visibility'],
+  },
+  {
+    icon: Landmark,
+    title: 'Wealth',
+    description: 'A premium financial overview for eligible customers seeking deeper reporting and relationship support.',
+    features: ['Portfolio visibility', 'Advanced reporting', 'Relationship support'],
+  },
+] as const;
 
-const trustBadges = [
-  { icon: Shield,      label: 'Funding Safeguard', desc: 'Deposits currently unavailable',    color: '#C9A84C' },
-  { icon: Fingerprint, label: 'Biometric Interface', desc: 'Native activation pending',       color: '#627EEA' },
-  { icon: FileText,    label: 'Launch Gated',      desc: 'Approvals required',         color: '#10B981' },
-  { icon: Zap,         label: 'Guided Setup',      desc: 'Platform workflow',                 color: '#9945FF' },
-  { icon: Lock,        label: 'Secure Sessions',   desc: 'Protected account access', color: '#EC4899' },
-  { icon: Globe,       label: 'Multi-Currency',    desc: 'Supported currency access', color: '#F7931A' },
-  { icon: CreditCard,  label: 'Virtual Cards',     desc: 'Issuance not yet available',        color: '#14B8A6' },
-  { icon: Star,        label: 'Responsive UI',     desc: 'Published web experience',          color: '#F0D080' },
-];
+const accessSteps = [
+  { icon: UserRound, title: 'Create your profile', description: 'Provide your contact details and create secure sign-in credentials.' },
+  { icon: BadgeCheck, title: 'Complete the required review', description: 'Identity, eligibility and service checks are completed before eligible features become available.' },
+  { icon: Fingerprint, title: 'Protect your access', description: 'Configure the security controls available for your profile, including multi-factor verification.' },
+  { icon: WalletCards, title: 'Manage your financial view', description: 'Use one authenticated workspace for accounts, activity, documents and available services.' },
+] as const;
 
-const testimonials = [
-  { name: 'Personal Banking', role: 'Connected account experience', text: 'See balances, cards, transfers, and spending insights together in one guided account experience.', rating: 5 },
-  { name: 'Business Banking', role: 'Operational account controls', text: 'Organize team access, expense controls, approval flows, and reporting from one place.', rating: 5 },
-  { name: 'Savings', role: 'Goal-led money management', text: 'Organize savings goals and monitor progress with clear account insights.', rating: 5 },
-];
+const safeguards = [
+  'Separate customer and administrator access',
+  'Multi-factor verification and session controls',
+  'Account activity and security notifications',
+  'Eligibility and feature-availability checks',
+] as const;
 
-function AccountsPageContent() {
-  const showRetiredPresentationSections = false;
-  const [selectedType] = useState('Savings');
-  const [showComparison, setShowComparison] = useState(false);
+export default function AccountsPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalPlan, setModalPlan] = useState<'Personal' | 'Savings' | 'Business'>('Personal');
-  const location = useLocation();
-
-  function openModal(plan: string) {
-    const safePlan = (['Personal', 'Savings', 'Business'].includes(plan) ? plan : 'Personal') as 'Personal' | 'Savings' | 'Business';
-    setModalPlan(safePlan);
-    setModalOpen(true);
-  }
 
   return (
     <>
       <Helmet>
-        <title>Open an Account — Personal, Savings & Business | CGC</title>
-        <meta name="description" content="Explore City Gate Capital personal, savings, and business account experiences with connected financial tools and guided account management." />
+        <title>Explore Account Options | City Gate Capital</title>
+        <meta name="description" content="Explore City Gate Capital personal, savings, business, multi-currency and wealth account experiences. Availability depends on eligibility and approved service arrangements." />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://citygate.capital/accounts" />
-        <meta property="og:title" content="Open a Bank Account — Personal, Savings & Business" />
-        <meta property="og:description" content="Explore personal, savings, and business account experiences on the City Gate Capital platform." />
+        <meta property="og:title" content="Choose the Account That Fits Your Ambition | City Gate Capital" />
+        <meta property="og:description" content="Explore connected account experiences designed for personal, business and international financial needs." />
         <meta property="og:url" content="https://citygate.capital/accounts" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="Open a Bank Account — Personal, Savings & Business" />
         <meta property="og:site_name" content="City Gate Capital" />
-        <meta property="og:locale" content="en_GB" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@CityGateCapital" />
-        <meta name="twitter:creator" content="@CityGateCapital" />
-        <meta name="twitter:title" content="Open a Bank Account — City Gate Capital" />
-        <meta name="twitter:description" content="Explore personal, savings, and business account experiences on the City Gate Capital platform." />
-        <meta name="twitter:image" content="https://citygate.capital/assets/media/pages-home-hero-e6ece0b6.jpg" />
+        <meta name="twitter:title" content="Explore Account Options | City Gate Capital" />
+        <meta name="twitter:description" content="Personal, savings, business, multi-currency and wealth account experiences in one connected platform." />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'WebPage',
           '@id': 'https://citygate.capital/accounts#webpage',
-          name: 'Open a Bank Account — City Gate Capital',
+          name: 'Explore Account Options | City Gate Capital',
           url: 'https://citygate.capital/accounts',
           isPartOf: { '@id': 'https://citygate.capital/#website' },
           about: { '@id': 'https://citygate.capital/#organization' },
           mainEntity: {
             '@type': 'ItemList',
-            name: 'City Gate Capital Account Types',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Personal account experience' },
-              { '@type': 'ListItem', position: 2, name: 'Savings goals experience' },
-              { '@type': 'ListItem', position: 3, name: 'Business account experience' },
-            ],
+            name: 'City Gate Capital account experiences',
+            itemListElement: accountOptions.map((option, index) => ({
+              '@type': 'ListItem', position: index + 1, name: `${option.title} account experience`,
+            })),
           },
-        }) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://citygate.capital/' },
-            { '@type': 'ListItem', position: 2, name: 'Accounts', item: 'https://citygate.capital/accounts' },
-          ],
         }) }} />
       </Helmet>
 
-      {/* ── Hero ─────────────────────────────────────────────────────── */}
-      {showRetiredPresentationSections && (
-      <section>
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] opacity-[0.05] blur-[120px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, #C9A84C, transparent)' }} />
-
-        <div className="container mx-auto px-4 md:px-6 relative">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-
-            {/* Left copy */}
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-              <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-6 tracking-widest uppercase">
-                Account Experiences
+      <main className="overflow-hidden bg-[#050505] text-foreground">
+        <section className="relative border-b border-white/[0.06] pb-24 pt-24 md:pb-32 md:pt-32">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_18%,rgba(201,168,76,0.16),transparent_35%),radial-gradient(circle_at_18%_82%,rgba(98,126,234,0.1),transparent_30%)]" />
+          <div className="container relative mx-auto px-4 md:px-6">
+            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65 }} className="mx-auto max-w-4xl text-center">
+              <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                <Sparkles size={14} /> Account options
               </span>
-              <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight">
-                Accounts Designed<br />
-                <span className="text-gold-shimmer">Around Your Ambition</span>
+              <h1 className="text-4xl font-bold leading-[1.08] tracking-tight md:text-6xl lg:text-7xl">
+                Choose the Account That Fits <span className="text-gold-gradient">Your Ambition</span>
               </h1>
-              <p className="text-lg text-foreground/50 mb-8 leading-relaxed max-w-lg">
-                Compare personal, savings and business account experiences. Service activation depends on completed verification, eligibility and approved provider arrangements.
+              <p className="mx-auto mt-7 max-w-2xl text-base leading-8 text-foreground/60 md:text-lg">
+                Explore a connected financial experience designed around personal goals, business needs and supported international activity.
               </p>
+              <div className="mt-10 flex flex-wrap justify-center gap-4">
+                <button type="button" onClick={() => setModalOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#F0D080] px-7 py-4 text-sm font-bold text-black transition-transform hover:-translate-y-0.5">
+                  Start Your Application <ArrowRight size={17} />
+                </button>
+                <Link to="/digital-banking" className="inline-flex items-center gap-2 rounded-xl border border-primary/25 bg-white/[0.025] px-7 py-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/55">
+                  Explore Digital Banking
+                </Link>
+              </div>
+              <p className="mx-auto mt-7 max-w-2xl text-xs leading-6 text-foreground/40">
+                Submitting an application does not guarantee access to any service. Availability depends on verification, eligibility, jurisdiction and approved provider arrangements.
+              </p>
+            </motion.div>
+          </div>
+        </section>
 
-              {/* Feature pills */}
-              <div className="flex flex-wrap gap-2 mb-10">
-                {['Platform profile', 'KYC workflow', 'Funding pending', 'Secure access', 'Provider activation required'].map(tag => (
-                  <span key={tag} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-primary bg-primary/10 border border-primary/20">
-                    <CheckCircle size={10} />
-                    {tag}
-                  </span>
+        <section className="py-20 md:py-28" aria-labelledby="account-options-heading">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="mb-12 max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Designed around you</p>
+              <h2 id="account-options-heading" className="mt-4 text-3xl font-bold tracking-tight md:text-5xl">One platform, distinct financial needs</h2>
+              <p className="mt-5 text-sm leading-7 text-foreground/55 md:text-base">
+                Each account experience brings together the information, controls and support appropriate to its purpose. Enabled capabilities are shown after sign-in.
+              </p>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+              {accountOptions.map((option, index) => {
+                const Icon = option.icon;
+                return (
+                  <motion.article key={option.title} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.06 }} className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 transition-colors hover:border-primary/25">
+                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Icon size={21} /></div>
+                    <h3 className="text-lg font-semibold">{option.title}</h3>
+                    <p className="mt-3 min-h-24 text-sm leading-6 text-foreground/50">{option.description}</p>
+                    <ul className="mt-5 space-y-2 border-t border-white/[0.06] pt-5">
+                      {option.features.map(feature => (
+                        <li key={feature} className="flex items-start gap-2 text-xs leading-5 text-foreground/55"><CheckCircle2 size={13} className="mt-0.5 shrink-0 text-primary" /> {feature}</li>
+                      ))}
+                    </ul>
+                  </motion.article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-white/[0.06] bg-[#080806] py-20 md:py-28" aria-labelledby="access-heading">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Guided access</p>
+              <h2 id="access-heading" className="mt-4 text-3xl font-bold tracking-tight md:text-5xl">A clear path from profile to platform</h2>
+              <p className="mt-5 text-sm leading-7 text-foreground/55 md:text-base">Account access follows a structured process so security, eligibility and service availability are clear at every stage.</p>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              {accessSteps.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                  <article key={step.title} className="relative rounded-2xl border border-white/[0.07] bg-black/30 p-6">
+                    <span className="absolute right-5 top-4 text-xs font-semibold text-primary/45">0{index + 1}</span>
+                    <Icon size={23} className="text-primary" />
+                    <h3 className="mt-5 text-base font-semibold">{step.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-foreground/50">{step.description}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 md:py-28" aria-labelledby="security-heading">
+          <div className="container mx-auto grid items-center gap-12 px-4 md:px-6 lg:grid-cols-2">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary"><ShieldCheck size={14} /> Security and control</span>
+              <h2 id="security-heading" className="mt-6 text-3xl font-bold tracking-tight md:text-5xl">Account access built around protection</h2>
+              <p className="mt-5 max-w-xl text-sm leading-7 text-foreground/55 md:text-base">Customer access is separated from administration and protected with server-side authorization, session controls and audit-supported workflows.</p>
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                {safeguards.map(item => (
+                  <div key={item} className="flex items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-4 text-sm leading-6 text-foreground/60"><LockKeyhole size={16} className="mt-1 shrink-0 text-primary" /> {item}</div>
                 ))}
               </div>
-
-              <div className="flex flex-wrap gap-4">
-                <button onClick={() => { trackConversion('signup_started', location.pathname, { source: 'hero_cta' }); openModal(selectedType); }} className="group relative inline-flex items-center gap-2.5 px-7 py-4 rounded-xl font-bold text-black overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-                  <span className="relative">Create Platform Profile</span>
-                  <ArrowRight size={18} className="relative transition-transform group-hover:translate-x-1" />
-                </button>
-                <button
-                  onClick={() => setShowComparison(v => !v)}
-                  className="inline-flex items-center gap-2 px-7 py-4 rounded-xl font-medium text-foreground/60 glass border border-primary/20 hover:border-primary/40 hover:text-foreground transition-colors text-sm"
-                >
-                  Compare Plans
-                  <ChevronRight size={14} className={`transition-transform ${showComparison ? 'rotate-90' : ''}`} />
-                </button>
-              </div>
-            </motion.div>
-
-            {/* Right — account experience */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="hidden lg:block"
-            >
-              <div
-                className="relative rounded-3xl p-7 overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(28,26,20,0.95), rgba(20,18,14,0.98))',
-                  border: '1px solid rgba(201,168,76,0.25)',
-                  boxShadow: 'var(--gold-glow)',
-                }}
-              >
-                {/* Card header */}
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <p className="text-xs text-foreground/35 uppercase tracking-widest mb-0.5">City Gate Capital</p>
-                    <p className="text-sm font-bold text-primary">Elite Savings Account</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-xs text-emerald-400 font-medium">Savings overview</span>
-                  </div>
-                </div>
-
-                {/* Stats row */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  {heroStats.map(stat => (
-                    <div key={stat.label} className="glass rounded-xl p-3">
-                      <p className="text-[10px] text-foreground/35 mb-1">{stat.label}</p>
-                      <p className="text-sm font-bold" style={{ color: stat.color }}>{stat.value}</p>
-                      <p className="text-[10px] text-foreground/30 mt-0.5">{stat.sub}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Mini bar chart */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs text-foreground/40">Savings Growth</p>
-                    <p className="text-xs text-primary font-semibold">Indicative performance</p>
-                  </div>
-                  <div className="flex items-end gap-1 h-14">
-                    {[40, 52, 48, 65, 58, 72, 68, 80, 75, 88, 84, 100].map((h, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ scaleY: 0 }}
-                        animate={{ scaleY: 1 }}
-                        transition={{ delay: 0.4 + i * 0.04, duration: 0.4 }}
-                        style={{ originY: 1, height: `${h}%` }}
-                        className={`flex-1 rounded-sm ${i === 11 ? 'bg-primary' : 'bg-primary/20'}`}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-[9px] text-foreground/20">Jun</span>
-                    <span className="text-[9px] text-foreground/20">May</span>
-                  </div>
-                </div>
-
-                {/* Recent transactions */}
-                <div>
-                  <p className="text-xs text-foreground/35 uppercase tracking-widest mb-3">Recent</p>
-                  {[
-                    { name: 'Interest Credit',  amount: '+$18.42', color: '#10B981' },
-                    { name: 'Auto-Save Rule',   amount: '+$200.00', color: '#10B981' },
-                    { name: 'Transfer Out',     amount: '-$500.00', color: '#EC4899' },
-                  ].map(tx => (
-                    <div key={tx.name} className="flex items-center justify-between py-2 border-b border-primary/5 last:border-0">
-                      <span className="text-xs text-foreground/50">{tx.name}</span>
-                      <span className="text-xs font-semibold" style={{ color: tx.color }}>{tx.amount}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
+            </div>
+            <div className="rounded-3xl border border-primary/20 bg-[linear-gradient(145deg,rgba(201,168,76,0.1),rgba(255,255,255,0.02))] p-7 md:p-10">
+              <Building2 size={30} className="text-primary" />
+              <h3 className="mt-6 text-2xl font-bold">Service availability</h3>
+              <p className="mt-4 text-sm leading-7 text-foreground/55">Product pages describe the intended customer experience. Specific capabilities appear in the authenticated dashboard only when the relevant verification, provider and operational requirements are satisfied.</p>
+              <ul className="mt-6 space-y-3 text-sm text-foreground/60">
+                <li className="flex gap-3"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-primary" /> Supported currencies and assets are shown in your account.</li>
+                <li className="flex gap-3"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-primary" /> Restricted or unavailable features remain disabled.</li>
+                <li className="flex gap-3"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-primary" /> Legal and service disclosures remain accessible before use.</li>
+              </ul>
+            </div>
           </div>
-        </div>
-      </section>
-      )}
+        </section>
 
-      <DashboardPreview compactTop />
-      <FeaturesGrid />
+        <section className="border-t border-white/[0.06] pb-24 pt-20">
+          <div className="container mx-auto px-4 text-center md:px-6">
+            <h2 className="text-3xl font-bold md:text-5xl">Ready to explore your options?</h2>
+            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-foreground/55 md:text-base">Begin with a secure profile and continue through the verification and eligibility steps appropriate to your selected service.</p>
+            <button type="button" onClick={() => setModalOpen(true)} className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#F0D080] px-8 py-4 text-sm font-bold text-black">
+              Start Your Application <ArrowRight size={17} />
+            </button>
+          </div>
+        </section>
+      </main>
 
-      {/* ── KYC Steps ────────────────────────────────────────────────── */}
-      {showRetiredPresentationSections && (
-      <section>
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-16">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 mb-5 tracking-widest uppercase">
-                KYC Verification
-              </span>
-              <h2 className="text-4xl font-bold text-foreground mb-4 tracking-tight">
-                Explore the <span className="text-gold-gradient">Verification Workflow</span>
-              </h2>
-              <p className="text-foreground/55 max-w-md mx-auto text-sm">Review the proposed identity-verification journey. Real document collection and approval remain disabled until a contracted provider and legal review are in place.</p>
-            </motion.div>
-          </div>
-          <div className="grid md:grid-cols-4 gap-6">
-            {kycSteps.map((step, i) => (
-              <motion.div
-                key={step.step}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="relative text-center"
-              >
-                {i < kycSteps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] right-[-40%] h-px bg-gradient-to-r from-primary/30 to-transparent" />
-                )}
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 relative"
-                  style={{ background: `${step.color}15`, border: `1px solid ${step.color}30` }}>
-                  <step.icon size={24} style={{ color: step.color }} />
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center"
-                    style={{ background: step.color }}>
-                    <span className="text-black text-xs font-bold">{step.step}</span>
-                  </div>
-                </div>
-                <h3 className="text-base font-semibold text-foreground mb-2">{step.title}</h3>
-                <p className="text-sm text-foreground/55 leading-relaxed">{step.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-      )}
-
-      {/* ── Testimonials ─────────────────────────────────────────────── */}
-      <section className="py-16 bg-[#060606]">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-10">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="text-3xl font-bold text-foreground tracking-tight">
-                What Our <span className="text-gold-gradient">Customers Say</span>
-              </h2>
-            </motion.div>
-          </div>
-          <div className="grid md:grid-cols-3 gap-5">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="glass-card rounded-2xl p-6 gradient-border"
-              >
-                <div className="flex gap-0.5 mb-4">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} size={12} className="text-primary fill-primary" />
-                  ))}
-                </div>
-                <p className="text-sm text-foreground/60 leading-relaxed mb-5">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/15 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                    <p className="text-xs text-foreground/55">{t.role}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Trust Badges ─────────────────────────────────────────────── */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-10">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="text-3xl font-bold text-foreground tracking-tight">
-                Built on <span className="text-gold-gradient">Trust</span>
-              </h2>
-            </motion.div>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {trustBadges.map((item, i) => (
-              <motion.div
-                key={item.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-                className="glass-card rounded-2xl p-5 gradient-border text-center hover:border-primary/25 transition-colors group"
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3 transition-transform group-hover:scale-110"
-                  style={{ background: `${item.color}15` }}>
-                  <item.icon size={18} style={{ color: item.color }} />
-                </div>
-                <p className="text-sm font-semibold text-foreground mb-0.5">{item.label}</p>
-                <p className="text-xs text-foreground/55">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Mobile sticky CTA ────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden safe-bottom">
-        <div className="bg-[rgba(10,10,10,0.95)] backdrop-blur-xl border-t border-primary/15 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex gap-3">
-          <button
-            onClick={() => { trackConversion('signup_started', location.pathname, { source: 'mobile_sticky_cta' }); openModal(selectedType); }}
-            className="flex-1 relative py-3.5 rounded-xl text-sm font-bold text-black text-center overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary to-[#F0D080]" />
-            <span className="relative">Create Platform Profile</span>
-          </button>
-          <Link
-            to="/contact"
-            className="px-4 py-3.5 rounded-xl text-sm font-medium text-foreground/60 glass border border-primary/20 hover:text-foreground transition-colors whitespace-nowrap"
-          >
-            Talk to Sales
-          </Link>
-        </div>
-      </div>
-
-      {/* ── Account Opening Modal ─────────────────────────────────────── */}
-      <AccountOpeningModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        initialPlan={modalPlan}
-      />
+      <AccountOpeningModal open={modalOpen} onClose={() => setModalOpen(false)} initialPlan="Personal" />
     </>
   );
-}
-
-const heroStats = [
-  { label: 'Total Balance', value: '$48,291.40', sub: '+2.4% this month', color: '#C9A84C' },
-  { label: 'Projected Return', value: '$210.18', sub: 'Indicative value', color: '#10B981' },
-  { label: 'Transfers',     value: '12',         sub: 'This week',        color: '#627EEA' },
-];
-
-export default function AccountsPage() {
-  return <HomepageContentProvider><AccountsPageContent /></HomepageContentProvider>;
 }

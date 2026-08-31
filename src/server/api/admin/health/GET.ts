@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import os from 'node:os';
 import { getSecret } from '#runtime/secrets';
 import { getQueryClient, isDatabaseConfigured, testConnection } from '../../../db/db.js';
+import { buildCoreHealthComponents, deriveOverallHealth, legacyCheck, type HealthComponent } from '../../../lib/healthStatus.js';
 
 interface DatabaseSummary {
   usersTotal: number;
@@ -18,9 +19,9 @@ interface DatabaseSummary {
   mediaAssets: number;
   emailQueuePending: number;
   emailQueueFailed: number;
-  operationsUpdatedAt: Date | null;
-  homepageUpdatedAt: Date | null;
-  mediaUpdatedAt: Date | null;
+  operationsUpdatedAt: Date | string | null;
+  homepageUpdatedAt: Date | string | null;
+  mediaUpdatedAt: Date | string | null;
 }
 
 const emptySummary: DatabaseSummary = {
@@ -67,11 +68,11 @@ async function getDatabaseSummary(): Promise<DatabaseSummary> {
   return rows[0] ?? emptySummary;
 }
 
-function managedStore(recordCount: number, lastUpdated: Date | null = null) {
+function managedStore(recordCount: number, lastUpdated: Date | string | null = null) {
   return {
     mode: 'managed' as const,
     recordCount,
-    lastUpdated: lastUpdated?.toISOString() ?? null,
+    lastUpdated: lastUpdated ? new Date(lastUpdated).toISOString() : null,
   };
 }
 
@@ -98,11 +99,36 @@ export default async function handler(_req: Request, res: Response) {
     getSecret('ZOHO_CLIENT_ID') && getSecret('ZOHO_CLIENT_SECRET') && getSecret('ZOHO_REFRESH_TOKEN')
   );
   const emailConfigured = resendConfigured || zohoConfigured;
-  const memoryWarning = memUsage.heapUsed / Math.max(memUsage.heapTotal, 1) >= 0.85;
-  const platformHealthy = database.ok && summaryAvailable;
+  const memoryRatio = memUsage.heapUsed / Math.max(memUsage.heapTotal, 1);
+  const components: Record<string, HealthComponent> = {
+    ...buildCoreHealthComponents({
+      databaseHealthy: Boolean(database.ok && summaryAvailable),
+      databaseDetail: database.ok
+        ? (summaryAvailable ? `PostgreSQL responded in ${database.latencyMs ?? 0}ms.` : 'PostgreSQL responded, but the operational summary failed.')
+        : 'PostgreSQL is unavailable.',
+      storageHealthy: summaryAvailable,
+      storageDetail: summaryAvailable ? 'Managed application records are accessible.' : 'Managed application records are unavailable.',
+      sessionsHealthy: Boolean(database.ok && summaryAvailable),
+      sessionsDetail: database.ok && summaryAvailable ? 'Session persistence is available.' : 'Session persistence could not be verified.',
+    }),
+    email: {
+      state: emailConfigured ? 'healthy' : 'not_configured',
+      required: false,
+      detail: emailConfigured ? 'A server-side email provider is configured.' : 'No optional email provider is configured.',
+    },
+    memory: {
+      state: memoryRatio >= 0.70 ? 'warning' : 'healthy',
+      required: true,
+      detail: memoryRatio >= 0.85
+        ? 'Heap usage is elevated; sustained samples are required before classifying an outage.'
+        : memoryRatio >= 0.70 ? 'Heap usage is above the warning threshold.' : 'Heap usage is within the normal range.',
+    },
+  };
+  const overall = deriveOverallHealth(components);
 
   res.status(200).json({
-    status: platformHealthy ? 'ok' : 'error',
+    status: overall,
+    components,
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version ?? '1.0.0',
     environment: process.env.NODE_ENV ?? 'development',
@@ -131,10 +157,11 @@ export default async function handler(_req: Request, res: Response) {
     },
     checks: {
       api: 'PASS',
-      database: platformHealthy ? 'PASS' : 'FAIL',
-      email: emailConfigured ? 'PASS' : 'WARN',
-      memory: memoryWarning ? 'WARN' : 'PASS',
-      storage: summaryAvailable ? 'PASS' : 'FAIL',
+      database: legacyCheck(components.database.state),
+      email: legacyCheck(components.email.state),
+      memory: legacyCheck(components.memory.state),
+      storage: legacyCheck(components.storage.state),
+      sessions: legacyCheck(components.sessions.state),
     },
     stores: {
       customers: managedStore(summary.usersTotal),

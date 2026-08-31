@@ -45,4 +45,21 @@ describe('published public website boundary', () => {
     expect(page).toContain('Product capabilities are activated only');
     expect(page).not.toMatch(/Open Account|Create Account|Start Banking|insured deposits/i);
   });
+
+  it('keeps the public accounts page free of synthetic customer financial data', () => {
+    const page = readFileSync('src/pages/accounts.tsx', 'utf8');
+    expect(page).toContain('Choose the Account That Fits');
+    expect(page).toContain('Start Your Application');
+    expect(page).toContain('Explore Digital Banking');
+    expect(page).not.toContain('DashboardPreview');
+    expect(page).not.toMatch(/Good morning, Alex|ALEX MORGAN|Recent transactions|Asset allocation|What Our Customers Say/i);
+    expect(page).not.toMatch(/\$\s?[0-9]|\bLive\b/);
+  });
+
+  it('routes the About call to action to the public account-options page', () => {
+    const page = readFileSync('src/pages/our-story.tsx', 'utf8');
+    expect(page).toContain('to="/accounts"');
+    expect(page).toContain('Explore Account Options');
+    expect(page).not.toContain('Explore banking');
+  });
 });

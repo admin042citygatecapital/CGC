@@ -11,7 +11,7 @@ export function getSupportSection(pathname: string): string {
   if (pathname === '/login' || pathname === '/register' || pathname.includes('password')) return 'authentication';
   if (pathname.startsWith('/dashboard/trading')) return 'trading';
   if (pathname.startsWith('/dashboard')) return 'customer_dashboard';
-  if (pathname.startsWith('/demo/accounts') || pathname.startsWith('/accounts')) return 'accounts_demo';
+  if (pathname.startsWith('/demo/accounts') || pathname.startsWith('/accounts')) return 'account_options';
   if (pathname.startsWith('/transfers')) return 'transfers';
   if (pathname.startsWith('/demo/support') || pathname.startsWith('/support')) return 'demo_support';
   if (pathname.startsWith('/contact')) return 'contact';

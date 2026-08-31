@@ -34,7 +34,7 @@ export async function issueCustomerResetToken(
     await transaction`DELETE FROM customer_password_reset_tokens WHERE user_id = ${userId}`;
     await transaction`
       INSERT INTO customer_password_reset_tokens (token_hash, user_id, expires_at)
-      VALUES (${tokenHash}, ${userId}, ${expiresAt})
+      VALUES (${tokenHash}, ${userId}, ${expiresAt.toISOString()})
     `;
   });
 }

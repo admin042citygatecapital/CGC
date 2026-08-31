@@ -1,9 +1,12 @@
 import type { Request, Response } from 'express';
-import { getQueryClient } from '../../../db/db.js';
+import { getQueryClient, isDatabaseConfigured } from '../../../db/db.js';
 
 export default async function handler(req: Request, res: Response) {
   const customer = req.customerUser;
   if (!customer) return res.status(401).json({ error: 'Authentication required' });
+  if (!isDatabaseConfigured()) {
+    return res.status(503).json({ error: 'Savings goals are temporarily unavailable.', code: 'GOAL_STORAGE_UNAVAILABLE' });
+  }
   try {
     const sql = getQueryClient();
     const goals = await sql`
@@ -31,6 +34,6 @@ export default async function handler(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('customer.goals.read.error', { customerId: customer.id, errorType: error instanceof Error ? error.name : 'UnknownError' });
-    return res.status(500).json({ error: 'Your goals could not be loaded.' });
+    return res.status(503).json({ error: 'Your goals could not be loaded.', code: 'GOAL_STORAGE_UNAVAILABLE' });
   }
 }

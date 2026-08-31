@@ -204,7 +204,7 @@ export default function RegisterPage() {
                 <label htmlFor="requested-product" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Selected service</label>
                 <div className="relative">
                   <Building2 size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
-                  <select id="requested-product" value={form.requestedProduct} onChange={set('requestedProduct')} className="w-full pl-10 pr-4 py-3 rounded-xl bg-primary/[0.07] border border-primary/25 text-foreground text-sm focus:outline-none focus:border-primary/60 transition-colors appearance-none" required>
+                  <select id="requested-product" name="requestedProduct" value={form.requestedProduct} onChange={set('requestedProduct')} className="w-full pl-10 pr-4 py-3 rounded-xl bg-primary/[0.07] border border-primary/25 text-foreground text-sm focus:outline-none focus:border-primary/60 transition-colors appearance-none" required>
                     {registrationProducts.map(product => <option key={product.slug} value={product.slug}>{product.label}</option>)}
                   </select>
                 </div>
@@ -216,7 +216,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
                   <input
-                    id="name" type="text" autoComplete="name" value={form.name} onChange={set('name')}
+                    id="name" name="name" type="text" autoComplete="name" value={form.name} onChange={set('name')} required
                     placeholder="Jane Smith"
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm placeholder:text-foreground/25 focus:outline-none focus:border-primary/50 transition-colors"
                   />
@@ -229,7 +229,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
                   <input
-                    id="reg-email" type="email" autoComplete="email" value={form.email} onChange={set('email')}
+                    id="reg-email" name="email" type="email" autoComplete="email" value={form.email} onChange={set('email')} required
                     placeholder="you@example.com"
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm placeholder:text-foreground/25 focus:outline-none focus:border-primary/50 transition-colors"
                   />
@@ -242,7 +242,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
                   <input
-                    id="phone" type="tel" autoComplete="tel" value={form.phone} onChange={set('phone')}
+                    id="phone" name="phone" type="tel" autoComplete="tel" value={form.phone} onChange={set('phone')}
                     placeholder="+44 7700 900000"
                     required
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm placeholder:text-foreground/25 focus:outline-none focus:border-primary/50 transition-colors"
@@ -256,7 +256,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Globe size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30 pointer-events-none" />
                   <select
-                    id="country" value={form.country} onChange={set('country')} required
+                    id="country" name="country" value={form.country} onChange={set('country')} required
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors appearance-none"
                   >
                     <option value="">Select country…</option>
@@ -267,12 +267,12 @@ export default function RegisterPage() {
 
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="address" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Residential or business address</label>
-                <div className="relative"><MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30"/><input id="address" type="text" autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="Street address" required className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm placeholder:text-foreground/25 focus:outline-none focus:border-primary/50 transition-colors"/></div>
+                <div className="relative"><MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30"/><input id="address" name="address" type="text" autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="Street address" required className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm placeholder:text-foreground/25 focus:outline-none focus:border-primary/50 transition-colors"/></div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5"><label htmlFor="city" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">City</label><input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={set('city')} required className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors"/></div>
-                <div className="flex flex-col gap-1.5"><label htmlFor="postal-code" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Postal code</label><input id="postal-code" type="text" autoComplete="postal-code" value={form.postalCode} onChange={set('postalCode')} required className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors"/></div>
+                <div className="flex flex-col gap-1.5"><label htmlFor="city" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">City</label><input id="city" name="city" type="text" autoComplete="address-level2" value={form.city} onChange={set('city')} required className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors"/></div>
+                <div className="flex flex-col gap-1.5"><label htmlFor="postal-code" className="text-xs font-medium text-foreground/60 uppercase tracking-wider">Postal code</label><input id="postal-code" name="postalCode" type="text" autoComplete="postal-code" value={form.postalCode} onChange={set('postalCode')} required className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-colors"/></div>
               </div>
 
               {/* Password */}
@@ -281,7 +281,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
                   <input
-                    id="reg-password" type={showPw ? 'text' : 'password'} autoComplete="new-password"
+                    id="reg-password" name="password" type={showPw ? 'text' : 'password'} autoComplete="new-password" required minLength={8}
                     value={form.password} onChange={set('password')} placeholder="Min. 8 characters"
                     className="w-full pl-10 pr-11 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm placeholder:text-foreground/25 focus:outline-none focus:border-primary/50 transition-colors"
                   />
@@ -299,7 +299,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/30" />
                   <input
-                    id="confirm" type={showConfirm ? 'text' : 'password'} autoComplete="new-password"
+                    id="confirm" name="confirmPassword" type={showConfirm ? 'text' : 'password'} autoComplete="new-password" required minLength={8}
                     value={form.confirm} onChange={set('confirm')} placeholder="Repeat password"
                     className="w-full pl-10 pr-11 py-3 rounded-xl bg-white/5 border border-white/10 text-foreground text-sm placeholder:text-foreground/25 focus:outline-none focus:border-primary/50 transition-colors"
                   />
@@ -332,6 +332,7 @@ export default function RegisterPage() {
               <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-3 text-xs text-foreground/45">
                 <input
                   type="checkbox"
+                  name="legalAccepted"
                   checked={legalAccepted}
                   onChange={event => setLegalAccepted(event.target.checked)}
                   className="mt-0.5 h-4 w-4 accent-[#C9A84C]"

@@ -98,7 +98,7 @@ export default function ProfilePage() {
               <div className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Camera size={14} className="text-white" />
               </div>
-              <input type="file" accept="image/*" className="hidden"
+              <input name="profilePhoto" type="file" accept="image/*" className="hidden"
                 onChange={async e => {
                   const file = e.target.files?.[0];
                   if (!file || !token) return;
@@ -150,32 +150,32 @@ export default function ProfilePage() {
                 </div>
               )}
               <div>
-                <label className="text-xs text-foreground/40 mb-1.5 block">Full Name</label>
+                <label htmlFor="profile-name" className="text-xs text-foreground/40 mb-1.5 block">Full Name</label>
                 <div className="relative">
                   <User size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/25" />
-                  <input className={`${inputCls} pl-9`} value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" />
+                  <input id="profile-name" name="name" autoComplete="name" required className={`${inputCls} pl-9`} value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" />
                 </div>
               </div>
               <div>
-                <label className="text-xs text-foreground/40 mb-1.5 block">Email Address</label>
+                <label htmlFor="profile-email" className="text-xs text-foreground/40 mb-1.5 block">Email Address</label>
                 <div className="relative">
                   <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/25" />
-                  <input className={`${inputCls} pl-9 opacity-50 cursor-not-allowed`} value={customer.email} disabled />
+                  <input id="profile-email" name="email" type="email" autoComplete="email" className={`${inputCls} pl-9 opacity-50 cursor-not-allowed`} value={customer.email} disabled />
                 </div>
                 <p className="text-[10px] text-foreground/25 mt-1">Email cannot be changed. Contact support if needed.</p>
               </div>
               <div>
-                <label className="text-xs text-foreground/40 mb-1.5 block">Phone Number</label>
+                <label htmlFor="profile-phone" className="text-xs text-foreground/40 mb-1.5 block">Phone Number</label>
                 <div className="relative">
                   <Phone size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/25" />
-                  <input className={`${inputCls} pl-9`} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 234 567 8900" />
+                  <input id="profile-phone" name="phone" type="tel" autoComplete="tel" className={`${inputCls} pl-9`} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 234 567 8900" />
                 </div>
               </div>
               <div>
-                <label className="text-xs text-foreground/40 mb-1.5 block">Address</label>
+                <label htmlFor="profile-address" className="text-xs text-foreground/40 mb-1.5 block">Address</label>
                 <div className="relative">
                   <MapPin size={13} className="absolute left-3.5 top-3.5 text-foreground/25" />
-                  <textarea className={`${inputCls} pl-9 resize-none`} rows={2} value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" />
+                  <textarea id="profile-address" name="address" autoComplete="street-address" className={`${inputCls} pl-9 resize-none`} rows={2} value={address} onChange={e => setAddress(e.target.value)} placeholder="Your address" />
                 </div>
               </div>
               <button onClick={handleSave} disabled={saving}

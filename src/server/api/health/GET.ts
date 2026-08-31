@@ -3,14 +3,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { isDatabaseConfigured, testConnection } from '../../db/db.js';
 import { mediaAssetRoot, privateDataRoot } from '../../lib/storagePaths.js';
+import { buildCoreHealthComponents, deriveOverallHealth } from '../../lib/healthStatus.js';
 
 // Directories and files that must be accessible for the app to function
 const CRITICAL_DIRS = [
-  `${privateDataRoot}/users`,
-  `${privateDataRoot}/admin`,
-  `${privateDataRoot}/contacts`,
-  `${privateDataRoot}/accounts`,
-  mediaAssetRoot,
+  { key: 'customers', path: `${privateDataRoot}/users` },
+  { key: 'administration', path: `${privateDataRoot}/admin` },
+  { key: 'contacts', path: `${privateDataRoot}/contacts` },
+  { key: 'accounts', path: `${privateDataRoot}/accounts` },
+  { key: 'media', path: mediaAssetRoot },
 ];
 
 function checkDir(dir: string): 'ok' | 'error' {
@@ -34,8 +35,8 @@ export default async function handler(_req: Request, res: Response) {
 
   // Storage checks (flat-file fallback)
   const storage: Record<string, 'ok' | 'error'> = {};
-  for (const dir of CRITICAL_DIRS) {
-    storage[dir] = checkDir(dir);
+  for (const directory of CRITICAL_DIRS) {
+    storage[directory.key] = checkDir(directory.path);
   }
 
   // Database check
@@ -50,18 +51,35 @@ export default async function handler(_req: Request, res: Response) {
 
   // Derived service health
   const services = {
-    userStore:    dbStatus === 'ok' ? 'ok' : (storage[`${privateDataRoot}/users`] === 'ok' ? 'ok' : 'error'),
-    adminStore:   dbStatus === 'ok' ? 'ok' : (storage[`${privateDataRoot}/admin`] === 'ok' ? 'ok' : 'error'),
-    contactStore: storage[`${privateDataRoot}/contacts`] === 'ok' ? 'ok' : 'error',
-    accountStore: storage[`${privateDataRoot}/accounts`] === 'ok' ? 'ok' : 'error',
-    publicAssets: storage[mediaAssetRoot] === 'ok' ? 'ok' : 'error',
-    sessionStore: dbStatus === 'ok' ? 'ok' : (storage[`${privateDataRoot}/admin`] === 'ok' ? 'ok' : 'error'),
-    auditLog:     dbStatus === 'ok' ? 'ok' : (storage[`${privateDataRoot}/admin`] === 'ok' ? 'ok' : 'error'),
+    userStore:    dbStatus === 'ok' ? 'ok' : (storage.customers === 'ok' ? 'ok' : 'error'),
+    adminStore:   dbStatus === 'ok' ? 'ok' : (storage.administration === 'ok' ? 'ok' : 'error'),
+    contactStore: storage.contacts === 'ok' ? 'ok' : 'error',
+    accountStore: storage.accounts === 'ok' ? 'ok' : 'error',
+    publicAssets: storage.media === 'ok' ? 'ok' : 'error',
+    sessionStore: dbStatus === 'ok' ? 'ok' : (storage.administration === 'ok' ? 'ok' : 'error'),
+    auditLog:     dbStatus === 'ok' ? 'ok' : (storage.administration === 'ok' ? 'ok' : 'error'),
     database:     dbStatus,
   };
 
-  const allOk = Object.values(services).every(v => v === 'ok' || v === 'not_configured');
-  const status = allOk ? 'ok' : 'degraded';
+  const storageOk = Object.values(storage).every(value => value === 'ok');
+  const production = process.env.NODE_ENV === 'production';
+  const components = buildCoreHealthComponents({
+    databaseHealthy: dbStatus === 'ok',
+    databaseConfigured: dbStatus !== 'not_configured',
+    databaseRequired: production,
+    databaseDetail: dbStatus === 'ok'
+      ? `PostgreSQL responded in ${dbLatencyMs ?? 0}ms.`
+      : dbStatus === 'not_configured' && !production
+        ? 'PostgreSQL is not configured; the local storage fallback is active.'
+        : 'PostgreSQL is unavailable.',
+    storageHealthy: storageOk,
+    storageDetail: storageOk ? 'Required runtime storage is accessible.' : 'Required runtime storage is unavailable.',
+    sessionsHealthy: services.sessionStore === 'ok',
+    sessionsDetail: services.sessionStore === 'ok' ? 'Session persistence is available.' : 'Session persistence is unavailable.',
+  });
+  const overall = deriveOverallHealth(components);
+  const allOk = overall !== 'degraded';
+  const status = overall === 'healthy' ? 'ok' : overall;
 
   res.status(allOk ? 200 : 503).json({
     status,
@@ -72,6 +90,7 @@ export default async function handler(_req: Request, res: Response) {
       branch: process.env.RENDER_GIT_BRANCH ?? 'local',
     },
     environment: process.env.NODE_ENV ?? 'development',
+    components,
     uptime: {
       seconds: Math.floor(uptime),
       human:   `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`,
