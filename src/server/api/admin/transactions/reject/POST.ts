@@ -6,14 +6,17 @@
 import type { Request, Response } from 'express';
 import { findTransactionById, updateTransaction } from '../../../../lib/transactionStore.js';
 import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
+import { authorizeRecentAdminStepUp } from '../../../../lib/rbacMiddleware.js';
+import { sanitizeNote } from '../../../../lib/inputValidator.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
   const txId = req.body?.txId ?? req.body?.transactionId;
-  const reason = req.body?.reason ?? '';
+  const reason = sanitizeNote(req.body?.reason ?? '');
 
   if (!txId)   return res.status(400).json({ success: false, error: 'txId is required' });
-  if (!reason) return res.status(400).json({ success: false, error: 'reason is required' });
+  if (reason.length < 10) return res.status(400).json({ success: false, error: 'A rejection reason of at least 10 characters is required.' });
+  if (!authorizeRecentAdminStepUp(req, res)) return;
 
   const tx = await findTransactionById(txId);
   if (!tx) return res.status(404).json({ success: false, error: 'Transaction not found' });

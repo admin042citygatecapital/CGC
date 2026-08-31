@@ -159,24 +159,27 @@ function ModalShell({ title, onClose, children, icon: Icon, iconColor = '#C9A84C
 // ─────────────────────────────────────────────────────────────────────────────
 function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', country: '', password: '',
-    status: 'active', kycStatus: 'not_submitted', accountTier: 'personal',
-    primaryCurrency: 'USD', balance: '0',
+    name: '', email: '', phone: '', country: '', password: '', address: '', city: '', postalCode: '',
+    requestedProduct: 'personal-account', reason: '', confirmed: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm(f => ({ ...f, [k]: e.target.value }));
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }));
 
   async function submit() {
-    if (!form.name || !form.email || !form.password) { setError('Name, email and password are required'); return; }
-    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (!form.name || !form.email || !form.password) { setError('Name, email and temporary password are required'); return; }
+    if (!form.phone || !form.country || !form.address || !form.city || !form.postalCode) { setError('Complete the customer contact and address fields.'); return; }
+    if (form.password.length < 12 || !/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password) || !/\d/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password)) {
+      setError('Temporary password must be at least 12 characters and include uppercase, lowercase, number and special characters'); return;
+    }
+    if (form.reason.trim().length < 10 || !form.confirmed) { setError('A reason and explicit confirmation are required.'); return; }
     setLoading(true); setError('');
     const res = await fetch('/api/admin/users/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ ...form, balance: parseFloat(form.balance) || 0 }),
+      body: JSON.stringify(form),
     });
     const d = await res.json();
     setLoading(false);
@@ -189,7 +192,7 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void; onSu
   const selectCls = 'w-full bg-[#111] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40';
 
   return (
-    <ModalShell title="Create Customer Account" onClose={onClose} icon={Plus} iconColor="#10B981" width="max-w-2xl">
+    <ModalShell title="Create Customer Registration" onClose={onClose} icon={Plus} iconColor="#10B981" width="max-w-2xl">
       {error && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">
           <AlertTriangle size={13} /> {error}
@@ -197,67 +200,55 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void; onSu
       )}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Full Name *</label>
-          <input value={form.name} onChange={set('name')} placeholder="John Doe" className={inputCls} />
+          <label htmlFor="create-customer-name" className={labelCls}>Full Name *</label>
+          <input id="create-customer-name" name="name" required autoComplete="name" value={form.name} onChange={set('name')} placeholder="Customer name" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Email Address *</label>
-          <input type="email" value={form.email} onChange={set('email')} placeholder="john@example.com" className={inputCls} />
+          <label htmlFor="create-customer-email" className={labelCls}>Email Address *</label>
+          <input id="create-customer-email" name="email" required autoComplete="email" type="email" value={form.email} onChange={set('email')} placeholder="customer@example.com" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Password *</label>
-          <input type="password" value={form.password} onChange={set('password')} placeholder="Min. 8 characters" className={inputCls} />
+          <label htmlFor="create-customer-password" className={labelCls}>Temporary Password *</label>
+          <input id="create-customer-password" name="new-password" required minLength={12} autoComplete="new-password" type="password" value={form.password} onChange={set('password')} placeholder="12+ characters with mixed character types" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Phone</label>
-          <input value={form.phone} onChange={set('phone')} placeholder="+1 555 000 0000" className={inputCls} />
+          <label htmlFor="create-customer-phone" className={labelCls}>Phone *</label>
+          <input id="create-customer-phone" name="phone" required autoComplete="tel" value={form.phone} onChange={set('phone')} placeholder="+1 555 000 0000" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Country</label>
-          <input value={form.country} onChange={set('country')} placeholder="United States" className={inputCls} />
+          <label htmlFor="create-customer-country" className={labelCls}>Country *</label>
+          <input id="create-customer-country" name="country" required autoComplete="country-name" value={form.country} onChange={set('country')} placeholder="Country" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Initial Balance (USD)</label>
-          <input type="number" value={form.balance} onChange={set('balance')} placeholder="0.00" className={inputCls} />
+          <label htmlFor="create-customer-address" className={labelCls}>Address *</label>
+          <input id="create-customer-address" name="street-address" required autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="Street address" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Account Status</label>
-          <select value={form.status} onChange={set('status')} className={selectCls}>
-            <option value="active">Active</option>
-            <option value="pending_kyc">Pending KYC</option>
-            <option value="pending_approval">Pending Approval</option>
-            <option value="suspended">Suspended</option>
+          <label htmlFor="create-customer-city" className={labelCls}>City *</label>
+          <input id="create-customer-city" name="address-level2" required autoComplete="address-level2" value={form.city} onChange={set('city')} placeholder="City" className={inputCls} />
+        </div>
+        <div>
+          <label htmlFor="create-customer-postal" className={labelCls}>Postal Code *</label>
+          <input id="create-customer-postal" name="postal-code" required autoComplete="postal-code" value={form.postalCode} onChange={set('postalCode')} placeholder="Postal code" className={inputCls} />
+        </div>
+        <div>
+          <label htmlFor="create-customer-product" className={labelCls}>Requested Service</label>
+          <select id="create-customer-product" name="requestedProduct" value={form.requestedProduct} onChange={set('requestedProduct')} className={selectCls}>
+            <option value="personal-account">Personal Account</option>
+            <option value="savings-account">Savings Account</option>
+            <option value="business-account">Business Account</option>
+            <option value="multi-currency-wallet">Multi-Currency Service Wallet</option>
           </select>
         </div>
-        <div>
-          <label className={labelCls}>KYC Status</label>
-          <select value={form.kycStatus} onChange={set('kycStatus')} className={selectCls}>
-            <option value="not_submitted">Not Submitted</option>
-            <option value="submitted">Submitted</option>
-            <option value="approved">Approved</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelCls}>Account Tier</label>
-          <select value={form.accountTier} onChange={set('accountTier')} className={selectCls}>
-            <option value="personal">Personal</option>
-            <option value="savings">Savings</option>
-            <option value="business">Business</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelCls}>Primary Currency</label>
-          <select value={form.primaryCurrency} onChange={set('primaryCurrency')} className={selectCls}>
-            {['USD','EUR','GBP','CHF','CAD','AUD','SGD','AED','NGN'].map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
+        <div className="col-span-2"><label htmlFor="create-customer-reason" className={labelCls}>Administration Reason *</label><textarea id="create-customer-reason" name="reason" required minLength={10} maxLength={500} rows={2} value={form.reason} onChange={set('reason')} placeholder="Explain why this registration is being created." className={`${inputCls} resize-none`} /></div>
+        <label className="col-span-2 flex items-start gap-2 rounded-xl border border-white/8 bg-white/[0.03] p-3 text-xs text-white/50"><input type="checkbox" name="confirmed" checked={form.confirmed} onChange={set('confirmed')} className="mt-0.5 accent-emerald-400" /><span>I confirm this creates a pending registration record only. Email verification, identity review, compliance approval, and service availability remain required.</span></label>
       </div>
       <div className="flex gap-3 mt-6">
         <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/8 text-white/50 text-sm hover:bg-white/[0.04]">Cancel</button>
-        <button onClick={submit} disabled={loading}
+        <button onClick={submit} disabled={loading || !form.confirmed || form.reason.trim().length < 10}
           className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/30 flex items-center justify-center gap-2 disabled:opacity-50">
           {loading ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-          Create Account
+          Create Registration
         </button>
       </div>
     </ModalShell>
@@ -1018,7 +1009,7 @@ export default function AdminUsers() {
             <button onClick={() => setCreateOpen(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
               style={{ background: 'linear-gradient(135deg,#C9A84C,#F0D080)', color: '#000' }}>
-              <Plus size={14} /> Create Customer
+              <Plus size={14} /> Create Registration
             </button>
           </div>
         </div>
@@ -1179,7 +1170,7 @@ export default function AdminUsers() {
           {createOpen && (
             <CreateCustomerModal
               onClose={() => setCreateOpen(false)}
-              onSuccess={() => { showToast('Customer account created'); fetchUsers(); }}
+              onSuccess={() => { showToast('Customer registration created'); fetchUsers(); }}
             />
           )}
         </AnimatePresence>

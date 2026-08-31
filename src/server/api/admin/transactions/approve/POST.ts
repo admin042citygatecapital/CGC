@@ -10,9 +10,11 @@ import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
 import { findUserById } from '../../../../lib/userStore.js';
 import { sanitizeNote } from '../../../../lib/inputValidator.js';
 import { requireFinancialOperations } from '../../../../lib/platformMode.js';
+import { authorizeRecentAdminStepUp } from '../../../../lib/rbacMiddleware.js';
 
 export default async function handler(req: Request, res: Response) {
   if (!requireFinancialOperations(res)) return;
+  if (!authorizeRecentAdminStepUp(req, res)) return;
   const session = req.adminSession!;
   const txId = req.body?.txId ?? req.body?.transactionId;
   const note = sanitizeNote(req.body?.note ?? '');

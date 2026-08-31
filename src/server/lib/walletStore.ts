@@ -23,12 +23,12 @@ export interface WalletAddress {
 }
 
 const DEFAULTS: WalletAddress[] = [
-  { id: 'btc',        symbol: 'BTC',  name: 'Bitcoin',          network: 'Bitcoin Network', address: '', minDeposit: 0.0001, confirmations: 3,  enabled: true, updatedAt: new Date().toISOString() },
-  { id: 'eth',        symbol: 'ETH',  name: 'Ethereum',         network: 'ERC-20',          address: '', minDeposit: 0.01,   confirmations: 12, enabled: true, updatedAt: new Date().toISOString() },
-  { id: 'usdt_erc20', symbol: 'USDT', name: 'Tether (ERC-20)',  network: 'ERC-20',          address: '', minDeposit: 10,     confirmations: 12, enabled: true, updatedAt: new Date().toISOString() },
-  { id: 'usdt_trc20', symbol: 'USDT', name: 'Tether (TRC-20)',  network: 'TRC-20',          address: '', minDeposit: 10,     confirmations: 20, enabled: true, updatedAt: new Date().toISOString() },
-  { id: 'bnb',        symbol: 'BNB',  name: 'BNB',              network: 'BEP-20',          address: '', minDeposit: 0.01,   confirmations: 15, enabled: true, updatedAt: new Date().toISOString() },
-  { id: 'sol',        symbol: 'SOL',  name: 'Solana',           network: 'Solana Network',  address: '', minDeposit: 0.1,    confirmations: 32, enabled: true, updatedAt: new Date().toISOString() },
+  { id: 'btc',        symbol: 'BTC',  name: 'Bitcoin',          network: 'Bitcoin Network', address: '', minDeposit: 0.0001, confirmations: 3,  enabled: false, updatedAt: new Date().toISOString() },
+  { id: 'eth',        symbol: 'ETH',  name: 'Ethereum',         network: 'ERC-20',          address: '', minDeposit: 0.01,   confirmations: 12, enabled: false, updatedAt: new Date().toISOString() },
+  { id: 'usdt_erc20', symbol: 'USDT', name: 'Tether (ERC-20)',  network: 'ERC-20',          address: '', minDeposit: 10,     confirmations: 12, enabled: false, updatedAt: new Date().toISOString() },
+  { id: 'usdt_trc20', symbol: 'USDT', name: 'Tether (TRC-20)',  network: 'TRC-20',          address: '', minDeposit: 10,     confirmations: 20, enabled: false, updatedAt: new Date().toISOString() },
+  { id: 'bnb',        symbol: 'BNB',  name: 'BNB',              network: 'BEP-20',          address: '', minDeposit: 0.01,   confirmations: 15, enabled: false, updatedAt: new Date().toISOString() },
+  { id: 'sol',        symbol: 'SOL',  name: 'Solana',           network: 'Solana Network',  address: '', minDeposit: 0.1,    confirmations: 32, enabled: false, updatedAt: new Date().toISOString() },
 ];
 
 function toWallet(r: Wallet): WalletAddress {

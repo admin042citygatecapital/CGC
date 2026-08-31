@@ -1,57 +1,87 @@
 /**
  * POST /api/admin/users/create
- * Super Admin creates a new customer account directly.
+ * SUPER_ADMIN creates a pending customer registration record that must still
+ * complete email verification, onboarding, and compliance review.
  */
 import type { Request, Response } from 'express';
 import { hashPassword } from '../../../../lib/passwordHash.js';
-import { createUser, findUserByEmail } from '../../../../lib/userStore.js';
+import { createUserWithRegistrationCase, findUserByEmail, generateVerifyToken } from '../../../../lib/userStore.js';
 import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
-import { requireFinancialOperations } from '../../../../lib/platformMode.js';
-import { authorizeAdminRole } from '../../../../lib/rbacMiddleware.js';
+import { authorizeAdminRole, authorizeRecentAdminStepUp } from '../../../../lib/rbacMiddleware.js';
+import { isValidEmail, sanitizeNote, sanitizeString, validatePassword } from '../../../../lib/inputValidator.js';
+import { sendVerificationEmail } from '../../../../lib/emailService.js';
+import { getProductBySlug } from '../../../../../lib/productCatalogue.js';
 
 export default async function handler(req: Request, res: Response) {
   if (!authorizeAdminRole(req, res, 'SUPER_ADMIN')) return;
   const session = req.adminSession!;
   const {
-    name, email, phone, country, password,
-    status = 'active',
-    kycStatus = 'not_submitted',
-    accountTier = 'personal',
-    primaryCurrency = 'USD',
-    balance = 0,
-  } = req.body as Record<string, string | number>;
+    name: rawName, email: rawEmail, phone: rawPhone, country: rawCountry, password,
+    address: rawAddress, city: rawCity, postalCode: rawPostalCode,
+    requestedProduct, reason, confirmed,
+  } = req.body as Record<string, unknown>;
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: 'name, email and password are required' });
+  const name = sanitizeString(rawName);
+  const email = sanitizeString(rawEmail).toLowerCase();
+  const phone = sanitizeString(rawPhone);
+  const country = sanitizeString(rawCountry);
+  const address = sanitizeString(rawAddress);
+  const city = sanitizeString(rawCity);
+  const postalCode = sanitizeString(rawPostalCode);
+  const safeReason = sanitizeNote(reason);
+  const product = getProductBySlug(requestedProduct);
+
+  if (!name || !email || typeof password !== 'string') {
+    return res.status(400).json({ error: 'Name, email and temporary password are required.' });
   }
-  if (Number(balance) !== 0 && !requireFinancialOperations(res)) return;
+  if (!phone || !country || !address || !city || !postalCode) {
+    return res.status(400).json({ error: 'Phone, country, address, city and postal code are required.' });
+  }
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.ok) return res.status(400).json({ error: passwordCheck.reason });
+  if (!product) return res.status(400).json({ error: 'Select a valid registration product.' });
+  if (confirmed !== true) return res.status(400).json({ error: 'Explicit confirmation is required.' });
+  if (safeReason.length < 10) return res.status(400).json({ error: 'An administration reason of at least 10 characters is required.' });
+  if (!authorizeRecentAdminStepUp(req, res)) return;
 
-  const existing = await findUserByEmail(String(email));
+  const existing = await findUserByEmail(email);
   if (existing) return res.status(409).json({ error: 'Email already registered' });
 
-  const passwordHash = await hashPassword(String(password));
+  const passwordHash = await hashPassword(password);
+  const { token, expiry } = generateVerifyToken();
 
   await appendCriticalAudit({
     event: 'admin_user_create_intent',
     adminId: session.adminId,
     email: session.email,
     ip: req.ip,
-    meta: { targetEmail: String(email).toLowerCase().trim(), status, kycStatus, accountTier },
+    reason: safeReason,
+    meta: { targetEmail: email, requestedProduct: product.slug, accountTier: product.accountTier },
   });
 
-  const user = await createUser({
-    name: String(name),
-    email: String(email).toLowerCase().trim(),
-    phone: phone ? String(phone) : undefined,
-    country: country ? String(country) : undefined,
+  const created = await createUserWithRegistrationCase({
+    name,
+    email,
+    phone,
+    country,
+    address,
+    city,
+    postalCode,
     passwordHash,
-    status: status as never,
-    kycStatus: kycStatus as never,
-    emailVerified: true,   // admin-created accounts skip email verification
-    accountTier: (accountTier as 'personal' | 'savings' | 'business') ?? 'personal',
-    primaryCurrency: String(primaryCurrency),
-    balance: Number(balance) || 0,
-  });
+    status: 'pending_verification',
+    kycStatus: 'not_submitted',
+    emailVerified: false,
+    emailVerifyToken: token,
+    emailVerifyExpiry: expiry,
+    accountTier: product.accountTier,
+    requestedProduct: product.slug,
+    ip: req.ip ?? 'unknown',
+  }, product.accountTier === 'business' ? 'business' : 'individual');
+  const { user, applicationReference } = created;
+
+  const siteUrl = (process.env.PUBLIC_URL || process.env.SITE_URL || `${req.protocol}://${req.hostname}`).replace(/\/+$/, '');
+  await sendVerificationEmail(user.email, user.name, token, siteUrl);
 
   appendAudit({
     event: 'admin_user_created',
@@ -59,8 +89,14 @@ export default async function handler(req: Request, res: Response) {
     userId: user.id,
     email: user.email,
     ip: req.ip,
-    meta: { name: user.name, status, kycStatus, accountTier },
+    reason: safeReason,
+    meta: { name: user.name, status: user.status, kycStatus: user.kycStatus, accountTier: user.accountTier, requestedProduct: product.slug, applicationReference },
   });
 
-  return res.status(201).json({ ok: true, userId: user.id, message: `Account created for ${user.name}` });
+  return res.status(201).json({
+    ok: true,
+    userId: user.id,
+    applicationReference,
+    message: `Registration record created for ${user.name}. Email verification is required.`,
+  });
 }

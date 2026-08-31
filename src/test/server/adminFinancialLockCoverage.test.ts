@@ -4,20 +4,38 @@ import { LIVE_PROVIDER_ADAPTERS_IMPLEMENTED } from '../../server/lib/platformMod
 
 const GUARDED_ADMIN_MUTATIONS = [
   'src/server/api/admin/transactions/approve/POST.ts',
-  'src/server/api/admin/transactions/create/POST.ts',
   'src/server/api/admin/wallets/PATCH.ts',
-  'src/server/api/admin/users/create/POST.ts',
   'src/server/api/admin/users/edit/POST.ts',
 ] as const;
 
 describe('production admin financial lock coverage', () => {
-  it('guards every administrator path that can create balances, completed transactions or deposit identifiers', () => {
+  it('guards every administrator path that can activate money movement or customer-facing deposit identifiers', () => {
     for (const file of GUARDED_ADMIN_MUTATIONS) {
       const source = readFileSync(file, 'utf8');
       expect(source, file).toContain("import { requireFinancialOperations }");
       expect(source, file).toContain('requireFinancialOperations(res)');
     }
     expect(LIVE_PROVIDER_ADAPTERS_IMPLEMENTED).toBe(false);
+  });
+
+  it('allows only pending transfer instructions while keeping execution provider-gated', () => {
+    const route = readFileSync('src/server/api/admin/transactions/create/POST.ts', 'utf8');
+    expect(route).toContain('isPendingTransferInstruction');
+    expect(route).toContain("safeStatus === 'pending'");
+    expect(route).toContain('!isPendingTransferInstruction && !requireFinancialOperations(res)');
+    expect(route).toContain("executionState: isPendingTransferInstruction ? 'provider_gated' : 'recorded'");
+    expect(route).toContain('requireIdempotency');
+    expect(route).toContain('authorizeRecentAdminStepUp');
+  });
+
+  it('creates customer registrations without activating financial services or bypassing verification', () => {
+    const route = readFileSync('src/server/api/admin/users/create/POST.ts', 'utf8');
+    expect(route).toContain('createUserWithRegistrationCase');
+    expect(route).toContain("status: 'pending_verification'");
+    expect(route).toContain('emailVerified: false');
+    expect(route).toContain('sendVerificationEmail');
+    expect(route).not.toContain('initialBalance');
+    expect(route).not.toContain('requireFinancialOperations');
   });
 
   it('posts controlled balance adjustments through the isolated double-entry ledger', () => {
@@ -53,8 +71,9 @@ describe('production admin financial lock coverage', () => {
     expect(page).toContain('Persistent demonstration register');
     expect(page).toContain('/api/admin/transactions/edit');
     expect(page).toContain('Financial fields are deliberately immutable');
-    expect(page).not.toContain('/api/admin/transactions/create');
-    expect(page).not.toContain('Create Transaction');
+    expect(page).toContain('/api/admin/transactions/create');
+    expect(page).toContain('Create transfer instruction');
+    expect(page).toContain('does not move or reserve money');
 
     const editRoute = readFileSync('src/server/api/admin/transactions/edit/POST.ts', 'utf8');
     expect(editRoute).toContain('IMMUTABLE_TRANSACTION_FIELDS');
