@@ -5,8 +5,9 @@
  */
 import type { Request, Response } from 'express';
 import { hashPassword } from '../../../../lib/passwordHash.js';
-import { findUserById, updateUser } from '../../../../lib/userStore.js';
+import { findUserById } from '../../../../lib/userStore.js';
 import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
+import { rotateCustomerPasswordCredential } from '../../../../lib/customerCredentialRotation.js';
 
 export default async function handler(req: Request, res: Response) {
   const session = req.adminSession!;
@@ -26,14 +27,10 @@ export default async function handler(req: Request, res: Response) {
 
   await appendCriticalAudit({ event: 'admin_user_password_reset_intent', adminId: session.adminId, userId,
     email: session.email, ip: req.ip, meta: { targetEmail: user.email } });
-  await updateUser(userId, {
+  const rotation = await rotateCustomerPasswordCredential({
+    userId,
     passwordHash,
-    // Invalidate any active session
-    sessionToken:      undefined,
-    sessionCreatedAt:  undefined,
-    sessionLastSeenAt: undefined,
-    sessionExpiresAt:  undefined,
-    loginAttempts: 0,
+    expectedCredentialVersion: user.credentialVersion,
   });
 
   appendAudit({
@@ -42,6 +39,10 @@ export default async function handler(req: Request, res: Response) {
     userId,
     email: user.email,
     ip: req.ip,
+    meta: {
+      credentialVersion: rotation.credentialVersion,
+      revokedSessions: rotation.revokedSessions,
+    },
   });
 
   return res.json({ ok: true, message: `Password reset for ${user.name}. Active session invalidated.` });
