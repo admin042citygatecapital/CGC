@@ -448,9 +448,13 @@ export async function updateUser(id: string, patch: UserUpdatePatch): Promise<Us
   if (safe.beneficiaries !== undefined)      dbPatch.beneficiaries      = safe.beneficiaries ?? null;
   if (safe.trustedDevices !== undefined)     dbPatch.trustedDevices     = safe.trustedDevices ?? null;
 
-  dbPatch.updatedAt = new Date();
-
-  const rows = await db.update(users).set(dbPatch).where(eq(users.id, id)).returning();
+  // Let PostgreSQL assign the timestamp. With postgres.js running in
+  // prepare:false mode, passing a JavaScript Date through this update path can
+  // reach the raw serializer and fail before the statement is executed.
+  const rows = await db.update(users)
+    .set({ ...dbPatch, updatedAt: drizzleSql`now()` })
+    .where(eq(users.id, id))
+    .returning();
   return rows[0] ? toRecord(rows[0]) : null;
 }
 
@@ -481,7 +485,7 @@ export async function upgradeCustomerPasswordHash(
     return Boolean(ff.updateUser(userId, { passwordHash: upgradedHash }));
   }
   const updated = await getDb().update(users)
-    .set({ passwordHash: upgradedHash, updatedAt: new Date() })
+    .set({ passwordHash: upgradedHash, updatedAt: drizzleSql`now()` })
     .where(and(eq(users.id, userId), eq(users.passwordHash, expectedOldHash)))
     .returning({ id: users.id });
   return updated.length === 1;

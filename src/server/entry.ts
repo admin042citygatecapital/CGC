@@ -8,7 +8,8 @@ import { readFileSync } from "node:fs";
 import { securityHeaders, enforceHttps, removeFingerprinting, requestSizeGuard, apiCacheHeaders } from "./lib/securityMiddleware";
 import { pathHardeningMiddleware } from "./lib/pathHardeningMiddleware";
 import { rateLimitMiddleware } from "./lib/rateLimiter";
-import { httpLogger } from "./lib/httpLogger";
+import { httpLogger, redactHttpLogUrl } from "./lib/httpLogger";
+import { safeApiErrorDetails } from "./lib/apiErrorLog";
 import { isSystemHost } from "./seo-host";
 import cookieParser from "cookie-parser";
 import compression from "compression";
@@ -1017,8 +1018,8 @@ app.use("/api", (err: unknown, req: Request, res: Response, _next: NextFunction)
 	// Avoid using req.method as a dynamic lookup key (scanner: object injection).
 	// Log the URL only; method is not needed for error diagnosis.
 	console.error("ssr.api.error", {
-		url: req.url,
-		error: err instanceof Error ? err.stack : String(err),
+		url: redactHttpLogUrl(req.url),
+		...safeApiErrorDetails(err),
 	});
 	// Never leak stack traces or internal details to clients in production
 	if (!res.headersSent) {
