@@ -66,6 +66,55 @@ export async function refreshAdminCsrfToken(): Promise<string | null> {
   }
 }
 
+function isAdminCsrfFailure(response: Response, body: unknown): boolean {
+  if (response.status !== 403 || !body || typeof body !== 'object') return false;
+  const error = 'error' in body ? (body as { error?: unknown }).error : undefined;
+  return typeof error === 'string' && (
+    error === 'CSRF token missing'
+    || error === 'CSRF token invalid or expired'
+  );
+}
+
+/**
+ * Fetch an administrator API with the current double-submit CSRF token.
+ *
+ * Administrator sessions outlive CSRF cookies. A state-changing request that
+ * fails specifically because its CSRF pair is missing or stale refreshes the
+ * pair and is retried once. Ordinary 403 permission denials are never retried.
+ */
+export async function adminFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  const method = (init.method ?? 'GET').toUpperCase();
+  const stateChanging = !['GET', 'HEAD', 'OPTIONS'].includes(method);
+
+  if (stateChanging && !csrfToken) await refreshAdminCsrfToken();
+
+  const request = () => {
+    const headers = new Headers(init.headers);
+    if (stateChanging && csrfToken) headers.set('X-CSRF-Token', csrfToken);
+    return fetch(input, {
+      ...init,
+      credentials: init.credentials ?? 'same-origin',
+      headers,
+    });
+  };
+
+  let response = await request();
+  if (!stateChanging || response.status !== 403) return response;
+
+  let body: unknown;
+  try {
+    body = await response.clone().json();
+  } catch {
+    return response;
+  }
+  if (!isAdminCsrfFailure(response, body)) return response;
+
+  const refreshed = await refreshAdminCsrfToken();
+  if (!refreshed) return response;
+  response = await request();
+  return response;
+}
+
 /**
  * Revoke the cookie-backed administrator session. A CSRF token has a shorter
  * lifetime than the administrator session, so a stale token is refreshed once
@@ -73,21 +122,8 @@ export async function refreshAdminCsrfToken(): Promise<string | null> {
  * authentication state unless this returns true.
  */
 export async function revokeAdminSession(): Promise<boolean> {
-  async function requestLogout(): Promise<Response> {
-    return fetch('/api/admin/auth/logout', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: authHeaders(),
-    });
-  }
-
   try {
-    let response = await requestLogout();
-    if (response.status === 403) {
-      const refreshed = await refreshAdminCsrfToken();
-      if (!refreshed) return false;
-      response = await requestLogout();
-    }
+    const response = await adminFetch('/api/admin/auth/logout', { method: 'POST' });
     return response.ok;
   } catch {
     return false;

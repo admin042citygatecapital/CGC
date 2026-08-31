@@ -4,7 +4,7 @@
  *          Login History · Audit Logs · Security Alerts · IP Restrictions · Rate Limits
  */
 import AdminLayout from '@/layouts/AdminLayout';
-import { authHeaders,useAdminAuth } from '@/lib/adminAuth';
+import { adminFetch,useAdminAuth } from '@/lib/adminAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
 Activity,
@@ -209,10 +209,10 @@ export default function SecurityCenter() {
   const [tab, setTab] = useState<Tab>('2fa');
   const [loading, setLoading] = useState(false);
 
-  const ah = useCallback(() => ({ 'Content-Type': 'application/json', ...authHeaders() }), []);
-
   async function api<T>(url: string, opts?: RequestInit): Promise<T> {
-    const res = await fetch(url, { credentials: 'same-origin', headers: ah(), ...opts });
+    const headers = new Headers(opts?.headers);
+    headers.set('Content-Type', 'application/json');
+    const res = await adminFetch(url, { ...opts, headers });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json() as Promise<T>;
   }
@@ -725,7 +725,7 @@ export default function SecurityCenter() {
                   if (confirm('Terminate ALL admin sessions? You will be logged out.')) {
                     const reason = prompt('Security reason for revoking all other administrator sessions:')?.trim();
                     if (!reason || reason.length < 8) return;
-                    fetch('/api/admin/security/sessions', { method: 'DELETE', headers: ah(), body: JSON.stringify({ all: true, reason, confirmation: 'CONFIRM SESSION REVOCATION' }) })
+                    adminFetch('/api/admin/security/sessions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ all: true, reason, confirmation: 'CONFIRM SESSION REVOCATION' }) })
                       .then(response => { if (response.ok) setSessions([]); });
                   }
                 }} className="text-red-400/70 hover:text-red-400 text-xs flex items-center gap-1.5 transition-colors">

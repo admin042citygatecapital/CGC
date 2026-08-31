@@ -10,7 +10,7 @@
  *  - Compliance metrics: flagged users, pending SARs, overdue reviews
  */
 import AdminLayout from '@/layouts/AdminLayout';
-import { authHeaders,useAdminAuth } from '@/lib/adminAuth';
+import { adminFetch,authHeaders,useAdminAuth } from '@/lib/adminAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
 AlertCircle,
@@ -164,9 +164,9 @@ export default function AdminCompliance() {
     setAmlSaving(true);
     setAmlError('');
     try {
-      const response = await fetch('/api/admin/kyc/aml', {
+      const response = await adminFetch('/api/admin/kyc/aml', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: selectedAml.id,
           ...amlForm,

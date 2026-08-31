@@ -10,7 +10,7 @@ import {
   X, Save, AlertTriangle, CheckCircle, Loader2,
   User, Shield, Wallet, Building2,
 } from 'lucide-react';
-import { authHeaders } from '@/lib/adminAuth';
+import { adminFetch } from '@/lib/adminAuth';
 
 export interface EditableUser {
   id: string;
@@ -75,9 +75,9 @@ export default function ClientEditModal({ user, onClose, onSuccess }: Props) {
     setError('');
     setSuccess('');
     try {
-      const res = await fetch('/api/admin/users/edit', {
+      const res = await adminFetch('/api/admin/users/edit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, patch: {
           name: form.name,
           email: form.email,
