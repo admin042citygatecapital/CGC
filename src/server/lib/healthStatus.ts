@@ -8,6 +8,11 @@ export interface HealthComponent {
 
 export type OverallHealthState = 'healthy' | 'warning' | 'degraded';
 
+export interface MemoryHealthEvidence {
+  component: HealthComponent;
+  usagePct: number;
+}
+
 export interface CoreHealthEvidence {
   databaseHealthy: boolean;
   databaseConfigured?: boolean;
@@ -68,4 +73,41 @@ export function legacyCheck(state: HealthComponentState): 'PASS' | 'WARN' | 'FAI
   if (state === 'healthy') return 'PASS';
   if (state === 'warning' || state === 'not_configured') return 'WARN';
   return 'FAIL';
+}
+
+/**
+ * Classify one instantaneous V8 heap sample against the runtime heap limit.
+ * `heapTotal` is only the amount V8 has currently committed and grows on
+ * demand, so using it as the denominator creates false high-memory alerts.
+ */
+export function buildMemoryHealthComponent(heapUsedBytes: number, heapLimitBytes: number): MemoryHealthEvidence {
+  if (!Number.isFinite(heapUsedBytes) || !Number.isFinite(heapLimitBytes) || heapUsedBytes < 0 || heapLimitBytes <= 0) {
+    return {
+      component: { state: 'unknown', required: true, detail: 'Heap utilization could not be measured.' },
+      usagePct: 0,
+    };
+  }
+
+  const ratio = heapUsedBytes / heapLimitBytes;
+  const usagePct = Math.min(100, Math.round(ratio * 100));
+  if (ratio >= 0.85) {
+    return {
+      component: {
+        state: 'warning',
+        required: true,
+        detail: 'Heap utilization is elevated; sustained samples are required before classifying an outage.',
+      },
+      usagePct,
+    };
+  }
+  if (ratio >= 0.70) {
+    return {
+      component: { state: 'warning', required: true, detail: 'Heap utilization is above the warning threshold.' },
+      usagePct,
+    };
+  }
+  return {
+    component: { state: 'healthy', required: true, detail: 'Heap utilization is within the normal range.' },
+    usagePct,
+  };
 }

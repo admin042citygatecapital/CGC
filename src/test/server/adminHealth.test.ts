@@ -101,4 +101,24 @@ describe('admin platform health', () => {
       checks: { email: 'WARN', database: 'PASS', sessions: 'PASS' },
     });
   });
+
+  it('keeps missing optional sponsor-review settings separate from required configuration', async () => {
+    const handler = (await import('../../server/api/admin/health/GET.js')).default;
+    const { state, res } = response();
+    await handler({} as Request, res);
+
+    expect(state.body).toMatchObject({
+      status: 'healthy',
+      components: {
+        configuration: { state: 'healthy', required: true },
+        sponsorReview: { state: 'not_configured', required: false },
+        memory: { state: 'healthy', required: true },
+      },
+      configuration: {
+        coreValid: true,
+        sponsorReview: 'not_configured',
+      },
+    });
+    expect(state.body?.memory.heapLimitMb).toBeGreaterThan(state.body?.memory.heapUsedMb);
+  });
 });

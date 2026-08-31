@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import os from 'node:os';
+import v8 from 'node:v8';
 import { isDatabaseConfigured, testConnection } from '../../db/db.js';
 import { mediaAssetRoot, privateDataRoot } from '../../lib/storagePaths.js';
 import { buildCoreHealthComponents, deriveOverallHealth } from '../../lib/healthStatus.js';
@@ -32,6 +33,7 @@ export default async function handler(_req: Request, res: Response) {
   const freeRam  = os.freemem();
   const totalRam = os.totalmem();
   const loadAvg  = os.loadavg();
+  const heapLimit = v8.getHeapStatistics().heap_size_limit;
 
   // Storage checks (flat-file fallback)
   const storage: Record<string, 'ok' | 'error'> = {};
@@ -98,10 +100,11 @@ export default async function handler(_req: Request, res: Response) {
     memory: {
       heapUsedMb:   Math.round(memUsage.heapUsed  / 1024 / 1024),
       heapTotalMb:  Math.round(memUsage.heapTotal / 1024 / 1024),
+      heapLimitMb:  Math.round(heapLimit / 1024 / 1024),
       rssMb:        Math.round(memUsage.rss       / 1024 / 1024),
       freeRamMb:    Math.round(freeRam  / 1024 / 1024),
       totalRamMb:   Math.round(totalRam / 1024 / 1024),
-      heapUsagePct: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
+      heapUsagePct: Math.round((memUsage.heapUsed / heapLimit) * 100),
     },
     cpu: {
       load1m:  Math.round(loadAvg[0] * 100) / 100,

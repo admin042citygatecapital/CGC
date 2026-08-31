@@ -74,7 +74,7 @@ interface HealthData {
   status: string;
   components: Record<string, { state: 'healthy' | 'warning' | 'degraded' | 'not_configured' | 'unknown'; required: boolean; detail: string }>;
   uptime: { seconds: number; human: string };
-  memory: { heapUsedMb: number; heapTotalMb: number; rssMb: number; freeRamMb: number; totalRamMb: number };
+  memory: { heapUsedMb: number; heapTotalMb: number; heapLimitMb: number; heapUsagePct: number; rssMb: number; freeRamMb: number; totalRamMb: number };
   stores: Record<string, { mode: 'managed'; recordCount: number; lastUpdated: string | null }>;
   storage: { database: string; media: string; trackedRecords: number };
   runtime: { activeSessions: number; activeAdminSessions: number; activeCustomerSessions: number; nodeVersion: string; platform: string; pid: number };
@@ -361,7 +361,7 @@ function LiveNotifications({ activity }: { activity: Stats['recentActivity'] }) 
 // Section: System Health
 // ─────────────────────────────────────────────────────────────────────────────
 function SystemHealthPanel({ health }: { health: HealthData | null }) {
-  const memPct  = health ? pct(health.memory.heapUsedMb, health.memory.heapTotalMb) : 0;
+  const memPct  = health?.memory.heapUsagePct ?? 0;
   const ramPct  = health ? pct(health.memory.heapTotalMb + health.memory.rssMb, health.memory.totalRamMb) : 0;
 
   const trackedRecords = health?.storage.trackedRecords ?? 0;
@@ -373,6 +373,8 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
     sessions: { label: 'Sessions', icon: ShieldCheck },
     email: { label: 'Email', icon: Mail },
     memory: { label: 'Memory', icon: Cpu },
+    configuration: { label: 'Configuration', icon: ShieldCheck },
+    sponsorReview: { label: 'Sponsor Review', icon: ShieldCheck },
   } as const;
   const checks = Object.entries(health?.components ?? {}).map(([key, component]) => ({
     key,
@@ -426,7 +428,7 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
         <div>
           <div className="flex items-center justify-between mb-1">
             <p className="text-white/35 text-[10px]">Heap Memory</p>
-            <p className="text-white/50 text-[10px] font-mono">{health ? `${health.memory.heapUsedMb} / ${health.memory.heapTotalMb} MB` : '—'}</p>
+            <p className="text-white/50 text-[10px] font-mono">{health ? `${health.memory.heapUsedMb} / ${health.memory.heapLimitMb} MB limit` : '—'}</p>
           </div>
           <GaugeBar value={memPct} color={memPct > 85 ? '#EF4444' : memPct > 70 ? '#F59E0B' : '#10B981'} />
         </div>

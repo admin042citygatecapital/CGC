@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCoreHealthComponents, deriveOverallHealth, legacyCheck, type HealthComponent } from '../../server/lib/healthStatus.js';
+import { buildCoreHealthComponents, buildMemoryHealthComponent, deriveOverallHealth, legacyCheck, type HealthComponent } from '../../server/lib/healthStatus.js';
 
 function component(state: HealthComponent['state'], required = true): HealthComponent {
   return { state, required, detail: 'test' };
@@ -66,5 +66,15 @@ describe('authoritative health status', () => {
     expect(deriveOverallHealth(local)).toBe('healthy');
     expect(production.database).toMatchObject({ state: 'degraded', required: true });
     expect(deriveOverallHealth(production)).toBe('degraded');
+  });
+
+  it('measures heap use against the V8 heap limit rather than the currently committed heap', () => {
+    const result = buildMemoryHealthComponent(46 * 1024 * 1024, 4096 * 1024 * 1024);
+    expect(result).toMatchObject({ component: { state: 'healthy' }, usagePct: 1 });
+  });
+
+  it('reports one high heap sample as a warning pending sustained evidence', () => {
+    const result = buildMemoryHealthComponent(900, 1000);
+    expect(result).toMatchObject({ component: { state: 'warning' }, usagePct: 90 });
   });
 });

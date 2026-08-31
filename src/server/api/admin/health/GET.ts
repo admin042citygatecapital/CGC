@@ -1,8 +1,10 @@
 import type { Request, Response } from 'express';
 import os from 'node:os';
+import v8 from 'node:v8';
 import { getSecret } from '#runtime/secrets';
 import { getQueryClient, isDatabaseConfigured, testConnection } from '../../../db/db.js';
-import { buildCoreHealthComponents, deriveOverallHealth, legacyCheck, type HealthComponent } from '../../../lib/healthStatus.js';
+import { buildEnvReport } from '../../../lib/envValidator.js';
+import { buildCoreHealthComponents, buildMemoryHealthComponent, deriveOverallHealth, legacyCheck, type HealthComponent } from '../../../lib/healthStatus.js';
 
 interface DatabaseSummary {
   usersTotal: number;
@@ -99,7 +101,13 @@ export default async function handler(_req: Request, res: Response) {
     getSecret('ZOHO_CLIENT_ID') && getSecret('ZOHO_CLIENT_SECRET') && getSecret('ZOHO_REFRESH_TOKEN')
   );
   const emailConfigured = resendConfigured || zohoConfigured;
-  const memoryRatio = memUsage.heapUsed / Math.max(memUsage.heapTotal, 1);
+  const heapLimitBytes = v8.getHeapStatistics().heap_size_limit;
+  const memoryHealth = buildMemoryHealthComponent(memUsage.heapUsed, heapLimitBytes);
+  const envReport = buildEnvReport();
+  const coreConfigurationHealthy = envReport.summary.critical === 0;
+  const sponsorReviewVariables = envReport.variables.filter(variable => variable.service === 'Independent Sponsor Review');
+  const sponsorReviewConfigured = sponsorReviewVariables.length > 0 && sponsorReviewVariables.every(variable => variable.status === 'PRESENT');
+  const sponsorReviewInvalid = sponsorReviewVariables.some(variable => variable.status === 'INVALID');
   const components: Record<string, HealthComponent> = {
     ...buildCoreHealthComponents({
       databaseHealthy: Boolean(database.ok && summaryAvailable),
@@ -116,13 +124,23 @@ export default async function handler(_req: Request, res: Response) {
       required: false,
       detail: emailConfigured ? 'A server-side email provider is configured.' : 'No optional email provider is configured.',
     },
-    memory: {
-      state: memoryRatio >= 0.70 ? 'warning' : 'healthy',
+    configuration: {
+      state: coreConfigurationHealthy ? 'healthy' : 'degraded',
       required: true,
-      detail: memoryRatio >= 0.85
-        ? 'Heap usage is elevated; sustained samples are required before classifying an outage.'
-        : memoryRatio >= 0.70 ? 'Heap usage is above the warning threshold.' : 'Heap usage is within the normal range.',
+      detail: coreConfigurationHealthy
+        ? 'Required protected configuration passed startup validation.'
+        : 'Required protected configuration is missing or invalid.',
     },
+    sponsorReview: {
+      state: sponsorReviewConfigured ? 'healthy' : sponsorReviewInvalid ? 'degraded' : 'not_configured',
+      required: false,
+      detail: sponsorReviewConfigured
+        ? 'Independent Sponsor Review is configured.'
+        : sponsorReviewInvalid
+          ? 'Independent Sponsor Review configuration is invalid.'
+          : 'Independent Sponsor Review is optional and not configured.',
+    },
+    memory: memoryHealth.component,
   };
   const overall = deriveOverallHealth(components);
 
@@ -139,9 +157,17 @@ export default async function handler(_req: Request, res: Response) {
     memory: {
       heapUsedMb: Math.round(memUsage.heapUsed / 1024 / 1024),
       heapTotalMb: Math.round(memUsage.heapTotal / 1024 / 1024),
+      heapLimitMb: Math.round(heapLimitBytes / 1024 / 1024),
+      heapUsagePct: memoryHealth.usagePct,
       rssMb: Math.round(memUsage.rss / 1024 / 1024),
       freeRamMb: Math.round(os.freemem() / 1024 / 1024),
       totalRamMb: Math.round(os.totalmem() / 1024 / 1024),
+    },
+    configuration: {
+      coreValid: coreConfigurationHealthy,
+      criticalIssues: envReport.summary.critical,
+      optionalWarnings: envReport.summary.warnings,
+      sponsorReview: components.sponsorReview.state,
     },
     database: {
       ok: database.ok,
