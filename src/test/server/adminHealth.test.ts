@@ -5,6 +5,13 @@ const dependencies = vi.hoisted(() => ({
   secrets: new Map<string, string>(),
   testConnection: vi.fn(),
   query: vi.fn(),
+  envReport: {
+    summary: { total: 2, present: 0, defaults: 0, missing: 2, critical: 0, warnings: 2 },
+    variables: [
+      { service: 'Independent Sponsor Review', status: 'MISSING' },
+      { service: 'Independent Sponsor Review', status: 'MISSING' },
+    ],
+  },
 }));
 
 vi.mock('#runtime/secrets', () => ({
@@ -14,6 +21,9 @@ vi.mock('../../server/db/db.js', () => ({
   isDatabaseConfigured: () => true,
   testConnection: dependencies.testConnection,
   getQueryClient: () => dependencies.query,
+}));
+vi.mock('../../server/lib/envValidator.js', () => ({
+  buildEnvReport: () => dependencies.envReport,
 }));
 
 function response() {
@@ -37,6 +47,7 @@ describe('admin platform health', () => {
       homepageVersions: 3, mediaAssets: 5, operationsUpdatedAt: null,
       homepageUpdatedAt: null, mediaUpdatedAt: null,
     }]);
+    dependencies.envReport.summary.critical = 0;
   });
 
   it('uses PostgreSQL and the configured primary email provider as health evidence', async () => {
@@ -120,5 +131,18 @@ describe('admin platform health', () => {
       },
     });
     expect(state.body?.memory.heapLimitMb).toBeGreaterThan(state.body?.memory.heapUsedMb);
+  });
+
+  it('fails closed when required protected configuration is invalid', async () => {
+    dependencies.envReport.summary.critical = 1;
+    const handler = (await import('../../server/api/admin/health/GET.js')).default;
+    const { state, res } = response();
+    await handler({} as Request, res);
+
+    expect(state.body).toMatchObject({
+      status: 'degraded',
+      components: { configuration: { state: 'degraded', required: true } },
+      configuration: { coreValid: false, criticalIssues: 1 },
+    });
   });
 });
