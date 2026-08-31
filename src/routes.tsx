@@ -2,7 +2,7 @@ import { useAdminAuth } from '@/lib/adminAuth';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { lazy,useEffect,type ReactNode } from 'react';
 import type { RouteObject } from 'react-router-dom';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import CustomerMobileNav from './components/CustomerMobileNav';
 import FeatureUnavailable from './components/FeatureUnavailable';
 import { usePlatformFeature } from './lib/platformFeatures';
@@ -26,11 +26,18 @@ function AdminOnly({ children }: { children: ReactNode }) {
 function CustomerOnly({ children }: { children: ReactNode }) {
   const { customer, loading } = useCustomerAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const onboardingRoute = location.pathname === '/kyc' || location.pathname === '/onboarding';
   useEffect(() => {
     if (!loading && !customer) navigate('/login?reason=session_expired', { replace: true });
-  }, [customer, loading, navigate]);
+    else if (!loading && customer?.accessMode === 'onboarding' && !onboardingRoute) navigate('/kyc', { replace: true });
+  }, [customer, loading, navigate, onboardingRoute]);
   if (loading || !customer) return null;
-  return <><div className="pb-16 md:pb-0">{children}</div><CustomerMobileNav /></>;
+  if (customer.accessMode === 'onboarding' && !onboardingRoute) return null;
+  return <>
+    <div className={customer.accessMode === 'full' ? 'pb-16 md:pb-0' : undefined}>{children}</div>
+    {customer.accessMode === 'full' && <CustomerMobileNav />}
+  </>;
 }
 
 function FeatureOnly({ feature, children }: { feature: PlatformFeatureKey; children: ReactNode }) {

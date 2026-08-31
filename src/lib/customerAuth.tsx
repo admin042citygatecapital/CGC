@@ -30,13 +30,14 @@ export interface CustomerUser {
   kycSubmittedAt: string;
   primaryCurrency: string;
   totpEnabled: boolean;
+  accessMode: 'full' | 'onboarding';
 }
 
 interface CustomerAuthCtx {
   customer: CustomerUser | null;
   token:    string | null;
   loading:  boolean;
-  login:    (email: string, password: string, otp?: string) => Promise<{ ok?: boolean; error?: string; code?: string }>;
+  login:    (email: string, password: string, otp?: string) => Promise<{ ok?: boolean; error?: string; code?: string; nextPath?: string }>;
   logout:   () => void;
 }
 
@@ -64,6 +65,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
         if (data?.user) {
           setCustomer({
             ...data.user,
+            accessMode: data.accessMode ?? data.user.accessMode ?? 'full',
             phone:       data.user.phone       ?? '',
             country:     data.user.country     ?? '',
             balance:     data.user.balance     ?? 0,
@@ -106,6 +108,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     setToken(SESSION_READY);
     setCustomer(data.user ? {
       ...data.user,
+      accessMode: data.accessMode ?? data.user.accessMode ?? 'full',
       phone:       data.user.phone       ?? '',
       country:     data.user.country     ?? '',
       balance:     data.user.balance     ?? 0,
@@ -122,7 +125,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
       idNumber:    data.user.idNumber    ?? '',
       kycSubmittedAt: data.user.kycSubmittedAt ?? '',
     } : null);
-    return { ok: true };
+    return { ok: true, nextPath: data.nextPath ?? (data.accessMode === 'onboarding' ? '/kyc' : '/dashboard') };
   }
 
   function logout() {

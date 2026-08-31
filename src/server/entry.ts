@@ -373,6 +373,7 @@ import { enforceSecurityNetworkPolicy } from "./lib/securityNetworkPolicyMiddlew
 import { csrfProtect } from "./api/csrf/GET";
 import { auditAdminMutation } from "./lib/adminMutationAuditMiddleware";
 import { requireCustomerAuth, requireCustomerSameOrigin } from "./lib/customerAuthMiddleware";
+import { requireCustomerLifecycleAccess } from "./lib/customerLifecycleAccess";
 import { sendEmail as smtpSendEmail } from "./lib/smtpTransport";
 import { seoRoutes } from "../lib/seo-routes";
 import { logStartupCredentialState } from "./lib/zohoTokenStore";
@@ -578,12 +579,12 @@ app.use('/api/users', (req: Request, res: Response, next: NextFunction) => {
     '/verify-email',
     '/password-reset',
     '/password-reset/confirm',
-    '/kyc-document', // validates either a customer session or a short-lived purpose token
   ]);
   const suffix = req.path.endsWith('/') && req.path.length > 1 ? req.path.slice(0, -1) : req.path || '/';
   if (PUBLIC_SUFFIXES.has(suffix)) return next();
   return requireCustomerAuth(req, res, next);
 });
+app.use('/api/users', requireCustomerLifecycleAccess);
 app.use('/api/users', requireEnabledCustomerFeature);
 
 // Public visitors may submit consented, data-minimised events. Analytics reports

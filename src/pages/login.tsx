@@ -20,9 +20,10 @@ export default function LoginPage() {
   const [otp,      setOtp]      = useState('');
   const [needsOtp, setNeedsOtp] = useState(false);
 
-  // Already logged in → go to dashboard
+  // Existing restricted sessions resume the registration workflow; only fully
+  // activated customers enter the financial dashboard.
   useEffect(() => {
-    if (!loading && customer) navigate('/dashboard', { replace: true });
+    if (!loading && customer) navigate(customer.accessMode === 'onboarding' ? '/kyc' : '/dashboard', { replace: true });
   }, [customer, loading, navigate]);
 
   // Show contextual messages from query params
@@ -47,7 +48,7 @@ export default function LoginPage() {
     const result = await login(email, password, needsOtp ? otp : undefined);
     setBusy(false);
     if (result.ok) {
-      navigate('/dashboard', { replace: true });
+      navigate(result.nextPath ?? '/dashboard', { replace: true });
     } else {
       if (result.code === 'TWO_FACTOR_REQUIRED' || result.code === 'INVALID_TWO_FACTOR') {
         setNeedsOtp(true);

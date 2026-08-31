@@ -15,6 +15,7 @@ import {
   recordLoginFailure,
   recordLoginSuccess,
 } from '../../../lib/bruteForce.js';
+import { getCustomerAccessMode, getCustomerLandingPath } from '../../../lib/customerLifecycleAccess.js';
 
 export default async function handler(req: Request, res: Response) {
   const ip = req.ip ?? 'unknown';
@@ -68,11 +69,8 @@ export default async function handler(req: Request, res: Response) {
   if (!user.emailVerified) {
     return res.status(403).json({ error: 'Please verify your email address before logging in.', code: 'EMAIL_NOT_VERIFIED' });
   }
-  if (user.status === 'pending_verification' || user.status === 'pending_kyc') {
-    return res.status(403).json({ error: 'Your account is pending verification. Please complete KYC.', code: 'PENDING_KYC' });
-  }
-  if (user.status === 'pending_approval') {
-    return res.status(403).json({ error: 'Your account is awaiting admin approval.', code: 'PENDING_APPROVAL' });
+  if (user.status === 'pending_verification') {
+    return res.status(403).json({ error: 'Please verify your email address before logging in.', code: 'EMAIL_NOT_VERIFIED' });
   }
   if (user.status === 'suspended') {
     await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'status_denied', ip, ua, reason: 'suspended' });
@@ -134,7 +132,9 @@ export default async function handler(req: Request, res: Response) {
     return res.status(401).json({ error: 'Credentials changed. Please log in again.' });
   }
 
-  appendAudit({ event: 'user_login_success', userId: user.id, email, ip, ua });
+  const accessMode = getCustomerAccessMode(user);
+  const nextPath = getCustomerLandingPath(user);
+  appendAudit({ event: 'user_login_success', userId: user.id, email, ip, ua, meta: { accessMode } });
   const sessionReference = crypto.createHash('sha256').update(sessionToken).digest('hex');
   await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'success', ip, ua, sessionId: sessionReference });
 
@@ -142,6 +142,8 @@ export default async function handler(req: Request, res: Response) {
 
   return res.json({
     ok: true,
+    accessMode,
+    nextPath,
     user: {
       id:        user.id,
       name:      user.name,
@@ -150,8 +152,9 @@ export default async function handler(req: Request, res: Response) {
       kycStatus: user.kycStatus,
       amlStatus: user.amlStatus ?? 'not_screened',
       amlRiskLevel: user.amlRiskLevel ?? 'unrated',
-      balance:   user.balance ?? 0,
+      ...(accessMode === 'full' ? { balance: user.balance ?? 0 } : {}),
       totpEnabled: user.totpEnabled ?? false,
+      accessMode,
     },
   });
 }

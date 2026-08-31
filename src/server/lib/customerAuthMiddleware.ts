@@ -23,12 +23,14 @@ import {
   CUSTOMER_SESSION_COOKIE,
   clearCustomerSessionCookie,
 } from './customerSessionConfig.js';
+import type { CustomerAccessMode } from './customerLifecycleAccess.js';
 
 // Augment Express Request so downstream handlers can read the attached user
 declare module 'express-serve-static-core' {
   interface Request {
     customerUser?: UserRecord;
     customerToken?: string;
+    customerAccessMode?: CustomerAccessMode;
   }
 }
 

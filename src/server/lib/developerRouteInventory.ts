@@ -36,7 +36,6 @@ const PUBLIC_CUSTOMER_PATHS = new Set([
   '/api/users/verify-email',
   '/api/users/password-reset',
   '/api/users/password-reset/confirm',
-  '/api/users/kyc-document',
 ]);
 
 export function classifyRouteAuth(path: string): DeveloperRouteEntry['auth'] {

@@ -9,7 +9,6 @@ import { appendAudit } from '../../../lib/auditLog.js';
 import { sendVerificationEmail, sendAdminNewUserAlert } from '../../../lib/emailService.js';
 import { sanitizeString, isValidEmail, validatePassword } from '../../../lib/inputValidator.js';
 import { requirePublicRegistration } from '../../../lib/platformMode.js';
-import { issueKycUploadToken } from '../../../lib/purposeToken.js';
 import { getProductBySlug, isAccountPlanProduct } from '../../../../lib/productCatalogue.js';
 import { normalizeAccountPlans } from '../../../../lib/accountPlans.js';
 import { requireIntakeEnabled } from '../../../lib/operationalControls.js';
@@ -135,7 +134,6 @@ export default async function handler(req: Request, res: Response) {
     intakePosition,
     selectedProductLabel,
     workflow: buildRegistrationWorkflow(user, { status: 'draft' }, 0, null),
-    documentUploadToken: process.env.NODE_ENV === 'production' ? undefined : issueKycUploadToken(user.id),
     kycAvailable: process.env.NODE_ENV !== 'production',
   });
 }

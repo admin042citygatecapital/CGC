@@ -2,6 +2,7 @@ import { Helmet } from "@dr.pogodin/react-helmet";
 import { ArrowLeft, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useCustomerAuth } from "@/lib/customerAuth";
 
 type WorkflowStep = {
   key: string;
@@ -23,6 +24,7 @@ type Bundle = {
   };
 };
 export default function OnboardingPage() {
+  const { customer, logout } = useCustomerAuth();
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [kind, setKind] = useState("identity");
   const [reference, setReference] = useState("");
@@ -85,13 +87,15 @@ export default function OnboardingPage() {
         <title>Registration Progress | City Gate Capital</title>
       </Helmet>
       <div className="max-w-2xl mx-auto space-y-6">
-        <Link
-          to="/dashboard"
-          className="inline-flex gap-2 text-sm text-foreground/50"
-        >
-          <ArrowLeft size={16} />
-          Dashboard
-        </Link>
+        {customer?.accessMode === 'full' ? (
+          <Link to="/dashboard" className="inline-flex gap-2 text-sm text-foreground/50">
+            <ArrowLeft size={16} /> Dashboard
+          </Link>
+        ) : (
+          <button type="button" onClick={logout} className="inline-flex gap-2 text-sm text-foreground/50">
+            <ArrowLeft size={16} /> Sign out
+          </button>
+        )}
         <div>
           <h1 className="text-3xl font-bold">Registration progress</h1>
           <p className="text-sm text-foreground/50 mt-2">

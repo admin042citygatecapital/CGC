@@ -2,10 +2,8 @@ import type { Request, Response } from 'express';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { findUserById, findUserBySessionToken, updateUser } from '../../../lib/userStore.js';
+import { findUserById, updateUser } from '../../../lib/userStore.js';
 import { privateSubdirectory } from '../../../lib/storagePaths.js';
-import { verifyKycUploadToken } from '../../../lib/purposeToken.js';
-import { resolveCustomerSessionToken } from '../../../lib/customerAuthMiddleware.js';
 
 const kycDirectory = privateSubdirectory('kyc-documents');
 
@@ -27,11 +25,7 @@ export default async function handler(req: Request, res: Response) {
     return res.status(400).json({ error: 'documentKind must be id or selfie' });
   }
 
-  const authorization = req.headers.authorization ?? '';
-  const bearer = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
-  const customerToken = resolveCustomerSessionToken(req);
-  const sessionUser = customerToken ? await findUserBySessionToken(customerToken) : undefined;
-  const authorizedUserId = sessionUser?.id ?? verifyKycUploadToken(bearer);
+  const authorizedUserId = req.customerUser?.id;
   if (!authorizedUserId) return res.status(401).json({ error: 'Authentication required' });
   if (userId && userId !== authorizedUserId) return res.status(403).json({ error: 'User mismatch' });
 
