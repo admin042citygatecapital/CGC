@@ -9,7 +9,9 @@ import {
   Database,
   Download,
   Pencil,
+  Plus,
   Save,
+  Send,
   Search,
   X,
 } from 'lucide-react';
@@ -85,6 +87,9 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
   const [editFlagged, setEditFlagged] = useState(false);
   const [editReason, setEditReason] = useState('');
   const [saving, setSaving] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [transferForm, setTransferForm] = useState({ userId: '', type: 'transfer', amount: '', currency: 'USD', description: '', note: '' });
 
   useEffect(() => {
     if (!authLoading && !admin) navigate('/admin/login');
@@ -185,6 +190,40 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
     }
   }
 
+  async function createPendingTransfer() {
+    if (!transferForm.userId.trim() || Number(transferForm.amount) <= 0 || transferForm.note.trim().length < 10) return;
+    setCreating(true);
+    setError('');
+    try {
+      const response = await fetch('/api/admin/transactions/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': `admin-transfer-${crypto.randomUUID()}`,
+          ...authHeaders(),
+        },
+        body: JSON.stringify({
+          userId: transferForm.userId.trim(),
+          type: transferForm.type,
+          status: 'pending',
+          amount: Number(transferForm.amount),
+          currency: transferForm.currency,
+          description: transferForm.description.trim() || 'Administrator-created pending transfer instruction',
+          note: transferForm.note.trim(),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to create the transfer instruction.');
+      setCreateOpen(false);
+      setTransferForm({ userId: '', type: 'transfer', amount: '', currency: 'USD', description: '', note: '' });
+      await loadRecords();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to create the transfer instruction.');
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <>
       <Helmet>
@@ -211,6 +250,8 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
             <p className="mt-1 text-xs leading-relaxed text-sky-100/55">Records come from the application database and may contain synthetic pre-deployment activity. The super-administrator may correct descriptions, internal notes, and compliance flags with a mandatory audit reason. Amount, currency, ownership, reference, timestamps, and financial status remain immutable.</p>
           </div>
         </div>
+
+        {transfersOnly && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/15 bg-amber-300/[0.05] p-4"><div><p className="text-sm font-semibold text-amber-100">Controlled transfer workflow</p><p className="mt-1 text-xs text-amber-100/50">Create a pending, auditable transfer instruction. Provider execution and settlement remain disabled until the approved payment and ledger adapters are available.</p></div><button type="button" onClick={() => setCreateOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2 text-sm font-semibold text-black"><Plus size={14} />Create transfer instruction</button></div>}
 
         <div className="mb-5 flex flex-wrap gap-3">
           <div className="flex min-w-48 flex-1 items-center gap-2 rounded-xl border border-white/8 bg-white/[0.04] px-3 py-2">
@@ -307,6 +348,24 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
                 <button type="button" onClick={() => void saveCorrection()} disabled={saving || editDescription.trim().length === 0 || editReason.trim().length < 10} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-40"><Save size={14} />{saving ? 'Saving…' : 'Save correction'}</button>
               </div>
             </div>
+          </div>
+        )}
+
+        {createOpen && transfersOnly && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="create-transfer-title">
+            <form onSubmit={event => { event.preventDefault(); void createPendingTransfer(); }} className="w-full max-w-2xl rounded-2xl border border-amber-300/20 bg-[#0A0A0A] p-6 shadow-2xl shadow-black/60">
+              <div className="flex items-start justify-between gap-4"><div><h2 id="create-transfer-title" className="text-lg font-bold text-white">Create pending transfer instruction</h2><p className="mt-1 text-xs text-white/40">This records an operational instruction for review. It does not move or reserve money.</p></div><button type="button" onClick={() => setCreateOpen(false)} aria-label="Close transfer form" className="rounded-lg p-1.5 text-white/35 hover:bg-white/5 hover:text-white"><X size={17} /></button></div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-white/45">Customer ID</span><input name="customerId" required value={transferForm.userId} onChange={event => setTransferForm(current => ({ ...current, userId: event.target.value }))} placeholder="Customer record ID" autoComplete="off" className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-amber-300/40" /></label>
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-white/45">Transfer type</span><select name="transferType" value={transferForm.type} onChange={event => setTransferForm(current => ({ ...current, type: event.target.value }))} className="w-full rounded-xl border border-white/10 bg-[#111] px-3 py-2.5 text-sm text-white"><option value="transfer">Internal transfer</option><option value="wire_transfer">Wire transfer</option></select></label>
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-white/45">Amount</span><input name="amount" type="number" required min="0.01" step="0.01" value={transferForm.amount} onChange={event => setTransferForm(current => ({ ...current, amount: event.target.value }))} className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none" /></label>
+                <label className="block"><span className="mb-1.5 block text-xs font-semibold text-white/45">Currency</span><select name="currency" value={transferForm.currency} onChange={event => setTransferForm(current => ({ ...current, currency: event.target.value }))} className="w-full rounded-xl border border-white/10 bg-[#111] px-3 py-2.5 text-sm text-white">{['USD','EUR','GBP','CHF','JPY','CAD','AUD','SGD','AED','NGN'].map(currency => <option key={currency}>{currency}</option>)}</select></label>
+              </div>
+              <label className="mt-4 block"><span className="mb-1.5 block text-xs font-semibold text-white/45">Description</span><input name="description" maxLength={300} value={transferForm.description} onChange={event => setTransferForm(current => ({ ...current, description: event.target.value }))} placeholder="Purpose or destination summary" className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none" /></label>
+              <label className="mt-4 block"><span className="mb-1.5 block text-xs font-semibold text-white/45">Administration reason</span><textarea name="reason" required minLength={10} maxLength={500} rows={3} value={transferForm.note} onChange={event => setTransferForm(current => ({ ...current, note: event.target.value }))} placeholder="Explain why this instruction is being created (minimum 10 characters)." className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none" /></label>
+              <div className="mt-4 flex gap-2 rounded-xl border border-sky-400/15 bg-sky-400/[0.05] p-3 text-xs leading-relaxed text-sky-100/60"><AlertTriangle size={14} className="mt-0.5 shrink-0" />The instruction will remain pending and provider-gated. It cannot become completed until compliance, ledger, payment-provider, reconciliation, and maker-checker gates are satisfied.</div>
+              <div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setCreateOpen(false)} disabled={creating} className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/55">Cancel</button><button type="submit" disabled={creating || !transferForm.userId.trim() || Number(transferForm.amount) <= 0 || transferForm.note.trim().length < 10} className="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2 text-sm font-semibold text-black disabled:opacity-35"><Send size={14} />{creating ? 'Creating…' : 'Create pending instruction'}</button></div>
+            </form>
           </div>
         )}
       </AdminLayout>

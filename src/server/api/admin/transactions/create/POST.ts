@@ -1,25 +1,26 @@
 /**
  * POST /api/admin/transactions/create
- * Admin creates a transaction manually for a user.
- * Supports optional backdating via createdAt field.
+ * Records a controlled transaction record. Pending transfer instructions may
+ * be queued for review; any state implying money movement remains provider-gated.
  */
 import type { Request, Response } from 'express';
 import { findUserById } from '../../../../lib/userStore.js';
 import {
-  createTransaction, updateTransaction,
+  createTransactionIdempotent, IdempotencyConflictError, updateTransaction,
   type TxType, type TxStatus, type TxCurrency,
 } from '../../../../lib/transactionStore.js';
 import { appendAudit, appendCriticalAudit } from '../../../../lib/auditLog.js';
 import { safeParseId, sanitizeString, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
 import { evaluateFinancialAccess } from '../../../../lib/complianceGate.js';
 import { requireFinancialOperations } from '../../../../lib/platformMode.js';
+import { requireIdempotency } from '../../../../lib/idempotency.js';
+import { authorizeRecentAdminStepUp } from '../../../../lib/rbacMiddleware.js';
 
 const VALID_TYPES: TxType[]      = ['deposit','withdrawal','transfer','crypto_buy','crypto_sell','wire_transfer','fee','refund','manual_credit','manual_debit'];
 const VALID_STATUSES: TxStatus[] = ['pending','completed','failed','rejected','flagged'];
 const VALID_CURRENCIES: TxCurrency[] = ['USD','EUR','GBP','BTC','ETH','USDT','BNB','SOL','CHF','JPY','CAD','AUD','SGD','AED','NGN'];
 
 export default async function handler(req: Request, res: Response) {
-  if (!requireFinancialOperations(res)) return;
   const session = req.adminSession!;
   const {
     userId: rawUserId, type, status = 'completed', amount, currency = 'USD',
@@ -52,6 +53,13 @@ export default async function handler(req: Request, res: Response) {
   // Sanitize free-text fields
   const safeDescription = sanitizeString(description, 300) || `${safeType} — admin created`;
   const safeNote        = note ? sanitizeNote(note) : undefined;
+  if (!safeNote || safeNote.length < 10) {
+    return res.status(400).json({ ok: false, error: 'An administration reason of at least 10 characters is required.' });
+  }
+
+  const isPendingTransferInstruction = ['transfer', 'wire_transfer'].includes(safeType) && safeStatus === 'pending';
+  if (!isPendingTransferInstruction && !requireFinancialOperations(res)) return;
+  if (!authorizeRecentAdminStepUp(req, res)) return;
 
   // Validate optional backdated createdAt
   let resolvedCreatedAt: string | undefined;
@@ -77,7 +85,19 @@ export default async function handler(req: Request, res: Response) {
     meta: { type: safeType, amount: Number(amount), currency: safeCurrency, status: safeStatus },
   });
 
-  const tx = await createTransaction({
+  const idempotency = requireIdempotency(req, res, 'admin-transaction-create', {
+    userId,
+    type: safeType,
+    status: safeStatus,
+    amount: Number(amount),
+    currency: safeCurrency,
+    description: safeDescription,
+  });
+  if (!idempotency) return;
+
+  let result;
+  try {
+    result = await createTransactionIdempotent({
     type:        safeType,
     status:      safeStatus,
     userId:      user.id,
@@ -87,10 +107,19 @@ export default async function handler(req: Request, res: Response) {
     currency:    safeCurrency,
     description: safeDescription,
     note:        safeNote,
-  });
+      idempotencyKey: idempotency.key,
+      idempotencyFingerprint: idempotency.fingerprint,
+    });
+  } catch (error) {
+    if (error instanceof IdempotencyConflictError) {
+      return res.status(409).json({ ok: false, error: error.message, code: 'IDEMPOTENCY_CONFLICT' });
+    }
+    throw error;
+  }
+  const tx = result.transaction;
 
   // Override createdAt if backdating was requested
-  if (resolvedCreatedAt) {
+  if (resolvedCreatedAt && !result.replayed) {
     await updateTransaction(tx.id, { createdAt: resolvedCreatedAt });
     tx.createdAt = resolvedCreatedAt;
   }
@@ -112,5 +141,10 @@ export default async function handler(req: Request, res: Response) {
     },
   });
 
-  return res.status(201).json({ ok: true, transaction: tx });
+  return res.status(result.replayed ? 200 : 201).json({
+    ok: true,
+    transaction: tx,
+    replayed: result.replayed,
+    executionState: isPendingTransferInstruction ? 'provider_gated' : 'recorded',
+  });
 }
