@@ -1,6 +1,6 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShieldCheck, ShieldX, Eye, EyeOff, CheckCircle, XCircle, Clock,
@@ -11,7 +11,7 @@ import {
   StickyNote, Send, Shield,
 } from 'lucide-react';
 import AdminLayout from '@/layouts/AdminLayout';
-import { useAdminAuth, authHeaders } from '@/lib/adminAuth';
+import { useAdminAuth, authHeaders, adminFetch } from '@/lib/adminAuth';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -684,13 +684,14 @@ function SettingsPanel({ settings, onSave }: {
 export default function AdminKyc() {
   const { admin, loading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
+  const [routeParams] = useSearchParams();
 
   const [tab, setTab]             = useState<'queue' | 'settings'>('queue');
   const [users, setUsers]         = useState<KycUser[]>([]);
   const [total, setTotal]         = useState(0);
   const [page, setPage]           = useState(1);
   const [pages, setPages]         = useState(1);
-  const [search, setSearch]       = useState('');
+  const [search, setSearch]       = useState(() => routeParams.get('search') ?? '');
   const [statusFilter, setStatusFilter] = useState('submitted');
   const [sortBy, setSortBy]       = useState('newest');
   const [loading, setLoading]     = useState(true);
@@ -767,9 +768,9 @@ export default function AdminKyc() {
         body = { userId: selected.id, action: 'revoke', reason: payload?.reason };
       }
 
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       const d = await res.json();
@@ -794,9 +795,9 @@ export default function AdminKyc() {
   }
 
   async function saveSettings(s: KycSettings) {
-    const res = await fetch('/api/admin/kyc/settings', {
+    const res = await adminFetch('/api/admin/kyc/settings', {
       method: 'POST',
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(s),
     });
     const d = await res.json();

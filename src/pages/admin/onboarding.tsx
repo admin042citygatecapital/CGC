@@ -1,5 +1,5 @@
 import AdminLayout from '@/layouts/AdminLayout';
-import { authHeaders, useAdminAuth } from '@/lib/adminAuth';
+import { adminFetch, authHeaders, useAdminAuth } from '@/lib/adminAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { CheckCircle2, Clock, FileCheck2, Loader2, RefreshCw, ShieldAlert, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -55,19 +55,19 @@ export default function AdminOnboardingPage() {
   }
   async function openComplianceCase() {
     if (!selected || caseSummary.trim().length < 10) { setError('A case summary of at least 10 characters is required.'); return; }
-    const response = await fetch('/api/admin/onboarding/compliance-cases', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: selected.case.userId, kind: caseKind, riskLevel: 'unrated', summary: caseSummary }) });
+    const response = await adminFetch('/api/admin/onboarding/compliance-cases', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: selected.case.userId, kind: caseKind, riskLevel: 'unrated', summary: caseSummary }) });
     const body = await response.json(); if (!response.ok) setError(body.error ?? 'Unable to open case.'); else { setCaseSummary(''); await openCase(selected.case.id); }
   }
   async function transitionCompliance(record: ComplianceCase, status: string) {
     const rationale = window.prompt(`Enter the required rationale to mark this ${record.kind} case ${status}:`)?.trim() ?? '';
     if (rationale.length < 10) { setError('A rationale of at least 10 characters is required.'); return; }
-    const response = await fetch('/api/admin/onboarding/compliance-cases', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ caseId: record.id, status, riskLevel: record.riskLevel, reason: rationale }) });
+    const response = await adminFetch('/api/admin/onboarding/compliance-cases', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ caseId: record.id, status, riskLevel: record.riskLevel, reason: rationale }) });
     const body = await response.json(); if (!response.ok) setError(body.error ?? 'Case update failed.'); else if (selected) await openCase(selected.case.id);
   }
   async function decide(decision: Status) {
     if (!selected) return;
     setBusy(true); setError('');
-    const response = await fetch('/api/admin/onboarding/review', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ caseId: selected.case.id, decision, reason }) });
+    const response = await adminFetch('/api/admin/onboarding/review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ caseId: selected.case.id, decision, reason }) });
     const body = await response.json();
     if (!response.ok) setError(body.error ?? 'Review failed.');
     else { await load(); await openCase(selected.case.id); }
@@ -80,7 +80,7 @@ export default function AdminOnboardingPage() {
     if (rationale.length < 10) { setError('A rationale of at least 10 characters is required.'); return; }
     if (action === 'reject' && !window.confirm('Deny this application? This terminal decision will be audited.')) return;
     setBusy(true); setError('');
-    const response = await fetch(`/api/admin/users/${action}`, { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: selected.customer.id, reason: rationale }) });
+    const response = await adminFetch(`/api/admin/users/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: selected.customer.id, reason: rationale }) });
     const body = await response.json();
     if (!response.ok) setError(body.error ?? 'Final decision failed.');
     else { await load(); await openCase(selected.case.id); }
@@ -90,7 +90,7 @@ export default function AdminOnboardingPage() {
     const rationale = action === 'scan_velocity' ? '' : window.prompt(action === 'submit_resolution' ? 'Enter the proposed resolution for independent review:' : 'Enter the required monitoring rationale:')?.trim() ?? '';
     if (action !== 'scan_velocity' && rationale.length < 10) { setError('A monitoring rationale of at least 10 characters is required.'); return; }
     setBusy(true); setError('');
-    const response = await fetch('/api/admin/onboarding/monitoring', { method:'POST', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify({action,alertId,rationale}) });
+    const response = await adminFetch('/api/admin/onboarding/monitoring', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action,alertId,rationale}) });
     const body=await response.json(); if(!response.ok)setError(body.error??'Monitoring action failed.'); await load(); setBusy(false);
   }
 

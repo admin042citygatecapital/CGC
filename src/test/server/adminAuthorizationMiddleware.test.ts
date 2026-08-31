@@ -21,6 +21,8 @@ describe('admin authorization policy', () => {
     expect(requiredPermissionForAdminRequest('/transactions', 'GET')).toBe('transactions.view');
     expect(requiredPermissionForAdminRequest('/transactions/approve', 'POST')).toBe('transactions.approve');
     expect(requiredPermissionForAdminRequest('/kyc/aml', 'POST')).toBe('compliance.manage');
+    expect(requiredPermissionForAdminRequest('/kyc/approve', 'POST')).toBe('users.kyc');
+    expect(requiredPermissionForAdminRequest('/kyc/queue', 'GET')).toBe('compliance.view');
     expect(requiredPermissionForAdminRequest('/balance/adjust', 'POST')).toBe('ledger.adjust');
     expect(requiredPermissionForAdminRequest('/security/roles', 'POST')).toBe('admin.roles.manage');
   });

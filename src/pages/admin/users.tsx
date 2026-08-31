@@ -9,8 +9,7 @@
  *  5.  Delete Customer          — confirm dialog + reason
  *  6.  Reset Password           — set new password modal
  *  7.  Reset 2FA                — one-click with confirm
- *  8.  Approve KYC              — approve_kyc action
- *  9.  Reject KYC               — reject with reason
+ *  8.  Review KYC               — dedicated evidence-review workflow
  * 10.  Manage Wallets           — BalanceModal (existing)
  * 11.  Manage Cards             — link to /admin/cards?userId=X
  * 12.  View Devices             — slide-out panel
@@ -21,7 +20,7 @@
 import BalanceModal from '@/components/admin/BalanceModal';
 import ClientEditModal,{ type EditableUser } from '@/components/admin/ClientEditModal';
 import AdminLayout from '@/layouts/AdminLayout';
-import { authHeaders,useAdminAuth } from '@/lib/adminAuth';
+import { adminFetch,authHeaders,useAdminAuth } from '@/lib/adminAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
 AlertTriangle,
@@ -46,9 +45,8 @@ Search,
 Shield,
 ShieldCheck,
 ShieldOff,
-ShieldX,
 Unlock,
-UserCheck,UserX,
+UserCheck,
 Wallet,
 X
 } from 'lucide-react';
@@ -176,9 +174,9 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void; onSu
     }
     if (form.reason.trim().length < 10 || !form.confirmed) { setError('A reason and explicit confirmation are required.'); return; }
     setLoading(true); setError('');
-    const res = await fetch('/api/admin/users/create', {
+    const res = await adminFetch('/api/admin/users/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     });
     const d = await res.json();
@@ -268,9 +266,9 @@ function ResetPasswordModal({ user, onClose, onSuccess }: { user: User; onClose:
     if (!pw || pw.length < 8) { setError('Password must be at least 8 characters'); return; }
     if (pw !== confirm) { setError('Passwords do not match'); return; }
     setLoading(true); setError('');
-    const res = await fetch('/api/admin/users/reset-password', {
+    const res = await adminFetch('/api/admin/users/reset-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, newPassword: pw }),
     });
     const d = await res.json();
@@ -321,9 +319,9 @@ function SuspendModal({ user, onClose, onSuccess }: { user: User; onClose: () =>
     if (confirm !== expected) { setError(`Type "${expected}" to confirm`); return; }
     setLoading(true); setError('');
     if (reason.trim().length < 10) { setError('Provide a rationale of at least 10 characters'); return; }
-    const res = await fetch('/api/admin/users/action', {
+    const res = await adminFetch('/api/admin/users/action', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, action: 'suspend', reason }),
     });
     const d = await res.json();
@@ -378,9 +376,9 @@ function NotifModal({ user, onClose, onSuccess }: { user: User; onClose: () => v
 
   async function send() {
     setLoading(true);
-    const res = await fetch('/api/admin/notifications/send', {
+    const res = await adminFetch('/api/admin/notifications/send', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, ...form }),
     });
     const d = await res.json();
@@ -421,51 +419,12 @@ function NotifModal({ user, onClose, onSuccess }: { user: User; onClose: () => v
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Reject KYC Modal
-// ─────────────────────────────────────────────────────────────────────────────
-function RejectModal({ user, onClose, onSuccess }: { user: User; onClose: () => void; onSuccess: (msg: string) => void }) {
-  const [reason, setReason] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  async function submit() {
-    setLoading(true);
-    const res = await fetch('/api/admin/users/reject', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ userId: user.id, reason: reason || undefined }),
-    });
-    const d = await res.json();
-    setLoading(false);
-    if (res.ok) { onSuccess(d.message ?? 'User rejected'); onClose(); }
-    else onSuccess(d.error ?? 'Rejection failed');
-  }
-
-  return (
-    <ModalShell title={`Reject Application — ${user.name}`} onClose={onClose} icon={ShieldX} iconColor="#EF4444">
-      <p className="text-white/40 text-sm mb-4">A rejection email with resubmission instructions will be sent automatically.</p>
-      <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Rejection Reason (optional)</label>
-      <textarea rows={3} value={reason} onChange={e => setReason(e.target.value)}
-        placeholder="e.g. Government ID unclear, proof of address expired..."
-        className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-red-500/40 resize-none mb-4" />
-      <div className="flex gap-3">
-        <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/8 text-white/50 text-sm hover:bg-white/[0.04]">Cancel</button>
-        <button onClick={submit} disabled={loading}
-          className="flex-1 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-semibold hover:bg-red-500/30 flex items-center justify-center gap-2">
-          {loading ? <Loader2 size={13} className="animate-spin" /> : <UserX size={13} />}
-          Reject & Notify
-        </button>
-      </div>
-    </ModalShell>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Detail Drawer — full customer profile + all actions
 // ─────────────────────────────────────────────────────────────────────────────
 type DrawerTab = 'profile' | 'devices' | 'login' | 'security' | 'audit';
 
 function CustomerDrawer({
-  user, onClose, onAction, onEdit, onBalance, onResetPw, onReset2fa, onDelete, onNotif, onReject,
+  user, onClose, onAction, onEdit, onBalance, onResetPw, onReset2fa, onDelete, onNotif,
 }: {
   user: User; onClose: () => void;
   onAction: (userId: string, action: string) => void;
@@ -475,7 +434,6 @@ function CustomerDrawer({
   onReset2fa: (u: User) => void;
   onDelete: (u: User) => void;
   onNotif: (u: User) => void;
-  onReject: (u: User) => void;
 }) {
   const [tab, setTab] = useState<DrawerTab>('profile');
   const [devices, setDevices] = useState<DeviceRecord[]>([]);
@@ -508,8 +466,7 @@ function CustomerDrawer({
 
   function switchTab(t: DrawerTab) { setTab(t); loadTab(t); }
 
-  const canApprove = ['pending_kyc', 'pending_approval', 'submitted'].includes(user.status) || user.kycStatus === 'submitted';
-  const canReject  = !['rejected', 'active'].includes(user.status);
+  const canReviewKyc = user.kycStatus === 'submitted';
 
   const tabs: { key: DrawerTab; label: string; icon: React.ElementType }[] = [
     { key: 'profile',  label: 'Profile',  icon: Eye },
@@ -777,22 +734,20 @@ function CustomerDrawer({
         <div className="border-t border-white/8 p-4 shrink-0">
           <p className="text-white/20 text-[9px] uppercase tracking-widest mb-3">Actions</p>
           <div className="grid grid-cols-4 gap-1.5 mb-2">
-            {/* Approve KYC */}
-            {canApprove && (
-              <button onClick={() => onAction(user.id, 'approve_kyc')} title="Approve KYC"
+            {/* KYC decisions belong to the evidence-review workflow. */}
+            {canReviewKyc ? (
+              <Link to={`/admin/kyc?search=${encodeURIComponent(user.email)}`} title="Open KYC review"
                 className="flex flex-col items-center gap-1 p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors">
                 <ShieldCheck size={13} className="text-emerald-400" />
-                <span className="text-[9px] text-emerald-400/70">Approve KYC</span>
-              </button>
-            )}
-            {/* Reject */}
-            {canReject && (
-              <button onClick={() => onReject(user)} title="Reject Application"
-                className="flex flex-col items-center gap-1 p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-colors">
-                <ShieldX size={13} className="text-red-400" />
-                <span className="text-[9px] text-red-400/70">Reject KYC</span>
-              </button>
-            )}
+                <span className="text-[9px] text-emerald-400/70">Review KYC</span>
+              </Link>
+            ) : user.kycStatus === 'not_submitted' ? (
+              <div title="The customer must submit identity evidence before review"
+                className="flex flex-col items-center gap-1 p-2 rounded-xl bg-white/[0.03] text-white/30">
+                <Shield size={13} />
+                <span className="text-[9px] text-center">Awaiting KYC</span>
+              </div>
+            ) : null}
             {/* Suspend */}
             {user.status === 'active' && (
               <button onClick={() => onAction(user.id, 'suspend')} title="Suspend"
@@ -892,7 +847,6 @@ export default function AdminUsers() {
   const [resetPwUser, setResetPwUser] = useState<User | null>(null);
   const [deleteUser,  setDeleteUser]  = useState<User | null>(null);
   const [notifUser,   setNotifUser]   = useState<User | null>(null);
-  const [rejectUser,  setRejectUser]  = useState<User | null>(null);
   const [confirm2fa,  setConfirm2fa]  = useState<User | null>(null);
 
   useEffect(() => { if (!authLoading && !admin) navigate('/admin/login'); }, [admin, authLoading, navigate]);
@@ -929,9 +883,9 @@ export default function AdminUsers() {
       actionPayload = { ...actionPayload, reason };
     }
     setAL(userId + action);
-    const res = await fetch('/api/admin/users/action', {
+    const res = await adminFetch('/api/admin/users/action', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, action, ...actionPayload }),
     });
     const d = await res.json();
@@ -945,11 +899,16 @@ export default function AdminUsers() {
   }
 
   async function approveUser(userId: string) {
+    const reason = window.prompt('Enter the final registration approval rationale:')?.trim() ?? '';
+    if (reason.length < 10) {
+      showToast('A final approval rationale of at least 10 characters is required.', false);
+      return;
+    }
     setAL(userId + 'approve');
-    const res = await fetch('/api/admin/users/approve', {
+    const res = await adminFetch('/api/admin/users/approve', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ userId }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, reason }),
     });
     const d = await res.json();
     setAL(null);
@@ -964,9 +923,9 @@ export default function AdminUsers() {
       return;
     }
     setAL(user.id + 'reset2fa');
-    const res = await fetch('/api/admin/users/reset-2fa', {
+    const res = await adminFetch('/api/admin/users/reset-2fa', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, reason, confirmation: 'CONFIRM CUSTOMER 2FA RESET' }),
     });
     const d = await res.json();
@@ -976,7 +935,8 @@ export default function AdminUsers() {
     else showToast(d.error ?? '2FA reset failed', false);
   }
 
-  const pendingCount = users.filter(u => u.status === 'pending_approval' || u.status === 'pending_kyc').length;
+  const submittedKycCount = users.filter(u => u.kycStatus === 'submitted').length;
+  const incompleteKycCount = users.filter(u => u.kycStatus === 'not_submitted' && u.status === 'pending_kyc').length;
 
   return (
     <>
@@ -1038,13 +998,15 @@ export default function AdminUsers() {
         </div>
 
         {/* ── Pending banner ── */}
-        {pendingCount > 0 && (
+        {(submittedKycCount > 0 || incompleteKycCount > 0) && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 mb-4">
             <AlertTriangle size={14} className="text-amber-400 shrink-0" />
             <p className="text-amber-300 text-sm">
-              <strong>{pendingCount}</strong> customer{pendingCount > 1 ? 's' : ''} awaiting KYC review and approval.
+              {submittedKycCount > 0 && <><strong>{submittedKycCount}</strong> submitted case{submittedKycCount > 1 ? 's are' : ' is'} ready for review.</>}
+              {submittedKycCount > 0 && incompleteKycCount > 0 && ' '}
+              {incompleteKycCount > 0 && <><strong>{incompleteKycCount}</strong> customer{incompleteKycCount > 1 ? 's have' : ' has'} not yet submitted identity evidence.</>}
             </p>
-            <button onClick={() => { setStatus('pending_approval'); setPage(1); }}
+            <button onClick={() => { setKyc(submittedKycCount > 0 ? 'submitted' : 'not_submitted'); setPage(1); }}
               className="ml-auto text-amber-400 text-xs underline underline-offset-2 hover:text-amber-300">
               Filter
             </button>
@@ -1109,9 +1071,15 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1">
-                        {/* Approve */}
-                        {(u.status === 'pending_approval' || u.status === 'pending_kyc' || u.kycStatus === 'submitted') && (
-                          <button onClick={() => approveUser(u.id)} disabled={!!actionLoading} title="Approve"
+                        {/* Evidence review is separate from final account activation. */}
+                        {u.kycStatus === 'submitted' && (
+                          <Link to={`/admin/kyc?search=${encodeURIComponent(u.email)}`} title="Review submitted KYC"
+                            className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center text-purple-400 hover:bg-purple-500/25 transition-colors">
+                            <ShieldCheck size={11} />
+                          </Link>
+                        )}
+                        {u.status === 'pending_approval' && u.kycStatus === 'approved' && (
+                          <button onClick={() => approveUser(u.id)} disabled={!!actionLoading} title="Final account activation"
                             className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/25 transition-colors">
                             {actionLoading === u.id + 'approve' ? <Loader2 size={11} className="animate-spin" /> : <UserCheck size={11} />}
                           </button>
@@ -1219,16 +1187,6 @@ export default function AdminUsers() {
           )}
         </AnimatePresence>
 
-        <AnimatePresence>
-          {rejectUser && (
-            <RejectModal
-              user={rejectUser}
-              onClose={() => setRejectUser(null)}
-              onSuccess={msg => { showToast(msg); fetchUsers(); setSelected(null); }}
-            />
-          )}
-        </AnimatePresence>
-
         {/* 2FA reset confirm */}
         <AnimatePresence>
           {confirm2fa && (
@@ -1262,7 +1220,6 @@ export default function AdminUsers() {
               onReset2fa={u => { setSelected(null); setConfirm2fa(u); }}
               onDelete={u => { setSelected(null); setDeleteUser(u); }}
               onNotif={u => { setSelected(null); setNotifUser(u); }}
-              onReject={u => { setSelected(null); setRejectUser(u); }}
             />
           )}
         </AnimatePresence>
