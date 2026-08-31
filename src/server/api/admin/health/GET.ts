@@ -62,7 +62,7 @@ async function getDatabaseSummary(): Promise<DatabaseSummary> {
       (SELECT count(*)::int FROM email_queue WHERE status IN ('queued', 'sending')) AS "emailQueuePending",
       (SELECT count(*)::int FROM email_queue WHERE status = 'failed') AS "emailQueueFailed",
       (SELECT max(updated_at) FROM operations_items) AS "operationsUpdatedAt",
-      (SELECT max(created_at) FROM homepage_content_versions) AS "homepageUpdatedAt",
+      (SELECT max(updated_at) FROM homepage_content_versions) AS "homepageUpdatedAt",
       (SELECT max(updated_at) FROM media_assets) AS "mediaUpdatedAt"
   `;
   return rows[0] ?? emptySummary;
