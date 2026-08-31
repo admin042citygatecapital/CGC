@@ -7,6 +7,9 @@ const integrations = readFileSync('src/pages/admin/integrations.tsx', 'utf8');
 const routes = readFileSync('src/routes.tsx', 'utf8');
 const entry = readFileSync('src/server/entry.ts', 'utf8');
 const transactions = readFileSync('src/pages/admin/transactions.tsx', 'utf8');
+const auditRoute = readFileSync('src/server/api/admin/audit/GET.ts', 'utf8');
+const emailStatusRoute = readFileSync('src/server/api/admin/email/status/GET.ts', 'utf8');
+const emailPage = readFileSync('src/pages/admin/email.tsx', 'utf8');
 
 describe('administrator UI correctness', () => {
   it('links operations to their canonical, accurately described destinations', () => {
@@ -32,6 +35,9 @@ describe('administrator UI correctness', () => {
     expect(config).toContain("const requestedSection = searchParams.get('section')");
     expect(config).toContain('isSectionId(requestedSection)');
     expect(config).toContain("activeSection === 'featureToggles'");
+    expect(config).toContain('role="switch"');
+    expect(config).toContain('aria-checked={value}');
+    expect(config).toContain("{value ? 'Enabled' : 'Disabled'}");
   });
 
   it('opens transfers as a focused transfer review instead of a duplicate register', () => {
@@ -46,5 +52,34 @@ describe('administrator UI correctness', () => {
     expect(integrations).toContain('setActionError(`Unable to save integration:');
     expect(integrations).toContain('if (!res.ok) {');
     expect(integrations).not.toContain('catch { /* silent */ }');
+    expect(integrations).toContain("label: 'Active market feeds'");
+    expect(integrations).toContain('marketProviders.length');
+  });
+
+  it('keeps email diagnostics bounded and gives administrators a retryable error state', () => {
+    expect(emailStatusRoute).toContain('PROVIDER_CHECK_TIMEOUT_MS');
+    expect(emailStatusRoute).toContain('Promise.race');
+    expect(emailPage).toContain('controller.abort()');
+    expect(emailPage).toContain('No delivery settings were changed.');
+    expect(emailPage).toContain('onClick={load}');
+  });
+
+  it('paginates audit records at the database boundary', () => {
+    expect(auditRoute).toContain('getAuditLogPage');
+    expect(auditRoute).not.toContain('limit: 10000');
+    expect(auditRoute).not.toContain('.slice(offset');
+  });
+
+  it('exposes one KYC workspace and first-class operational pages', () => {
+    expect(layout).toContain("label: 'KYC & Onboarding'");
+    expect(layout).not.toContain("label: 'KYC Review'");
+    expect(layout).not.toContain("label: 'Onboarding Cases'");
+    expect(routes).toContain("path: '/admin/kyc',             element: <AdminOnly><Navigate to=\"/admin/onboarding\" replace /></AdminOnly>");
+    for (const path of ['/admin/administrators', '/admin/deployments', '/admin/database']) {
+      expect(routes).toContain(`path: '${path}'`);
+    }
+    expect(entry).toContain('app.get("/api/admin/administrators"');
+    expect(entry).toContain('app.get("/api/admin/deployments"');
+    expect(entry).toContain('app.get("/api/admin/database"');
   });
 });

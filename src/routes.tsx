@@ -138,6 +138,9 @@ const AdminMedia           = lazy(() => import('./pages/admin/media'));
 const AdminConfig          = lazy(() => import('./pages/admin/config'));
 const AdminIntegrations    = lazy(() => import('./pages/admin/integrations'));
 const AdminTrading         = lazy(() => import('./pages/admin/trading'));
+const AdminAdministrators  = lazy(() => import('./pages/admin/administrators'));
+const AdminDeployments     = lazy(() => import('./pages/admin/deployments'));
+const AdminDatabase        = lazy(() => import('./pages/admin/database'));
 const OnboardingPage       = lazy(() => import('./pages/onboarding'));
 
 export const routes: RouteObject[] = [
@@ -236,7 +239,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/links',        element: <AdminOnly><AdminLinks /></AdminOnly> },
   { path: '/admin/website',      element: <AdminOnly><AdminWebsite /></AdminOnly> },
   { path: '/admin/rates',        element: <AdminOnly><AdminRates /></AdminOnly> },
-  { path: '/admin/kyc',             element: <AdminOnly><AdminOnboarding /></AdminOnly> },
+  { path: '/admin/kyc',             element: <AdminOnly><Navigate to="/admin/onboarding" replace /></AdminOnly> },
   { path: '/admin/onboarding',      element: <AdminOnly><AdminOnboarding /></AdminOnly> },
   { path: '/admin/sponsor-readiness', element: <AdminOnly><AdminSponsorReadiness /></AdminOnly> },
   { path: '/admin/readiness',       element: <AdminOnly><AdminReadiness /></AdminOnly> },
@@ -252,6 +255,9 @@ export const routes: RouteObject[] = [
   { path: '/admin/config',          element: <AdminOnly><AdminConfig /></AdminOnly> },
   { path: '/admin/configuration',   element: <AdminOnly><AdminConfig /></AdminOnly> },
   { path: '/admin/integrations',    element: <AdminOnly><AdminIntegrations /></AdminOnly> },
+  { path: '/admin/administrators',  element: <AdminOnly><AdminAdministrators /></AdminOnly> },
+  { path: '/admin/deployments',     element: <AdminOnly><AdminDeployments /></AdminOnly> },
+  { path: '/admin/database',        element: <AdminOnly><AdminDatabase /></AdminOnly> },
   { path: '/admin/trading',         element: <AdminOnly><AdminTrading /></AdminOnly> },
   { path: '/admin/system',          element: <AdminOnly><AdminSystem /></AdminOnly> },
   { path: '*', element: <NotFoundPage /> },

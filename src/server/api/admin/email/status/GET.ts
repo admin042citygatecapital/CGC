@@ -10,8 +10,28 @@ import { loadSmtpConfig } from '../../../../lib/smtpConfigStore.js';
 import { getSecret } from '#runtime/secrets';
 import { verifyResendProvider } from '../../../../lib/smtpTransport.js';
 import { assessResendHealth } from '../../../../lib/emailProviderHealth.js';
+import type { ProviderVerification } from '../../../../lib/emailProviderHealth.js';
 import { getRecentResendDeliveryEvents } from '../../../../lib/resendWebhook.js';
 import { authorizeAdminRole } from '../../../../lib/rbacMiddleware.js';
+
+const PROVIDER_CHECK_TIMEOUT_MS = 5_000;
+
+async function verifyResendProviderWithTimeout(): Promise<ProviderVerification> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      verifyResendProvider(),
+      new Promise<ProviderVerification>((resolve) => {
+        timeout = setTimeout(() => resolve({
+          status: 'unavailable',
+          detail: 'The provider health check timed out. Queue and delivery records remain available.',
+        }), PROVIDER_CHECK_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
 
 export default async function handler(req: Request, res: Response) {
   if (!authorizeAdminRole(req, res, 'SUPER_ADMIN')) return;
@@ -22,7 +42,7 @@ export default async function handler(req: Request, res: Response) {
     getQueueStats(),
     getPendingQueue(),
     getEmailLogs(50),
-    resendReady ? verifyResendProvider() : Promise.resolve({ status: 'unconfigured' as const }),
+    resendReady ? verifyResendProviderWithTimeout() : Promise.resolve({ status: 'unconfigured' as const }),
     getRecentResendDeliveryEvents(100),
   ]);
 
