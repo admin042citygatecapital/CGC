@@ -117,16 +117,10 @@ const AdminWebsite         = lazy(() => import('./pages/admin/website'));
 const AdminRates           = lazy(() => import('./pages/admin/rates'));
 const AdminKyc             = lazy(() => import('./pages/admin/kyc'));
 const AdminOnboarding      = lazy(() => import('./pages/admin/onboarding'));
-const AdminDocumentation   = lazy(() => import('./pages/admin/documentation'));
 const AdminReadiness       = lazy(() => import('./pages/admin/readiness'));
-const AdminSponsorReadiness = lazy(() => import('./pages/admin/sponsor-readiness'));
-const AdminProviderSandbox  = lazy(() => import('./pages/admin/provider-sandbox'));
-const AdminFinancialSandbox = lazy(() => import('./pages/admin/financial-sandbox'));
 const AdminReconciliation = lazy(() => import('./pages/admin/reconciliation'));
 const AdminDisputes = lazy(() => import('./pages/admin/disputes'));
-const AdminAssuranceExercises = lazy(() => import('./pages/admin/assurance-exercises'));
 const AdminLegalEntity = lazy(() => import('./pages/admin/legal-entity'));
-const AdminDeveloper       = lazy(() => import('./pages/admin/developer'));
 const AdminNotifications   = lazy(() => import('./pages/admin/notifications'));
 const AdminSystem          = lazy(() => import('./pages/admin/system'));
 const AdminEmailCenter     = lazy(() => import('./pages/admin/email'));
@@ -215,11 +209,11 @@ export const routes: RouteObject[] = [
   { path: '/admin/customer-relationships', element: <AdminOnly><AdminCustomerRelationships /></AdminOnly> },
   { path: '/admin/cards',        element: <AdminOnly><AdminCards /></AdminOnly> },
   { path: '/admin/transactions', element: <AdminOnly><AdminTransactions /></AdminOnly> },
-  { path: '/admin/transfers',    element: <AdminOnly><AdminTransactions /></AdminOnly> },
+  { path: '/admin/transfers',    element: <AdminOnly><AdminTransactions view="transfers" /></AdminOnly> },
   { path: '/admin/crypto',       element: <AdminOnly><AdminCrypto /></AdminOnly> },
   { path: '/admin/banking',      element: <AdminOnly><AdminCustomerAccounts /></AdminOnly> },
   { path: '/admin/accounts',     element: <AdminOnly><AdminCustomerAccounts /></AdminOnly> },
-  { path: '/admin/wallets',      element: <AdminOnly><AdminFinancialSandbox /></AdminOnly> },
+  { path: '/admin/wallets',      element: <Navigate to="/admin/crypto" replace /> },
   { path: '/admin/support',      element: <AdminOnly><AdminSupport /></AdminOnly> },
   { path: '/admin/cms',          element: <AdminOnly><AdminCMS /></AdminOnly> },
   { path: '/admin/security',     element: <AdminOnly><AdminSecurity /></AdminOnly> },
@@ -236,16 +230,10 @@ export const routes: RouteObject[] = [
   { path: '/admin/rates',        element: <AdminOnly><AdminRates /></AdminOnly> },
   { path: '/admin/kyc',             element: <AdminOnly><AdminKyc /></AdminOnly> },
   { path: '/admin/onboarding',      element: <AdminOnly><AdminOnboarding /></AdminOnly> },
-  { path: '/admin/documentation',   element: <AdminOnly><AdminDocumentation /></AdminOnly> },
   { path: '/admin/readiness',       element: <AdminOnly><AdminReadiness /></AdminOnly> },
-  { path: '/admin/sponsor-readiness', element: <AdminOnly><AdminSponsorReadiness /></AdminOnly> },
-  { path: '/admin/provider-sandbox', element: <AdminOnly><AdminProviderSandbox /></AdminOnly> },
-  { path: '/admin/financial-sandbox', element: <AdminOnly><AdminFinancialSandbox /></AdminOnly> },
   { path: '/admin/reconciliation', element: <AdminOnly><AdminReconciliation /></AdminOnly> },
   { path: '/admin/disputes', element: <AdminOnly><AdminDisputes /></AdminOnly> },
-  { path: '/admin/assurance-exercises', element: <AdminOnly><AdminAssuranceExercises /></AdminOnly> },
   { path: '/admin/legal-entity', element: <AdminOnly><AdminLegalEntity /></AdminOnly> },
-  { path: '/admin/developer',       element: <AdminOnly><AdminDeveloper /></AdminOnly> },
   { path: '/admin/notifications',   element: <AdminOnly><AdminNotifications /></AdminOnly> },
   { path: '/admin/audit',           element: <AdminOnly><AdminAudit /></AdminOnly> },
   { path: '/admin/email',           element: <AdminOnly><AdminEmailCenter /></AdminOnly> },

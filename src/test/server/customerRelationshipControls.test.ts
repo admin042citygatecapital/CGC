@@ -35,7 +35,7 @@ describe('customer relationship administration controls', () => {
     const routes = readFileSync('src/routes.tsx', 'utf8');
     const users = readFileSync('src/pages/admin/users.tsx', 'utf8');
     const page = readFileSync('src/pages/admin/customer-relationships.tsx', 'utf8');
-    expect(layout).toContain("href: '/admin/customer-relationships'");
+    expect(layout).not.toContain("label: 'Customer Relations'");
     expect(routes).toContain("path: '/admin/customer-relationships'");
     expect(users).toContain('to="/admin/customer-relationships"');
     expect(page).toContain('Create relationship');

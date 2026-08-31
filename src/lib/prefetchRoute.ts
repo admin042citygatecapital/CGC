@@ -60,7 +60,7 @@ const routeImports: Record<string, () => Promise<unknown>> = {
   '/admin/banking':      () => import('../pages/admin/customer-accounts'),
   '/admin/accounts':     () => import('../pages/admin/customer-accounts'),
   '/admin/cards':        () => import('../pages/admin/cards'),
-  '/admin/wallets':      () => import('../pages/admin/financial-sandbox'),
+  '/admin/wallets':      () => import('../pages/admin/crypto'),
   '/admin/crypto':       () => import('../pages/admin/crypto'),
   '/admin/trading':      () => import('../pages/admin/trading'),
 };

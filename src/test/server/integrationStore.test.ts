@@ -30,8 +30,6 @@ describe('integration status reporting', () => {
       ZOHO_CLIENT_ID: 'zoho-client',
       ZOHO_CLIENT_SECRET: 'zoho-secret',
       ZOHO_REFRESH_TOKEN: 'zoho-refresh',
-      CLOUDFLARE_API_TOKEN: 'cf-token',
-      CLOUDFLARE_ZONE_ID: 'cf-zone',
     })) dependencies.secrets.set(name, value);
 
     const { getAllIntegrations } = await import('../../server/lib/integrationStore.js');
@@ -39,9 +37,10 @@ describe('integration status reporting', () => {
 
     expect(byId.resend).toMatchObject({ name: 'Resend', status: 'connected', enabled: false });
     expect(byId.zoho_mail).toMatchObject({ status: 'connected', enabled: false });
-    expect(byId.cloudflare).toMatchObject({ status: 'connected', enabled: false });
     expect(byId.smartsupp.status).toBe('disconnected');
-    expect(byId.banking_api.status).toBe('disconnected');
+    expect(byId.cloudflare).toBeUndefined();
+    expect(byId.banking_api).toBeUndefined();
+    expect(Object.keys(byId).sort()).toEqual(['resend', 'smartsupp', 'zoho_mail']);
   });
 
   it('reports partial configuration when only some required secrets are present', async () => {

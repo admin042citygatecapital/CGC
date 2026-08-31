@@ -1,9 +1,9 @@
 /**
  * /admin/readiness — Deployment Readiness Report
  *
- * Shows two tabs:
- *  1. Readiness Report  — subsystem pass/fail checks
- *  2. Environment Report — variable-by-variable validation
+ * Shows the server-owned subsystem readiness checks.
+ * Secret and environment-variable inventories intentionally remain outside
+ * the browser administration panel.
  *
  * Admin auth required (AdminOnly guard in routes.tsx).
  */
@@ -13,14 +13,12 @@ import { authHeaders, useAdminAuth } from '@/lib/adminAuth';
 import {
   CheckCircle, XCircle, AlertTriangle, Info, RefreshCw,
   Shield, Database, Mail, MessageSquare, Lock, Globe,
-  Server, FileText, Cpu, Eye, EyeOff, ChevronDown, ChevronRight,
+  Server, Cpu, ChevronDown, ChevronRight,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type CheckStatus  = 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
-type SecretStatus = 'PRESENT' | 'MISSING' | 'DEFAULT';
-type SecretLevel  = 'CRITICAL' | 'WARNING' | 'INFO';
 type OverallStatus = 'READY' | 'DEGRADED' | 'NOT_READY';
 
 interface ReadinessCheck {
@@ -42,48 +40,29 @@ interface ReadinessReport {
   checks: ReadinessCheck[];
 }
 
-interface EnvVarReport {
-  name:        string;
-  aliases:     string[];
-  status:      SecretStatus;
-  level:       SecretLevel;
-  service:     string;
-  description: string;
-  isPublic:    boolean;
-  maskedValue: string;
-  defaultVal:  string;
-}
-
-interface EnvReport {
-  environment: string;
-  generatedAt: string;
-  summary: { total: number; present: number; defaults: number; missing: number; critical: number; warnings: number };
-  variables: EnvVarReport[];
-}
-
 // ── Status helpers ────────────────────────────────────────────────────────────
 
-function StatusIcon({ status, size = 18 }: { status: CheckStatus | SecretStatus | SecretLevel; size?: number }) {
+function StatusIcon({ status, size = 18 }: { status: CheckStatus; size?: number }) {
   const cls = `w-${size === 18 ? 4 : 5} h-${size === 18 ? 4 : 5} shrink-0`;
-  if (status === 'PASS' || status === 'PRESENT')
+  if (status === 'PASS')
     return <CheckCircle className={`${cls} text-emerald-400`} />;
-  if (status === 'FAIL' || status === 'MISSING' || status === 'CRITICAL')
+  if (status === 'FAIL')
     return <XCircle className={`${cls} text-red-400`} />;
-  if (status === 'WARN' || status === 'WARNING')
+  if (status === 'WARN')
     return <AlertTriangle className={`${cls} text-amber-400`} />;
-  if (status === 'DEFAULT' || status === 'INFO')
+  if (status === 'SKIP')
     return <Info className={`${cls} text-blue-400`} />;
   return <Info className={`${cls} text-zinc-500`} />;
 }
 
-function statusBadge(status: CheckStatus | SecretStatus): string {
-  if (status === 'PASS' || status === 'PRESENT')
+function statusBadge(status: CheckStatus): string {
+  if (status === 'PASS')
     return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-  if (status === 'FAIL' || status === 'MISSING')
+  if (status === 'FAIL')
     return 'bg-red-500/10 text-red-400 border border-red-500/20';
   if (status === 'WARN')
     return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
-  if (status === 'DEFAULT')
+  if (status === 'SKIP')
     return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
   return 'bg-zinc-800 text-zinc-400 border border-zinc-700';
 }
@@ -159,68 +138,11 @@ function CheckRow({ check }: { check: ReadinessCheck }) {
   );
 }
 
-// ── Env var row ───────────────────────────────────────────────────────────────
-
-function EnvRow({ v }: { v: EnvVarReport }) {
-  const [showVal, setShowVal] = useState(false);
-  return (
-    <div className="border border-zinc-800 rounded-lg px-4 py-3 flex flex-col gap-1">
-      <div className="flex items-start gap-3">
-        <StatusIcon status={v.status} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-sm text-zinc-200">{v.name}</span>
-            {v.aliases.length > 0 && (
-              <span className="text-xs text-zinc-600 font-mono">
-                (aliases: {v.aliases.join(', ')})
-              </span>
-            )}
-            <span className={`text-xs font-mono px-2 py-0.5 rounded ${statusBadge(v.status)}`}>
-              {v.status}
-            </span>
-            <span className={`text-xs px-2 py-0.5 rounded ${
-              v.level === 'CRITICAL' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-              v.level === 'WARNING'  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-              'bg-zinc-800 text-zinc-500 border border-zinc-700'
-            }`}>
-              {v.level}
-            </span>
-            {v.isPublic && (
-              <span className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                PUBLIC
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-zinc-500 mt-0.5">{v.service} — {v.description}</p>
-          {v.maskedValue && (
-            <div className="flex items-center gap-2 mt-1">
-              <span className="font-mono text-xs text-zinc-400">
-                {showVal ? v.maskedValue : '••••••••'}
-              </span>
-              <button
-                onClick={() => setShowVal(s => !s)}
-                className="text-zinc-600 hover:text-zinc-400 transition-colors"
-              >
-                {showVal ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-              </button>
-            </div>
-          )}
-          {!v.maskedValue && v.defaultVal && (
-            <p className="text-xs text-zinc-600 mt-0.5 font-mono">default: {v.defaultVal}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ReadinessPage() {
   const { admin } = useAdminAuth();
-  const [tab, setTab] = useState<'readiness' | 'env'>('readiness');
   const [readiness, setReadiness] = useState<ReadinessReport | null>(null);
-  const [envReport, setEnvReport] = useState<EnvReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
@@ -229,15 +151,10 @@ export default function ReadinessPage() {
     setLoading(true);
     setError(null);
     try {
-      const headers = authHeaders();
-      const [rRes, eRes] = await Promise.all([
-        fetch('/api/admin/readiness',  { headers }),
-        fetch('/api/admin/env-report', { headers }),
-      ]);
-      if (!rRes.ok || !eRes.ok) throw new Error('Failed to fetch reports');
-      const [rData, eData] = await Promise.all([rRes.json(), eRes.json()]);
+      const rRes = await fetch('/api/admin/readiness', { headers: authHeaders() });
+      if (!rRes.ok) throw new Error('Failed to fetch the readiness report');
+      const rData = await rRes.json();
       setReadiness(rData.report);
-      setEnvReport(eData.report);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -253,7 +170,7 @@ export default function ReadinessPage() {
     <>
       <Helmet>
         <title>Deployment Readiness — City Gate Capital Admin</title>
-        <meta name="description" content="Production deployment readiness report and environment variable validation for City Gate Capital admin panel." />
+        <meta name="description" content="Production subsystem readiness report for the City Gate Capital admin panel." />
         <link rel="canonical" href="https://citygate.capital/admin/readiness" />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
@@ -268,13 +185,10 @@ export default function ReadinessPage() {
                 Deployment Readiness
               </h1>
               <p className="text-zinc-500 text-sm mt-1">
-                Environment validation &amp; subsystem health checks
+                Server-owned subsystem health checks without secret exposure
               </p>
             </div>
             <div className="flex items-center gap-2">
-            <a href="/admin/sponsor-readiness" className="flex items-center gap-2 px-4 py-2 bg-amber-400/10 text-amber-300 border border-amber-400/20 rounded-lg text-sm">
-              <Shield className="w-4 h-4" /> Sponsor readiness
-            </a>
             <button
               onClick={fetchReports}
               disabled={loading}
@@ -314,67 +228,14 @@ export default function ReadinessPage() {
             </div>
           )}
 
-          {/* Tabs */}
-          <div className="flex gap-1 mb-6 bg-zinc-900 rounded-lg p-1 w-fit">
-            {(['readiness', 'env'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  tab === t
-                    ? 'bg-zinc-700 text-white'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {t === 'readiness' ? (
-                  <span className="flex items-center gap-2"><Server className="w-4 h-4" />Readiness Checks</span>
-                ) : (
-                  <span className="flex items-center gap-2"><FileText className="w-4 h-4" />Environment Variables</span>
-                )}
-              </button>
+          <div className="space-y-2">
+            {loading && !readiness && (
+              <div className="text-center py-12 text-zinc-500">Running subsystem checks…</div>
+            )}
+            {readiness?.checks.map(check => (
+              <CheckRow key={check.id} check={check} />
             ))}
           </div>
-
-          {/* ── Readiness tab ── */}
-          {tab === 'readiness' && (
-            <div className="space-y-2">
-              {loading && !readiness && (
-                <div className="text-center py-12 text-zinc-500">Running subsystem checks…</div>
-              )}
-              {readiness?.checks.map(check => (
-                <CheckRow key={check.id} check={check} />
-              ))}
-            </div>
-          )}
-
-          {/* ── Environment tab ── */}
-          {tab === 'env' && (
-            <div>
-              {envReport && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                  {[
-                    { label: 'Present',  value: envReport.summary.present,  cls: 'text-emerald-400' },
-                    { label: 'Default',  value: envReport.summary.defaults, cls: 'text-blue-400' },
-                    { label: 'Missing',  value: envReport.summary.missing,  cls: 'text-red-400' },
-                    { label: 'Warnings', value: envReport.summary.warnings, cls: 'text-amber-400' },
-                  ].map(s => (
-                    <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-center">
-                      <p className={`text-2xl font-bold font-mono ${s.cls}`}>{s.value}</p>
-                      <p className="text-xs text-zinc-500 mt-1">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="space-y-2">
-                {loading && !envReport && (
-                  <div className="text-center py-12 text-zinc-500">Loading environment report…</div>
-                )}
-                {envReport?.variables.map(v => (
-                  <EnvRow key={v.name} v={v} />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>

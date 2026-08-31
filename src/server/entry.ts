@@ -88,7 +88,6 @@ import admin_cms_news_post_36 from "./api/admin/cms/news/POST";
 import admin_config_get_37 from "./api/admin/config/GET";
 import admin_config_post_38 from "./api/admin/config/POST";
 import admin_contacts_get_39 from "./api/admin/contacts/GET";
-import admin_developer_get_40 from "./api/admin/developer/GET";
 import admin_email_flush_post_41 from "./api/admin/email/flush/POST";
 import admin_email_log_get_42 from "./api/admin/email/log/GET";
 import admin_email_purge_post_43 from "./api/admin/email/purge/POST";
@@ -101,7 +100,6 @@ import admin_email_templates_get_49 from "./api/admin/email/templates/GET";
 import admin_email_templates_post_50 from "./api/admin/email/templates/POST";
 import admin_email_templates_reset_post_51 from "./api/admin/email/templates/reset/POST";
 import admin_email_test_post_52 from "./api/admin/email/test/POST";
-import admin_env_report_get_53 from "./api/admin/env-report/GET";
 import admin_health_get_54 from "./api/admin/health/GET";
 import admin_integrations_get_55 from "./api/admin/integrations/GET";
 import admin_integrations_post_56 from "./api/admin/integrations/POST";
@@ -399,8 +397,8 @@ import { loadRatesConfigFromDb } from "./lib/ratesStore";
 import { getSecret } from "#runtime/secrets";
 import { validateEnvAtStartup } from "./lib/envValidator";
 import { APP_ENV } from "./lib/envConfig";
-// Note: admin_env_report_get_53, admin_reports_get_89, admin_readiness_get_88,
-// admin_developer_get_40 are imported above in the <api-imports> block and
+// Note: admin_reports_get_89 and admin_readiness_get_88
+// are imported above in the <api-imports> block and
 // registered at their respective app.get() lines. No duplicate imports needed.
 import { initMarketProviders } from "./lib/market/init";
 import { startOperationalBackupWorker } from "./lib/operationalBackup";
@@ -688,7 +686,6 @@ app.get("/api/admin/features", admin_features_get);
 app.get("/api/admin/contacts", admin_contacts_get_39);
 app.get("/api/admin/operations", admin_operations_get);
 app.post("/api/admin/operations", admin_operations_post);
-app.get("/api/admin/developer", admin_developer_get_40);
 app.get("/api/admin/documentation/:format", admin_documentation_format_get);
 app.post("/api/admin/email/flush", admin_email_flush_post_41);
 app.get("/api/admin/email/log", admin_email_log_get_42);
@@ -702,7 +699,6 @@ app.get("/api/admin/email/templates", admin_email_templates_get_49);
 app.post("/api/admin/email/templates", admin_email_templates_post_50);
 app.post("/api/admin/email/templates/reset", admin_email_templates_reset_post_51);
 app.post("/api/admin/email/test", admin_email_test_post_52);
-app.get("/api/admin/env-report", admin_env_report_get_53);
 app.get("/api/admin/health", admin_health_get_54);
 app.get("/api/admin/integrations", admin_integrations_get_55);
 app.post("/api/admin/integrations", admin_integrations_post_56);

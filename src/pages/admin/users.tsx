@@ -294,13 +294,13 @@ function ResetPasswordModal({ user, onClose, onSuccess }: { user: User; onClose:
       <p className="text-white/40 text-xs mb-4">Sets a new password and immediately invalidates the customer's active session.</p>
       <div className="space-y-3">
         <div>
-          <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">New Password</label>
-          <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Min. 8 characters"
+          <label htmlFor="customer-password-reset-new" className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">New Password</label>
+          <input id="customer-password-reset-new" name="newPassword" type="password" autoComplete="new-password" required minLength={8} value={pw} onChange={e => setPw(e.target.value)} placeholder="Uppercase, number and special character"
             className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-amber-500/40" />
         </div>
         <div>
-          <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Confirm Password</label>
-          <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat password"
+          <label htmlFor="customer-password-reset-confirm" className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Confirm Password</label>
+          <input id="customer-password-reset-confirm" name="confirmPassword" type="password" autoComplete="new-password" required minLength={8} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat password"
             className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-amber-500/40" />
         </div>
       </div>
