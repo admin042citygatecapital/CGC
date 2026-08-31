@@ -90,6 +90,11 @@ describe('admin platform health', () => {
     const { state, res } = response();
     await handler({} as Request, res);
 
+    const [queryParts] = dependencies.query.mock.calls[0] as [TemplateStringsArray];
+    const summarySql = Array.from(queryParts).join(' ');
+    expect(summarySql).toContain('(SELECT max(updated_at) FROM homepage_content_versions)');
+    expect(summarySql).not.toContain('(SELECT max(created_at) FROM homepage_content_versions)');
+
     expect(state.body).toMatchObject({
       status: 'healthy',
       components: { email: { state: 'not_configured', required: false } },
