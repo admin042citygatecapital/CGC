@@ -6,7 +6,7 @@
  *  ② Financial KPIs     — Deposits / Withdrawals / Transfers / Revenue
  *  ③ Pending Flows      — Pending Deposits / Withdrawals / Transfers
  *  ④ Exchange Rates     — USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
- *  ⑤ Pre-deployment status     — financial locks and sponsor-readiness boundary
+ *  ⑤ Platform controls        — website, features, system and integrations
  *  ⑥ Fee Activity       — 14-day fee-record and activity chart
  *  ⑦ Notifications      — administrative activity feed, 15 s poll
  *  ⑧ System Health      — API, DB, Email, Server, Storage, Memory, CPU,
@@ -243,24 +243,39 @@ function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section: Pre-deployment data boundary
+// Section: Platform controls
 // ─────────────────────────────────────────────────────────────────────────────
-function PreviewDataPanel() {
+function PlatformControlPanel() {
+  const controls = [
+    { label: 'Website & CMS', detail: 'Pages, navigation and content', href: '/admin/website', icon: Layers },
+    { label: 'Features & access', detail: 'Modules and customer availability', href: '/admin/config?section=featureToggles', icon: Zap },
+    { label: 'System controls', detail: 'Maintenance and service health', href: '/admin/system', icon: Server },
+    { label: 'Integrations', detail: 'Provider readiness and diagnostics', href: '/admin/integrations', icon: Globe },
+  ] as const;
+
   return (
     <div className="rounded-2xl border border-white/[0.05] p-4" style={{ background: 'rgba(255,255,255,0.025)' }}>
-      <div className="mb-4 flex items-center gap-2">
-        <Lock size={13} className="text-amber-300" />
-        <h3 className="text-sm font-semibold text-white">Pre-deployment financial boundary</h3>
+      <div className="mb-1 flex items-center gap-2">
+        <ShieldCheck size={13} className="text-emerald-300" />
+        <h3 className="text-sm font-semibold text-white">Platform controls</h3>
       </div>
-      <div className="space-y-2 text-xs">
-        {[['Money movement', 'Disabled'], ['Sponsor ledger', 'Not connected'], ['Custody and crypto', 'Deferred'], ['Provider adapters', 'Not implemented']].map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between border-b border-white/[0.04] py-2 last:border-0">
-            <span className="text-white/40">{label}</span><span className="font-semibold text-amber-200/75">{value}</span>
-          </div>
+      <p className="mb-3 text-[11px] leading-relaxed text-white/35">
+        Manage routine website and platform operations through protected, audited workspaces.
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {controls.map(({ label, detail, href, icon: Icon }) => (
+          <Link key={label} to={href} className="group rounded-xl border border-white/[0.06] bg-white/[0.025] p-3 transition-colors hover:border-primary/25 hover:bg-primary/[0.05]">
+            <div className="mb-2 flex items-center justify-between">
+              <Icon size={13} className="text-primary/80" />
+              <ChevronRight size={11} className="text-white/20 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+            </div>
+            <p className="text-xs font-semibold text-white/75">{label}</p>
+            <p className="mt-1 text-[10px] leading-snug text-white/30">{detail}</p>
+          </Link>
         ))}
       </div>
       <Link to="/admin/sponsor-readiness" className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-amber-300/15 bg-amber-300/[0.07] py-2 text-[11px] font-semibold text-amber-200 transition-colors hover:bg-amber-300/[0.1]">
-        Sponsor-readiness workspace <ChevronRight size={10} />
+        Financial service readiness <ChevronRight size={10} />
       </Link>
     </div>
   );
@@ -640,7 +655,7 @@ export default function AdminDashboard() {
 
         <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3">
           <Lock size={15} className="mt-0.5 shrink-0 text-amber-200" />
-          <div><p className="text-sm font-semibold text-amber-100">Pre-deployment administration</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">Financial figures below summarize persistent synthetic application records. They are not bank balances, safeguarded funds, assets under management, recognised revenue, or provider-ledger entries. Money movement and provider adapters remain disabled.</p></div>
+          <div><p className="text-sm font-semibold text-amber-100">Financial data safeguards</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">Website, customer and platform settings are managed through the protected workspaces below. Financial figures summarize isolated application records and are not bank balances, safeguarded funds, assets under management, recognised revenue or provider-ledger entries. Regulated services require their approved provider, ledger and compliance gates.</p></div>
         </div>
 
         {loading ? (
@@ -697,10 +712,10 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* ── Section 4: Pre-deployment analytics, rates and boundary ── */}
+            {/* ── Section 4: Operational analytics, rates and controls ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
-                <BarChart2 size={10} /> Pre-deployment analytics & configuration
+                <BarChart2 size={10} /> Operational analytics & controls
               </p>
               <div className="grid lg:grid-cols-3 gap-4">
                 {/* Revenue chart — spans 1 col on lg */}
@@ -709,7 +724,7 @@ export default function AdminDashboard() {
                 </div>
                 {/* Exchange rates */}
                 <ExchangeRatesPanel rates={stats?.exchangeRates ?? null} />
-                <PreviewDataPanel />
+                <PlatformControlPanel />
               </div>
             </section>
 
