@@ -65,8 +65,14 @@ describe('production admin financial lock coverage', () => {
 
   it('does not present preview crypto holdings or deposits as revenue on the executive dashboard', () => {
     const page = readFileSync('src/pages/admin/index.tsx', 'utf8');
-    expect(page).toContain('Pre-deployment administration');
-    expect(page).toContain('Pre-deployment financial boundary');
+    expect(page).toContain('Financial data safeguards');
+    expect(page).toContain('Platform controls');
+    expect(page).toContain('/admin/config?section=featureToggles');
+    expect(page).toContain('/admin/website');
+    expect(page).toContain('/admin/system');
+    expect(page).toContain('/admin/integrations');
+    expect(page).not.toContain("['Money movement', 'Disabled']");
+    expect(page).not.toContain('Pre-deployment financial boundary');
     expect(page).not.toContain('Crypto Market');
     expect(page).not.toContain('AUM:');
 
