@@ -55,4 +55,17 @@ describe('homepage CMS publication boundary', () => {
     }
     expect(readFileSync('src/pages/index.tsx', 'utf8')).toContain('HomepageContentProvider');
   });
+
+  it('does not publish illustrative customer balances or transactions', () => {
+    const source = readFileSync('src/sections/BankingModule.tsx', 'utf8');
+
+    for (const illustrativeValue of [
+      '$28,650.75',
+      'Coffee shop',
+      'Salary deposit',
+      'Travel booking',
+    ]) {
+      expect(source).not.toContain(illustrativeValue);
+    }
+  });
 });

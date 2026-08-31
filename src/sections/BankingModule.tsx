@@ -157,7 +157,7 @@ export function HeroSection() {
             </motion.div>
           </div>
 
-          {/* Hero logo — right column */}
+          {/* Product capabilities — right column */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
@@ -166,17 +166,31 @@ export function HeroSection() {
           >
             <div className="w-[260px] space-y-3 mr-1 xl:mr-6">
               <div className="rounded-2xl border border-primary/25 bg-[#07101e]/90 p-5 shadow-2xl backdrop-blur-md">
-                <div className="flex items-center justify-between text-xs text-foreground/55"><span>Total balance</span><span>USD</span></div>
-                <p className="mt-2 text-2xl font-bold text-foreground">$28,650.75</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Eye size={17} /></div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Your financial view</p>
+                    <p className="mt-1 text-xs leading-5 text-foreground/55">Private account information is available only after secure sign-in.</p>
+                  </div>
+                </div>
               </div>
               <div className="rounded-2xl border border-primary/20 bg-black/75 p-5 shadow-2xl backdrop-blur-md">
-                <div className="flex items-center justify-between"><p className="text-xs font-semibold">Spending overview</p><TrendingUp size={15} className="text-primary" /></div>
-                <p className="mt-3 text-sm font-semibold text-primary">−8.3%</p>
-                <div className="mt-4 flex h-12 items-end gap-1">{[28,42,35,54,47,68,58,74,65,86,73,96].map((height, index) => <span key={index} className="flex-1 rounded-t bg-primary/60" style={{ height: `${height}%` }} />)}</div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><BarChart3 size={17} /></div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Financial insights</p>
+                    <p className="mt-1 text-xs leading-5 text-foreground/55">Review account activity and available analytics in your authenticated workspace.</p>
+                  </div>
+                </div>
               </div>
               <div className="rounded-2xl border border-primary/20 bg-black/75 p-5 shadow-2xl backdrop-blur-md">
-                <p className="text-xs font-semibold mb-4">Recent activity</p>
-                <div className="space-y-3 text-xs"><div className="flex justify-between"><span className="text-foreground/60">Coffee shop</span><span>−$4.75</span></div><div className="flex justify-between"><span className="text-foreground/60">Salary deposit</span><span className="text-emerald-400">+$2,450.00</span></div><div className="flex justify-between"><span className="text-foreground/60">Travel booking</span><span>−$320.00</span></div></div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Shield size={17} /></div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Security and control</p>
+                    <p className="mt-1 text-xs leading-5 text-foreground/55">Session protection and account controls keep personal activity out of the public website.</p>
+                  </div>
+                </div>
               </div>
               <div className="hidden">
               {/* Ambient glow ring */}
