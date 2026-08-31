@@ -148,7 +148,7 @@ export default function AboutPage() {
                   One premium experience for personal accounts, business finances, multi-currency services, beneficiaries, statements, and secure account management.
                 </p>
                 <Link to="/accounts" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-black transition-transform hover:-translate-y-0.5">
-                  Explore Banking <ArrowRight size={16} />
+                  Explore Account Options <ArrowRight size={16} />
                 </Link>
               </div>
 

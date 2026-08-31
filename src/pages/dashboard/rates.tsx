@@ -203,10 +203,15 @@ export default function ExchangeRatesPage() {
             <div className="flex items-center gap-3 flex-wrap">
               {/* From */}
               <div className="flex-1 min-w-[120px] flex flex-col gap-1.5">
-                <label className="text-[10px] text-foreground/35">Amount</label>
+                <label htmlFor="exchange-amount" className="text-[10px] text-foreground/35">Amount</label>
                 <div className="flex items-center gap-2 bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5">
                   <input
+                    id="exchange-amount"
+                    name="amount"
                     type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
                     value={amount}
                     onChange={e => { setAmount(e.target.value); setCalculationMessage(''); }}
                     className="flex-1 bg-transparent text-sm font-bold text-foreground focus:outline-none min-w-0"
@@ -214,7 +219,7 @@ export default function ExchangeRatesPage() {
                   />
                   <CurrencyMark currency={fromCcy} size={25} />
                   <div className="relative">
-                    <select value={fromCcy} onChange={e => { setFromCcy(e.target.value); setCalculationMessage(''); }}
+                    <select name="fromCurrency" value={fromCcy} onChange={e => { setFromCcy(e.target.value); setCalculationMessage(''); }}
                       aria-label="Currency to exchange from"
                       className="appearance-none bg-transparent text-xs font-semibold text-foreground/70 focus:outline-none cursor-pointer pr-4 max-w-[92px]">
                       {availableCurrencies.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{currencyOptionLabel(c)}</option>)}
@@ -243,7 +248,7 @@ export default function ExchangeRatesPage() {
                   </span>
                   <CurrencyMark currency={toCcy} size={25} />
                   <div className="relative">
-                    <select value={toCcy} onChange={e => { setToCcy(e.target.value); setCalculationMessage(''); }}
+                    <select name="toCurrency" value={toCcy} onChange={e => { setToCcy(e.target.value); setCalculationMessage(''); }}
                       aria-label="Currency to exchange to"
                       className="appearance-none bg-transparent text-xs font-semibold text-foreground/70 focus:outline-none cursor-pointer pr-4 max-w-[92px]">
                       {availableCurrencies.map(c => <option key={c} value={c} style={{ background: '#0a0a0a' }}>{currencyOptionLabel(c)}</option>)}

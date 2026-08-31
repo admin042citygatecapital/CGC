@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import bcrypt from 'bcryptjs';
 import {
-  E2E_ADMIN, E2E_CUSTOMER, E2E_RESET_CUSTOMER,
+  E2E_ADMIN, E2E_CUSTOMER, E2E_RESET_CUSTOMER, E2E_ROUTE_AUDIT_CUSTOMER,
   E2E_TWO_FACTOR_CUSTOMER, E2E_UNVERIFIED_CUSTOMER,
 } from '../e2e/test-credentials.js';
 
@@ -45,8 +45,9 @@ const [{ hashPassword }, { createUser }] = await Promise.all([
   import('../src/server/lib/userStore.js'),
 ]);
 
-const [customerHash, unverifiedHash, resetHash, twoFactorHash, adminHash, validatorHash] = await Promise.all([
+const [customerHash, routeAuditHash, unverifiedHash, resetHash, twoFactorHash, adminHash, validatorHash] = await Promise.all([
   hashPassword(E2E_CUSTOMER.password),
+  hashPassword(E2E_ROUTE_AUDIT_CUSTOMER.password),
   hashPassword(E2E_UNVERIFIED_CUSTOMER.password),
   hashPassword(E2E_RESET_CUSTOMER.password),
   hashPassword(E2E_TWO_FACTOR_CUSTOMER.password),
@@ -64,6 +65,24 @@ await createUser({
   amlRiskLevel: 'low',
   emailVerified: true,
   passwordHash: customerHash,
+  balance: 125_000,
+  primaryCurrency: 'GBP',
+  accountTier: 'personal',
+});
+
+// Keep the long route catalogue independent from tests that intentionally log
+// out the general browser fixture. The production database supports multiple
+// sessions; the development flat-file fallback intentionally stores only one.
+await createUser({
+  email: E2E_ROUTE_AUDIT_CUSTOMER.email,
+  name: E2E_ROUTE_AUDIT_CUSTOMER.name,
+  country: 'United Kingdom',
+  status: 'active',
+  kycStatus: 'approved',
+  amlStatus: 'cleared',
+  amlRiskLevel: 'low',
+  emailVerified: true,
+  passwordHash: routeAuditHash,
   balance: 125_000,
   primaryCurrency: 'GBP',
   accountTier: 'personal',

@@ -28,9 +28,25 @@ export default function OnboardingPage() {
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
   async function load() {
-    const r = await fetch("/api/users/onboarding");
-    if (r.ok) setBundle(await r.json());
+    setLoading(true);
+    try {
+      const r = await fetch("/api/users/onboarding");
+      const body = await r.json();
+      if (r.ok) {
+        setBundle(body);
+        setMessage("");
+      } else {
+        setBundle(null);
+        setMessage(body.error ?? "Registration progress is temporarily unavailable.");
+      }
+    } catch {
+      setBundle(null);
+      setMessage("Registration progress is temporarily unavailable.");
+    } finally {
+      setLoading(false);
+    }
   }
   useEffect(() => {
     void load();
@@ -84,9 +100,14 @@ export default function OnboardingPage() {
             is complete.
           </p>
         </div>
-        {!bundle ? (
+        {message && !bundle && !loading && (
+          <div role="status" className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-5 text-sm text-amber-100">
+            {message}
+          </div>
+        )}
+        {loading ? (
           <Loader2 className="animate-spin" />
-        ) : (
+        ) : bundle ? (
           <>
             <section className="rounded-2xl border border-primary/20 bg-primary/[0.035] p-5">
               <div className="flex items-center justify-between gap-3">
@@ -222,7 +243,7 @@ export default function OnboardingPage() {
               </p>
             )}
           </>
-        )}
+        ) : null}
       </div>
     </main>
   );

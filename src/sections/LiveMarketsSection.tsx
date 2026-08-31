@@ -232,7 +232,7 @@ export function LiveMarketsSection() {
           <div>
             <div className="flex items-center gap-3 mb-3">
               <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-primary bg-primary/10 border border-primary/20 tracking-widest uppercase">
-                Live Markets
+                Market Overview
               </span>
               <WsStatusBadge status={status} isLive={isLive} source={source} />
             </div>
@@ -240,7 +240,7 @@ export function LiveMarketsSection() {
               Real-time <span className="text-gold-gradient">market data</span>
             </h2>
             <p className="text-foreground/45 mt-3 max-w-lg leading-relaxed">
-              Live prices across crypto, forex, and equities — powered by Coinbase, Kraken, and more.
+              Latest available prices across crypto, forex, and equities, refreshed automatically when market data is available.
               Updates every 3 seconds via WebSocket.
             </p>
           </div>
@@ -338,7 +338,7 @@ export function LiveMarketsSection() {
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
                     <BarChart2 className="w-10 h-10 text-white/10" />
                     <p className="text-sm text-white/25">Market data loading…</p>
-                    <p className="text-xs text-white/15">Connecting to Coinbase · Kraken</p>
+                    <p className="text-xs text-white/25">Refreshing market data</p>
                   </div>
                 ) : (
                   rows.slice(0, 8).map((row, i) => (

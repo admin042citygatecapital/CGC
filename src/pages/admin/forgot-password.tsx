@@ -132,8 +132,10 @@ export default function AdminForgotPasswordPage() {
                         <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                         <input
                           id="admin-reset-email"
+                          name="email"
                           type="email"
                           required
+                          autoComplete="email"
                           value={email}
                           onChange={e => setEmail(e.target.value)}
                           className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-10 pr-4 py-3 text-white placeholder:text-white/15 focus:outline-none focus:border-primary/40 transition-colors text-sm"

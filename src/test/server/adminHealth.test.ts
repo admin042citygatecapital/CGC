@@ -46,7 +46,12 @@ describe('admin platform health', () => {
     await handler({} as Request, res);
 
     expect(state.body).toMatchObject({
-      status: 'ok',
+      status: 'healthy',
+      components: {
+        database: { state: 'healthy', required: true },
+        email: { state: 'healthy', required: false },
+        sessions: { state: 'healthy', required: true },
+      },
       database: { ok: true, provider: 'postgresql' },
       email: { configured: true, provider: 'Resend' },
       checks: { api: 'PASS', database: 'PASS', email: 'PASS' },
@@ -62,7 +67,7 @@ describe('admin platform health', () => {
     const { state, res } = response();
     await handler({} as Request, res);
 
-    expect(state.body).toMatchObject({ status: 'error', checks: { database: 'FAIL', email: 'WARN' } });
+    expect(state.body).toMatchObject({ status: 'degraded', checks: { database: 'FAIL', email: 'WARN' } });
     expect(dependencies.query).not.toHaveBeenCalled();
   });
 
@@ -73,10 +78,22 @@ describe('admin platform health', () => {
     await handler({} as Request, res);
 
     expect(state.body).toMatchObject({
-      status: 'error',
+      status: 'degraded',
       database: { ok: true, summaryAvailable: false },
       checks: { database: 'FAIL', storage: 'FAIL' },
       users: { total: 0 },
+    });
+  });
+
+  it('does not degrade the application when optional email is intentionally not configured', async () => {
+    const handler = (await import('../../server/api/admin/health/GET.js')).default;
+    const { state, res } = response();
+    await handler({} as Request, res);
+
+    expect(state.body).toMatchObject({
+      status: 'healthy',
+      components: { email: { state: 'not_configured', required: false } },
+      checks: { email: 'WARN', database: 'PASS', sessions: 'PASS' },
     });
   });
 });

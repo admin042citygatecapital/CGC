@@ -25,7 +25,7 @@ export function WsStatusBadge({ status, isLive, source, className = '' }: WsStat
           ? <Radio size={9} />
           : <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
         }
-        {isSSE ? 'Live (SSE)' : 'Live'}
+        Prices current
       </span>
     );
   }
@@ -34,7 +34,7 @@ export function WsStatusBadge({ status, isLive, source, className = '' }: WsStat
     return (
       <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 ${className}`}>
         <RefreshCw size={9} className="animate-spin" />
-        Connecting
+        Refreshing market data
       </span>
     );
   }
@@ -43,7 +43,7 @@ export function WsStatusBadge({ status, isLive, source, className = '' }: WsStat
     return (
       <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-white/30 ${className}`}>
         <WifiOff size={9} />
-        {source === 'rest' ? 'Polling' : 'Offline'}
+        {source === 'rest' ? 'Updating prices' : 'Latest available prices'}
       </span>
     );
   }
@@ -51,7 +51,7 @@ export function WsStatusBadge({ status, isLive, source, className = '' }: WsStat
   return (
     <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/5 text-white/30 ${className}`}>
       <Wifi size={9} />
-      {source ?? 'REST'}
+      Updating prices
     </span>
   );
 }

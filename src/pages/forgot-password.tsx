@@ -113,7 +113,7 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 {error && (
-                  <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3 mb-4">
+                  <div id="password-reset-request-error" role="alert" className="flex items-start gap-2 bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3 mb-4">
                     <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
                     <p className="text-destructive text-sm">{error}</p>
                   </div>
@@ -126,8 +126,11 @@ export default function ForgotPasswordPage() {
                     </Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
+                      required
                       autoComplete="email"
+                      aria-describedby={error ? 'password-reset-request-error' : undefined}
                       placeholder="you@example.com"
                       value={email}
                       onChange={e => setEmail(e.target.value)}

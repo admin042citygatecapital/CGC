@@ -421,7 +421,7 @@ export default function MarketsPage() {
 
           {/* Provider attribution */}
           <div className="text-center text-xs text-white/15 pb-4">
-            Live data via WebSocket · Binance · Coinbase · Kraken · Prices update every 3s via WS, 8s via REST
+            Market data refreshes automatically when a configured source is available. Timestamps show the latest successful update.
           </div>
         </div>
       </div>

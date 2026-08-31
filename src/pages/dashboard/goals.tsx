@@ -32,7 +32,13 @@ export default function GoalsPage() {
     setFetching(true);
     try {
       const response = await fetch('/api/users/goals', { credentials: 'same-origin' });
-      if (response.ok) setGoals((await response.json()).goals ?? []);
+      const body = await response.json().catch(() => ({}));
+      if (response.ok) {
+        setGoals(body.goals ?? []);
+        setMessage('');
+      } else {
+        setMessage(body.error ?? 'Savings goals are temporarily unavailable.');
+      }
     } finally { setFetching(false); }
   };
   useEffect(() => { if (customer) void load(); }, [customer]);

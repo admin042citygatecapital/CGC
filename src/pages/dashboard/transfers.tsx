@@ -142,7 +142,7 @@ export default function CustomerTransfersPage() {
       const body = await response.json();
       if (!response.ok)
         throw new Error(body.error ?? "Unable to post transfer.");
-      setMessage(`Balanced internal transfer posted: ${body.reference}`);
+      setMessage(`Internal transfer completed: ${body.reference}`);
       setForm((value) => ({ ...value, amount: "", description: "" }));
       await load();
     } catch (cause) {
@@ -208,15 +208,18 @@ export default function CustomerTransfersPage() {
           </div>
         )}
         <div className="grid lg:grid-cols-[380px_1fr] gap-6">
-          <section className="rounded-2xl border border-white/8 bg-white/[0.025] p-5 h-fit">
+          <form onSubmit={(event) => { event.preventDefault(); void submit(); }} className="rounded-2xl border border-white/8 bg-white/[0.025] p-5 h-fit">
             <h1 className="font-bold mb-1">New internal transfer</h1>
             <p className="text-xs text-white/35 mb-5">
               Every successful transfer creates one balanced journal entry.
             </p>
-            <label className="text-[10px] uppercase text-white/35">
+            <label htmlFor="transfer-source-account" className="text-[10px] uppercase text-white/35">
               From account
             </label>
             <select
+              id="transfer-source-account"
+              name="sourceAccountId"
+              required
               value={form.sourceAccountId}
               onChange={(event) =>
                 setForm({
@@ -245,10 +248,13 @@ export default function CustomerTransfersPage() {
                 </span>
               </div>
             )}
-            <label className="text-[10px] uppercase text-white/35">
+            <label htmlFor="transfer-destination-account" className="text-[10px] uppercase text-white/35">
               To account
             </label>
             <select
+              id="transfer-destination-account"
+              name="destinationAccountId"
+              required
               value={form.destinationAccountId}
               onChange={(event) =>
                 setForm({ ...form, destinationAccountId: event.target.value })
@@ -262,10 +268,16 @@ export default function CustomerTransfersPage() {
                 </option>
               ))}
             </select>
-            <label className="text-[10px] uppercase text-white/35">
+            <label htmlFor="transfer-amount" className="text-[10px] uppercase text-white/35">
               Amount
             </label>
             <input
+              id="transfer-amount"
+              name="amount"
+              type="number"
+              required
+              min="0.01"
+              step="0.01"
               value={form.amount}
               onChange={(event) =>
                 setForm({ ...form, amount: event.target.value })
@@ -274,10 +286,15 @@ export default function CustomerTransfersPage() {
               placeholder="0.00"
               className="mt-1 mb-4 w-full bg-black/30 border border-white/10 rounded-xl px-3 py-3 text-sm"
             />
-            <label className="text-[10px] uppercase text-white/35">
+            <label htmlFor="transfer-description" className="text-[10px] uppercase text-white/35">
               Description
             </label>
             <input
+              id="transfer-description"
+              name="description"
+              required
+              minLength={3}
+              maxLength={160}
               value={form.description}
               onChange={(event) =>
                 setForm({ ...form, description: event.target.value })
@@ -286,7 +303,7 @@ export default function CustomerTransfersPage() {
               className="mt-1 mb-4 w-full bg-black/30 border border-white/10 rounded-xl px-3 py-3 text-sm"
             />
             <button
-              onClick={() => void submit()}
+              type="submit"
               disabled={!canSend || busy}
               className="w-full rounded-xl bg-primary py-3 font-bold text-black disabled:opacity-30"
             >
@@ -295,17 +312,17 @@ export default function CustomerTransfersPage() {
               ) : (
                 <>
                   <Send size={15} className="inline mr-2" />
-                  Post internal transfer
+                  Send internal transfer
                 </>
               )}
             </button>
-          </section>
+          </form>
           <section>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="font-bold">Transaction history</h2>
                 <p className="text-xs text-white/30">
-                  {transfers.length} synthetic journal transactions
+                  {transfers.length} internal transfer records
                 </p>
               </div>
               <Link to="/dashboard/accounts" className="text-xs text-primary">

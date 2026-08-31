@@ -139,7 +139,7 @@ export default function OurStoryPage() {
               </p>
               <div className="mt-10 flex flex-wrap gap-4">
                 <Link to="/accounts" className="inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-primary text-black font-semibold">
-                  Explore banking <ArrowRight size={18} />
+                  Explore Account Options <ArrowRight size={18} />
                 </Link>
                 <Link to="/contact" className="inline-flex items-center gap-2 px-7 py-4 rounded-xl border border-primary/25 font-semibold hover:border-primary/60 transition-colors">
                   Contact our team

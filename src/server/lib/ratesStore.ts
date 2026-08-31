@@ -412,7 +412,7 @@ export async function readFeeHistory(limit = 200, offset = 0): Promise<{ data: F
   if (!isDatabaseConfigured()) return { data: [], total: 0 };
   const sql = getQueryClient();
   const [rows, counts] = await Promise.all([
-    sql<Array<{ id: string; ts: Date; admin_id: string; admin_email: string | null; section: string; field: string; old_value: string; new_value: string; ip: string }>>`
+    sql<Array<{ id: string; ts: Date | string; admin_id: string; admin_email: string | null; section: string; field: string; old_value: string; new_value: string; ip: string }>>`
       SELECT id, ts, admin_id, admin_email, section, field, old_value, new_value, ip
       FROM rate_fee_history ORDER BY ts DESC, id DESC LIMIT ${limit} OFFSET ${offset}
     `,
@@ -420,7 +420,7 @@ export async function readFeeHistory(limit = 200, offset = 0): Promise<{ data: F
   ]);
   return {
     data: rows.map(row => ({
-      id: row.id, ts: row.ts.toISOString(), adminId: row.admin_id,
+      id: row.id, ts: new Date(row.ts).toISOString(), adminId: row.admin_id,
       adminEmail: row.admin_email ?? undefined, section: row.section, field: row.field,
       oldValue: row.old_value, newValue: row.new_value, ip: row.ip,
     })),

@@ -68,14 +68,23 @@ export function generateSessionToken(): string {
 
 // ── DB row → Session ──────────────────────────────────────────────────────────
 
-function toSession(r: AdminSession): Session {
+function parseTimestamp(value: Date | string | null | undefined): Date | null {
+  if (value == null) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function toSession(r: AdminSession): Session | null {
+  const createdAt = parseTimestamp(r.createdAt);
+  const lastSeenAt = parseTimestamp(r.lastSeenAt);
+  if (!createdAt || !lastSeenAt) return null;
   return {
     adminId:    r.adminId,
     email:      r.email,
     role:       r.role as AdminRole,
     credentialVersion: r.credentialVersion,
-    createdAt:  r.createdAt.toISOString(),
-    lastSeenAt: r.lastSeenAt.toISOString(),
+    createdAt:  createdAt.toISOString(),
+    lastSeenAt: lastSeenAt.toISOString(),
     ip:         r.ip,
     ua:         r.ua,
   };
@@ -164,9 +173,9 @@ export async function getSession(
       credential_version: number;
       ip: string;
       ua: string;
-      created_at: Date;
-      last_seen_at: Date;
-      expires_at: Date;
+      created_at: Date | string;
+      last_seen_at: Date | string;
+      expires_at: Date | string;
       current_credential_version: number;
       is_active: boolean;
     }[]>`
@@ -180,10 +189,14 @@ export async function getSession(
     `;
     if (!s) return null;
 
+    const expiresAt = parseTimestamp(s.expires_at);
+    const lastSeenAt = parseTimestamp(s.last_seen_at);
+    const createdAt = parseTimestamp(s.created_at);
     const inactive = !s.is_active || s.credential_version !== s.current_credential_version;
-    const absoluteExpired = new Date(s.expires_at) < now;
-    const inactivityExpired = new Date(new Date(s.last_seen_at).getTime() + INACTIVITY_MS) < now;
-    if (inactive || absoluteExpired || inactivityExpired) {
+    const malformedTimestamp = !expiresAt || !lastSeenAt || !createdAt;
+    const absoluteExpired = !expiresAt || expiresAt < now;
+    const inactivityExpired = !lastSeenAt || new Date(lastSeenAt.getTime() + INACTIVITY_MS) < now;
+    if (inactive || malformedTimestamp || absoluteExpired || inactivityExpired) {
       await tx`DELETE FROM admin_sessions WHERE token_hash = ${tokenHash}`;
       return null;
     }
@@ -194,7 +207,7 @@ export async function getSession(
       email: s.email,
       role: s.role,
       credentialVersion: s.credential_version,
-      createdAt: new Date(s.created_at).toISOString(),
+      createdAt: createdAt.toISOString(),
       lastSeenAt: now.toISOString(),
       ip: s.ip,
       ua: s.ua,
@@ -220,7 +233,10 @@ export async function listSessions(): Promise<Array<{ token: string } & Session>
   if (!isDatabaseConfigured()) return (await ff()).listSessions();
   const db   = getDb();
   const rows = await db.select().from(adminSessions).orderBy(adminSessions.createdAt);
-  return rows.map(r => ({ token: r.tokenHash, ...toSession(r) }));
+  return rows.flatMap(r => {
+    const session = toSession(r);
+    return session ? [{ token: r.tokenHash, ...session }] : [];
+  });
 }
 
 export async function purgeAllSessions(): Promise<void> {
@@ -245,7 +261,10 @@ export async function getSessionsByAdmin(adminId: string): Promise<Array<{ token
   const rows = await db.select().from(adminSessions)
     .where(eq(adminSessions.adminId, adminId))
     .orderBy(adminSessions.createdAt);
-  return rows.map(r => ({ token: r.tokenHash, ...toSession(r) }));
+  return rows.flatMap(r => {
+    const session = toSession(r);
+    return session ? [{ token: r.tokenHash, ...session }] : [];
+  });
 }
 
 /** Delete all sessions belonging to a given admin (e.g. after password reset). */

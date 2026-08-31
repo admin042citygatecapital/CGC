@@ -126,7 +126,7 @@ export async function quarantineTestData(options: {
   return sql.begin(async transaction => {
     const candidates = await transaction<Array<{
       id: string; email: string; status: string; data_classification: string;
-      quarantine_batch_id: string | null; quarantined_at: Date | null;
+      quarantine_batch_id: string | null; quarantined_at: Date | string | null;
     }>>`
       SELECT id, lower(email) AS email, status, data_classification,
              quarantine_batch_id, quarantined_at
@@ -157,7 +157,7 @@ export async function quarantineTestData(options: {
       INSERT INTO data_quarantine_batches
         (id, provider_backup_reference, provider_backup_verified_at, reason, initiated_by, status, customer_count, transaction_count)
       VALUES
-        (${batchId}, ${providerBackupReference}, ${providerBackupVerifiedAt}, ${reason}, ${actor}, 'planned', ${candidates.length}, ${transactionRows.length})
+        (${batchId}, ${providerBackupReference}, ${providerBackupVerifiedAt.toISOString()}, ${reason}, ${actor}, 'planned', ${candidates.length}, ${transactionRows.length})
     `;
 
     for (const row of candidates) {
@@ -165,7 +165,7 @@ export async function quarantineTestData(options: {
         status: row.status,
         dataClassification: row.data_classification,
         quarantineBatchId: row.quarantine_batch_id,
-        quarantinedAt: row.quarantined_at?.toISOString() ?? null,
+        quarantinedAt: row.quarantined_at ? new Date(row.quarantined_at).toISOString() : null,
       };
       const canonical = canonicalSnapshot(previousState);
       await transaction`
@@ -256,7 +256,7 @@ export async function restoreQuarantineBatch(options: {
             status = ${String(state.status)},
             data_classification = ${String(state.dataClassification)},
             quarantine_batch_id = ${state.quarantineBatchId ? String(state.quarantineBatchId) : null},
-            quarantined_at = ${state.quarantinedAt ? new Date(String(state.quarantinedAt)) : null},
+            quarantined_at = ${state.quarantinedAt ? new Date(String(state.quarantinedAt)).toISOString() : null},
             updated_at = NOW()
           WHERE id = ${record.resource_id} AND quarantine_batch_id = ${batchId}
         `;

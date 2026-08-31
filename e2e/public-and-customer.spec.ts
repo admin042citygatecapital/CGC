@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import crypto from 'node:crypto';
 import {
-  E2E_CUSTOMER, E2E_RESET_CUSTOMER, E2E_TWO_FACTOR_CUSTOMER,
+  E2E_CUSTOMER, E2E_RESET_CUSTOMER, E2E_ROUTE_AUDIT_CUSTOMER, E2E_TWO_FACTOR_CUSTOMER,
   E2E_UNVERIFIED_CUSTOMER,
 } from './test-credentials.js';
 
@@ -55,6 +55,16 @@ test('public site renders the owned brand without unsupported banking claims', a
   await page.getByRole('link', { name: 'Explore Digital Banking' }).click();
   await expect(page).toHaveURL(/\/digital-banking$/);
   await expect(page.getByText('Digital Banking', { exact: true })).toBeVisible();
+});
+
+test('public account options never expose a synthetic customer dashboard', async ({ page }) => {
+  await page.goto('/accounts');
+  await expect(page.getByRole('heading', { level: 1, name: 'Choose the Account That Fits Your Ambition' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start Your Application' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Explore Digital Banking' }).first()).toBeVisible();
+  const body = page.locator('body');
+  await expect(body).not.toContainText(/Alex Morgan|Recent transactions|Asset allocation|What Our Customers Say/i);
+  await expect(body).not.toContainText(/\$\s?\d/);
 });
 
 test('protected customer routes redirect to the session-expired login state', async ({ page }) => {
@@ -208,6 +218,64 @@ test('account, transaction, beneficiary and support views remain usable on mobil
   await page.getByRole('button', { name: /Sign Out/i }).click();
   await expect(page).toHaveURL(/\/login(?:\?|$)/);
   expect((await page.request.get('/api/users/session')).status()).toBe(401);
+});
+
+test('the authenticated customer route catalogue stays inside the customer boundary without server errors', async ({ page }) => {
+  test.setTimeout(120_000);
+  await isolateMarketData(page);
+  await login(page, E2E_ROUTE_AUDIT_CUSTOMER.email, E2E_ROUTE_AUDIT_CUSTOMER.password);
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  const serverErrors: string[] = [];
+  const expectedUnavailable = new Set([
+    '/api/users/plaid',
+    '/api/users/onboarding',
+    '/api/users/support',
+    '/api/users/bills',
+    '/api/users/goals',
+  ]);
+  const unavailableStates = new Set<string>();
+  const pageErrors: string[] = [];
+  page.on('response', response => {
+    const url = new URL(response.url());
+    if (url.origin === new URL(page.url()).origin && response.status() >= 500) {
+      if (response.status() === 503 && expectedUnavailable.has(url.pathname)) {
+        unavailableStates.add(url.pathname);
+      } else {
+        serverErrors.push(`${response.status()} ${url.pathname}`);
+      }
+    }
+  });
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  const routes = [
+    '/dashboard', '/dashboard/accounts', '/dashboard/transactions', '/dashboard/transfers',
+    '/dashboard/beneficiaries', '/dashboard/cards', '/dashboard/wallets', '/dashboard/deposits',
+    '/dashboard/rates', '/dashboard/exchange', '/dashboard/trading', '/dashboard/trading/markets',
+    '/dashboard/trading/orders', '/dashboard/trading/chart', '/dashboard/trading/watchlist',
+    '/dashboard/trading/analytics', '/dashboard/trading/spot', '/dashboard/trading/trades',
+    '/dashboard/portfolio', '/dashboard/statements', '/dashboard/notifications', '/dashboard/profile',
+    '/dashboard/settings', '/dashboard/security', '/dashboard/devices', '/dashboard/support',
+    '/dashboard/disputes', '/dashboard/goals', '/dashboard/bills', '/dashboard/payments',
+    '/dashboard/rewards', '/dashboard/search', '/kyc', '/onboarding',
+  ];
+
+  for (const route of routes) {
+    await page.goto(route, { waitUntil: 'domcontentloaded' });
+    await expect(page, `${route} must remain in the customer application`).not.toHaveURL(/\/admin(?:\/login)?/);
+    await expect(page, `${route} must retain the authenticated customer session`).not.toHaveURL(/\/login\?reason=session_expired/);
+    await expect(page.locator('body')).toBeVisible();
+    await page.waitForTimeout(100);
+  }
+
+  expect(serverErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  for (const endpoint of expectedUnavailable) {
+    const response = await page.request.get(endpoint);
+    expect(response.status(), `${endpoint} must fail closed when its dependency is unavailable`).toBe(503);
+    unavailableStates.add(endpoint);
+  }
+  expect([...unavailableStates].sort()).toEqual([...expectedUnavailable].sort());
 });
 
 test('repeated customer login failures trigger per-account throttling', async ({ page }) => {

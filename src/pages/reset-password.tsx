@@ -165,7 +165,7 @@ export default function ResetPasswordPage() {
                 </div>
 
                 {error && (
-                  <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3 mb-4">
+                  <div id="password-reset-error" role="alert" className="flex items-start gap-2 bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3 mb-4">
                     <ShieldAlert className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
                     <p className="text-destructive text-sm">{error}</p>
                   </div>
@@ -180,8 +180,13 @@ export default function ResetPasswordPage() {
                     <div className="relative">
                       <Input
                         id="password"
+                        name="password"
                         type={showPw ? 'text' : 'password'}
+                        required
+                        minLength={8}
+                        maxLength={256}
                         autoComplete="new-password"
+                        aria-describedby={error ? 'password-reset-error' : undefined}
                         placeholder="Min. 8 characters"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
@@ -208,8 +213,13 @@ export default function ResetPasswordPage() {
                     <div className="relative">
                       <Input
                         id="confirm"
+                        name="confirmPassword"
                         type={showCf ? 'text' : 'password'}
+                        required
+                        minLength={8}
+                        maxLength={256}
                         autoComplete="new-password"
+                        aria-describedby={error ? 'password-reset-error' : undefined}
                         placeholder="Repeat your password"
                         value={confirm}
                         onChange={e => setConfirm(e.target.value)}

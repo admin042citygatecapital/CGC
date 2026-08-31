@@ -45,7 +45,6 @@ TrendingUp,
 UserCheck,
 Users,
 UserX,
-Wifi,
 Zap
 } from 'lucide-react';
 import { AnimatePresence,motion } from 'motion/react';
@@ -73,6 +72,7 @@ interface Stats {
 
 interface HealthData {
   status: string;
+  components: Record<string, { state: 'healthy' | 'warning' | 'degraded' | 'not_configured' | 'unknown'; required: boolean; detail: string }>;
   uptime: { seconds: number; human: string };
   memory: { heapUsedMb: number; heapTotalMb: number; rssMb: number; freeRamMb: number; totalRamMb: number };
   stores: Record<string, { mode: 'managed'; recordCount: number; lastUpdated: string | null }>;
@@ -354,59 +354,27 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
 
   const trackedRecords = health?.storage.trackedRecords ?? 0;
 
-  // CPU: use load average as proxy (load1m / cores — not available here, use uptime heuristic)
-  // We'll show uptime instead of CPU% since we don't have CPU% from health endpoint
-  const uptimeH = health ? Math.floor(health.uptime.seconds / 3600) : 0;
-  const uptimeM = health ? Math.floor((health.uptime.seconds % 3600) / 60) : 0;
+  const componentPresentation = {
+    api: { label: 'API', icon: Globe },
+    database: { label: 'Database', icon: Database },
+    storage: { label: 'Storage', icon: HardDrive },
+    sessions: { label: 'Sessions', icon: ShieldCheck },
+    email: { label: 'Email', icon: Mail },
+    memory: { label: 'Memory', icon: Cpu },
+  } as const;
+  const checks = Object.entries(health?.components ?? {}).map(([key, component]) => ({
+    key,
+    label: componentPresentation[key as keyof typeof componentPresentation]?.label ?? key,
+    icon: componentPresentation[key as keyof typeof componentPresentation]?.icon ?? Server,
+    ok: component.state === 'healthy',
+    warn: component.state === 'warning' || component.state === 'not_configured',
+    detail: component.detail,
+  }));
 
-  // Subsystem checks
-  const checks = [
-    {
-      key: 'api',        label: 'API',        icon: Globe,      ok: !!health,
-      detail: health ? 'Responding' : 'Unreachable',
-    },
-    {
-      key: 'database',   label: 'Database',   icon: Database,   ok: !!health?.database.ok,
-      detail: health?.database.ok ? `PostgreSQL · ${health.database.latencyMs ?? 0}ms` : 'Unavailable',
-    },
-    {
-      key: 'email',      label: 'Email',      icon: Mail,       ok: !!health?.email.configured,
-      detail: health?.email.provider ?? 'Unknown',
-    },
-    {
-      key: 'server',     label: 'Server',     icon: Server,     ok: !!health,
-      detail: health ? `Node ${health.runtime.nodeVersion}` : 'Unknown',
-    },
-    {
-      key: 'storage',    label: 'Storage',    icon: HardDrive,  ok: health?.storage.database === 'managed',
-      detail: health?.storage.database === 'managed' ? 'Managed storage' : 'Unavailable',
-    },
-    {
-      key: 'memory',     label: 'Memory',     icon: Cpu,        ok: memPct < 85,
-      warn: memPct >= 70 && memPct < 85,
-      detail: health ? `${health.memory.heapUsedMb}/${health.memory.heapTotalMb} MB` : '—',
-    },
-    {
-      key: 'cpu',        label: 'CPU',        icon: Zap,        ok: true,
-      detail: health ? `${uptimeH}h ${uptimeM}m uptime` : '—',
-    },
-    {
-      key: 'queue',      label: 'Queue',      icon: Send,       ok: true,
-      detail: 'Email queue active',
-    },
-    {
-      key: 'cloudflare', label: 'Cloudflare', icon: Wifi,       ok: true,
-      detail: 'CDN active',
-    },
-    {
-      key: 'ssl',        label: 'SSL',        icon: Lock,       ok: true,
-      detail: 'TLS 1.3',
-    },
-  ];
-
-  const allOk   = checks.every(c => c.ok);
-  const anyWarn = checks.some(c => c.warn && c.ok);
-  const anyFail = checks.some(c => !c.ok);
+  const overall = health?.status ?? 'degraded';
+  const allOk = overall === 'healthy';
+  const anyWarn = overall === 'warning';
+  const anyFail = !health || overall === 'degraded';
 
   return (
     <div className="rounded-2xl border border-white/[0.05] p-4" style={{ background: 'rgba(255,255,255,0.025)' }}>
@@ -423,11 +391,11 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
         />
       </div>
 
-      {/* 5-column subsystem grid */}
-      <div className="grid grid-cols-5 gap-1.5 mb-4">
+      {/* Authoritative server-measured subsystem grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-4">
         {checks.map(c => {
           const Icon = c.icon;
-          const ok   = c.ok && !c.warn;
+              const ok   = c.ok && !c.warn;
           const warn = c.warn;
           return (
             <div key={c.key}
@@ -474,8 +442,12 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
             <p className="text-white/55 text-[11px] font-mono">{health.uptime.human}</p>
           </div>
           <div>
-            <p className="text-white/25 text-[9px] mb-0.5">Sessions</p>
-            <p className="text-white/55 text-[11px] font-mono">{health.runtime.activeSessions} active</p>
+            <p className="text-white/25 text-[9px] mb-0.5">Administrator sessions</p>
+            <p className="text-white/55 text-[11px] font-mono">{health.runtime.activeAdminSessions} active · 60-minute activity window</p>
+          </div>
+          <div>
+            <p className="text-white/25 text-[9px] mb-0.5">Customer sessions</p>
+            <p className="text-white/55 text-[11px] font-mono">{health.runtime.activeCustomerSessions} unexpired</p>
           </div>
           <div>
             <p className="text-white/25 text-[9px] mb-0.5">Node</p>

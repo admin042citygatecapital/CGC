@@ -45,6 +45,12 @@ function publicSessionIdFromHash(tokenHash: string): string {
   return tokenHash.slice(0, 24);
 }
 
+function parseTimestamp(value: Date | string | null | undefined): Date | null {
+  if (value == null) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 /** List active sessions without exposing their bearer credentials. */
 export async function listCustomerSessions(
   userId: string,
@@ -78,17 +84,23 @@ export async function listCustomerSessions(
     .from(users).where(eq(users.id, userId)).limit(1);
   if (!principal) return [];
   const rows = await db.select().from(customerSessions).where(eq(customerSessions.userId, userId));
-  return rows
-    .filter(row => row.credentialVersion === principal.credentialVersion && row.expiresAt.getTime() > now && row.lastSeenAt.getTime() + INACTIVITY_MS > now)
-    .map(row => ({
+  return rows.flatMap(row => {
+    const createdAt = parseTimestamp(row.createdAt);
+    const lastSeenAt = parseTimestamp(row.lastSeenAt);
+    const expiresAt = parseTimestamp(row.expiresAt);
+    if (!createdAt || !lastSeenAt || !expiresAt) return [];
+    if (row.credentialVersion !== principal.credentialVersion ||
+        expiresAt.getTime() <= now || lastSeenAt.getTime() + INACTIVITY_MS <= now) return [];
+    return [{
       id: publicSessionIdFromHash(row.tokenHash),
       ip: row.ip ?? '',
       ua: row.ua ?? '',
-      createdAt: row.createdAt.toISOString(),
-      lastSeenAt: row.lastSeenAt.toISOString(),
-      expiresAt: row.expiresAt.toISOString(),
+      createdAt: createdAt.toISOString(),
+      lastSeenAt: lastSeenAt.toISOString(),
+      expiresAt: expiresAt.toISOString(),
       isCurrent: row.tokenHash === digestOpaqueToken(currentToken),
-    }));
+    }];
+  });
 }
 
 /** Revoke one session owned by this user, addressed by its non-secret ID. */
@@ -142,7 +154,7 @@ export async function createCustomerSession(
           created_at, last_seen_at, expires_at
         )
         SELECT ${digestOpaqueToken(token)}, id, credential_version, ${opts.ip ?? null}, ${opts.ua ?? null},
-               ${now}, ${now}, ${expiresAt}
+               ${now.toISOString()}, ${now.toISOString()}, ${expiresAt.toISOString()}
         FROM users
         WHERE id = ${userId} AND credential_version = ${opts.credentialVersion}
         RETURNING token_hash
@@ -190,8 +202,8 @@ export async function findUserByCustomerToken(token: string): Promise<UserRecord
       user_id: string;
       credential_version: number;
       current_credential_version: number;
-      last_seen_at: Date;
-      expires_at: Date;
+      last_seen_at: Date | string;
+      expires_at: Date | string;
     }[]>`
       SELECT s.user_id, s.credential_version,
              u.credential_version AS current_credential_version,
@@ -202,13 +214,15 @@ export async function findUserByCustomerToken(token: string): Promise<UserRecord
       FOR UPDATE OF s
     `;
     if (!session) return null;
+    const expiresAt = parseTimestamp(session.expires_at);
+    const lastSeenAt = parseTimestamp(session.last_seen_at);
     const stale = session.credential_version !== session.current_credential_version;
-    const expired = session.expires_at < now || new Date(session.last_seen_at.getTime() + INACTIVITY_MS) < now;
+    const expired = !expiresAt || !lastSeenAt || expiresAt < now || new Date(lastSeenAt.getTime() + INACTIVITY_MS) < now;
     if (stale || expired) {
       await tx`DELETE FROM customer_sessions WHERE token_hash = ${tokenHash}`;
       return null;
     }
-    await tx`UPDATE customer_sessions SET last_seen_at = ${now} WHERE token_hash = ${tokenHash}`;
+    await tx`UPDATE customer_sessions SET last_seen_at = ${now.toISOString()} WHERE token_hash = ${tokenHash}`;
     return session.user_id;
   });
   if (!userId) return undefined;
