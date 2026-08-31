@@ -8,7 +8,6 @@ type Health = Record<string, any>;
 
 export default function AdminSystem() {
   const [health, setHealth] = useState<Health|null>(null);
-  const [env, setEnv] = useState<Health|null>(null);
   const [loading, setLoading] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [reason, setReason] = useState('');
@@ -17,12 +16,9 @@ export default function AdminSystem() {
   const refresh = useCallback(async () => {
     setLoading(true); setMessage('');
     try {
-      const [h,e] = await Promise.all([
-        fetch('/api/admin/health',{credentials:'same-origin',headers:authHeaders()}),
-        fetch('/api/admin/env-report',{credentials:'same-origin',headers:authHeaders()}),
-      ]);
-      if (!h.ok || !e.ok) throw new Error('System diagnostics are unavailable.');
-      setHealth(await h.json()); setEnv((await e.json()).report);
+      const h = await fetch('/api/admin/health',{credentials:'same-origin',headers:authHeaders()});
+      if (!h.ok) throw new Error('System diagnostics are unavailable.');
+      setHealth(await h.json());
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Diagnostics failed.'); }
     finally { setLoading(false); }
   }, []);
@@ -44,7 +40,7 @@ export default function AdminSystem() {
         <div className={card}><Database className="text-amber-300 mb-3" size={18}/><p className="text-white font-medium">PostgreSQL</p><p className="text-white/35 text-xs mt-1">Latency {health?.database?.latencyMs??'—'} ms</p><div className="mt-3">{status(Boolean(health?.database?.ok))}</div></div>
         <div className={card}><Mail className="text-amber-300 mb-3" size={18}/><p className="text-white font-medium">Email delivery</p><p className="text-white/35 text-xs mt-1">{health?.email?.provider??'Unavailable'}</p><div className="mt-3">{status(Boolean(health?.email?.configured))}</div></div>
         <div className={card}><Server className="text-amber-300 mb-3" size={18}/><p className="text-white font-medium">Application runtime</p><p className="text-white/35 text-xs mt-1">{health?.runtime?.nodeVersion??'—'} · {health?.uptime?.human??'—'}</p><div className="mt-3">{status(health?.status==='ok')}</div></div>
-        <div className={card}><Shield className="text-amber-300 mb-3" size={18}/><p className="text-white font-medium">Configuration</p><p className="text-white/35 text-xs mt-1">Secrets masked · admin only</p><div className="mt-3">{status(Number(env?.summary?.critical??1)===0)}</div></div>
+        <div className={card}><Shield className="text-amber-300 mb-3" size={18}/><p className="text-white font-medium">Protected configuration</p><p className="text-white/35 text-xs mt-1">Validated privately at startup</p><div className="mt-3">{status(health?.status==='ok')}</div></div>
       </div>
       <div className="grid lg:grid-cols-2 gap-4">
         <section className={card}><h2 className="text-white font-semibold">Runtime details</h2><div className="mt-4 space-y-2 text-sm text-white/45">{[['Environment',health?.environment],['Active admin sessions',health?.runtime?.activeAdminSessions],['Active customer sessions',health?.runtime?.activeCustomerSessions],['Heap usage',`${health?.memory?.heapUsedMb??'—'} / ${health?.memory?.heapTotalMb??'—'} MB`],['Tracked records',health?.storage?.trackedRecords]].map(([k,v])=><div key={String(k)} className="flex justify-between border-b border-white/5 pb-2"><span>{k}</span><span className="text-white/70">{String(v??'—')}</span></div>)}</div></section>

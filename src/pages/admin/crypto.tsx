@@ -73,8 +73,8 @@ export default function AdminCrypto() {
                   No custody provider, deposit address, platform holding, trading venue, or live digital-asset balance is configured. Crypto is excluded from the current UK sponsor package.
                 </p>
               </div>
-              <Link to="/admin/sponsor-readiness" className="rounded-lg bg-amber-400 px-4 py-2.5 text-black text-sm font-semibold flex items-center gap-2 w-fit">
-                Sponsor workspace <ArrowRight className="w-4 h-4" />
+              <Link to="/admin/integrations" className="rounded-lg bg-amber-400 px-4 py-2.5 text-black text-sm font-semibold flex items-center gap-2 w-fit">
+                Review integrations <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </section>

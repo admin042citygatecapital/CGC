@@ -9,6 +9,17 @@ export interface CustomerCredentialRotationResult {
   revokedSessions: number;
 }
 
+export class CustomerCredentialRotationError extends Error {
+  constructor(
+    message: string,
+    readonly code: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'CustomerCredentialRotationError';
+  }
+}
+
 function getSupabaseAdminConfig(): { url: string; key: string } | null {
   const url = String(getSecret('SUPABASE_URL') || '').trim();
   const key = String(
@@ -45,7 +56,11 @@ export async function rotateCustomerPasswordCredential(input: {
 
   const config = getSupabaseAdminConfig();
   if (!config) {
-    throw new Error('Customer credential rotation is not configured.');
+    throw new CustomerCredentialRotationError(
+      'Customer credential rotation is unavailable because the protected database service credential is not configured.',
+      'SUPABASE_SERVER_CREDENTIAL_MISSING',
+      503,
+    );
   }
 
   const client = createClient(config.url, config.key, {
@@ -67,10 +82,18 @@ export async function rotateCustomerPasswordCredential(input: {
     const safeCode = typeof error.code === 'string' && /^[A-Za-z0-9_.-]{1,80}$/.test(error.code)
       ? error.code
       : 'SUPABASE_WRITE_FAILED';
-    throw Object.assign(new Error('Customer credential rotation failed.'), { code: safeCode });
+    throw new CustomerCredentialRotationError(
+      'The protected database service rejected the credential rotation.',
+      safeCode,
+      502,
+    );
   }
   if (!data) {
-    throw Object.assign(new Error('Customer credential changed concurrently.'), { code: 'CREDENTIAL_VERSION_CONFLICT' });
+    throw new CustomerCredentialRotationError(
+      'The customer credential changed concurrently. Refresh the customer record and try again.',
+      'CREDENTIAL_VERSION_CONFLICT',
+      409,
+    );
   }
 
   const revokedSessions = await deleteAllCustomerSessions(input.userId);

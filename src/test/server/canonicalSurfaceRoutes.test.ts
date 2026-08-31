@@ -26,7 +26,7 @@ describe('canonical platform surfaces', () => {
   it('keeps every canonical administration route behind AdminOnly', () => {
     for (const path of [
       '/admin/customers', '/admin/accounts', '/admin/transactions', '/admin/transfers',
-      '/admin/cards', '/admin/wallets', '/admin/trading', '/admin/kyc',
+      '/admin/cards', '/admin/crypto', '/admin/trading', '/admin/kyc',
       '/admin/compliance', '/admin/security', '/admin/support', '/admin/email',
       '/admin/integrations', '/admin/rates', '/admin/cms', '/admin/media',
       '/admin/configuration', '/admin/audit', '/admin/system',
@@ -34,5 +34,6 @@ describe('canonical platform surfaces', () => {
       const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       expect(routes).toMatch(new RegExp(`path: '${escaped}'[^\\n]*<AdminOnly>`));
     }
+    expect(routes).toContain("path: '/admin/wallets',      element: <Navigate to=\"/admin/crypto\" replace />");
   });
 });

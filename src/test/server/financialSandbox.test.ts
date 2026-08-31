@@ -114,9 +114,12 @@ describe("financial administration sandbox", () => {
     );
   });
 
-  it("exposes the final super-admin interface and navigation entry", () => {
-    expect(readFileSync("src/layouts/AdminLayout.tsx", "utf8")).toContain(
+  it("keeps the isolated implementation outside the production navigation", () => {
+    expect(readFileSync("src/layouts/AdminLayout.tsx", "utf8")).not.toContain(
       "href: '/admin/financial-sandbox'",
+    );
+    expect(readFileSync("src/routes.tsx", "utf8")).not.toContain(
+      "path: '/admin/financial-sandbox'",
     );
     const page = readFileSync("src/pages/admin/financial-sandbox.tsx", "utf8");
     expect(page).toContain("Pending mock transaction");

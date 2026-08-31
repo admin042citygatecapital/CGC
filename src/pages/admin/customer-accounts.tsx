@@ -334,10 +334,10 @@ export default function AdminCustomerAccounts() {
           </p>
         </div>
         <Link
-          to="/admin/financial-sandbox"
+          to="/admin/transactions"
           className="px-4 py-2.5 rounded-xl border border-primary/25 text-primary text-xs font-semibold hover:bg-primary/10"
         >
-          Open transaction sandbox
+          Review transaction register
         </Link>
       </div>
 

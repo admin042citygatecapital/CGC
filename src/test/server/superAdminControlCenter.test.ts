@@ -14,13 +14,13 @@ describe('super-admin control center coverage', () => {
     expect(layout).toContain("label: 'Control Center'");
     expect(layout).toContain("href: '/admin/accounts'");
     expect(layout).toContain("href: '/admin/cards'");
-    expect(layout).toContain("href: '/admin/wallets'");
+    expect(layout).toContain("href: '/admin/crypto'");
   });
 
   it('preloads the same modules used by the registered control routes', () => {
     const prefetch = readFileSync('src/lib/prefetchRoute.ts', 'utf8');
     expect(prefetch).toContain("'/admin/accounts':     () => import('../pages/admin/customer-accounts')");
     expect(prefetch).toContain("'/admin/cards':        () => import('../pages/admin/cards')");
-    expect(prefetch).toContain("'/admin/wallets':      () => import('../pages/admin/financial-sandbox')");
+    expect(prefetch).toContain("'/admin/wallets':      () => import('../pages/admin/crypto')");
   });
 });

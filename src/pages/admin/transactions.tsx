@@ -66,7 +66,8 @@ function displayAmount(record: TransactionRecord, csv = false): string {
   return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export default function AdminTransactions() {
+export default function AdminTransactions({ view = 'transactions' }: { view?: 'transactions' | 'transfers' }) {
+  const transfersOnly = view === 'transfers';
   const { admin, loading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
   const [records, setRecords] = useState<TransactionRecord[]>([]);
@@ -76,7 +77,7 @@ export default function AdminTransactions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState(transfersOnly ? 'transfer' : '');
   const [statusFilter, setStatusFilter] = useState('');
   const [editing, setEditing] = useState<TransactionRecord | null>(null);
   const [editDescription, setEditDescription] = useState('');
@@ -88,6 +89,11 @@ export default function AdminTransactions() {
   useEffect(() => {
     if (!authLoading && !admin) navigate('/admin/login');
   }, [admin, authLoading, navigate]);
+
+  useEffect(() => {
+    setTypeFilter(transfersOnly ? 'transfer' : '');
+    setPage(1);
+  }, [transfersOnly]);
 
   const loadRecords = useCallback(async () => {
     setLoading(true);
@@ -182,15 +188,15 @@ export default function AdminTransactions() {
   return (
     <>
       <Helmet>
-        <title>Transaction Register — CGC Admin</title>
+        <title>{transfersOnly ? 'Transfer Review' : 'Transaction Register'} — CGC Admin</title>
         <meta name="description" content="Persistent transaction register with controlled metadata corrections and immutable financial fields." />
         <meta name="robots" content="noindex, nofollow" />
-        <link rel="canonical" href="https://citygate.capital/admin/transactions" />
+        <link rel="canonical" href={`https://citygate.capital/admin/${transfersOnly ? 'transfers' : 'transactions'}`} />
       </Helmet>
-      <AdminLayout title="Transaction Register">
+      <AdminLayout title={transfersOnly ? 'Transfer Review' : 'Transaction Register'}>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-white">Transaction Register</h1>
+            <h1 className="text-xl font-bold text-white">{transfersOnly ? 'Transfer Review' : 'Transaction Register'}</h1>
             <p className="text-sm text-white/30">{total.toLocaleString()} persistent demonstration records</p>
           </div>
           <button onClick={exportCsv} disabled={records.length === 0} className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary transition-colors hover:bg-primary/20 disabled:opacity-40">
@@ -212,8 +218,11 @@ export default function AdminTransactions() {
             <input value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Search user, ID, or reference" className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/20" />
           </div>
           <select value={typeFilter} onChange={event => { setTypeFilter(event.target.value); setPage(1); }} className="rounded-xl border border-white/8 bg-white/[0.04] px-3 py-2 text-sm text-white/60 outline-none">
-            <option value="">All types</option>
-            {['deposit', 'withdrawal', 'transfer', 'wire_transfer', 'crypto_buy', 'crypto_sell', 'fee', 'refund', 'manual_credit', 'manual_debit'].map(type => <option key={type} value={type} className="bg-[#0A0A0A]">{type.replaceAll('_', ' ')}</option>)}
+            {!transfersOnly && <option value="">All types</option>}
+            {(transfersOnly
+              ? ['transfer', 'wire_transfer']
+              : ['deposit', 'withdrawal', 'transfer', 'wire_transfer', 'crypto_buy', 'crypto_sell', 'fee', 'refund', 'manual_credit', 'manual_debit']
+            ).map(type => <option key={type} value={type} className="bg-[#0A0A0A]">{type.replaceAll('_', ' ')}</option>)}
           </select>
           <select value={statusFilter} onChange={event => { setStatusFilter(event.target.value); setPage(1); }} className="rounded-xl border border-white/8 bg-white/[0.04] px-3 py-2 text-sm text-white/60 outline-none">
             <option value="">All statuses</option>

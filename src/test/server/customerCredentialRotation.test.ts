@@ -74,7 +74,10 @@ describe('rotateCustomerPasswordCredential', () => {
       userId: 'user-1',
       passwordHash: '$argon2id$redacted-test-value',
       expectedCredentialVersion: 1,
-    })).rejects.toThrow('Customer credential rotation is not configured.');
+    })).rejects.toMatchObject({
+      code: 'SUPABASE_SERVER_CREDENTIAL_MISSING',
+      status: 503,
+    });
     expect(dependencies.createClient).not.toHaveBeenCalled();
   });
 });

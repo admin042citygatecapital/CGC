@@ -1,8 +1,7 @@
 /**
  * /admin/integrations — Integrations Center
- * Manage all third-party service connections:
- * Zoho Mail · Smartsupp · Cloudflare · Google Analytics · GTM
- * Google Maps · Stripe · PayPal · Twilio · WhatsApp Business · Banking APIs
+ * Manage the approved customer-communication integrations and market-data
+ * provider status. Infrastructure health remains in System Operations.
  */
 import { useProviders } from '@/hooks/useMarketData';
 import AdminLayout from '@/layouts/AdminLayout';

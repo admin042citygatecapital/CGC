@@ -274,9 +274,6 @@ function PlatformControlPanel() {
           </Link>
         ))}
       </div>
-      <Link to="/admin/sponsor-readiness" className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-amber-300/15 bg-amber-300/[0.07] py-2 text-[11px] font-semibold text-amber-200 transition-colors hover:bg-amber-300/[0.1]">
-        Financial service readiness <ChevronRight size={10} />
-      </Link>
     </div>
   );
 }
