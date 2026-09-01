@@ -1,6 +1,6 @@
 import { Helmet } from "@dr.pogodin/react-helmet";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   Loader2,
@@ -10,6 +10,10 @@ import {
   Send,
   X,
 } from "lucide-react";
+import {
+  type CustomerSupportCategory,
+  getCustomerSupportSurface,
+} from "@/lib/customerSupportAccess";
 
 interface SupportMessage {
   id: string;
@@ -30,16 +34,6 @@ interface Conversation {
   updatedAt: string;
 }
 
-const CATEGORIES = [
-  "Account Access",
-  "Identity Verification",
-  "Transfer Workspace",
-  "Card Workspace",
-  "Trading Workspace",
-  "Technical Support",
-  "General",
-] as const;
-
 const STATUS_STYLE: Record<Conversation["status"], string> = {
   open: "bg-emerald-500/15 text-emerald-300",
   pending: "bg-amber-500/15 text-amber-300",
@@ -58,6 +52,8 @@ async function responseError(response: Response): Promise<string> {
 }
 
 export default function DashboardSupportPage() {
+  const location = useLocation();
+  const supportSurface = getCustomerSupportSurface(location.pathname);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
@@ -67,8 +63,9 @@ export default function DashboardSupportPage() {
   const [search, setSearch] = useState("");
   const [reply, setReply] = useState("");
   const [subject, setSubject] = useState("");
-  const [category, setCategory] =
-    useState<(typeof CATEGORIES)[number]>("General");
+  const [category, setCategory] = useState<CustomerSupportCategory>(
+    supportSurface.defaultCategory,
+  );
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [message, setMessage] = useState("");
 
@@ -134,7 +131,7 @@ export default function DashboardSupportPage() {
       setShowNew(false);
       setSubject("");
       setMessage("");
-      setCategory("General");
+      setCategory(supportSurface.defaultCategory);
       setPriority("medium");
     } catch (caught) {
       setError(
@@ -190,17 +187,17 @@ export default function DashboardSupportPage() {
       <main className="min-h-screen bg-[#07090d] px-4 pb-16 pt-24 text-white md:px-6">
         <div className="mx-auto max-w-6xl">
           <Link
-            to="/dashboard"
+            to={supportSurface.backHref}
             className="mb-6 inline-flex items-center gap-2 text-sm text-white/45 transition hover:text-white"
           >
-            <ArrowLeft size={15} /> Back to dashboard
+            <ArrowLeft size={15} /> {supportSurface.backLabel}
           </Link>
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-primary">
-                Customer care
+                {supportSurface.eyebrow}
               </p>
-              <h1 className="mt-1 text-2xl font-semibold">Support centre</h1>
+              <h1 className="mt-1 text-2xl font-semibold">{supportSurface.heading}</h1>
             </div>
             <button
               type="button"
@@ -316,7 +313,7 @@ export default function DashboardSupportPage() {
                         }
                         className="mt-1.5 w-full rounded-xl border border-white/[0.08] bg-[#0d1016] px-4 py-3 text-sm text-white outline-none"
                       >
-                        {CATEGORIES.map((item) => (
+                        {supportSurface.categories.map((item) => (
                           <option key={item}>{item}</option>
                         ))}
                       </select>
