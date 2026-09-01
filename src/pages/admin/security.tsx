@@ -670,7 +670,12 @@ export default function SecurityCenter() {
                         <p className="text-white/80 text-sm font-medium">{label}</p>
                         <p className="text-white/35 text-xs mt-1">{desc}</p>
                       </div>
-                      <button onClick={() => setPolicyDraft(prev => prev ? { ...prev, [key]: !prev[key as keyof TwoFAPolicy] } : prev)}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={Boolean((policyDraft as unknown as Record<string, unknown>)[key])}
+                        aria-label={label}
+                        onClick={() => setPolicyDraft(prev => prev ? { ...prev, [key]: !prev[key as keyof TwoFAPolicy] } : prev)}
                         className="shrink-0 mt-0.5">
                         {(policyDraft as unknown as Record<string, unknown>)[key]
                           ? <ToggleRight size={28} className="text-primary" />

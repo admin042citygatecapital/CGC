@@ -81,6 +81,22 @@ describe('customer onboarding controls', () => {
     expect(reviewTransition).toContain("code: 'WORKFLOW_CONFLICT'");
   });
 
+  it('supports a controlled request-more-information and corrected resubmission cycle', () => {
+    const source = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/onboardingStore.ts'), 'utf8');
+    const submitTransition = source.slice(source.indexOf('export async function submitOnboardingCase'), source.indexOf('export async function reviewOnboardingCase'));
+    const reviewService = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/kycReviewService.ts'), 'utf8');
+
+    expect(submitTransition).toContain("['draft', 'needs_info'].includes(current.status)");
+    expect(submitTransition).toContain('requested.filter(kind => !uploaded.has(kind))');
+    expect(submitTransition).toContain('requestedEvidenceKinds: []');
+    expect(submitTransition).toContain('customerInstructions: null');
+    expect(submitTransition).toContain('fromStatus: current.status');
+    expect(reviewService).toContain("input.decision === 'needs_info'");
+    expect(reviewService).toContain('requestedEvidenceKinds.length === 0');
+    expect(reviewService).toContain('requestId');
+    expect(reviewService).toContain('auditLog');
+  });
+
   it('maintains separate full-intake and compliance-review queues', () => {
     const source = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/onboardingStore.ts'), 'utf8');
     const intake = source.slice(source.indexOf('export async function getRegistrationIntakePosition'), source.indexOf('export async function listOnboardingQueueIds'));

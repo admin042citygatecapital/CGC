@@ -15,6 +15,9 @@ import { digestOpaqueToken, isSha256Digest } from './tokenDigest.js';
 const INACTIVITY_MS          = (parseInt(process.env.SESSION_TIMEOUT_MINUTES ?? '60', 10)) * 60_000;
 const ABSOLUTE_TTL_MS        = (parseInt(process.env.SESSION_MAX_HOURS        ?? '8',  10)) * 3_600_000;
 const MAX_SESSIONS_PER_ADMIN = 5;
+// Avoid serialising every parallel admin API read behind a session-row update.
+// Touch often enough to preserve the inactivity window without writing on each request.
+const SESSION_TOUCH_INTERVAL_MS = Math.max(1_000, Math.min(30_000, Math.floor(INACTIVITY_MS / 2)));
 
 export type AdminRole =
   | 'SUPER_ADMIN'
@@ -165,7 +168,10 @@ export async function getSession(
       SELECT admin_id FROM admin_sessions WHERE token_hash = ${tokenHash}
     `;
     if (!identity) return null;
-    await tx`SELECT pg_advisory_xact_lock(hashtext(${`admin-credential:${identity.admin_id}`}))`;
+    // Password rotation takes the exclusive form of this lock. Authenticated
+    // reads take a shared lock so parallel dashboard requests can proceed while
+    // still remaining ordered against credential rotation.
+    await tx`SELECT pg_advisory_xact_lock_shared(hashtext(${`admin-credential:${identity.admin_id}`}))`;
     const [s] = await tx<{
       admin_id: string;
       email: string;
@@ -185,7 +191,6 @@ export async function getSession(
       FROM admin_sessions s
       JOIN admins a ON a.id = s.admin_id
       WHERE s.token_hash = ${tokenHash}
-      FOR UPDATE OF s
     `;
     if (!s) return null;
 
@@ -201,14 +206,17 @@ export async function getSession(
       return null;
     }
     if (fingerprint && (s.ip !== fingerprint.ip || s.ua !== fingerprint.ua)) return null;
-    await tx`UPDATE admin_sessions SET last_seen_at = ${now.toISOString()} WHERE token_hash = ${tokenHash}`;
+    const shouldTouch = now.getTime() - lastSeenAt.getTime() >= SESSION_TOUCH_INTERVAL_MS;
+    if (shouldTouch) {
+      await tx`UPDATE admin_sessions SET last_seen_at = ${now.toISOString()} WHERE token_hash = ${tokenHash}`;
+    }
     return {
       adminId: s.admin_id,
       email: s.email,
       role: s.role,
       credentialVersion: s.credential_version,
       createdAt: createdAt.toISOString(),
-      lastSeenAt: now.toISOString(),
+      lastSeenAt: shouldTouch ? now.toISOString() : lastSeenAt.toISOString(),
       ip: s.ip,
       ua: s.ua,
     };

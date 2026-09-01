@@ -22,6 +22,8 @@ import { loadAlerts }          from './securityCenterStore.js';
 import { readEmailLog }        from './campaignStore.js';
 import { getEmailLogs, getPendingQueue } from './emailQueue.js';
 import { getLoginHistory }     from './loginLog.js';
+import type { Transaction }    from './transactionStore.js';
+import type { UserRecord }     from './userStore.js';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -78,10 +80,49 @@ function pctChange(current: number, previous: number): number {
   return +((current - previous) / previous * 100).toFixed(1);
 }
 
+const NON_OPERATIONAL_CLASSIFICATIONS = new Set([
+  'demo',
+  'quarantined_test',
+  'synthetic',
+  'synthetic_preview',
+  'synthetic_quarantined',
+  'synthetic_test',
+]);
+
+export function isOperationalCustomer(user: Pick<UserRecord, 'dataClassification' | 'quarantineBatchId'>): boolean {
+  const classification = (user.dataClassification ?? 'customer').trim().toLowerCase();
+  return !user.quarantineBatchId
+    && !NON_OPERATIONAL_CLASSIFICATIONS.has(classification)
+    && !classification.startsWith('synthetic_')
+    && !classification.startsWith('demo_');
+}
+
+function isOperationalTransaction(transaction: Transaction, excludedUserIds: ReadonlySet<string>): boolean {
+  const classification = (transaction.dataClassification ?? 'application_record').trim().toLowerCase();
+  return !transaction.quarantineBatchId
+    && !excludedUserIds.has(transaction.userId)
+    && !NON_OPERATIONAL_CLASSIFICATIONS.has(classification)
+    && !classification.startsWith('synthetic_')
+    && !classification.startsWith('demo_');
+}
+
+async function operationalUsers(): Promise<UserRecord[]> {
+  return (await loadAllUsers()).filter(isOperationalCustomer);
+}
+
+async function operationalTransactions(): Promise<Transaction[]> {
+  const [users, result] = await Promise.all([
+    loadAllUsers(),
+    queryTransactions({ limit: 100_000 }),
+  ]);
+  const excludedUserIds = new Set(users.filter(user => !isOperationalCustomer(user)).map(user => user.id));
+  return result.data.filter(transaction => isOperationalTransaction(transaction, excludedUserIds));
+}
+
 // ─── 1. CUSTOMERS REPORT ─────────────────────────────────────────────────────
 
 export async function customersReport(q: ReportQuery) {
-  const users  = await loadAllUsers();
+  const users  = await operationalUsers();
   const start  = periodStart(q.period);
   const pStart = prevPeriodStart(q.period);
 
@@ -146,7 +187,7 @@ export async function transactionsReport(q: ReportQuery) {
   const pStart = prevPeriodStart(q.period);
   const rates  = toUsdRate();
 
-  const { data: all } = await queryTransactions({ limit: 100_000 });
+  const all = await operationalTransactions();
   const inPeriod = all.filter(t => t.createdAt >= start);
   const inPrev   = all.filter(t => t.createdAt >= pStart && t.createdAt < start);
 
@@ -222,7 +263,7 @@ export async function revenueReport(q: ReportQuery) {
   const pStart = prevPeriodStart(q.period);
   const rates  = toUsdRate();
 
-  const { data: all } = await queryTransactions({ limit: 100_000 });
+  const all = await operationalTransactions();
   const fees     = all.filter(t => t.type === 'fee' && t.status === 'completed');
   const inPeriod = fees.filter(t => t.createdAt >= start);
   const inPrev   = fees.filter(t => t.createdAt >= pStart && t.createdAt < start);
@@ -279,7 +320,7 @@ export async function depositsReport(q: ReportQuery) {
   const rates  = toUsdRate();
   const CREDIT = new Set(['deposit', 'manual_credit', 'refund', 'crypto_sell']);
 
-  const { data: all } = await queryTransactions({ limit: 100_000 });
+  const all = await operationalTransactions();
   const deps     = all.filter(t => CREDIT.has(t.type));
   const inPeriod = deps.filter(t => t.createdAt >= start);
   const inPrev   = deps.filter(t => t.createdAt >= pStart && t.createdAt < start);
@@ -335,7 +376,7 @@ export async function withdrawalsReport(q: ReportQuery) {
   const rates  = toUsdRate();
   const DEBIT  = new Set(['withdrawal', 'manual_debit', 'wire_transfer', 'crypto_buy']);
 
-  const { data: all } = await queryTransactions({ limit: 100_000 });
+  const all = await operationalTransactions();
   const wds      = all.filter(t => DEBIT.has(t.type));
   const inPeriod = wds.filter(t => t.createdAt >= start);
   const inPrev   = wds.filter(t => t.createdAt >= pStart && t.createdAt < start);
@@ -391,7 +432,7 @@ export async function exchangeReport(q: ReportQuery) {
   const rates  = toUsdRate();
   const EX_TYPES = new Set(['crypto_buy', 'crypto_sell']);
 
-  const { data: all } = await queryTransactions({ limit: 100_000 });
+  const all = await operationalTransactions();
   const exs      = all.filter(t => EX_TYPES.has(t.type));
   const inPeriod = exs.filter(t => t.createdAt >= start);
   const inPrev   = exs.filter(t => t.createdAt >= pStart && t.createdAt < start);
@@ -452,7 +493,7 @@ export async function exchangeReport(q: ReportQuery) {
 // ─── 7. KYC REPORT ───────────────────────────────────────────────────────────
 
 export async function kycReport(q: ReportQuery) {
-  const users  = await loadAllUsers();
+  const users  = await operationalUsers();
   const start  = periodStart(q.period);
   const pStart = prevPeriodStart(q.period);
 
@@ -521,12 +562,12 @@ export async function amlReport(q: ReportQuery) {
   const pStart = prevPeriodStart(q.period);
   const rates  = toUsdRate();
 
-  const { data: all } = await queryTransactions({ limit: 100_000 });
+  const all = await operationalTransactions();
   const flagged    = all.filter(t => t.flagged);
   const inPeriod   = flagged.filter(t => t.createdAt >= start);
   const inPrev     = flagged.filter(t => t.createdAt >= pStart && t.createdAt < start);
 
-  const users = await loadAllUsers();
+  const users = await operationalUsers();
   const frozenUsers    = users.filter(u => u.status === 'frozen').length;
   const suspendedUsers = users.filter(u => u.status === 'suspended').length;
 

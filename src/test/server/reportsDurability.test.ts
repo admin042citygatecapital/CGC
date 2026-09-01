@@ -14,5 +14,7 @@ describe('administration report durability', () => {
     expect(store).not.toContain("privateSubdirectory('security/login-log.jsonl')");
     expect(route).toContain('await emailsReport(q)');
     expect(route).toContain('await securityReport(q)');
+    expect(store).toContain('isOperationalCustomer');
+    expect(store).toContain('operationalTransactions');
   });
 });
