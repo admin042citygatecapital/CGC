@@ -21,6 +21,7 @@ import BalanceModal from '@/components/admin/BalanceModal';
 import ClientEditModal,{ type EditableUser } from '@/components/admin/ClientEditModal';
 import AdminLayout from '@/layouts/AdminLayout';
 import { adminFetch,authHeaders,useAdminAuth } from '@/lib/adminAuth';
+import { customerCountSummary } from '@/lib/adminCustomerLoading';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
 AlertTriangle,
@@ -836,8 +837,10 @@ export default function AdminUsers() {
   const [statusFilter, setStatus] = useState('');
   const [kycFilter, setKyc]       = useState('');
   const [loading, setLoading]     = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [actionLoading, setAL]    = useState<string | null>(null);
   const [toast, setToast]         = useState<{ msg: string; ok: boolean } | null>(null);
+  const requestIdRef              = useRef(0);
 
   // Modals
   const [selected,    setSelected]    = useState<User | null>(null);
@@ -857,17 +860,29 @@ export default function AdminUsers() {
   };
 
   const fetchUsers = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
+    setLoadError(null);
     const p = new URLSearchParams({ page: String(page), limit: '20' });
     if (search) p.set('search', search);
     if (statusFilter) p.set('status', statusFilter);
     if (kycFilter) p.set('kyc', kycFilter);
-    const res = await fetch(`/api/admin/users?${p}`, { headers: authHeaders() });
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/admin/users?${p}`, { headers: authHeaders() });
+      if (!res.ok) throw new Error(`Customer request failed with ${res.status}`);
       const d = await res.json();
+      if (!Array.isArray(d.data) || !Number.isFinite(d.total)) throw new Error('Customer response is malformed');
+      if (requestId !== requestIdRef.current) return;
       setUsers(d.data); setTotal(d.total); setPages(d.pages ?? Math.ceil(d.total / 20));
+    } catch {
+      if (requestId !== requestIdRef.current) return;
+      setUsers([]);
+      setTotal(0);
+      setPages(1);
+      setLoadError('Customer records could not be loaded. No customer data has been changed.');
+    } finally {
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-    setLoading(false);
   }, [page, search, statusFilter, kycFilter]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
@@ -955,16 +970,18 @@ export default function AdminUsers() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
           <div>
             <h1 className="text-white text-xl font-bold">Customer Management</h1>
-            <p className="text-white/30 text-sm">{total.toLocaleString()} total customers</p>
+            <p className="text-white/30 text-sm" aria-live="polite">
+              {customerCountSummary({ loading, error: loadError, total })}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/admin/customer-relationships"
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/8 text-white/60 text-sm hover:text-white hover:border-primary/30 transition-colors">
               <Link2 size={14} /> Customer Relations
             </Link>
-            <button onClick={fetchUsers}
+            <button onClick={fetchUsers} disabled={loading} aria-label={loading ? 'Loading customer records' : 'Refresh customer records'}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/8 text-white/50 text-sm hover:text-white transition-colors">
-              <RefreshCw size={13} />
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             </button>
             <button onClick={() => setCreateOpen(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
@@ -1027,7 +1044,17 @@ export default function AdminUsers() {
               <tbody className="divide-y divide-white/[0.03]">
                 {loading ? Array.from({ length: 10 }).map((_, i) => (
                   <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-4 bg-white/[0.04] rounded animate-pulse" /></td></tr>
-                )) : users.length === 0 ? (
+                )) : loadError ? (
+                  <tr><td colSpan={7} className="px-4 py-14 text-center">
+                    <AlertTriangle size={18} className="mx-auto mb-3 text-red-400" />
+                    <p className="text-red-300 text-sm font-medium">Unable to load customer records</p>
+                    <p className="text-white/30 text-xs mt-1 mb-4">{loadError}</p>
+                    <button type="button" onClick={fetchUsers}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-white/60 text-xs hover:text-white hover:bg-white/[0.04]">
+                      <RefreshCw size={12} /> Retry
+                    </button>
+                  </td></tr>
+                ) : users.length === 0 ? (
                   <tr><td colSpan={7} className="px-4 py-14 text-center text-white/25 text-sm">No customers found</td></tr>
                 ) : users.map(u => (
                   <motion.tr key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -1117,7 +1144,11 @@ export default function AdminUsers() {
           {/* Pagination */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
             <p className="text-white/25 text-xs">
-              Showing {Math.min((page - 1) * 20 + 1, total)}–{Math.min(page * 20, total)} of {total.toLocaleString()}
+              {loading
+                ? 'Loading customer records…'
+                : loadError
+                  ? 'Customer records unavailable'
+                  : `Showing ${Math.min((page - 1) * 20 + 1, total)}–${Math.min(page * 20, total)} of ${total.toLocaleString()}`}
             </p>
             <div className="flex gap-1">
               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
