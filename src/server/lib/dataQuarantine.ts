@@ -1,10 +1,7 @@
 import crypto from 'node:crypto';
 import { getQueryClient, isDatabaseConfigured } from '../db/db.js';
+import { isReservedTestEmail } from './testIdentity.js';
 
-// Only IANA/special-use non-public domains are accepted. `.local` is included
-// for the legacy City Gate preview identity; arbitrary production domains are
-// intentionally rejected even when an operator claims they are test data.
-const TEST_EMAIL = /^[^@\s]+@(example\.(com|net|org)|[^@\s]+\.(test|invalid|local)|localhost)$/i;
 const SAFE_REFERENCE = /^[A-Za-z0-9][A-Za-z0-9._:/-]{5,199}$/;
 
 export interface QuarantineCandidate {
@@ -38,7 +35,7 @@ function jsonb(value: unknown): string {
 export function normalizeTestEmails(input: string[]): string[] {
   const emails = [...new Set(input.map(value => value.trim().toLowerCase()).filter(Boolean))].sort();
   if (!emails.length) throw new Error('At least one exact test-customer email is required.');
-  const unsafe = emails.filter(email => !TEST_EMAIL.test(email));
+  const unsafe = emails.filter(email => !isReservedTestEmail(email));
   if (unsafe.length) {
     throw new Error('Quarantine accepts only exact addresses on reserved test domains; review all other identities manually.');
   }

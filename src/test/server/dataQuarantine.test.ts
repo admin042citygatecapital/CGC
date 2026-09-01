@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeTestEmails, quarantineConfirmationSha256, quarantineTestData,
 } from '../../server/lib/dataQuarantine.js';
+import { isReservedTestEmail } from '../../server/lib/testIdentity.js';
 
 describe('production test-data quarantine controls', () => {
   it('accepts only exact identities on reserved test domains', () => {
@@ -12,6 +13,9 @@ describe('production test-data quarantine controls', () => {
     ])).toEqual(['browser@e2e.test', 'preview@citygate.local', 'test.user@example.com']);
     expect(() => normalizeTestEmails(['customer@gmail.com'])).toThrow(/reserved test domains/i);
     expect(() => normalizeTestEmails([])).toThrow(/at least one/i);
+    expect(isReservedTestEmail('legacy@example.com')).toBe(true);
+    expect(isReservedTestEmail('fixture@e2e.invalid')).toBe(true);
+    expect(isReservedTestEmail('customer@outlook.com')).toBe(false);
   });
 
   it('produces a deterministic confirmation fingerprint over the exact sorted set', () => {

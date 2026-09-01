@@ -22,9 +22,9 @@ vi.mock('../../server/lib/ratesStore.js', () => ({
 }));
 
 const createdAt = new Date().toISOString();
-function user(id: string, dataClassification: string, quarantineBatchId?: string) {
+function user(id: string, dataClassification: string, email = `${id}@outlook.com`, quarantineBatchId?: string) {
   return {
-    id, name: id, email: `${id}@example.test`, status: 'active', kycStatus: 'approved',
+    id, name: id, email, status: 'active', kycStatus: 'approved',
     accountTier: 'personal', country: 'US', createdAt, dataClassification, quarantineBatchId,
   };
 }
@@ -42,7 +42,8 @@ describe('operational report classification', () => {
       user('real-customer', 'customer'),
       user('synthetic-customer', 'synthetic_test'),
       user('demo-customer', 'demo'),
-      user('quarantined-customer', 'customer', 'batch-test'),
+      user('reserved-domain-customer', 'customer', 'legacy-demo@example.com'),
+      user('quarantined-customer', 'customer', 'quarantined@outlook.com', 'batch-test'),
     ];
     dependencies.transactions = [
       transaction('real', 'real-customer'),
@@ -51,7 +52,7 @@ describe('operational report classification', () => {
     ];
   });
 
-  it('excludes synthetic, demo, and quarantined customers from customer and KYC metrics', async () => {
+  it('excludes classified, reserved-domain, and quarantined customers from customer and KYC metrics', async () => {
     const { customersReport, kycReport } = await import('../../server/lib/reportsStore.js');
     const customers = await customersReport({ period: 'all' });
     const kyc = await kycReport({ period: 'all' });

@@ -24,6 +24,7 @@ import { getEmailLogs, getPendingQueue } from './emailQueue.js';
 import { getLoginHistory }     from './loginLog.js';
 import type { Transaction }    from './transactionStore.js';
 import type { UserRecord }     from './userStore.js';
+import { isReservedTestEmail } from './testIdentity.js';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -89,9 +90,10 @@ const NON_OPERATIONAL_CLASSIFICATIONS = new Set([
   'synthetic_test',
 ]);
 
-export function isOperationalCustomer(user: Pick<UserRecord, 'dataClassification' | 'quarantineBatchId'>): boolean {
+export function isOperationalCustomer(user: Pick<UserRecord, 'email' | 'dataClassification' | 'quarantineBatchId'>): boolean {
   const classification = (user.dataClassification ?? 'customer').trim().toLowerCase();
   return !user.quarantineBatchId
+    && !isReservedTestEmail(user.email)
     && !NON_OPERATIONAL_CLASSIFICATIONS.has(classification)
     && !classification.startsWith('synthetic_')
     && !classification.startsWith('demo_');
