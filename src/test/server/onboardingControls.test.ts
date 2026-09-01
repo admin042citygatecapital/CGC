@@ -81,6 +81,17 @@ describe('customer onboarding controls', () => {
     expect(reviewTransition).toContain("code: 'WORKFLOW_CONFLICT'");
   });
 
+  it('adds metadata evidence atomically behind the case version boundary', () => {
+    const source = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/onboardingStore.ts'), 'utf8');
+    const evidenceWrite = source.slice(source.indexOf('export async function addOnboardingEvidence'), source.indexOf('export async function submitOnboardingCase'));
+    expect(evidenceWrite).toContain('db.transaction(async tx =>');
+    expect(evidenceWrite).toContain('eq(onboardingCases.status, current.status)');
+    expect(evidenceWrite).toContain('eq(onboardingCases.version, current.version)');
+    expect(evidenceWrite).toContain("code: 'WORKFLOW_CONFLICT'");
+    expect(evidenceWrite).toContain('await tx.insert(onboardingEvents)');
+    expect(evidenceWrite).not.toContain('await appendEvent');
+  });
+
   it('supports a controlled request-more-information and corrected resubmission cycle', () => {
     const source = fs.readFileSync(path.join(process.cwd(), 'src/server/lib/onboardingStore.ts'), 'utf8');
     const submitTransition = source.slice(source.indexOf('export async function submitOnboardingCase'), source.indexOf('export async function reviewOnboardingCase'));
