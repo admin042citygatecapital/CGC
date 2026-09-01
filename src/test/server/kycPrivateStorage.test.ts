@@ -1,8 +1,18 @@
 import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
+import { assertKycCaseVersionUpdated } from '../../server/lib/kycPrivateStore';
 import { createKycObjectKey, MAX_KYC_DOCUMENT_BYTES, sanitizeOriginalFilename, validateAndSanitizeKycDocument } from '../../server/lib/kycStorage';
 
 describe('private KYC evidence boundary',()=>{
+  it('fails a stale case-version update so the surrounding transaction rolls back',()=>{
+    expect(assertKycCaseVersionUpdated([{ id: 'case-1' }])).toEqual({ id: 'case-1' });
+    expect(() => assertKycCaseVersionUpdated([])).toThrow(/workflow changed/i);
+    try {
+      assertKycCaseVersionUpdated([]);
+    } catch (error) {
+      expect(error).toMatchObject({ code: 'WORKFLOW_CONFLICT' });
+    }
+  });
   it('uses opaque object keys without customer identity',()=>{
     const key=createKycObjectKey('case-with-customer@example.test','kd_0123456789abcdef01234567','application/pdf');
     expect(key).toMatch(/^cases\/[a-f0-9]{24}\/kd_[a-f0-9]{24}\.pdf$/);
