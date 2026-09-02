@@ -34,6 +34,13 @@ interface TransactionRecord {
   flagged: boolean;
 }
 
+interface FinancialReadinessCheck {
+  id: string;
+  status: 'PASS' | 'WARN' | 'FAIL' | 'SKIP';
+  message: string;
+  detail?: string;
+}
+
 const TYPE_COLORS: Record<string, string> = {
   deposit: '#10B981',
   withdrawal: '#EF4444',
@@ -90,6 +97,9 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [transferForm, setTransferForm] = useState({ userId: '', type: 'transfer', amount: '', currency: 'USD', description: '', note: '' });
+  const [financialReadiness, setFinancialReadiness] = useState<FinancialReadinessCheck | null>(null);
+  const [readinessLoading, setReadinessLoading] = useState(transfersOnly);
+  const [readinessError, setReadinessError] = useState('');
 
   useEffect(() => {
     if (!authLoading && !admin) navigate('/admin/login');
@@ -128,6 +138,30 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
     const timeout = setTimeout(() => void loadRecords(), search ? 350 : 0);
     return () => clearTimeout(timeout);
   }, [loadRecords, search]);
+
+  useEffect(() => {
+    if (!transfersOnly || !admin) return;
+    let cancelled = false;
+    setReadinessLoading(true);
+    setReadinessError('');
+    void fetch('/api/admin/readiness', { headers: authHeaders() })
+      .then(async response => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load financial readiness.');
+        const checks = Array.isArray(result.report?.checks) ? result.report.checks as FinancialReadinessCheck[] : [];
+        return checks.find(check => check.id === 'financial_launch') ?? null;
+      })
+      .then(check => {
+        if (!cancelled) setFinancialReadiness(check);
+      })
+      .catch(cause => {
+        if (!cancelled) setReadinessError(cause instanceof Error ? cause.message : 'Unable to load financial readiness.');
+      })
+      .finally(() => {
+        if (!cancelled) setReadinessLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [admin, transfersOnly]);
 
   function exportCsv() {
     const headers = ['ID', 'Type', 'User', 'Amount', 'Currency', 'Status', 'Reference', 'Flagged', 'Date', 'Classification'];
@@ -251,7 +285,28 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
           </div>
         </div>
 
-        {transfersOnly && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/15 bg-amber-300/[0.05] p-4"><div><p className="text-sm font-semibold text-amber-100">Controlled transfer workflow</p><p className="mt-1 text-xs text-amber-100/50">Create a pending, auditable transfer instruction. Provider execution and settlement remain disabled until the approved payment and ledger adapters are available.</p></div><button type="button" onClick={() => setCreateOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2 text-sm font-semibold text-black"><Plus size={14} />Create transfer instruction</button></div>}
+        {transfersOnly && <>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/15 bg-amber-300/[0.05] p-4"><div><p className="text-sm font-semibold text-amber-100">Controlled transfer workflow</p><p className="mt-1 text-xs text-amber-100/50">Create a pending, auditable transfer instruction. Provider execution and settlement remain disabled until the approved payment and ledger adapters are available.</p></div><button type="button" onClick={() => setCreateOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-2 text-sm font-semibold text-black"><Plus size={14} />Create transfer instruction</button></div>
+          <section className={`mb-5 rounded-2xl border p-4 ${financialReadiness?.status === 'PASS' ? 'border-emerald-400/20 bg-emerald-400/[0.06]' : 'border-red-400/20 bg-red-400/[0.06]'}`} aria-labelledby="financial-readiness-heading">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="max-w-3xl">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={15} className={financialReadiness?.status === 'PASS' ? 'text-emerald-300' : 'text-red-300'} />
+                  <h2 id="financial-readiness-heading" className="text-sm font-semibold text-white">Financial launch readiness</h2>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${financialReadiness?.status === 'PASS' ? 'bg-emerald-400/15 text-emerald-200' : 'bg-red-400/15 text-red-200'}`}>{readinessLoading ? 'CHECKING' : financialReadiness?.status ?? 'UNAVAILABLE'}</span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-white/60">{readinessLoading ? 'Loading the server-authoritative launch gate...' : financialReadiness?.message || readinessError || 'The financial launch check was not returned by the readiness service.'}</p>
+                {financialReadiness?.detail && <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-xl border border-white/8 bg-black/20 p-3 font-sans text-xs leading-relaxed text-white/45">{financialReadiness.detail}</pre>}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <a href="/admin/sponsor-readiness" className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/70 hover:bg-white/[0.08]">Sponsor readiness</a>
+                <a href="/admin/integrations" className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/70 hover:bg-white/[0.08]">Provider integrations</a>
+                <a href="/admin/reconciliation" className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/70 hover:bg-white/[0.08]">Reconciliation</a>
+                <a href="/admin/system" className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/70 hover:bg-white/[0.08]">System health</a>
+              </div>
+            </div>
+          </section>
+        </>}
 
         <div className="mb-5 flex flex-wrap gap-3">
           <div className="flex min-w-48 flex-1 items-center gap-2 rounded-xl border border-white/8 bg-white/[0.04] px-3 py-2">
