@@ -650,14 +650,7 @@ export default function AdminDashboard() {
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
             Refresh
           </button>
-        </div>
-
-        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3">
-          <Lock size={15} className="mt-0.5 shrink-0 text-amber-200" />
-          <div><p className="text-sm font-semibold text-amber-100">Financial data safeguards</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">Website, customer and platform settings are managed through the protected workspaces below. Financial figures summarize isolated application records and are not bank balances, safeguarded funds, assets under management, recognised revenue or provider-ledger entries. Regulated services require their approved provider, ledger and compliance gates.</p></div>
-        </div>
-
-        {loading ? (
+        </div>{loading ? (
           /* Skeleton */
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -683,44 +676,13 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* ── Section 2: Financial KPIs ── */}
-            <section>
-              <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
-                <DollarSign size={10} /> Demonstration financial records
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {financialCards.map((c, i) => (
-                  <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 + i * 0.04 }}>
-                    <KpiCard {...c} sparkData={spark(c.sparkKey)} />
-                  </motion.div>
-                ))}
-              </div>
-            </section>
-
-            {/* ── Section 3: Pending Flows ── */}
-            <section>
-              <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
-                <Clock size={10} /> Pending demonstration records
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {pendingCards.map((c, i) => (
-                  <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 + i * 0.04 }}>
-                    <KpiCard {...c} />
-                  </motion.div>
-                ))}
-              </div>
-            </section>
-
             {/* ── Section 4: Operational analytics, rates and controls ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
                 <BarChart2 size={10} /> Operational analytics & controls
               </p>
-              <div className="grid lg:grid-cols-3 gap-4">
+              <div className="grid lg:grid-cols-2 gap-4">
                 {/* Revenue chart — spans 1 col on lg */}
-                <div className="lg:col-span-1">
-                  <RevenueChart data={stats?.dailyRevenue ?? []} />
-                </div>
                 {/* Exchange rates */}
                 <ExchangeRatesPanel rates={stats?.exchangeRates ?? null} />
                 <PlatformControlPanel />
