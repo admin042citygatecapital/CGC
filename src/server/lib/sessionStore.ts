@@ -147,6 +147,45 @@ export async function createSession(
  * login.  Callers that service an authenticated request must pass both values;
  * the optional form is reserved for narrowly scoped internal checks.
  */
+/**
+ * Session fingerprint IP comparison. IPv6 clients rotate the low 64 bits of
+ * their address (SLAAC privacy / temporary addresses, RFC 4941), so pinning a
+ * session to the exact IPv6 address logs legitimate admins out minutes after
+ * login. Compare IPv6 by /64 prefix; keep IPv4 exact. A cookie replayed from a
+ * different network still fails.
+ */
+export function sameSessionClientIp(a: string, b: string): boolean {
+  if (a === b) return true;
+  const na = fingerprintIp(a);
+  const nb = fingerprintIp(b);
+  return na !== null && na === nb;
+}
+
+function fingerprintIp(ip: string): string | null {
+  if (!ip) return null;
+  const zoneless = ip.split('%')[0].trim().toLowerCase();
+  const mapped = zoneless.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/);
+  const value = mapped ? mapped[1] : zoneless;
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(value)) return `v4:${value}`;
+  if (value.includes(':')) {
+    const prefix = ipv6Prefix64(value);
+    return prefix ? `v6:${prefix}` : null;
+  }
+  return null;
+}
+
+function ipv6Prefix64(ip: string): string | null {
+  const parts = ip.split('::');
+  if (parts.length > 2) return null;
+  const head = parts[0] ? parts[0].split(':') : [];
+  const tail = parts.length === 2 && parts[1] ? parts[1].split(':') : [];
+  const fill = ip.includes('::') ? 8 - head.length - tail.length : 0;
+  if (fill < 0) return null;
+  const groups = [...head, ...Array(fill).fill('0'), ...tail];
+  if (groups.length !== 8) return null;
+  return groups.slice(0, 4).map(g => (g === '' ? '0' : g.replace(/^0+(?=.)/, ''))).join(':');
+}
+
 export async function getSession(
   token: string,
   fingerprint?: { ip: string; ua: string },
@@ -155,7 +194,7 @@ export async function getSession(
   if (!isDatabaseConfigured()) {
     const session = (await ff()).getSession(token);
     if (!session) return null;
-    if (fingerprint && (session.ip !== fingerprint.ip || session.ua !== fingerprint.ua)) {
+    if (fingerprint && (!sameSessionClientIp(session.ip, fingerprint.ip) || session.ua !== fingerprint.ua)) {
       return null;
     }
     return session;
@@ -205,7 +244,7 @@ export async function getSession(
       await tx`DELETE FROM admin_sessions WHERE token_hash = ${tokenHash}`;
       return null;
     }
-    if (fingerprint && (s.ip !== fingerprint.ip || s.ua !== fingerprint.ua)) return null;
+    if (fingerprint && (!sameSessionClientIp(s.ip, fingerprint.ip) || s.ua !== fingerprint.ua)) return null;
     const shouldTouch = now.getTime() - lastSeenAt.getTime() >= SESSION_TOUCH_INTERVAL_MS;
     if (shouldTouch) {
       await tx`UPDATE admin_sessions SET last_seen_at = ${now.toISOString()} WHERE token_hash = ${tokenHash}`;

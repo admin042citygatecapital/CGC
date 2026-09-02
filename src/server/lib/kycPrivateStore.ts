@@ -48,6 +48,13 @@ function validateDates(input: KycProfileInput): void {
   if (issued && (!Number.isFinite(issued.getTime()) || issued >= expiry)) throw new Error('Document issue date must be before its expiry date.');
 }
 
+export function assertKycCaseVersionUpdated<T>(rows: T[]): T {
+  if (!rows[0]) {
+    throw Object.assign(new Error('The registration workflow changed. Refresh it before continuing.'), { code: 'WORKFLOW_CONFLICT' });
+  }
+  return rows[0];
+}
+
 export async function saveKycProfile(userId: string, caseId: string, body: unknown) {
   const parsed = profileSchema.safeParse(body);
   if (!parsed.success) throw Object.assign(new Error('Complete every required identity and residency field.'), { code: 'INVALID_KYC_PROFILE' });
@@ -86,8 +93,10 @@ export async function saveKycProfile(userId: string, caseId: string, body: unkno
     const rows = existing[0]
       ? await tx.update(kycProfiles).set(values).where(eq(kycProfiles.userId, userId)).returning()
       : await tx.insert(kycProfiles).values({ userId, ...values, createdAt: now }).returning();
-    await tx.update(onboardingCases).set({ version: record.version + 1, lastEditedBy: userId, updatedAt: now })
-      .where(and(eq(onboardingCases.id, caseId), eq(onboardingCases.version, record.version)));
+    const updatedCases = await tx.update(onboardingCases).set({ version: record.version + 1, lastEditedBy: userId, updatedAt: now })
+      .where(and(eq(onboardingCases.id, caseId), eq(onboardingCases.version, record.version)))
+      .returning({ id: onboardingCases.id });
+    assertKycCaseVersionUpdated(updatedCases);
     await tx.insert(onboardingEvents).values({
       id: `oe_${crypto.randomBytes(10).toString('hex')}`, caseId, userId,
       action: 'kyc_profile_saved', actorId: userId, actorType: 'customer',
@@ -188,8 +197,10 @@ export async function storeKycDocument(input: {
         referenceType: 'internal', reference: `document:${id}`, sha256,
         createdBy: input.userId, lastEditedBy: input.userId, createdAt: now, updatedAt: now,
       });
-      await tx.update(onboardingCases).set({ version: record.version + 1, lastEditedBy: input.userId, updatedAt: now })
-        .where(and(eq(onboardingCases.id, input.caseId), eq(onboardingCases.version, record.version)));
+      const updatedCases = await tx.update(onboardingCases).set({ version: record.version + 1, lastEditedBy: input.userId, updatedAt: now })
+        .where(and(eq(onboardingCases.id, input.caseId), eq(onboardingCases.version, record.version)))
+        .returning({ id: onboardingCases.id });
+      assertKycCaseVersionUpdated(updatedCases);
       await tx.insert(onboardingEvents).values({
         id: `oe_${crypto.randomBytes(10).toString('hex')}`, caseId: input.caseId, userId: input.userId,
         action: current ? 'kyc_document_replaced' : 'kyc_document_uploaded', actorId: input.userId, actorType: 'customer',

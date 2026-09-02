@@ -79,17 +79,30 @@ export async function addOnboardingEvidence(input: {
   if (!['draft', 'needs_info'].includes(current.status)) throw Object.assign(new Error('Evidence cannot be edited after submission.'), { code: 'CASE_LOCKED' });
   const validation = validateEvidenceReference(input);
   if (validation) throw Object.assign(new Error(validation), { code: 'INVALID_EVIDENCE' });
-  const evidenceCount = await db.select({ id: onboardingEvidence.id }).from(onboardingEvidence).where(eq(onboardingEvidence.caseId, input.caseId));
-  if (evidenceCount.length >= 20) throw Object.assign(new Error('A case may contain at most 20 evidence references.'), { code: 'EVIDENCE_LIMIT' });
-  const rows = await db.insert(onboardingEvidence).values({
-    id: `ev_${crypto.randomBytes(10).toString('hex')}`, caseId: input.caseId, kind: input.kind,
-    referenceType: input.referenceType, reference: input.reference.trim(), sha256: input.sha256 ?? null,
-    issuedAt: input.issuedAt ? new Date(input.issuedAt) : null, expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
-    createdBy: input.actorId, lastEditedBy: input.actorId, createdAt: new Date(), updatedAt: new Date(),
-  }).returning();
-  await db.update(onboardingCases).set({ lastEditedBy: input.actorId, version: current.version + 1, updatedAt: new Date() }).where(eq(onboardingCases.id, input.caseId));
-  await appendEvent({ caseId: current.id, userId: current.userId, action: 'evidence_added', actorId: input.actorId, actorType: input.actorType, details: { evidenceId: rows[0].id, kind: input.kind, referenceType: input.referenceType } });
-  return rows[0];
+  const now = new Date();
+  return db.transaction(async tx => {
+    const evidenceCount = await tx.select({ id: onboardingEvidence.id }).from(onboardingEvidence).where(eq(onboardingEvidence.caseId, input.caseId));
+    if (evidenceCount.length >= 20) throw Object.assign(new Error('A case may contain at most 20 evidence references.'), { code: 'EVIDENCE_LIMIT' });
+    const rows = await tx.insert(onboardingEvidence).values({
+      id: `ev_${crypto.randomBytes(10).toString('hex')}`, caseId: input.caseId, kind: input.kind,
+      referenceType: input.referenceType, reference: input.reference.trim(), sha256: input.sha256 ?? null,
+      issuedAt: input.issuedAt ? new Date(input.issuedAt) : null, expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+      createdBy: input.actorId, lastEditedBy: input.actorId, createdAt: now, updatedAt: now,
+    }).returning();
+    const updatedCases = await tx.update(onboardingCases)
+      .set({ lastEditedBy: input.actorId, version: current.version + 1, updatedAt: now })
+      .where(and(eq(onboardingCases.id, input.caseId), eq(onboardingCases.status, current.status), eq(onboardingCases.version, current.version)))
+      .returning({ id: onboardingCases.id });
+    if (!updatedCases[0]) throw Object.assign(new Error('The registration workflow changed. Refresh it before continuing.'), { code: 'WORKFLOW_CONFLICT' });
+    await tx.insert(onboardingEvents).values({
+      id: `oe_${crypto.randomBytes(10).toString('hex')}`, caseId: current.id, userId: current.userId,
+      action: 'evidence_added', actorId: input.actorId, actorType: input.actorType,
+      fromStatus: current.status, toStatus: current.status,
+      details: { evidenceId: rows[0].id, kind: input.kind, referenceType: input.referenceType, previousVersion: current.version, version: current.version + 1 },
+      createdAt: now,
+    });
+    return rows[0];
+  });
 }
 
 export async function submitOnboardingCase(
