@@ -92,3 +92,49 @@ export function verifyProviderWebhook(input: { rawBody: Buffer; eventId: string;
   const received = Buffer.from(input.signature, 'hex');
   if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) throw new OnboardingProviderError('Invalid webhook signature.', 'INVALID_SIGNATURE', 401);
 }
+
+type SumsubDigestAlgorithm = 'HMAC_SHA256_HEX' | 'HMAC_SHA512_HEX';
+
+export function verifySumsubWebhook(input: { rawBody: Buffer; signature: string; algorithm: string; secret: string }): void {
+  const algorithms: Record<SumsubDigestAlgorithm, 'sha256' | 'sha512'> = {
+    HMAC_SHA256_HEX: 'sha256',
+    HMAC_SHA512_HEX: 'sha512',
+  };
+  const algorithm = algorithms[input.algorithm as SumsubDigestAlgorithm];
+  if (!algorithm) throw new OnboardingProviderError('Unsupported Sumsub webhook digest algorithm.', 'INVALID_SIGNATURE_ALGORITHM', 401);
+  if (input.secret.length < 32) throw new OnboardingProviderError('Approved provider webhook secret is not configured.', 'PROVIDER_SECRET_MISSING', 503);
+  const expectedHex = crypto.createHmac(algorithm, input.secret).update(input.rawBody).digest('hex');
+  if (!new RegExp(`^[a-f0-9]{${expectedHex.length}}$`, 'i').test(input.signature)) throw new OnboardingProviderError('Invalid webhook signature.', 'INVALID_SIGNATURE', 401);
+  const expected = Buffer.from(expectedHex, 'hex');
+  const received = Buffer.from(input.signature, 'hex');
+  if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) throw new OnboardingProviderError('Invalid webhook signature.', 'INVALID_SIGNATURE', 401);
+}
+
+export function mapSumsubWebhookPayload(input: unknown): { eventId: string; payload: ProviderWebhookPayload } {
+  if (!input || typeof input !== 'object') throw new OnboardingProviderError('Sumsub webhook payload must be an object.', 'INVALID_PAYLOAD');
+  const value = input as Record<string, unknown>;
+  const externalUserId = String(value.externalUserId ?? '').trim();
+  const applicantId = String(value.applicantId ?? '').trim();
+  const correlationId = String(value.correlationId ?? '').trim();
+  const type = String(value.type ?? '').trim();
+  const reviewStatus = String(value.reviewStatus ?? '').trim();
+  const reviewResult = value.reviewResult && typeof value.reviewResult === 'object' ? value.reviewResult as Record<string, unknown> : {};
+  const reviewAnswer = String(reviewResult.reviewAnswer ?? '').trim().toUpperCase();
+
+  if (!/^oc_[a-f0-9]{20}$/.test(externalUserId)) throw new OnboardingProviderError('Sumsub externalUserId must be the onboarding case reference.', 'INVALID_CASE_REFERENCE');
+  if (!/^[a-f0-9]{20,64}$/i.test(applicantId)) throw new OnboardingProviderError('Invalid Sumsub applicant reference.', 'INVALID_PROVIDER_REFERENCE');
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/.test(correlationId)) throw new OnboardingProviderError('Invalid Sumsub correlation identifier.', 'INVALID_EVENT_ID');
+  if (type !== 'applicantReviewed' || reviewStatus !== 'completed') throw new OnboardingProviderError('Unsupported Sumsub webhook event.', 'UNSUPPORTED_PROVIDER_EVENT');
+  if (!['GREEN', 'RED'].includes(reviewAnswer)) throw new OnboardingProviderError('Sumsub review result requires manual review.', 'PROVIDER_REVIEW_REQUIRED', 202);
+
+  return {
+    eventId: correlationId,
+    payload: validateProviderWebhookPayload({
+      caseId: externalUserId,
+      providerRef: `sumsub:${applicantId}`,
+      kind: 'identity',
+      status: reviewAnswer === 'GREEN' ? 'accepted' : 'rejected',
+      purpose: 'onboarding',
+    }),
+  };
+}
