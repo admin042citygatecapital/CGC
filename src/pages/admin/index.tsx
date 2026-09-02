@@ -2,14 +2,14 @@
  * /admin — City Gate Capital Super-Admin Control Center
  *
  * Administration command centre:
- *  ⓐ Customer KPIs      — Total / Active / Suspended / Pending KYC
- *  ⓑ Financial KPIs     — Deposits / Withdrawals / Transfers / Revenue
- *  ⓒ Pending Flows      — Pending Deposits / Withdrawals / Transfers
- *  ⓓ Exchange Rates     — USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
- *  ⓔ Platform controls        — website, features, system and integrations
- *  ⓕ Fee Activity       — 14-day fee-record and activity chart
- *  ⓖ Notifications      — administrative activity feed, 15 s poll
- *  ⓗ System Health      — API, DB, Email, Server, Storage, Memory, CPU,
+ *  ① Customer KPIs      — Total / Active / Suspended / Pending KYC
+ *  ② Financial KPIs     — Deposits / Withdrawals / Transfers / Revenue
+ *  ③ Pending Flows      — Pending Deposits / Withdrawals / Transfers
+ *  ④ Exchange Rates     — USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
+ *  ⑤ Platform controls        — website, features, system and integrations
+ *  ⑥ Fee Activity       — 14-day fee-record and activity chart
+ *  ⑦ Notifications      — administrative activity feed, 15 s poll
+ *  ⑧ System Health      — API, DB, Email, Server, Storage, Memory, CPU,
  *                          Queue, Cloudflare, SSL — each with live status
  *
  *  Auto-refresh: stats every 30 s · health every 15 s · notifications every 15 s
@@ -28,15 +28,20 @@ Clock,
 Cpu,
 CreditCard,
 Database,
+DollarSign,
 Globe,
 HardDrive,
 HeadphonesIcon,
 Layers,
+Lock,
 Mail,
 Minus,
 RefreshCw,
+Send,
 Server,
 ShieldCheck,
+TrendingDown,
+TrendingUp,
 UserCheck,
 Users,
 UserX,
@@ -46,9 +51,9 @@ import { AnimatePresence,motion } from 'motion/react';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 // Types
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 interface KpiValue { value: number; change: number; trend: string }
 
 interface Stats {
@@ -79,9 +84,9 @@ interface HealthData {
   checks: Record<string, 'PASS' | 'WARN' | 'FAIL'>;
 }
 
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 // Helpers
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined, prefix = '') {
   const v = Number(n ?? 0);
   if (v >= 1_000_000) return `${prefix}${(v / 1_000_000).toFixed(2)}M`;
@@ -111,9 +116,9 @@ const ACTIVITY_META: Record<string, { color: string; label: string }> = {
   admin_login:     { color: '#C9A84C', label: 'Admin Login' },
 };
 
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 // Sub-components
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 
 /** Tiny SVG sparkline */
 function Sparkline({ data, color, h = 28 }: { data: number[]; color: string; h?: number }) {
@@ -191,12 +196,12 @@ function GaugeBar({ value, max = 100, color }: { value: number; max?: number; co
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 // Section: Exchange Rates
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null }) {
   const fxPairs = rates ? [
-    { pair: 'EUR/USD', rate: rates.EUR_USD,  flag: '🇦🇺' },
+    { pair: 'EUR/USD', rate: rates.EUR_USD,  flag: '🇪🇺' },
     { pair: 'GBP/USD', rate: rates.GBP_USD,  flag: '🇬🇧' },
     { pair: 'JPY/USD', rate: rates.JPY_USD,  flag: '🇯🇵', decimals: 6 },
     { pair: 'CHF/USD', rate: rates.CHF_USD,  flag: '🇨🇭' },
@@ -237,9 +242,9 @@ function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null })
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 // Section: Platform controls
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 function PlatformControlPanel() {
   const controls = [
     { label: 'Website & CMS', detail: 'Pages, navigation and content', href: '/admin/website', icon: Layers },
@@ -273,9 +278,9 @@ function PlatformControlPanel() {
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 // Section: Live Notifications
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 function LiveNotifications({ activity }: { activity: Stats['recentActivity'] }) {
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const prevIds = useRef<Set<string>>(new Set());
@@ -352,9 +357,9 @@ function LiveNotifications({ activity }: { activity: Stats['recentActivity'] }) 
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 // Section: System Health
-// ───────────────────────────────────���──────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 function SystemHealthPanel({ health }: { health: HealthData | null }) {
   const memPct  = health?.memory.heapUsagePct ?? 0;
   const ramPct  = health ? pct(health.memory.heapTotalMb + health.memory.rssMb, health.memory.totalRamMb) : 0;
@@ -478,11 +483,9 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────
-// Section: Fee activity chart
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 // Main Page
-// ──────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const { admin, loading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
@@ -536,7 +539,7 @@ export default function AdminDashboard() {
       key === 'newUsers' ? d.newUsers : d.revenue
     ) ?? [];
 
-  // ── Customer KPI cards ────────────────────────────────────────────────
+  // ── Customer KPI cards ──────────────────────────────────────────────────────
   const customerCards = [
     { label: 'Total Customers',     value: fmt(k.totalUsers?.value),           change: k.totalUsers?.change ?? 0,           icon: Users,        color: '#C9A84C', href: '/admin/users',    sub: 'All verified and pending' },
     { label: 'Active Customers',    value: fmt(k.activeAccounts?.value),       change: k.activeAccounts?.change ?? 0,       icon: CheckCircle,  color: '#10B981', href: '/admin/users',    sub: 'Actively trading' },
@@ -577,7 +580,14 @@ export default function AdminDashboard() {
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
             Refresh
           </button>
-        </div>{loading ? (
+        </div>
+
+        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3">
+          <Lock size={15} className="mt-0.5 shrink-0 text-amber-200" />
+          <div><p className="text-sm font-semibold text-amber-100">Financial data safeguards</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">All financial records shown are from the pre-deployment demonstration register. No real money, crypto, or customer accounts exist in this preview.</p></div>
+        </div>
+
+        {loading ? (
           /* Skeleton */
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -609,7 +619,6 @@ export default function AdminDashboard() {
                 <BarChart2 size={10} /> Operational analytics & controls
               </p>
               <div className="grid lg:grid-cols-2 gap-4">
-                {/* Revenue chart – spans 1 col on lg */}
                 {/* Exchange rates */}
                 <ExchangeRatesPanel rates={stats?.exchangeRates ?? null} />
                 <PlatformControlPanel />
