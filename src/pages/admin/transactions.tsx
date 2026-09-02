@@ -175,7 +175,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
       record.reference,
       record.flagged ? 'Yes' : 'No',
       new Date(record.createdAt).toISOString(),
-      'Synthetic pre-deployment record',
+      'Application record - provider reconciliation required',
     ]);
     const csv = [headers, ...rows]
       .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
@@ -183,7 +183,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `cgc-pre-deployment-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.download = `cgc-transaction-register-${new Date().toISOString().slice(0, 10)}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -270,7 +270,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-white">{transfersOnly ? 'Transfer Review' : 'Transaction Register'}</h1>
-            <p className="text-sm text-white/30">{total.toLocaleString()} persistent demonstration records</p>
+            <p className="text-sm text-white/30">{total.toLocaleString()} application transaction records</p>
           </div>
           <button onClick={exportCsv} disabled={records.length === 0} className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary transition-colors hover:bg-primary/20 disabled:opacity-40">
             <Download size={13} /> Export labelled CSV
@@ -280,8 +280,8 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
         <div className="mb-5 flex items-start gap-3 rounded-2xl border border-sky-400/20 bg-sky-400/[0.06] px-4 py-3">
           <Database size={16} className="mt-0.5 shrink-0 text-sky-300" />
           <div>
-            <p className="text-sm font-semibold text-sky-100">Persistent demonstration register</p>
-            <p className="mt-1 text-xs leading-relaxed text-sky-100/55">Records come from the application database and may contain synthetic pre-deployment activity. The super-administrator may correct descriptions, internal notes, and compliance flags with a mandatory audit reason. Amount, currency, ownership, reference, timestamps, and financial status remain immutable.</p>
+            <p className="text-sm font-semibold text-sky-100">Application transaction register</p>
+            <p className="mt-1 text-xs leading-relaxed text-sky-100/55">These records originate in the application database. Provider execution and settlement must be confirmed through reconciliation before a record is treated as completed externally. The super-administrator may correct descriptions, internal notes, and compliance flags with a mandatory audit reason. Amount, currency, ownership, reference, timestamps, and financial status remain immutable.</p>
           </div>
         </div>
 
@@ -333,7 +333,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
             <table className="w-full text-sm">
               <thead><tr className="border-b border-white/5">{['ID', 'Type', 'User', 'Amount', 'Currency', 'Status', 'Reference', 'Date', 'Control'].map(label => <th key={label} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white/30">{label}</th>)}</tr></thead>
               <tbody className="divide-y divide-white/[0.03]">
-                {loading ? Array.from({ length: 8 }).map((_, index) => <tr key={index}><td colSpan={9} className="px-4 py-3"><div className="h-4 animate-pulse rounded bg-white/[0.04]" /></td></tr>) : records.length === 0 ? <tr><td colSpan={9} className="px-4 py-12 text-center text-sm text-white/25">No persistent demonstration records match these filters.</td></tr> : records.map((record, index) => (
+                {loading ? Array.from({ length: 8 }).map((_, index) => <tr key={index}><td colSpan={9} className="px-4 py-3"><div className="h-4 animate-pulse rounded bg-white/[0.04]" /></td></tr>) : records.length === 0 ? <tr><td colSpan={9} className="px-4 py-12 text-center text-sm text-white/25">No application transaction records match these filters.</td></tr> : records.map((record, index) => (
                   <motion.tr key={record.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.015 }} className={record.flagged ? 'bg-red-500/[0.03]' : 'hover:bg-white/[0.02]'}>
                     <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-white/40"><span className="flex items-center gap-1">{record.flagged && <AlertTriangle size={10} className="text-red-400" />}{record.id}</span></td>
                     <td className="whitespace-nowrap px-4 py-3"><span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: TYPE_COLORS[record.type] ?? '#C9A84C' }}><span className="h-1.5 w-1.5 rounded-full" style={{ background: TYPE_COLORS[record.type] ?? '#C9A84C' }} />{record.type.replaceAll('_', ' ')}</span></td>
