@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { assertApprovedProvider, signProviderWebhook, validateProviderWebhookPayload, verifyProviderWebhook } from '../../server/lib/onboardingProviderWebhook.js';
+import crypto from 'node:crypto';
+import { assertApprovedProvider, mapSumsubWebhookPayload, signProviderWebhook, validateProviderWebhookPayload, verifyProviderWebhook, verifySumsubWebhook } from '../../server/lib/onboardingProviderWebhook.js';
 import { assessProviderVerification, deriveScreeningState } from '../../server/lib/onboardingProviderStore.js';
 
 describe('approved onboarding provider webhooks', () => {
@@ -38,5 +39,18 @@ describe('approved onboarding provider webhooks', () => {
     expect(assessProviderVerification([identity, clearScreening], 'individual').approvable).toBe(true);
     expect(assessProviderVerification([identity, clearScreening], 'business').approvable).toBe(false);
     expect(assessProviderVerification([identity, { ...clearScreening, status: 'review' }], 'individual').approvable).toBe(false);
+  });
+
+  it('verifies Sumsub raw-body digests and maps only explicit identity decisions', () => {
+    const secret = 'sumsub-webhook-secret-at-least-32-bytes';
+    const body = Buffer.from(JSON.stringify({ applicantId: '5cb56e8e0a975a35f333cb83', correlationId: 'req-ec508a2a-fa33-4dd2-b93d-fcade2967e03', externalUserId: 'oc_0123456789abcdef0123', type: 'applicantReviewed', reviewStatus: 'completed', reviewResult: { reviewAnswer: 'GREEN' } }));
+    const signature = crypto.createHmac('sha256', secret).update(body).digest('hex');
+    expect(() => verifySumsubWebhook({ rawBody: body, signature, algorithm: 'HMAC_SHA256_HEX', secret })).not.toThrow();
+    expect(() => verifySumsubWebhook({ rawBody: Buffer.from('{}'), signature, algorithm: 'HMAC_SHA256_HEX', secret })).toThrow(expect.objectContaining({ code: 'INVALID_SIGNATURE' }));
+    expect(() => verifySumsubWebhook({ rawBody: body, signature, algorithm: 'HMAC_SHA1_HEX', secret })).toThrow(expect.objectContaining({ code: 'INVALID_SIGNATURE_ALGORITHM' }));
+    const mapped = mapSumsubWebhookPayload(JSON.parse(body.toString('utf8')));
+    expect(mapped.eventId).toBe('req-ec508a2a-fa33-4dd2-b93d-fcade2967e03');
+    expect(mapped.payload).toMatchObject({ caseId: 'oc_0123456789abcdef0123', providerRef: 'sumsub:5cb56e8e0a975a35f333cb83', kind: 'identity', status: 'accepted' });
+    expect(mapped.payload.screening).toBeUndefined();
   });
 });
