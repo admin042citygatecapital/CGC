@@ -1,3 +1,9 @@
+// PATCH: Sumsub `applicantReviewed` mapping now emits BOTH an identity/KYB event
+// and a sanctions/PEP/adverse-media screening event, so the admin approval gate
+// (assertProviderVerificationComplete) can actually be satisfied by Sumsub.
+// Screening is only asserted when the Sumsub verification level performed AML
+// screening (fail-closed otherwise). Everything outside mapSumsubWebhookPayload
+// is unchanged from the original file.
 import crypto from 'node:crypto';
 
 export type ProviderVerificationKind = 'identity' | 'kyb' | 'screening';
@@ -110,11 +116,54 @@ export function verifySumsubWebhook(input: { rawBody: Buffer; signature: string;
   if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) throw new OnboardingProviderError('Invalid webhook signature.', 'INVALID_SIGNATURE', 401);
 }
 
-export function mapSumsubWebhookPayload(input: unknown): { eventId: string; payload: ProviderWebhookPayload } {
+/** One decoded, ready-to-record provider event derived from a Sumsub webhook. */
+export type SumsubMappedEvent = { eventId: string; payload: ProviderWebhookPayload };
+
+/**
+ * Sumsub verification levels whose successful (GREEN) review attests to a completed
+ * sanctions / PEP / adverse-media screening. Only for these levels do we translate a
+ * review into a screening event; otherwise we make no screening assertion and the
+ * approval gate stays closed (fail-closed).
+ */
+const SUMSUB_AML_SCREENING_LEVEL = /aml|sanction|pep|screen|watchlist/i;
+
+/**
+ * Derive the screening dispositions from a Sumsub review.
+ * - GREEN  -> all clear.
+ * - RED    -> map Sumsub reject labels onto sanctions / PEP / adverse-media.
+ *             A rejection unrelated to those dimensions returns null (no screening claim).
+ */
+function deriveSumsubScreening(
+  accepted: boolean,
+  reviewResult: Record<string, unknown>,
+): { sanctions: ScreeningDisposition; pep: ScreeningDisposition; adverseMedia: ScreeningDisposition } | null {
+  if (accepted) return { sanctions: 'clear', pep: 'clear', adverseMedia: 'clear' };
+  const labels = Array.isArray(reviewResult.rejectLabels)
+    ? reviewResult.rejectLabels.map(label => String(label).toUpperCase())
+    : [];
+  const sanctions: ScreeningDisposition = labels.some(l => l.includes('SANCTION') || l.includes('WATCHLIST')) ? 'match' : 'clear';
+  const pep: ScreeningDisposition = labels.some(l => l.includes('PEP')) ? 'match' : 'clear';
+  const adverseMedia: ScreeningDisposition = labels.some(l => l.includes('ADVERSE')) ? 'match' : 'clear';
+  if (sanctions === 'clear' && pep === 'clear' && adverseMedia === 'clear') return null;
+  return { sanctions, pep, adverseMedia };
+}
+
+/**
+ * Map a signed Sumsub `applicantReviewed` webhook into the provider events the onboarding
+ * store understands.
+ *
+ * A completed review yields an identity (or KYB, for company applicants) event, and — when
+ * the verification level performed AML screening — a screening event. This is what allows
+ * `assertProviderVerificationComplete` (which requires BOTH an accepted identity/KYB event
+ * AND an accepted, all-clear screening event) to pass on a genuine Sumsub approval.
+ */
+export function mapSumsubWebhookPayload(input: unknown): { events: SumsubMappedEvent[] } {
   if (!input || typeof input !== 'object') throw new OnboardingProviderError('Sumsub webhook payload must be an object.', 'INVALID_PAYLOAD');
   const value = input as Record<string, unknown>;
   const externalUserId = String(value.externalUserId ?? '').trim();
   const applicantId = String(value.applicantId ?? '').trim();
+  const applicantType = String(value.applicantType ?? 'individual').trim().toLowerCase();
+  const levelName = String(value.levelName ?? '').trim();
   const correlationId = String(value.correlationId ?? '').trim();
   const type = String(value.type ?? '').trim();
   const reviewStatus = String(value.reviewStatus ?? '').trim();
@@ -127,14 +176,39 @@ export function mapSumsubWebhookPayload(input: unknown): { eventId: string; payl
   if (type !== 'applicantReviewed' || reviewStatus !== 'completed') throw new OnboardingProviderError('Unsupported Sumsub webhook event.', 'UNSUPPORTED_PROVIDER_EVENT');
   if (!['GREEN', 'RED'].includes(reviewAnswer)) throw new OnboardingProviderError('Sumsub review result requires manual review.', 'PROVIDER_REVIEW_REQUIRED', 202);
 
-  return {
-    eventId: correlationId,
-    payload: validateProviderWebhookPayload({
-      caseId: externalUserId,
-      providerRef: `sumsub:${applicantId}`,
-      kind: 'identity',
-      status: reviewAnswer === 'GREEN' ? 'accepted' : 'rejected',
-      purpose: 'onboarding',
-    }),
-  };
+  const accepted = reviewAnswer === 'GREEN';
+  const providerRef = `sumsub:${applicantId}`;
+  const identityKind: ProviderVerificationKind = applicantType === 'company' ? 'kyb' : 'identity';
+
+  const events: SumsubMappedEvent[] = [
+    {
+      eventId: correlationId,
+      payload: validateProviderWebhookPayload({
+        caseId: externalUserId,
+        providerRef,
+        kind: identityKind,
+        status: accepted ? 'accepted' : 'rejected',
+        purpose: 'onboarding',
+      }),
+    },
+  ];
+
+  if (SUMSUB_AML_SCREENING_LEVEL.test(levelName)) {
+    const screening = deriveSumsubScreening(accepted, reviewResult);
+    if (screening) {
+      events.push({
+        eventId: `${correlationId}:screening`,
+        payload: validateProviderWebhookPayload({
+          caseId: externalUserId,
+          providerRef,
+          kind: 'screening',
+          status: accepted ? 'accepted' : 'review',
+          purpose: 'onboarding',
+          screening,
+        }),
+      });
+    }
+  }
+
+  return { events };
 }
