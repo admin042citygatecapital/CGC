@@ -1,6 +1,7 @@
 services:
   - type: web
     name: city-gate-capital
+    branch: main
     runtime: node
     plan: starter
     region: oregon
