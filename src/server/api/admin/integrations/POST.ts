@@ -5,14 +5,14 @@
  * Body: { id: IntegrationId; enabled?: boolean; notes?: string; config?: Record<string,string> }
  */
 import type { Request, Response } from 'express';
-import { updateIntegration, type IntegrationId } from '../../../lib/integrationStore.js';
+import {
+  MANAGED_INTEGRATION_IDS,
+  updateIntegration,
+  type IntegrationId,
+} from '../../../lib/integrationStore.js';
 import { appendCriticalAudit } from '../../../lib/auditLog.js';
 
-const VALID_IDS = new Set<IntegrationId>([
-  'resend', 'zoho_mail', 'tawk', 'cloudflare', 'google_analytics',
-  'google_tag_manager', 'google_maps', 'stripe', 'paypal',
-  'twilio', 'whatsapp_business', 'banking_api',
-]);
+const VALID_IDS = new Set<IntegrationId>(MANAGED_INTEGRATION_IDS);
 
 export default async function handler(req: Request, res: Response) {
   try {

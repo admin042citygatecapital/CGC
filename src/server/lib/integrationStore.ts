@@ -65,11 +65,24 @@ function defaultRecord(id: IntegrationId): IntegrationRecord {
   };
 }
 
-// Keep the production administration inventory limited to integrations that
-// are part of the approved operating model. Historical/speculative provider
-// records remain readable from durable storage but are not presented as live
-// configuration work for administrators.
-const ALL_IDS: IntegrationId[] = ['resend', 'zoho_mail', 'tawk'];
+// Canonical integration IDs exposed in the administrator configuration UI and API.
+// The IDs must remain aligned with POST/test handlers.
+export const MANAGED_INTEGRATION_IDS: IntegrationId[] = [
+  'resend',
+  'zoho_mail',
+  'tawk',
+  'cloudflare',
+  'google_analytics',
+  'google_tag_manager',
+  'google_maps',
+  'stripe',
+  'paypal',
+  'twilio',
+  'whatsapp_business',
+  'banking_api',
+];
+
+const ALL_IDS = MANAGED_INTEGRATION_IDS;
 
 function defaultStore(): IntegrationStore {
   return Object.fromEntries(ALL_IDS.map(id => [id, defaultRecord(id)])) as IntegrationStore;

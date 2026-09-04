@@ -32,16 +32,16 @@ describe('integration status reporting', () => {
       ZOHO_REFRESH_TOKEN: 'zoho-refresh',
     })) dependencies.secrets.set(name, value);
 
-    const { getAllIntegrations } = await import('../../server/lib/integrationStore.js');
+    const { getAllIntegrations, MANAGED_INTEGRATION_IDS } = await import('../../server/lib/integrationStore.js');
     const byId = Object.fromEntries((await getAllIntegrations()).map(item => [item.id, item]));
 
     expect(byId.resend).toMatchObject({ name: 'Resend', status: 'connected', enabled: false });
     expect(byId.zoho_mail).toMatchObject({ status: 'connected', enabled: false });
     expect(byId.tawk).toMatchObject({ name: 'tawk.to', status: 'connected', enabled: true });
     expect(byId.tawk.secrets).toEqual([]);
-    expect(byId.cloudflare).toBeUndefined();
-    expect(byId.banking_api).toBeUndefined();
-    expect(Object.keys(byId).sort()).toEqual(['resend', 'tawk', 'zoho_mail']);
+    expect(byId.cloudflare).toMatchObject({ status: 'disconnected', enabled: false });
+    expect(byId.banking_api).toMatchObject({ status: 'disconnected', enabled: false });
+    expect(Object.keys(byId)).toEqual(MANAGED_INTEGRATION_IDS);
   });
 
   it('reports partial configuration when only some required secrets are present', async () => {
