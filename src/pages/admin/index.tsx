@@ -1,18 +1,18 @@
 /**
- * /admin — City Gate Capital Super-Admin Control Center
+ * /admin â€” City Gate Capital Super-Admin Control Center
  *
  * Administration command centre:
- *  ① Customer KPIs      — Total / Active / Suspended / Pending KYC
- *  ② Financial KPIs     — Deposits / Withdrawals / Transfers / Revenue
- *  ③ Pending Flows      — Pending Deposits / Withdrawals / Transfers
- *  ④ Exchange Rates     — USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
- *  ⑤ Platform controls        — website, features, system and integrations
- *  ⑥ Fee Activity       — 14-day fee-record and activity chart
- *  ⑦ Notifications      — administrative activity feed, 15 s poll
- *  ⑧ System Health      — API, DB, Email, Server, Storage, Memory, CPU,
- *                          Queue, Cloudflare, SSL — each with live status
+ *  â‘  Customer KPIs      â€” Total / Active / Suspended / Pending KYC
+ *  â‘¡ Financial KPIs     â€” Deposits / Withdrawals / Transfers / Revenue
+ *  â‘¢ Pending Flows      â€” Pending Deposits / Withdrawals / Transfers
+ *  â‘£ Exchange Rates     â€” USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
+ *  â‘¤ Platform controls        â€” website, features, system and integrations
+ *  â‘¥ Fee Activity       â€” 14-day fee-record and activity chart
+ *  â‘¦ Notifications      â€” administrative activity feed, 15 s poll
+ *  â‘§ System Health      â€” API, DB, Email, Server, Storage, Memory, CPU,
+ *                          Queue, Cloudflare, SSL â€” each with live status
  *
- *  Auto-refresh: stats every 30 s · health every 15 s · notifications every 15 s
+ *  Auto-refresh: stats every 30 s Â· health every 15 s Â· notifications every 15 s
  */
 import AdminLayout from '@/layouts/AdminLayout';
 import { authHeaders,useAdminAuth } from '@/lib/adminAuth';
@@ -33,7 +33,6 @@ Globe,
 HardDrive,
 HeadphonesIcon,
 Layers,
-Lock,
 Mail,
 Minus,
 RefreshCw,
@@ -51,9 +50,9 @@ import { AnimatePresence,motion } from 'motion/react';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Types
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface KpiValue { value: number; change: number; trend: string }
 
 interface Stats {
@@ -84,9 +83,9 @@ interface HealthData {
   checks: Record<string, 'PASS' | 'WARN' | 'FAIL'>;
 }
 
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Helpers
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function fmt(n: number | null | undefined, prefix = '') {
   const v = Number(n ?? 0);
   if (v >= 1_000_000) return `${prefix}${(v / 1_000_000).toFixed(2)}M`;
@@ -116,9 +115,9 @@ const ACTIVITY_META: Record<string, { color: string; label: string }> = {
   admin_login:     { color: '#C9A84C', label: 'Admin Login' },
 };
 
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Sub-components
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Tiny SVG sparkline */
 function Sparkline({ data, color, h = 28 }: { data: number[]; color: string; h?: number }) {
@@ -157,7 +156,7 @@ function KpiCard({
         </div>
         <span className={`flex items-center gap-0.5 text-[11px] font-semibold ${change > 0 ? 'text-emerald-400' : change < 0 ? 'text-red-400' : 'text-white/25'}`}>
           {change > 0 ? <ArrowUpRight size={11} /> : change < 0 ? <ArrowDownRight size={11} /> : <Minus size={9} />}
-          {change !== 0 ? `${Math.abs(change)}%` : '–'}
+          {change !== 0 ? `${Math.abs(change)}%` : 'â€”'}
         </span>
       </div>
       <p className="text-white text-[22px] font-bold leading-none mb-0.5 group-hover:text-primary transition-colors tabular-nums">{value}</p>
@@ -196,15 +195,15 @@ function GaugeBar({ value, max = 100, color }: { value: number; max?: number; co
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Section: Exchange Rates
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null }) {
   const fxPairs = rates ? [
-    { pair: 'EUR/USD', rate: rates.EUR_USD,  flag: '🇪🇺' },
-    { pair: 'GBP/USD', rate: rates.GBP_USD,  flag: '🇬🇧' },
-    { pair: 'JPY/USD', rate: rates.JPY_USD,  flag: '🇯🇵', decimals: 6 },
-    { pair: 'CHF/USD', rate: rates.CHF_USD,  flag: '🇨🇭' },
+    { pair: 'EUR/USD', rate: rates.EUR_USD,  flag: 'ðŸ‡ªðŸ‡º' },
+    { pair: 'GBP/USD', rate: rates.GBP_USD,  flag: 'ðŸ‡¬ðŸ‡§' },
+    { pair: 'JPY/USD', rate: rates.JPY_USD,  flag: 'ðŸ‡¯ðŸ‡µ', decimals: 6 },
+    { pair: 'CHF/USD', rate: rates.CHF_USD,  flag: 'ðŸ‡¨ðŸ‡­' },
   ] : [];
 
   return (
@@ -242,9 +241,9 @@ function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null })
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Section: Platform controls
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function PlatformControlPanel() {
   const controls = [
     { label: 'Website & CMS', detail: 'Pages, navigation and content', href: '/admin/website', icon: Layers },
@@ -278,9 +277,9 @@ function PlatformControlPanel() {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Section: Live Notifications
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function LiveNotifications({ activity }: { activity: Stats['recentActivity'] }) {
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const prevIds = useRef<Set<string>>(new Set());
@@ -357,9 +356,9 @@ function LiveNotifications({ activity }: { activity: Stats['recentActivity'] }) 
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Section: System Health
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SystemHealthPanel({ health }: { health: HealthData | null }) {
   const memPct  = health?.memory.heapUsagePct ?? 0;
   const ramPct  = health ? pct(health.memory.heapTotalMb + health.memory.rssMb, health.memory.totalRamMb) : 0;
@@ -428,14 +427,14 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
         <div>
           <div className="flex items-center justify-between mb-1">
             <p className="text-white/35 text-[10px]">Heap Memory</p>
-            <p className="text-white/50 text-[10px] font-mono">{health ? `${health.memory.heapUsedMb} / ${health.memory.heapLimitMb} MB limit` : '–'}</p>
+            <p className="text-white/50 text-[10px] font-mono">{health ? `${health.memory.heapUsedMb} / ${health.memory.heapLimitMb} MB limit` : 'â€”'}</p>
           </div>
           <GaugeBar value={memPct} color={memPct > 85 ? '#EF4444' : memPct > 70 ? '#F59E0B' : '#10B981'} />
         </div>
         <div>
           <div className="flex items-center justify-between mb-1">
             <p className="text-white/35 text-[10px]">RAM Usage</p>
-            <p className="text-white/50 text-[10px] font-mono">{health ? `${Math.round(health.memory.rssMb)} MB RSS` : '–'}</p>
+            <p className="text-white/50 text-[10px] font-mono">{health ? `${Math.round(health.memory.rssMb)} MB RSS` : 'â€”'}</p>
           </div>
           <GaugeBar value={ramPct} color={ramPct > 85 ? '#EF4444' : ramPct > 70 ? '#F59E0B' : '#627EEA'} />
         </div>
@@ -457,7 +456,7 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
           </div>
           <div>
             <p className="text-white/25 text-[9px] mb-0.5">Administrator sessions</p>
-            <p className="text-white/55 text-[11px] font-mono">{health.runtime.activeAdminSessions} active · 60-minute activity window</p>
+            <p className="text-white/55 text-[11px] font-mono">{health.runtime.activeAdminSessions} active Â· 60-minute activity window</p>
           </div>
           <div>
             <p className="text-white/25 text-[9px] mb-0.5">Customer sessions</p>
@@ -483,9 +482,11 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Section: Fee activity chart
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Main Page
-// ────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function AdminDashboard() {
   const { admin, loading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
@@ -539,12 +540,12 @@ export default function AdminDashboard() {
       key === 'newUsers' ? d.newUsers : d.revenue
     ) ?? [];
 
-  // ── Customer KPI cards ──────────────────────────────────────────────────────
+  // â”€â”€ Customer KPI cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const customerCards = [
-    { label: 'Total Customers',     value: fmt(k.totalUsers?.value),           change: k.totalUsers?.change ?? 0,           icon: Users,        color: '#C9A84C', href: '/admin/users',    sub: 'All verified and pending' },
-    { label: 'Active Customers',    value: fmt(k.activeAccounts?.value),       change: k.activeAccounts?.change ?? 0,       icon: CheckCircle,  color: '#10B981', href: '/admin/users',    sub: 'Actively trading' },
-    { label: 'Suspended Customers', value: fmt(k.suspendedAccounts?.value),    change: k.suspendedAccounts?.change ?? 0,    icon: UserX,        color: '#EF4444', href: '/admin/users',    sub: 'Fraud / compliance' },
-    { label: 'Pending KYC',         value: fmt(k.pendingVerifications?.value), change: k.pendingVerifications?.change ?? 0, icon: Clock,        color: '#F59E0B', href: '/admin/kyc',      sub: 'Awaiting verification' },
+    { label: 'Total Customers',     value: fmt(k.totalUsers?.value),           change: k.totalUsers?.change ?? 0,           icon: Users,        color: '#C9A84C', href: '/admin/users',    sub: 'All registered accounts',   sparkKey: 'newUsers' },
+    { label: 'Active Customers',    value: fmt(k.activeAccounts?.value),       change: k.activeAccounts?.change ?? 0,       icon: CheckCircle,  color: '#10B981', href: '/admin/users',    sub: 'Status: active',            sparkKey: 'newUsers' },
+    { label: 'Suspended Customers', value: fmt(k.suspendedAccounts?.value),    change: k.suspendedAccounts?.change ?? 0,    icon: UserX,        color: '#EF4444', href: '/admin/users',    sub: 'Frozen or suspended',       sparkKey: 'newUsers' },
+    { label: 'Pending KYC',         value: fmt(k.pendingVerifications?.value), change: k.pendingVerifications?.change ?? 0, icon: Clock,        color: '#F59E0B', href: '/admin/kyc',      sub: 'Awaiting verification',     sparkKey: 'newUsers' },
   ];
 
   const hour = new Date().getHours();
@@ -553,14 +554,14 @@ export default function AdminDashboard() {
   return (
     <>
       <Helmet>
-        <title>Control Center — City Gate Capital Admin</title>
+        <title>Control Center â€” City Gate Capital Admin</title>
         <meta name="description" content="City Gate Capital super-administration control center for customers, operations, content, security, integrations and system health." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/admin" />
       </Helmet>
       <AdminLayout title="Control Center">
 
-        {/* ── Page header ── */}
+        {/* â”€â”€ Page header â”€â”€ */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-white text-xl font-bold leading-tight" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -568,9 +569,9 @@ export default function AdminDashboard() {
             </h1>
             <p className="text-white/30 text-xs mt-1">
               {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              <span className="mx-1.5 text-white/15">·</span>
+              <span className="mx-1.5 text-white/15">Â·</span>
               Last updated {lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              <span className="mx-1.5 text-white/15">·</span>
+              <span className="mx-1.5 text-white/15">Â·</span>
               <span className="text-emerald-400/70">Auto-refresh 30s</span>
             </p>
           </div>
@@ -580,14 +581,7 @@ export default function AdminDashboard() {
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
             Refresh
           </button>
-        </div>
-
-        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3">
-          <Lock size={15} className="mt-0.5 shrink-0 text-amber-200" />
-          <div><p className="text-sm font-semibold text-amber-100">Financial data safeguards</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">All financial records shown are from the pre-deployment demonstration register. No real money, crypto, or customer accounts exist in this preview.</p></div>
-        </div>
-
-        {loading ? (
+        </div>{loading ? (
           /* Skeleton */
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -599,7 +593,7 @@ export default function AdminDashboard() {
         ) : (
           <div className="space-y-5">
 
-            {/* ── Section 1: Customer KPIs ── */}
+            {/* â”€â”€ Section 1: Customer KPIs â”€â”€ */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
                 <Users size={10} /> Customers
@@ -607,25 +601,26 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {customerCards.map((c, i) => (
                   <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                    <KpiCard {...c} sparkData={spark('revenue')} />
+                    <KpiCard {...c} sparkData={spark(c.sparkKey)} />
                   </motion.div>
                 ))}
               </div>
             </section>
 
-            {/* ── Section 4: Operational analytics, rates and controls ── */}
+            {/* â”€â”€ Section 4: Operational analytics, rates and controls â”€â”€ */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
                 <BarChart2 size={10} /> Operational analytics & controls
               </p>
               <div className="grid lg:grid-cols-2 gap-4">
+                {/* Revenue chart â€” spans 1 col on lg */}
                 {/* Exchange rates */}
                 <ExchangeRatesPanel rates={stats?.exchangeRates ?? null} />
                 <PlatformControlPanel />
               </div>
             </section>
 
-            {/* ── Section 5: Notifications + System Health ── */}
+            {/* â”€â”€ Section 5: Notifications + System Health â”€â”€ */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
                 <Activity size={10} /> Operational activity
@@ -638,7 +633,7 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* ── Quick-action bar ── */}
+            {/* â”€â”€ Quick-action bar â”€â”€ */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
                 <Zap size={10} /> Quick Actions
