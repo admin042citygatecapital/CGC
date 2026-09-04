@@ -11,18 +11,13 @@
 
 import crypto from 'node:crypto';
 import { eq, lt, and } from 'drizzle-orm';
-import { getDb, getQueryClient, isDatabaseConfigured } from '../db/db.js';
+import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { customerSessions, users } from '../db/schema.js';
 import type { UserRecord } from './userStore.js';
 import {
   CUSTOMER_SESSION_ABSOLUTE_MS,
   CUSTOMER_SESSION_INACTIVITY_MS,
 } from './customerSessionConfig.js';
-import {
-  digestFromPersistedTokenKey,
-  digestOpaqueToken,
-  persistedTokenKey,
-} from './tokenDigest.js';
 
 const INACTIVITY_MS = CUSTOMER_SESSION_INACTIVITY_MS;
 const ABSOLUTE_TTL_MS = CUSTOMER_SESSION_ABSOLUTE_MS;
@@ -41,14 +36,8 @@ export interface CustomerSessionView {
   isCurrent: boolean;
 }
 
-function publicSessionIdFromHash(tokenHash: string): string {
-  return tokenHash.slice(0, 24);
-}
-
-function parseTimestamp(value: Date | string | null | undefined): Date | null {
-  if (value == null) return null;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+function publicSessionId(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex').slice(0, 24);
 }
 
 /** List active sessions without exposing their bearer credentials. */
@@ -61,46 +50,33 @@ export async function listCustomerSessions(
     const store = await import('./userStore.flatfile.js');
     const user = store.findUserById(userId);
     if (!user?.sessionToken) return [];
-    if ((user.sessionCredentialVersion ?? 1) !== (user.credentialVersion ?? 1)) return [];
-    const tokenHash = digestFromPersistedTokenKey(user.sessionToken);
-    if (!tokenHash) return [];
     const createdAt = user.sessionCreatedAt ?? new Date(now).toISOString();
     const lastSeenAt = user.sessionLastSeenAt ?? createdAt;
     const expiresAt = user.sessionExpiresAt ?? new Date(new Date(createdAt).getTime() + ABSOLUTE_TTL_MS).toISOString();
     if (new Date(expiresAt).getTime() <= now || new Date(lastSeenAt).getTime() + INACTIVITY_MS <= now) return [];
     return [{
-      id: publicSessionIdFromHash(tokenHash),
+      id: publicSessionId(user.sessionToken),
       ip: user.lastLoginIp ?? '',
       ua: '',
       createdAt,
       lastSeenAt,
       expiresAt,
-      isCurrent: user.sessionToken === persistedTokenKey(currentToken),
+      isCurrent: user.sessionToken === currentToken,
     }];
   }
 
-  const db = getDb();
-  const [principal] = await db.select({ credentialVersion: users.credentialVersion })
-    .from(users).where(eq(users.id, userId)).limit(1);
-  if (!principal) return [];
-  const rows = await db.select().from(customerSessions).where(eq(customerSessions.userId, userId));
-  return rows.flatMap(row => {
-    const createdAt = parseTimestamp(row.createdAt);
-    const lastSeenAt = parseTimestamp(row.lastSeenAt);
-    const expiresAt = parseTimestamp(row.expiresAt);
-    if (!createdAt || !lastSeenAt || !expiresAt) return [];
-    if (row.credentialVersion !== principal.credentialVersion ||
-        expiresAt.getTime() <= now || lastSeenAt.getTime() + INACTIVITY_MS <= now) return [];
-    return [{
-      id: publicSessionIdFromHash(row.tokenHash),
+  const rows = await getDb().select().from(customerSessions).where(eq(customerSessions.userId, userId));
+  return rows
+    .filter(row => new Date(row.expiresAt).getTime() > now && new Date(row.lastSeenAt).getTime() + INACTIVITY_MS > now)
+    .map(row => ({
+      id: publicSessionId(row.token),
       ip: row.ip ?? '',
       ua: row.ua ?? '',
-      createdAt: createdAt.toISOString(),
-      lastSeenAt: lastSeenAt.toISOString(),
-      expiresAt: expiresAt.toISOString(),
-      isCurrent: row.tokenHash === digestOpaqueToken(currentToken),
-    }];
-  });
+      createdAt: new Date(row.createdAt).toISOString(),
+      lastSeenAt: new Date(row.lastSeenAt).toISOString(),
+      expiresAt: new Date(row.expiresAt).toISOString(),
+      isCurrent: row.token === currentToken,
+    }));
 }
 
 /** Revoke one session owned by this user, addressed by its non-secret ID. */
@@ -108,26 +84,20 @@ export async function revokeCustomerSession(userId: string, sessionId: string): 
   if (!/^[a-f0-9]{24}$/i.test(sessionId)) return false;
   if (!isDatabaseConfigured()) {
     const store = await import('./userStore.flatfile.js');
-    const tokenKey = store.findUserById(userId)?.sessionToken;
-    const tokenHash = tokenKey ? digestFromPersistedTokenKey(tokenKey) : null;
-    if (!tokenHash || publicSessionIdFromHash(tokenHash) !== sessionId) return false;
-    await store.updateUser(userId, {
-      sessionToken: undefined,
-      sessionCreatedAt: undefined,
-      sessionLastSeenAt: undefined,
-      sessionExpiresAt: undefined,
-    });
+    const token = store.findUserById(userId)?.sessionToken;
+    if (!token || publicSessionId(token) !== sessionId) return false;
+    await deleteCustomerSession(token);
     return true;
   }
 
-  const rows = await getDb().select({ tokenHash: customerSessions.tokenHash })
+  const rows = await getDb().select({ token: customerSessions.token })
     .from(customerSessions)
     .where(eq(customerSessions.userId, userId));
-  const match = rows.find(row => publicSessionIdFromHash(row.tokenHash) === sessionId);
+  const match = rows.find(row => publicSessionId(row.token) === sessionId);
   if (!match) return false;
   await getDb().delete(customerSessions).where(and(
     eq(customerSessions.userId, userId),
-    eq(customerSessions.tokenHash, match.tokenHash),
+    eq(customerSessions.token, match.token),
   ));
   return true;
 }
@@ -138,42 +108,32 @@ export async function revokeCustomerSession(userId: string, sessionId: string): 
  */
 export async function createCustomerSession(
   userId: string,
-  opts: { ip?: string; ua?: string; credentialVersion: number },
-): Promise<string | null> {
+  opts: { ip?: string; ua?: string } = {}
+): Promise<string> {
   const token     = generateCustomerToken();
   const now       = new Date();
   const expiresAt = new Date(now.getTime() + ABSOLUTE_TTL_MS);
 
   if (isDatabaseConfigured()) {
-    const sql = getQueryClient();
-    const inserted = await sql.begin(async (tx) => {
-      await tx`SELECT pg_advisory_xact_lock(hashtext(${`customer-credential:${userId}`}))`;
-      const rows = await tx<{ token_hash: string }[]>`
-        INSERT INTO customer_sessions (
-          token_hash, user_id, credential_version, ip, ua,
-          created_at, last_seen_at, expires_at
-        )
-        SELECT ${digestOpaqueToken(token)}, id, credential_version, ${opts.ip ?? null}, ${opts.ua ?? null},
-               ${now.toISOString()}, ${now.toISOString()}, ${expiresAt.toISOString()}
-        FROM users
-        WHERE id = ${userId} AND credential_version = ${opts.credentialVersion}
-        RETURNING token_hash
-      `;
-      return rows.length === 1;
+    const db = getDb();
+    await db.insert(customerSessions).values({
+      token,
+      userId,
+      ip:         opts.ip ?? null,
+      ua:         opts.ua ?? null,
+      createdAt:  now,
+      lastSeenAt: now,
+      expiresAt,
     });
-    if (!inserted) return null;
   } else {
     // Development-only flat-file compatibility: persist the token so the
     // session returned by login is immediately usable by authenticated APIs.
     const store = await import('./userStore.flatfile.js');
-    const principal = store.findUserById(userId);
-    if (!principal || (principal.credentialVersion ?? 1) !== opts.credentialVersion) return null;
     await store.updateUser(userId, {
-      sessionToken: persistedTokenKey(token),
+      sessionToken: token,
       sessionCreatedAt: now.toISOString(),
       sessionLastSeenAt: now.toISOString(),
       sessionExpiresAt: expiresAt.toISOString(),
-      sessionCredentialVersion: opts.credentialVersion,
     });
   }
 
@@ -189,47 +149,43 @@ export async function findUserByCustomerToken(token: string): Promise<UserRecord
   if (!token || token.length < 32) return undefined;
   if (!isDatabaseConfigured()) return undefined;
 
+  const db  = getDb();
   const now = new Date();
-  const tokenHash = digestOpaqueToken(token);
-  const sql = getQueryClient();
-  const userId = await sql.begin(async (tx) => {
-    const [identity] = await tx<{ user_id: string }[]>`
-      SELECT user_id FROM customer_sessions WHERE token_hash = ${tokenHash}
-    `;
-    if (!identity) return null;
-    await tx`SELECT pg_advisory_xact_lock(hashtext(${`customer-credential:${identity.user_id}`}))`;
-    const [session] = await tx<{
-      user_id: string;
-      credential_version: number;
-      current_credential_version: number;
-      last_seen_at: Date | string;
-      expires_at: Date | string;
-    }[]>`
-      SELECT s.user_id, s.credential_version,
-             u.credential_version AS current_credential_version,
-             s.last_seen_at, s.expires_at
-      FROM customer_sessions s
-      JOIN users u ON u.id = s.user_id
-      WHERE s.token_hash = ${tokenHash}
-      FOR UPDATE OF s
-    `;
-    if (!session) return null;
-    const expiresAt = parseTimestamp(session.expires_at);
-    const lastSeenAt = parseTimestamp(session.last_seen_at);
-    const stale = session.credential_version !== session.current_credential_version;
-    const expired = !expiresAt || !lastSeenAt || expiresAt < now || new Date(lastSeenAt.getTime() + INACTIVITY_MS) < now;
-    if (stale || expired) {
-      await tx`DELETE FROM customer_sessions WHERE token_hash = ${tokenHash}`;
-      return null;
-    }
-    await tx`UPDATE customer_sessions SET last_seen_at = ${now.toISOString()} WHERE token_hash = ${tokenHash}`;
-    return session.user_id;
-  });
-  if (!userId) return undefined;
+
+  // Find the session
+  const sessions = await db.select()
+    .from(customerSessions)
+    .where(eq(customerSessions.token, token))
+    .limit(1);
+
+  if (sessions.length === 0) return undefined;
+  const session = sessions[0];
+
+  // Check absolute TTL
+  if (new Date(session.expiresAt) < now) {
+    await db.delete(customerSessions).where(eq(customerSessions.token, token));
+    return undefined;
+  }
+
+  // Check inactivity TTL
+  const inactivityDeadline = new Date(new Date(session.lastSeenAt).getTime() + INACTIVITY_MS);
+  if (inactivityDeadline < now) {
+    await db.delete(customerSessions).where(eq(customerSessions.token, token));
+    return undefined;
+  }
+
+  // Touch lastSeenAt (sliding window)
+  await db.update(customerSessions)
+    .set({ lastSeenAt: now })
+    .where(eq(customerSessions.token, token));
+
+  // Load the user
+  const userRows = await db.select().from(users).where(eq(users.id, session.userId)).limit(1);
+  if (userRows.length === 0) return undefined;
 
   // Import toRecord from userStore to avoid circular dependency
   const { findUserById } = await import('./userStore.js');
-  return findUserById(userId);
+  return findUserById(session.userId);
 }
 
 /**
@@ -248,7 +204,7 @@ export async function deleteCustomerSession(token: string): Promise<void> {
     return;
   }
   const db = getDb();
-  await db.delete(customerSessions).where(eq(customerSessions.tokenHash, digestOpaqueToken(token)));
+  await db.delete(customerSessions).where(eq(customerSessions.token, token));
 }
 
 /**
@@ -270,7 +226,7 @@ export async function deleteAllCustomerSessions(userId: string): Promise<number>
   const db = getDb();
   const result = await db.delete(customerSessions)
     .where(eq(customerSessions.userId, userId))
-    .returning({ tokenHash: customerSessions.tokenHash });
+    .returning({ token: customerSessions.token });
   return result.length;
 }
 
@@ -303,7 +259,7 @@ export async function purgeExpiredCustomerSessions(): Promise<number> {
   const now = new Date();
   const result = await db.delete(customerSessions)
     .where(lt(customerSessions.expiresAt, now))
-    .returning({ tokenHash: customerSessions.tokenHash });
+    .returning({ token: customerSessions.token });
   return result.length;
 }
 
@@ -316,7 +272,7 @@ export async function countCustomerSessions(userId: string): Promise<number> {
     return store.findUserById(userId)?.sessionToken ? 1 : 0;
   }
   const db  = getDb();
-  const rows = await db.select({ tokenHash: customerSessions.tokenHash })
+  const rows = await db.select({ token: customerSessions.token })
     .from(customerSessions)
     .where(and(
       eq(customerSessions.userId, userId),

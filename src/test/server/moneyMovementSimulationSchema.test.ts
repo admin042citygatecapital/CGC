@@ -3,17 +3,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 const migration = readFileSync(
-  path.resolve(
-    process.cwd(),
-    "src/server/db/migrations/0031_money_movement_simulation.sql",
-  ),
+  path.resolve(process.cwd(), "src/server/db/migrations/0031_money_movement_simulation.sql"),
   "utf8",
 );
 const api = readFileSync(
-  path.resolve(
-    process.cwd(),
-    "src/server/api/admin/financial-sandbox/POST.ts",
-  ),
+  path.resolve(process.cwd(), "src/server/api/admin/financial-sandbox/POST.ts"),
   "utf8",
 );
 const page = readFileSync(
