@@ -1,18 +1,18 @@
 /**
- * /admin â€” City Gate Capital Super-Admin Control Center
+ * /admin - City Gate Capital Super-Admin Control Center
  *
- * Administration command centre:
- *  â‘  Customer KPIs      â€” Total / Active / Suspended / Pending KYC
- *  â‘¡ Financial KPIs     â€” Deposits / Withdrawals / Transfers / Revenue
- *  â‘¢ Pending Flows      â€” Pending Deposits / Withdrawals / Transfers
- *  â‘£ Exchange Rates     â€” USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
- *  â‘¤ Platform controls        â€” website, features, system and integrations
- *  â‘¥ Fee Activity       â€” 14-day fee-record and activity chart
- *  â‘¦ Notifications      â€” administrative activity feed, 15 s poll
- *  â‘§ System Health      â€” API, DB, Email, Server, Storage, Memory, CPU,
- *                          Queue, Cloudflare, SSL â€” each with live status
+ * Administration command center:
+ *  - Customer KPIs: Total / Active / Suspended / Pending KYC
+ *  - Financial KPIs: Deposits / Withdrawals / Transfers / Revenue
+ *  - Pending Flows: Deposits / Withdrawals / Transfers
+ *  - Exchange Rates: USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
+ *  - Platform controls: website, features, system and integrations
+ *  - Fee Activity: 14-day fee-record and activity chart
+ *  - Notifications: administrative activity feed, 15 s poll
+ *  - System Health: API, DB, Email, Server, Storage, Memory, CPU,
+ *    Queue, Cloudflare, SSL with live status
  *
- *  Auto-refresh: stats every 30 s Â· health every 15 s Â· notifications every 15 s
+ * Auto-refresh: stats every 30 s, health every 15 s, notifications every 15 s.
  */
 import AdminLayout from '@/layouts/AdminLayout';
 import { authHeaders,useAdminAuth } from '@/lib/adminAuth';
@@ -46,9 +46,9 @@ import { AnimatePresence,motion } from 'motion/react';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 // Types
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 interface KpiValue { value: number; change: number; trend: string }
 
 interface Stats {
@@ -79,9 +79,9 @@ interface HealthData {
   checks: Record<string, 'PASS' | 'WARN' | 'FAIL'>;
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 // Helpers
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 function fmt(n: number | null | undefined, prefix = '') {
   const v = Number(n ?? 0);
   if (v >= 1_000_000) return `${prefix}${(v / 1_000_000).toFixed(2)}M`;
@@ -111,11 +111,26 @@ const ACTIVITY_META: Record<string, { color: string; label: string }> = {
   admin_login:     { color: '#C9A84C', label: 'Admin Login' },
 };
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 // Sub-components
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 
-/** Tiny SVG sparkline */
+/**
+ * /admin - City Gate Capital Super-Admin Control Center
+ *
+ * Administration command center:
+ *  - Customer KPIs: Total / Active / Suspended / Pending KYC
+ *  - Financial KPIs: Deposits / Withdrawals / Transfers / Revenue
+ *  - Pending Flows: Deposits / Withdrawals / Transfers
+ *  - Exchange Rates: USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
+ *  - Platform controls: website, features, system and integrations
+ *  - Fee Activity: 14-day fee-record and activity chart
+ *  - Notifications: administrative activity feed, 15 s poll
+ *  - System Health: API, DB, Email, Server, Storage, Memory, CPU,
+ *    Queue, Cloudflare, SSL with live status
+ *
+ * Auto-refresh: stats every 30 s, health every 15 s, notifications every 15 s.
+ */
 function Sparkline({ data, color, h = 28 }: { data: number[]; color: string; h?: number }) {
   if (data.length < 2) return null;
   const w = 72;
@@ -135,7 +150,22 @@ function Sparkline({ data, color, h = 28 }: { data: number[]; color: string; h?:
   );
 }
 
-/** Single KPI card */
+/**
+ * /admin - City Gate Capital Super-Admin Control Center
+ *
+ * Administration command center:
+ *  - Customer KPIs: Total / Active / Suspended / Pending KYC
+ *  - Financial KPIs: Deposits / Withdrawals / Transfers / Revenue
+ *  - Pending Flows: Deposits / Withdrawals / Transfers
+ *  - Exchange Rates: USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
+ *  - Platform controls: website, features, system and integrations
+ *  - Fee Activity: 14-day fee-record and activity chart
+ *  - Notifications: administrative activity feed, 15 s poll
+ *  - System Health: API, DB, Email, Server, Storage, Memory, CPU,
+ *    Queue, Cloudflare, SSL with live status
+ *
+ * Auto-refresh: stats every 30 s, health every 15 s, notifications every 15 s.
+ */
 function KpiCard({
   label, value, sub, change, icon: Icon, color, href, sparkData,
 }: {
@@ -164,7 +194,22 @@ function KpiCard({
   return <Link to={href} className="block h-full">{inner}</Link>;
 }
 
-/** Status dot + label */
+/**
+ * /admin - City Gate Capital Super-Admin Control Center
+ *
+ * Administration command center:
+ *  - Customer KPIs: Total / Active / Suspended / Pending KYC
+ *  - Financial KPIs: Deposits / Withdrawals / Transfers / Revenue
+ *  - Pending Flows: Deposits / Withdrawals / Transfers
+ *  - Exchange Rates: USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
+ *  - Platform controls: website, features, system and integrations
+ *  - Fee Activity: 14-day fee-record and activity chart
+ *  - Notifications: administrative activity feed, 15 s poll
+ *  - System Health: API, DB, Email, Server, Storage, Memory, CPU,
+ *    Queue, Cloudflare, SSL with live status
+ *
+ * Auto-refresh: stats every 30 s, health every 15 s, notifications every 15 s.
+ */
 function StatusBadge({ ok, warn, label }: { ok: boolean; warn?: boolean; label: string }) {
   return (
     <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
@@ -178,7 +223,22 @@ function StatusBadge({ ok, warn, label }: { ok: boolean; warn?: boolean; label: 
   );
 }
 
-/** Gauge bar */
+/**
+ * /admin - City Gate Capital Super-Admin Control Center
+ *
+ * Administration command center:
+ *  - Customer KPIs: Total / Active / Suspended / Pending KYC
+ *  - Financial KPIs: Deposits / Withdrawals / Transfers / Revenue
+ *  - Pending Flows: Deposits / Withdrawals / Transfers
+ *  - Exchange Rates: USD/EUR, USD/GBP, USD/JPY, USD/CHF + more
+ *  - Platform controls: website, features, system and integrations
+ *  - Fee Activity: 14-day fee-record and activity chart
+ *  - Notifications: administrative activity feed, 15 s poll
+ *  - System Health: API, DB, Email, Server, Storage, Memory, CPU,
+ *    Queue, Cloudflare, SSL with live status
+ *
+ * Auto-refresh: stats every 30 s, health every 15 s, notifications every 15 s.
+ */
 function GaugeBar({ value, max = 100, color }: { value: number; max?: number; color: string }) {
   const p = Math.min(100, Math.round((value / max) * 100));
   return (
@@ -191,9 +251,9 @@ function GaugeBar({ value, max = 100, color }: { value: number; max?: number; co
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 // Section: Exchange Rates
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null }) {
   const fxPairs = rates ? [
     { pair: 'EUR/USD', rate: rates.EUR_USD,  flag: 'ðŸ‡ªðŸ‡º' },
@@ -237,9 +297,9 @@ function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null })
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 // Section: Platform controls
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 function PlatformControlPanel() {
   const controls = [
     { label: 'Website & CMS', detail: 'Pages, navigation and content', href: '/admin/website', icon: Layers },
@@ -255,7 +315,7 @@ function PlatformControlPanel() {
         <h3 className="text-sm font-semibold text-white">Platform controls</h3>
       </div>
       <p className="mb-3 text-[11px] leading-relaxed text-white/35">
-        Manage routine website and platform operations through protected, audited workspaces.
+        Financial data safeguards keep the register and controls in synthetic preview mode until a provider and sponsor are fully approved. Manage routine website and platform operations through protected, audited workspaces.
       </p>
       <div className="grid grid-cols-2 gap-2">
         {controls.map(({ label, detail, href, icon: Icon }) => (
@@ -273,9 +333,9 @@ function PlatformControlPanel() {
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 // Section: Live Notifications
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 function LiveNotifications({ activity }: { activity: Stats['recentActivity'] }) {
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const prevIds = useRef<Set<string>>(new Set());
@@ -352,9 +412,9 @@ function LiveNotifications({ activity }: { activity: Stats['recentActivity'] }) 
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 // Section: System Health
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 function SystemHealthPanel({ health }: { health: HealthData | null }) {
   const memPct  = health?.memory.heapUsagePct ?? 0;
   const ramPct  = health ? pct(health.memory.heapTotalMb + health.memory.rssMb, health.memory.totalRamMb) : 0;
@@ -478,11 +538,11 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 // Section: Fee activity chart
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 // Main Page
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
 export default function AdminDashboard() {
   const { admin, loading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
@@ -662,3 +722,5 @@ export default function AdminDashboard() {
     </>
   );
 }
+
+

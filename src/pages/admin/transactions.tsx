@@ -270,6 +270,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-white">{transfersOnly ? 'Transfer Review' : 'Transaction Register'}</h1>
+            <p className="text-sm text-white/35">Persistent demonstration register</p>
             <p className="text-sm text-white/30">{total.toLocaleString()} application transaction records</p>
           </div>
           <button onClick={exportCsv} disabled={records.length === 0} className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary transition-colors hover:bg-primary/20 disabled:opacity-40">
