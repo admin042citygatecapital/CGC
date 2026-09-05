@@ -4,6 +4,7 @@ import { buildRegistrationWorkflow } from '../../../lib/registrationWorkflow.js'
 import { findUserById } from '../../../lib/userStore.js';
 import { ONBOARDING_COMPLIANCE_MAP } from '../../../lib/onboardingComplianceMap.js';
 import { getKycProfile, listKycDocuments } from '../../../lib/kycPrivateStore.js';
+import { getSumsubReadiness } from '../../../lib/onboardingProviderReadiness.js';
 
 const STATUSES = new Set(['draft', 'submitted', 'under_review', 'needs_info', 'approved', 'rejected', 'expired']);
 export default async function handler(req: Request, res: Response) {
@@ -40,10 +41,11 @@ export default async function handler(req: Request, res: Response) {
   }
   const raw = String(req.query.status ?? '');
   if (raw && !STATUSES.has(raw)) return res.status(400).json({ error: 'Invalid onboarding status.' });
-  const [cases, queued, intake] = await Promise.all([
+  const [cases, queued, intake, sumsub] = await Promise.all([
     listOnboardingCases(raw as OnboardingStatus || undefined),
     listOnboardingQueueIds(),
     listRegistrationIntakeQueueIds(),
+    getSumsubReadiness(),
   ]);
   const queuePositions = new Map(queued.map((record, index) => [record.id, index + 1]));
   const intakePositions = new Map(intake.map((record, index) => [record.id, index + 1]));
@@ -54,6 +56,7 @@ export default async function handler(req: Request, res: Response) {
       intakePosition: intakePositions.get(record.id) ?? null,
     })),
     controls: ONBOARDING_COMPLIANCE_MAP,
+    sumsub,
     programme: {
       launchJurisdiction: 'UNDECIDED',
       liveIdentityProviderConnected: false,

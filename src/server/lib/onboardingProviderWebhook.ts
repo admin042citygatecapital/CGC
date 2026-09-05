@@ -113,6 +113,9 @@ export function verifySumsubWebhook(input: { rawBody: Buffer; signature: string;
 export function mapSumsubWebhookPayload(input: unknown): { eventId: string; payload: ProviderWebhookPayload } {
   if (!input || typeof input !== 'object') throw new OnboardingProviderError('Sumsub webhook payload must be an object.', 'INVALID_PAYLOAD');
   const value = input as Record<string, unknown>;
+  if (value.testMode != null && value.testMode !== false || value.sandboxMode != null && value.sandboxMode !== false) {
+    throw new OnboardingProviderError('Test and sandbox events cannot become production onboarding evidence.', 'NON_PRODUCTION_PROVIDER_EVENT', 422);
+  }
   const externalUserId = String(value.externalUserId ?? '').trim();
   const applicantId = String(value.applicantId ?? '').trim();
   const correlationId = String(value.correlationId ?? '').trim();
@@ -132,8 +135,8 @@ export function mapSumsubWebhookPayload(input: unknown): { eventId: string; payl
     payload: validateProviderWebhookPayload({
       caseId: externalUserId,
       providerRef: `sumsub:${applicantId}`,
-      kind: 'identity',
-      status: reviewAnswer === 'GREEN' ? 'accepted' : 'rejected',
+      kind: value.applicantType === 'company' ? 'kyb' : 'identity',
+      status: reviewAnswer === 'GREEN' ? 'accepted' : reviewResult.reviewRejectType === 'RETRY' ? 'review' : 'rejected',
       purpose: 'onboarding',
     }),
   };

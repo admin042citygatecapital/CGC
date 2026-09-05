@@ -1,3 +1,4 @@
+import { getDatabaseEvidence } from '../../../lib/databaseEvidence.js';
 import type { Request, Response } from 'express';
 import { getSecret } from '#runtime/secrets';
 import { getQueryClient, isDatabaseConfigured, testConnection } from '../../../db/db.js';
@@ -38,6 +39,7 @@ export default async function handler(_req: Request, res: Response) {
       getSecret('SUPABASE_URL') && getSecret('SUPABASE_SERVICE_ROLE_KEY') && getSecret('SUPABASE_STORAGE_BUCKET')
     );
     return res.json({
+      evidence: getDatabaseEvidence(),
       database: { state: 'healthy', provider: 'PostgreSQL', latencyMs: connection.latencyMs ?? null },
       schema: {
         tableCount: summary?.tableCount ?? 0,

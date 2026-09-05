@@ -1,3 +1,4 @@
+import { adminHealthState, type AdminHealthState } from '@/lib/adminHealthPresentation';
 /**
  * AdminLayout — Enterprise Super Admin Control Center Shell
  *
@@ -359,32 +360,32 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
 
 // ── System health pill ────────────────────────────────────────────────────────
 function SystemHealthPill() {
-  const [status, setStatus] = useState<'ok' | 'warn' | 'error'>('ok');
+  const [status, setStatus] = useState<AdminHealthState>('unknown');
   useEffect(() => {
-    fetch('/api/admin/health', { headers: authHeaders() })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (!d) return;
-        const checks = Object.values(d.checks ?? {}) as string[];
-        if (checks.some(c => c === 'FAIL')) setStatus('error');
-        else if (checks.some(c => c === 'WARN')) setStatus('warn');
-        else setStatus('ok');
-      }).catch(() => {});
+    let active = true;
+    const controller = new AbortController();
+    const refresh = async () => {
+      try {
+        const response = await fetch('/api/admin/health', { headers: authHeaders(), signal: controller.signal });
+        const data = response.ok ? await response.json() : null;
+        if (active) setStatus(adminHealthState(data));
+      } catch { if (active) setStatus('unknown'); }
+    };
+    void refresh();
+    const timer = setInterval(() => void refresh(), 30_000);
+    return () => { active = false; controller.abort(); clearInterval(timer); };
   }, []);
-
   const cfg = {
-    ok:    { color: '#10B981', label: 'Platform Healthy', Icon: CheckCircle2 },
-    warn:  { color: '#F59E0B', label: 'Platform Warning', Icon: AlertCircle },
-    error: { color: '#EF4444', label: 'Platform Alert',   Icon: AlertTriangle },
+    healthy: { color: '#10B981', label: 'Service healthy', Icon: CheckCircle2 },
+    warning: { color: '#F59E0B', label: 'Service warning', Icon: AlertCircle },
+    degraded: { color: '#EF4444', label: 'Service degraded', Icon: AlertTriangle },
+    unknown: { color: '#94A3B8', label: 'Health unverified', Icon: AlertCircle },
   }[status];
-
-  return (
-    <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium"
-      style={{ background: `${cfg.color}0d`, borderColor: `${cfg.color}22`, color: cfg.color }}>
-      <cfg.Icon size={11} />
-      <span>{cfg.label}</span>
-    </div>
-  );
+  return <Link to="/admin/readiness" title="Service health does not establish financial launch readiness. Open the full readiness report."
+    className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium"
+    style={{ background: cfg.color + '0d', borderColor: cfg.color + '22', color: cfg.color }}>
+    <cfg.Icon size={11} /><span>{cfg.label}</span>
+  </Link>;
 }
 
 // ── Main layout ───────────────────────────────────────────────────────────────

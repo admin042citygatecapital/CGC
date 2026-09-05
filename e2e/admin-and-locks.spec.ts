@@ -72,3 +72,45 @@ test('admin password recovery gives the same generic confirmation for unknown ac
   await expect(page.getByRole('heading', { name: 'Check Your Inbox' })).toBeVisible();
   await expect(page.getByText(/If that email is registered/i)).toBeVisible();
 });
+
+test('admin health and Sumsub evidence stay truthful through loading and failures', async ({ page }) => {
+  await page.route('**/api/admin/health', async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...await response.json(), status: 'warning' } });
+  });
+  await loginAdmin(page);
+  await expect(page.getByText('Service warning', { exact: true })).toBeVisible();
+  await expect(page.locator('body')).not.toContainText(/\u00c2\u00b7|\u00e2\u20ac\u201d|\u00f0\u0178/);
+
+  let release = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/admin/integrations', async route => {
+    await gate;
+    await route.fulfill({ json: { integrations: [], sumsub: {
+      approved: false, webhookConfigured: false, receiverReady: false, status: 'not_configured',
+      evidenceStatus: 'available', evidence: { eventCount: 0, latestEventAt: null, identityEvents: 0, screeningEvents: 0 },
+      message: 'Applicant creation and explicit AML screening integration remain incomplete.',
+    } } });
+  });
+  await page.goto('/admin/integrations');
+  const panel = page.getByRole('region', { name: 'Sumsub readiness' });
+  try { await expect(panel.getByText('Loading provider evidence...')).toBeVisible(); }
+  finally { release(); }
+  await expect(panel.getByText('Receiver configuration incomplete')).toBeVisible();
+  await expect(panel.getByText('None recorded')).toBeVisible();
+  await page.unroute('**/api/admin/health');
+  await page.route('**/api/admin/health', route => route.fulfill({ status: 503, json: { error: 'unavailable' } }));
+  await page.reload();
+  await expect(page.getByText('Health unverified', { exact: true })).toBeVisible();
+});
+
+test('session list distinguishes idle unexpired sessions from recent activity', async ({ page }) => {
+  await loginAdmin(page);
+  await page.route('**/api/admin/security/sessions', route => route.fulfill({ json: { sessions: [
+    { token: 'fixture-session-reference', adminId: 'fixture-admin', email: E2E_ADMIN.email, createdAt: '2020-01-01T00:00:00Z', lastSeenAt: '2020-01-01T00:00:00Z', ip: '127.0.0.1', ua: 'Local test fixture' },
+  ] } }));
+  await page.goto('/admin/security');
+  await page.getByRole('button', { name: 'Sessions', exact: true }).click();
+  await expect(page.getByText('1 unexpired admin session; 0 active in the last 60 minutes')).toBeVisible();
+  await expect(page.getByText('Idle - unexpired', { exact: true })).toBeVisible();
+});

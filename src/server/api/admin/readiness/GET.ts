@@ -1,3 +1,5 @@
+import { getSumsubReadiness } from '../../../lib/onboardingProviderReadiness.js';
+import { restoreEvidence } from '../../../lib/databaseEvidence.js';
 /**
  * GET /api/admin/readiness
  * ─────────────────────────────────────────────────────────────────────────────
@@ -493,14 +495,15 @@ function checkBackupReadiness(): ReadinessCheck {
     return { id: 'backups', name: 'Backup & Recovery', subsystem: 'Database', status: 'WARN', critical: false,
       message: 'Backup worker is enabled but has not completed its first snapshot.', detail: `Directory: ${local.directory}` };
   }
-  const complete = managedConfirmed && Boolean(restoreTest);
+  const restore = restoreEvidence();
+  const complete = restore.complete && local.checksumValid === true && (local.ageHours ?? Infinity) <= 48;
   return {
     id: 'backups', name: 'Backup & Recovery', subsystem: 'Database',
     status: complete ? 'PASS' : 'WARN', critical: false,
     message: complete
       ? `Local operational backup verified; managed backups and restore test are confirmed.`
       : `Latest local operational backup is ${local.ageHours ?? 0} hours old; managed backup/restore attestation remains outstanding.`,
-    detail: `Latest: ${local.latestAt}\nChecksum: verified\nDirectory: ${local.directory}\nManaged backups confirmed: ${managedConfirmed}\nLast restore test: ${restoreTest || 'not recorded'}\nLocal snapshots are a recovery aid, not a substitute for provider-managed off-site backups.`,
+    detail: `Latest: ${local.latestAt}\nChecksum: verified\nDirectory: ${local.directory}\nManaged backups confirmed: ${managedConfirmed}\nLast restore test: ${restoreTest || 'not recorded'}\nRestore reference recorded: ${restore.referenceRecorded}\nRestore within 90 days: ${restore.recent}\nLocal scope: operations_items only\nLocal snapshots are a recovery aid, not a substitute for provider-managed off-site backups.`,
   };
 }
 
@@ -510,10 +513,11 @@ export default async function handler(_req: Request, res: Response): Promise<voi
   const t0 = Date.now();
 
   // Run async checks in parallel, sync checks inline
-  const [adminAuthCheck, emailCheck, dbCheck] = await Promise.all([
+  const [adminAuthCheck, emailCheck, dbCheck, sumsub] = await Promise.all([
     checkAdminAuth(),
     checkEmailDelivery(),
     checkDatabase(),
+    getSumsubReadiness(),
   ]);
 
   const checks: ReadinessCheck[] = [
@@ -531,6 +535,9 @@ export default async function handler(_req: Request, res: Response): Promise<voi
     checkStorageBackend(),
     checkBackupReadiness(),
     checkFinancialLaunchGate(),
+    { id: 'sumsub', name: 'Sumsub onboarding integration', subsystem: 'Compliance & Providers', status: 'WARN', critical: false,
+      message: sumsub.message,
+      detail: 'Allow-listed: ' + sumsub.approved + '\nSigning secret configured: ' + sumsub.webhookConfigured + '\nSigned events: ' + (sumsub.evidence?.eventCount ?? 'unavailable') + '\nApplicant creation: not implemented\nAML mapping: not implemented' },
   ];
 
   const pass     = checks.filter(c => c.status === 'PASS').length;

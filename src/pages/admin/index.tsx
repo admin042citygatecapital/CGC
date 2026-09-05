@@ -182,7 +182,7 @@ function KpiCard({
         </div>
         <span className={`flex items-center gap-0.5 text-[11px] font-semibold ${change > 0 ? 'text-emerald-400' : change < 0 ? 'text-red-400' : 'text-white/25'}`}>
           {change > 0 ? <ArrowUpRight size={11} /> : change < 0 ? <ArrowDownRight size={11} /> : <Minus size={9} />}
-          {change !== 0 ? `${Math.abs(change)}%` : 'â€”'}
+          {change !== 0 ? `${Math.abs(change)}%` : '—'}
         </span>
       </div>
       <p className="text-white text-[22px] font-bold leading-none mb-0.5 group-hover:text-primary transition-colors tabular-nums">{value}</p>
@@ -256,10 +256,10 @@ function GaugeBar({ value, max = 100, color }: { value: number; max?: number; co
 //
 function ExchangeRatesPanel({ rates }: { rates: Stats['exchangeRates'] | null }) {
   const fxPairs = rates ? [
-    { pair: 'EUR/USD', rate: rates.EUR_USD,  flag: 'ðŸ‡ªðŸ‡º' },
-    { pair: 'GBP/USD', rate: rates.GBP_USD,  flag: 'ðŸ‡¬ðŸ‡§' },
-    { pair: 'JPY/USD', rate: rates.JPY_USD,  flag: 'ðŸ‡¯ðŸ‡µ', decimals: 6 },
-    { pair: 'CHF/USD', rate: rates.CHF_USD,  flag: 'ðŸ‡¨ðŸ‡­' },
+    { pair: 'EUR/USD', rate: rates.EUR_USD,  flag: '🇪🇺' },
+    { pair: 'GBP/USD', rate: rates.GBP_USD,  flag: '🇬🇧' },
+    { pair: 'JPY/USD', rate: rates.JPY_USD,  flag: '🇯🇵', decimals: 6 },
+    { pair: 'CHF/USD', rate: rates.CHF_USD,  flag: '🇨🇭' },
   ] : [];
 
   return (
@@ -456,7 +456,7 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
         <StatusBadge
           ok={allOk && !anyFail}
           warn={anyWarn && !anyFail}
-          label={anyFail ? 'Degraded' : anyWarn ? 'Warning' : 'All Systems Go'}
+          label={anyFail ? 'Degraded' : anyWarn ? 'Warning' : 'Service healthy'}
         />
       </div>
 
@@ -483,14 +483,14 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
         <div>
           <div className="flex items-center justify-between mb-1">
             <p className="text-white/35 text-[10px]">Heap Memory</p>
-            <p className="text-white/50 text-[10px] font-mono">{health ? `${health.memory.heapUsedMb} / ${health.memory.heapLimitMb} MB limit` : 'â€”'}</p>
+            <p className="text-white/50 text-[10px] font-mono">{health ? `${health.memory.heapUsedMb} / ${health.memory.heapLimitMb} MB limit` : '—'}</p>
           </div>
           <GaugeBar value={memPct} color={memPct > 85 ? '#EF4444' : memPct > 70 ? '#F59E0B' : '#10B981'} />
         </div>
         <div>
           <div className="flex items-center justify-between mb-1">
             <p className="text-white/35 text-[10px]">RAM Usage</p>
-            <p className="text-white/50 text-[10px] font-mono">{health ? `${Math.round(health.memory.rssMb)} MB RSS` : 'â€”'}</p>
+            <p className="text-white/50 text-[10px] font-mono">{health ? `${Math.round(health.memory.rssMb)} MB RSS` : '—'}</p>
           </div>
           <GaugeBar value={ramPct} color={ramPct > 85 ? '#EF4444' : ramPct > 70 ? '#F59E0B' : '#627EEA'} />
         </div>
@@ -512,7 +512,7 @@ function SystemHealthPanel({ health }: { health: HealthData | null }) {
           </div>
           <div>
             <p className="text-white/25 text-[9px] mb-0.5">Administrator sessions</p>
-            <p className="text-white/55 text-[11px] font-mono">{health.runtime.activeAdminSessions} active Â· 60-minute activity window</p>
+            <p className="text-white/55 text-[11px] font-mono">{health.runtime.activeAdminSessions} active · 60-minute activity window</p>
           </div>
           <div>
             <p className="text-white/25 text-[9px] mb-0.5">Customer sessions</p>
@@ -551,7 +551,8 @@ export default function AdminDashboard() {
   const [health,  setHealth]  = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => { if (!authLoading && !admin) navigate('/admin/login'); }, [admin, authLoading, navigate]);
 
@@ -562,10 +563,11 @@ export default function AdminDashboard() {
         fetch('/api/admin/stats',  { headers: authHeaders() }),
         fetch('/api/admin/health', { headers: authHeaders() }),
       ]);
-      if (sRes.ok) setStats(await sRes.json());
-      if (hRes.ok) setHealth(await hRes.json());
+      if (!sRes.ok || !hRes.ok) throw new Error('Dashboard data could not be refreshed.');
+      const [nextStats, nextHealth] = await Promise.all([sRes.json(), hRes.json()]);
+      setStats(nextStats); setHealth(nextHealth); setLoadError(null);
       setLastRefresh(new Date());
-    } finally { setLoading(false); setRefreshing(false); }
+    } catch { setLoadError('Dashboard data is unavailable or stale. Use Refresh to retry.'); } finally { setLoading(false); setRefreshing(false); }
   }, []);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
@@ -596,7 +598,7 @@ export default function AdminDashboard() {
       key === 'newUsers' ? d.newUsers : d.revenue
     ) ?? [];
 
-  // â”€â”€ Customer KPI cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Customer KPI cards ──────────────────────────────────────────────────────
   const customerCards = [
     { label: 'Total Customers',     value: fmt(k.totalUsers?.value),           change: k.totalUsers?.change ?? 0,           icon: Users,        color: '#C9A84C', href: '/admin/users',    sub: 'All registered accounts',   sparkKey: 'newUsers' },
     { label: 'Active Customers',    value: fmt(k.activeAccounts?.value),       change: k.activeAccounts?.change ?? 0,       icon: CheckCircle,  color: '#10B981', href: '/admin/users',    sub: 'Status: active',            sparkKey: 'newUsers' },
@@ -610,14 +612,14 @@ export default function AdminDashboard() {
   return (
     <>
       <Helmet>
-        <title>Control Center â€” City Gate Capital Admin</title>
+        <title>Control Center — City Gate Capital Admin</title>
         <meta name="description" content="City Gate Capital super-administration control center for customers, operations, content, security, integrations and system health." />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href="https://citygate.capital/admin" />
       </Helmet>
       <AdminLayout title="Control Center">
 
-        {/* â”€â”€ Page header â”€â”€ */}
+        {/* ── Page header ── */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-white text-xl font-bold leading-tight" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -625,9 +627,9 @@ export default function AdminDashboard() {
             </h1>
             <p className="text-white/30 text-xs mt-1">
               {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              <span className="mx-1.5 text-white/15">Â·</span>
-              Last updated {lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              <span className="mx-1.5 text-white/15">Â·</span>
+              <span className="mx-1.5 text-white/15">·</span>
+              Last updated {lastRefresh ? lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Not yet verified'}
+              <span className="mx-1.5 text-white/15">·</span>
               <span className="text-emerald-400/70">Auto-refresh 30s</span>
             </p>
           </div>
@@ -637,7 +639,9 @@ export default function AdminDashboard() {
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
             Refresh
           </button>
-        </div>{loading ? (
+        </div>
+        {loadError && <p role="alert" className="mb-4 rounded-xl border border-amber-400/20 p-3 text-sm text-amber-200">{loadError}</p>}
+        {loading ? (
           /* Skeleton */
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -646,10 +650,10 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
-        ) : (
+        ) : stats ? (
           <div className="space-y-5">
 
-            {/* â”€â”€ Section 1: Customer KPIs â”€â”€ */}
+            {/* ── Section 1: Customer KPIs ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
                 <Users size={10} /> Customers
@@ -663,20 +667,20 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* â”€â”€ Section 4: Operational analytics, rates and controls â”€â”€ */}
+            {/* ── Section 4: Operational analytics, rates and controls ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
                 <BarChart2 size={10} /> Operational analytics & controls
               </p>
               <div className="grid lg:grid-cols-2 gap-4">
-                {/* Revenue chart â€” spans 1 col on lg */}
+                {/* Revenue chart — spans 1 col on lg */}
                 {/* Exchange rates */}
                 <ExchangeRatesPanel rates={stats?.exchangeRates ?? null} />
                 <PlatformControlPanel />
               </div>
             </section>
 
-            {/* â”€â”€ Section 5: Notifications + System Health â”€â”€ */}
+            {/* ── Section 5: Notifications + System Health ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
                 <Activity size={10} /> Operational activity
@@ -689,7 +693,7 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* â”€â”€ Quick-action bar â”€â”€ */}
+            {/* ── Quick-action bar ── */}
             <section>
               <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.15em] mb-2.5 flex items-center gap-2">
                 <Zap size={10} /> Quick Actions
@@ -717,7 +721,7 @@ export default function AdminDashboard() {
             </section>
 
           </div>
-        )}
+        ) : null}
       </AdminLayout>
     </>
   );

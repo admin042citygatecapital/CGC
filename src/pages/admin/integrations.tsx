@@ -1,3 +1,4 @@
+import SumsubReadinessPanel, { type SumsubReadiness } from '@/components/admin/SumsubReadinessPanel';
 /**
  * /admin/integrations — Integrations Center
  * Manage the approved customer-communication integrations and market-data
@@ -82,10 +83,10 @@ function MarketProvidersPanel({ providers, loading }: { providers: MarketProvide
                   </div>
                 </div>
                 <div className="text-xs text-white/30 mb-3">
-                  {active ? (
+                  {loading ? <span>Checking availability...</span> : active ? (
                     <span className="text-emerald-400">Active · {detail?.capabilities.length ?? 0} capabilities</span>
                   ) : (
-                    <span>Requires API key</span>
+                    <span>{p.free ? 'Unavailable' : 'Requires API key'}</span>
                   )}
                 </div>
                 {PROVIDER_KEYS[p.id] && (
@@ -523,6 +524,7 @@ function IntegrationCard({ integration, onToggle, onSave, onTest, testing, testR
 
 export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [sumsub, setSumsub] = useState<SumsubReadiness | null>(null);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState<string | null>(null);
   const [actionError,  setActionError]  = useState<string | null>(null);
@@ -547,8 +549,9 @@ export default function IntegrationsPage() {
     try {
       const res = await fetch('/api/admin/integrations', { headers: authHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json() as { integrations: Integration[] };
+      const data = await res.json() as { integrations: Integration[]; sumsub?: SumsubReadiness };
       setIntegrations(data.integrations);
+      setSumsub(data.sumsub ?? null);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -687,9 +690,9 @@ export default function IntegrationsPage() {
         {/* ── Stats strip ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Managed integrations', value: stats.managed,     icon: Wifi,         color: 'text-white/60' },
-            { label: 'Connected integrations', value: stats.connected, icon: CheckCircle2, color: 'text-emerald-400' },
-            { label: 'Needs attention', value: stats.attention,         icon: AlertCircle,  color: 'text-amber-400' },
+            { label: 'Managed integrations', value: loading || error ? 'Unavailable' : stats.managed,     icon: Wifi,         color: 'text-white/60' },
+            { label: 'Connected integrations', value: loading || error ? 'Unavailable' : stats.connected, icon: CheckCircle2, color: 'text-emerald-400' },
+            { label: 'Needs attention', value: loading || error ? 'Unavailable' : stats.attention,         icon: AlertCircle,  color: 'text-amber-400' },
             { label: 'Active market feeds', value: marketProvidersLoading ? '—' : stats.marketFeeds, icon: BarChart2, color: 'text-sky-300' },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="rounded-2xl p-4 border"
@@ -702,6 +705,8 @@ export default function IntegrationsPage() {
             </div>
           ))}
         </div>
+
+        <SumsubReadinessPanel data={sumsub} loading={loading || refreshing} error={Boolean(error)} />
 
         {/* ── Filters ──────────────────────────────────────────────────────── */}
         <div className="flex flex-wrap gap-3 items-center">
@@ -806,9 +811,7 @@ export default function IntegrationsPage() {
             <div>
               <p className="text-white/60 text-xs font-medium">Credentials are managed securely</p>
               <p className="text-white/30 text-xs mt-0.5">
-                API keys and secrets are stored in the platform's encrypted secrets vault — never in the database.
-                To add or update credentials, go to <strong className="text-white/50">Settings → Secrets</strong>.
-                Values are never exposed in this panel.
+                Credentials are managed in protected server configuration. This panel reports configuration presence, which does not by itself prove provider connectivity or a completed workflow. Secret values are not exposed here.
               </p>
             </div>
           </div>

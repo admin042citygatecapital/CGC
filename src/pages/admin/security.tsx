@@ -1,3 +1,4 @@
+import { sessionRecentlyActive } from '@/lib/adminHealthPresentation';
 /**
  * /admin/security — Security Center
  * 10 tabs: Roles · Permissions · 2FA · Sessions · Devices
@@ -249,14 +250,16 @@ export default function SecurityCenter() {
 
   // ── Sessions ───────────────────────────────────────────────────────────────
   const [sessions, setSessions]       = useState<AdminSession[]>([]);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
   const [terminating, setTerminating] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
-    setLoading(true);
+    setLoading(true); setSessionsError(null); setSessionsLoaded(false);
     try {
       const d = await api<{ sessions: AdminSession[] }>('/api/admin/security/sessions');
-      setSessions(d.sessions ?? []);
-    } finally { setLoading(false); }
+      setSessions(d.sessions ?? []); setSessionsLoaded(true);
+    } catch { setSessionsError('Session data is unavailable. Refresh to retry.'); } finally { setLoading(false); }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Devices ────────────────────────────────────────────────────────────────
@@ -722,10 +725,12 @@ export default function SecurityCenter() {
           {/* ══════════════════════════════════════════════════════════════ */}
           {/* TAB: SESSIONS                                                 */}
           {/* ══════════════════════════════════════════════════════════════ */}
-          {tab === 'sessions' && (
+          {tab === 'sessions' && sessionsError && <p role="alert" className="text-sm text-amber-200">{sessionsError}</p>}
+          {tab === 'sessions' && !sessionsLoaded && !sessionsError && <p role="status" className="text-sm text-white/50">Loading session records...</p>}
+          {tab === 'sessions' && sessionsLoaded && !loading && !sessionsError && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-white/40 text-sm">{sessions.length} active admin session{sessions.length !== 1 ? 's' : ''}</p>
+                <p className="text-white/40 text-sm">{sessions.length} unexpired admin session{sessions.length !== 1 ? 's' : ''}; {sessions.filter(s => sessionRecentlyActive(s.lastSeenAt)).length} active in the last 60 minutes</p>
                 <button onClick={() => {
                   if (confirm('Terminate ALL admin sessions? You will be logged out.')) {
                     const reason = prompt('Security reason for revoking all other administrator sessions:')?.trim();
@@ -737,7 +742,7 @@ export default function SecurityCenter() {
                   <LogOut size={12} /> Terminate all
                 </button>
               </div>
-              {sessions.length === 0 ? <EmptyState icon={Activity} message="No active admin sessions" /> : (
+              {sessions.length === 0 ? <EmptyState icon={Activity} message="No unexpired admin sessions" /> : (
                 <div className="space-y-2">
                   {sessions.map(s => (
                     <Card key={s.token}>
@@ -748,8 +753,7 @@ export default function SecurityCenter() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-white/80 text-sm font-medium">{s.email}</p>
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-emerald-400 text-[10px] font-bold">Active</span>
+                            <span className={sessionRecentlyActive(s.lastSeenAt) ? 'text-emerald-400 text-[10px] font-bold' : 'text-white/40 text-[10px] font-bold'}>{sessionRecentlyActive(s.lastSeenAt) ? 'Recently active' : 'Idle - unexpired'}</span>
                           </div>
                           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
                             <span className="text-white/30 text-xs flex items-center gap-1"><Globe size={10} />{s.ip}</span>

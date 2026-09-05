@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { complianceCaseEvents, complianceCases, onboardingCases, onboardingEvidence, onboardingEvents, onboardingProviderEvents, users } from '../db/schema.js';
 import type { ProviderWebhookPayload } from './onboardingProviderWebhook.js';
@@ -71,10 +71,12 @@ export async function recordOnboardingProviderEvent(input: RecordedProviderEvent
       fromStatus: current.status, toStatus: current.status,
       details: { providerCode: input.providerCode, providerEventId: id, kind: input.kind, status: input.status, purpose: input.purpose, screeningState: state }, createdAt: now,
     });
-    await tx.update(onboardingCases).set({
+    const updated = await tx.update(onboardingCases).set({
       version: current.version + 1, lastEditedBy: `provider:${input.providerCode}`, updatedAt: now,
       ...(state ? { screeningStatus: state, lastScreenedAt: screenedAt, nextScreeningAt } : {}),
-    }).where(eq(onboardingCases.id, current.id));
+    }).where(and(eq(onboardingCases.id, current.id), eq(onboardingCases.version, current.version), eq(onboardingCases.status, current.status)))
+      .returning({ id: onboardingCases.id });
+    if (!updated.length) throw new OnboardingProviderError('The case changed while processing the provider event. Retry against the current case.', 'WORKFLOW_CONFLICT', 409);
     if (state && state !== 'clear') {
       const caseKind = input.screening?.sanctions === 'match' ? 'sanctions' : 'aml';
       const complianceId = `cc_${crypto.randomBytes(10).toString('hex')}`;

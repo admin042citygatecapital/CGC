@@ -1,4 +1,5 @@
 import AdminLayout from '@/layouts/AdminLayout';
+import SumsubReadinessPanel, { type SumsubReadiness } from '@/components/admin/SumsubReadinessPanel';
 import { adminFetch, authHeaders, useAdminAuth } from '@/lib/adminAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { CheckCircle2, Clock, FileCheck2, Loader2, RefreshCw, ShieldAlert, XCircle } from 'lucide-react';
@@ -20,6 +21,8 @@ type MonitoringAlert = { id:string; reference:string; ruleKey:string; status:str
 export default function AdminOnboardingPage() {
   const { admin } = useAdminAuth();
   const [cases, setCases] = useState<CaseRow[]>([]);
+  const [sumsub, setSumsub] = useState<SumsubReadiness | null>(null);
+  const [loadError, setLoadError] = useState('');
   const [selected, setSelected] = useState<Bundle | null>(null);
   const [loading, setLoading] = useState(true);
   const [reason, setReason] = useState('');
@@ -37,15 +40,21 @@ export default function AdminOnboardingPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
+    try {
     const [response, screeningResponse, monitoringResponse] = await Promise.all([
       fetch('/api/admin/onboarding', { headers: authHeaders() }),
       fetch('/api/admin/onboarding/screening', { headers: authHeaders() }),
       fetch('/api/admin/onboarding/monitoring', { headers: authHeaders() }),
     ]);
+    if (!response.ok || !screeningResponse.ok || !monitoringResponse.ok) throw new Error('Onboarding data unavailable');
     const body = await response.json();
+    setSumsub(body.sumsub ?? null);
     const screeningBody = await screeningResponse.json();
     const monitoringBody = await monitoringResponse.json();
-    setCases(body.data ?? []); setControls(body.controls ?? []); setProgramme(body.programme ?? null); setScreeningQueue(screeningBody.data ?? []); setMonitoringAlerts(monitoringBody.data ?? []); setLoading(false);
+    setCases(body.data ?? []); setControls(body.controls ?? []); setProgramme(body.programme ?? null); setScreeningQueue(screeningBody.data ?? []); setMonitoringAlerts(monitoringBody.data ?? []);
+    } catch { setLoadError('Onboarding data could not be loaded. Refresh to retry.'); }
+    finally { setLoading(false); }
   }, []);
   useEffect(() => { if (admin) void load(); }, [admin, load]);
 
@@ -96,14 +105,17 @@ export default function AdminOnboardingPage() {
     const body=await response.json(); if(!response.ok)setError(body.error??'Monitoring action failed.'); await load(); setBusy(false);
   }
 
+  if (loading || loadError) return <AdminLayout><div className="p-6 space-y-4"><h1 className="text-2xl font-bold">Customer Onboarding</h1>{loadError ? <><p role="alert">{loadError}</p><button onClick={() => void load()} className="rounded-lg border p-2">Retry onboarding</button></> : <p role="status">Loading onboarding records...</p>}</div></AdminLayout>;
+
   return <AdminLayout>
     <Helmet><title>Customer Onboarding | City Gate Capital Admin</title></Helmet>
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">Customer Onboarding</h1><p className="text-sm text-foreground/50">KYC/KYB evidence, maker-checker review and immutable case history.</p></div><button onClick={() => void load()} className="p-2 rounded-lg border border-white/10"><RefreshCw size={16}/></button></div>
+      <SumsubReadinessPanel data={sumsub} loading={loading} error={Boolean(loadError)} />
       <section className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div><h2 className="font-semibold text-amber-100">Onboarding and compliance programme register</h2><p className="mt-1 max-w-3xl text-xs leading-5 text-amber-100/55">Global controls and jurisdiction-specific obligations are separated deliberately. This register cannot approve identity, clear screening, file a regulatory report or enable financial operations.</p></div>
-          <div className="flex flex-wrap gap-2 text-[10px] font-bold tracking-wider"><span className="rounded-full border border-amber-400/20 px-3 py-1.5 text-amber-300">JURISDICTION {programme?.launchJurisdiction ?? 'UNDECIDED'}</span><span className="rounded-full border border-red-400/20 px-3 py-1.5 text-red-300">PROVIDERS DISCONNECTED</span><span className="rounded-full border border-white/10 px-3 py-1.5 text-white/40">ACTIVATION NONE</span></div>
+          <div className="flex flex-wrap gap-2 text-[10px] font-bold tracking-wider"><span className="rounded-full border border-amber-400/20 px-3 py-1.5 text-amber-300">JURISDICTION {programme?.launchJurisdiction ?? 'UNDECIDED'}</span><span className="rounded-full border border-red-400/20 px-3 py-1.5 text-red-300">LIVE VERIFICATION INCOMPLETE</span><span className="rounded-full border border-white/10 px-3 py-1.5 text-white/40">ACTIVATION NONE</span></div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{controls.map(control => {
           const style = control.status === 'implemented' ? 'border-emerald-400/15 bg-emerald-400/[0.035] text-emerald-300' : control.status === 'jurisdiction_decision_required' ? 'border-red-400/15 bg-red-400/[0.035] text-red-300' : 'border-sky-400/15 bg-sky-400/[0.035] text-sky-300';
