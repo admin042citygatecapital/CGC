@@ -3,9 +3,18 @@ import SumsubReadinessPanel, { type SumsubReadiness } from '@/components/admin/S
 import { adminFetch, authHeaders, useAdminAuth } from '@/lib/adminAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { CheckCircle2, Clock, FileCheck2, Loader2, RefreshCw, ShieldAlert, XCircle } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Status = 'draft' | 'submitted' | 'under_review' | 'needs_info' | 'approved' | 'rejected' | 'expired';
+const STATUS_LABELS: Record<Status, string> = { draft: 'Draft', submitted: 'Submitted', under_review: 'Under review', needs_info: 'Needs information', approved: 'Approved', rejected: 'Rejected', expired: 'Expired' };
+const STATUS_STYLES: Record<Status, string> = {
+  draft: 'bg-white/5 text-foreground/60', submitted: 'bg-sky-400/10 text-sky-300',
+  under_review: 'bg-blue-400/10 text-blue-300', needs_info: 'bg-amber-400/10 text-amber-300',
+  approved: 'bg-emerald-400/10 text-emerald-300', rejected: 'bg-red-400/10 text-red-300', expired: 'bg-white/5 text-foreground/50',
+};
+function CaseStatus({ status }: { status: Status }) {
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[status]}`}>{STATUS_LABELS[status]}</span>;
+}
 type CaseRow = { id: string; userId: string; caseType: 'individual' | 'business'; status: Status; version: number; submittedBy?: string; lastEditedBy: string; updatedAt: string; queuePosition?: number|null; intakePosition?: number|null };
 type ProviderEvent = { id: string; providerCode: string; providerRef: string; kind: 'identity'|'kyb'|'screening'; status: string; screening?: { sanctions: string; pep: string; adverseMedia: string }; receivedAt: string };
 type CustomerDecision = { id: string; name: string; email: string; status: string; emailVerified: boolean; kycStatus: string; amlStatus: string; amlRiskLevel: string; kycApprovedAt?: string; kycReviewedBy?: string; amlReviewedAt?: string; amlNextReviewAt?: string; approvedBy?: string; amlReviewedBy?: string };
@@ -37,6 +46,23 @@ export default function AdminOnboardingPage() {
   const [controls, setControls] = useState<ProgrammeControl[]>([]);
   const [programme, setProgramme] = useState<ProgrammeState | null>(null);
   const [monitoringAlerts, setMonitoringAlerts] = useState<MonitoringAlert[]>([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
+  const [sortOrder, setSortOrder] = useState('recent');
+  const [page, setPage] = useState(1);
+  const [caseLoading, setCaseLoading] = useState(false);
+  const caseRequest = useRef(0);
+  useEffect(() => () => { caseRequest.current += 1; }, []);
+
+  const query = search.trim().toLowerCase();
+  const filteredCases = cases.filter(item => (statusFilter === 'all' || item.status === statusFilter)
+    && [item.id, item.userId, item.submittedBy ?? '', item.lastEditedBy].some(value => value.toLowerCase().includes(query)))
+    .sort((a, b) => sortOrder === 'queue'
+      ? (a.queuePosition ?? a.intakePosition ?? Number.MAX_SAFE_INTEGER) - (b.queuePosition ?? b.intakePosition ?? Number.MAX_SAFE_INTEGER) || a.id.localeCompare(b.id)
+      : sortOrder === 'oldest' ? a.updatedAt.localeCompare(b.updatedAt) : b.updatedAt.localeCompare(a.updatedAt));
+  const totalPages = Math.max(1, Math.ceil(filteredCases.length / 20));
+  const currentPage = Math.min(page, totalPages);
+  const visibleCases = filteredCases.slice((currentPage - 1) * 20, currentPage * 20);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,10 +85,25 @@ export default function AdminOnboardingPage() {
   useEffect(() => { if (admin) void load(); }, [admin, load]);
 
   async function openCase(id: string) {
-    const response = await fetch(`/api/admin/onboarding?caseId=${encodeURIComponent(id)}`, { headers: authHeaders() });
-    const next = await response.json(); setSelected(next); setReason(''); setError('');
-    const casesResponse = await fetch(`/api/admin/onboarding/compliance-cases?userId=${encodeURIComponent(next.case.userId)}`, { headers: authHeaders() });
-    setComplianceCases((await casesResponse.json()).data ?? []);
+    const request = ++caseRequest.current;
+    setCaseLoading(true); setSelected(null); setComplianceCases([]); setError('');
+    setReason(''); setReasonCode('other'); setRequestedKinds(['additional']); setCaseSummary('');
+    try {
+      const response = await fetch(`/api/admin/onboarding?caseId=${encodeURIComponent(id)}`, { headers: authHeaders() });
+      if (!response.ok) throw new Error(response.status === 401 ? 'Your session has expired. Sign in again.' : 'This case could not be loaded. Select it again to retry.');
+      const next: Bundle = await response.json();
+      if (next.case?.id !== id || !Array.isArray(next.events)) throw new Error('The server returned an incomplete case. Refresh before reviewing.');
+      if (request !== caseRequest.current) return;
+      const casesResponse = await fetch(`/api/admin/onboarding/compliance-cases?userId=${encodeURIComponent(next.case.userId)}`, { headers: authHeaders() });
+      if (!casesResponse.ok) throw new Error('Related case records could not be loaded. Select the case again to retry.');
+      const related = await casesResponse.json();
+      if (request !== caseRequest.current) return;
+      setSelected(next); setComplianceCases(related.data ?? []);
+    } catch (cause) {
+      if (request === caseRequest.current) setError(cause instanceof Error ? cause.message : 'The case could not be loaded. Select it again to retry.');
+    } finally {
+      if (request === caseRequest.current) setCaseLoading(false);
+    }
   }
   async function openComplianceCase() {
     if (!selected || caseSummary.trim().length < 10) { setError('A case summary of at least 10 characters is required.'); return; }
@@ -76,26 +117,34 @@ export default function AdminOnboardingPage() {
     const body = await response.json(); if (!response.ok) setError(body.error ?? 'Case update failed.'); else if (selected) await openCase(selected.case.id);
   }
   async function decide(decision: Status) {
-    if (!selected) return;
+    if (!selected || busy || caseLoading) return;
+    const rationale = reason.trim();
+    if (rationale.length < 10 || rationale.length > 1000) { setError('Enter a review rationale between 10 and 1,000 characters.'); return; }
+    if (decision === 'needs_info' && requestedKinds.length === 0) { setError('Select the evidence you are requesting.'); return; }
+    if (!window.confirm(`Confirm ${STATUS_LABELS[decision].toLowerCase()} for case ${selected.case.id}?\nCustomer: ${selected.case.userId}\nVersion: ${selected.case.version}\n\nRationale: ${rationale}\n\nThis decision will be audited. It does not authorize financial activity.`)) return;
     setBusy(true); setError('');
-    const response = await adminFetch('/api/admin/onboarding/review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ caseId: selected.case.id, decision, reason, reasonCode, requestedEvidenceKinds: decision === 'needs_info' ? requestedKinds : [], expectedVersion: selected.case.version }) });
-    const body = await response.json();
-    if (!response.ok) setError(body.error ?? 'Review failed.');
-    else { await load(); await openCase(selected.case.id); }
-    setBusy(false);
+    try {
+      const response = await adminFetch('/api/admin/onboarding/review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ caseId: selected.case.id, decision, reason: rationale, reasonCode, requestedEvidenceKinds: decision === 'needs_info' ? requestedKinds : [], expectedVersion: selected.case.version }) });
+      const body = await response.json();
+      if (!response.ok) setError(response.status === 409 ? 'This case changed while you were reviewing it. Reopen it and review the latest version before deciding.' : body.error ?? 'Review failed.');
+      else { await load(); await openCase(selected.case.id); }
+    } catch { setError('The decision could not be confirmed. Reopen the case to check its history before retrying.'); }
+    finally { setBusy(false); }
   }
   async function finalDecision(action: 'approve' | 'reject') {
-    if (!selected?.customer || admin?.role !== 'SUPER_ADMIN') return;
+    if (!selected?.customer || admin?.role !== 'SUPER_ADMIN' || busy || caseLoading) return;
     const label = action === 'approve' ? 'final registration approval' : 'terminal application denial';
     const rationale = window.prompt(`Enter the required rationale for ${label}:`)?.trim() ?? '';
     if (rationale.length < 10) { setError('A rationale of at least 10 characters is required.'); return; }
-    if (action === 'reject' && !window.confirm('Deny this application? This terminal decision will be audited.')) return;
+    if (!window.confirm(`Confirm ${label} for ${selected.customer.name} (${selected.customer.email})?\nCase: ${selected.case.id}\nVersion: ${selected.case.version}\n\nRationale: ${rationale}\n\n${action === 'reject' ? 'Denial is terminal and will be audited.' : 'Approval remains subject to all existing server checks and does not enable financial activity.'}`)) return;
     setBusy(true); setError('');
-    const response = await adminFetch(`/api/admin/users/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: selected.customer.id, reason: rationale, expectedCaseVersion: selected.case.version }) });
-    const body = await response.json();
-    if (!response.ok) setError(body.error ?? 'Final decision failed.');
-    else { await load(); await openCase(selected.case.id); }
-    setBusy(false);
+    try {
+      const response = await adminFetch(`/api/admin/users/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: selected.customer.id, reason: rationale, expectedCaseVersion: selected.case.version }) });
+      const body = await response.json();
+      if (!response.ok) setError(response.status === 409 ? 'This case changed. Reopen it before making a final decision.' : body.error ?? 'Final decision failed.');
+      else { await load(); await openCase(selected.case.id); }
+    } catch { setError('The final decision could not be confirmed. Reopen the case to check its history before retrying.'); }
+    finally { setBusy(false); }
   }
   async function monitoringAction(action:'scan_velocity'|'start_review'|'escalate'|'submit_resolution', alertId?:string) {
     const rationale = action === 'scan_velocity' ? '' : window.prompt(action === 'submit_resolution' ? 'Enter the proposed resolution for independent review:' : 'Enter the required monitoring rationale:')?.trim() ?? '';
@@ -105,12 +154,14 @@ export default function AdminOnboardingPage() {
     const body=await response.json(); if(!response.ok)setError(body.error??'Monitoring action failed.'); await load(); setBusy(false);
   }
 
-  if (loading || loadError) return <AdminLayout><div className="p-6 space-y-4"><h1 className="text-2xl font-bold">Customer Onboarding</h1>{loadError ? <><p role="alert">{loadError}</p><button onClick={() => void load()} className="rounded-lg border p-2">Retry onboarding</button></> : <p role="status">Loading onboarding records...</p>}</div></AdminLayout>;
+  if (cases.length === 0 && (loading || loadError)) return <AdminLayout><div className="p-6 space-y-4"><h1 className="text-2xl font-bold">Customer Onboarding</h1>{loadError ? <><p role="alert">{loadError}</p><button onClick={() => void load()} className="rounded-lg border p-2">Retry onboarding</button></> : <p role="status">Loading onboarding records...</p>}</div></AdminLayout>;
 
   return <AdminLayout>
     <Helmet><title>Customer Onboarding | City Gate Capital Admin</title></Helmet>
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">Customer Onboarding</h1><p className="text-sm text-foreground/50">KYC/KYB evidence, maker-checker review and immutable case history.</p></div><button onClick={() => void load()} className="p-2 rounded-lg border border-white/10"><RefreshCw size={16}/></button></div>
+      <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold">Customer Onboarding</h1><p className="text-sm text-foreground/50">KYC/KYB evidence, maker-checker review and immutable case history.</p></div><button disabled={loading || busy} aria-label="Refresh onboarding queue" onClick={() => void load()} className="p-2 rounded-lg border border-white/10 disabled:opacity-40"><RefreshCw size={16} className={loading ? 'animate-spin' : ''}/></button></div>
+      {loadError && <p role="alert" className="rounded-xl border border-amber-400/20 p-3 text-sm text-amber-300">{loadError} Previously loaded records remain visible.</p>}
+      {error && <p role="alert" className="flex items-start gap-2 rounded-xl border border-red-400/20 p-3 text-sm text-red-300"><ShieldAlert size={16} className="mt-0.5 shrink-0"/>{error}</p>}
       <SumsubReadinessPanel data={sumsub} loading={loading} error={Boolean(loadError)} />
       <section className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -124,23 +175,34 @@ export default function AdminOnboardingPage() {
       </section>
       <section className="rounded-2xl border border-white/10 p-4">
         <div className="flex items-center justify-between gap-4"><div><h2 className="font-semibold">Ongoing sanctions, PEP and adverse-media screening</h2><p className="text-xs text-foreground/45 mt-1">Signed approved-provider results only. Matches automatically open a compliance case; administrators cannot manufacture a clear result.</p></div><span className="rounded-full bg-amber-400/10 px-3 py-1 text-xs text-amber-300">{screeningQueue.filter(item => item.due).length} due</span></div>
-        {screeningQueue.length > 0 && <div className="mt-3 grid md:grid-cols-2 xl:grid-cols-3 gap-2">{screeningQueue.slice(0, 6).map(item => <button key={item.caseId} onClick={() => void openCase(item.caseId)} className="rounded-xl bg-white/5 p-3 text-left text-xs"><div className="flex justify-between"><span className="font-semibold">{item.userId}</span><span className={item.screeningStatus === 'clear' ? 'text-emerald-300' : 'text-amber-300'}>{item.screeningStatus}</span></div><p className="mt-1 text-foreground/40">Next: {item.nextScreeningAt ? new Date(item.nextScreeningAt).toLocaleDateString() : 'not scheduled'}</p></button>)}</div>}
+        {screeningQueue.length > 0 && <div className="mt-3 grid md:grid-cols-2 xl:grid-cols-3 gap-2">{screeningQueue.slice(0, 6).map(item => <button key={item.caseId} disabled={busy} onClick={() => void openCase(item.caseId)} className="rounded-xl bg-white/5 p-3 text-left text-xs disabled:opacity-40"><div className="flex justify-between"><span className="font-semibold">{item.userId}</span><span className={item.screeningStatus === 'clear' ? 'text-emerald-300' : 'text-amber-300'}>{item.screeningStatus}</span></div><p className="mt-1 text-foreground/40">Next: {item.nextScreeningAt ? new Date(item.nextScreeningAt).toLocaleDateString() : 'not scheduled'}</p></button>)}</div>}
       </section>
       <section className="rounded-2xl border border-violet-400/15 bg-violet-400/[0.025] p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="font-semibold">Synthetic transaction-monitoring queue</h2><p className="mt-1 text-xs leading-5 text-foreground/45">Deterministic velocity rules inspect only simulation transactions. Linked snapshots are hashed and immutable; this queue cannot change balances or file SAR/CTR reports.</p></div><button disabled={busy} onClick={()=>void monitoringAction('scan_velocity')} className="rounded-lg border border-violet-300/20 bg-violet-300/10 px-3 py-2 text-xs font-semibold text-violet-200 disabled:opacity-40">Run synthetic velocity scan</button></div>
         {monitoringAlerts.length===0?<p className="py-8 text-center text-sm text-foreground/35">No synthetic monitoring alerts. Create at least three same-source sandbox transactions, then run the scan.</p>:<div className="mt-4 space-y-3">{monitoringAlerts.map(alert=><article key={alert.id} className="rounded-xl border border-white/[0.07] bg-black/20 p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-sm font-semibold text-white/80">{alert.reference}</span><span className="rounded-full bg-white/5 px-2 py-1 text-[9px] font-bold uppercase text-white/45">{alert.status.replaceAll('_',' ')}</span><span className={`rounded-full px-2 py-1 text-[9px] font-bold uppercase ${['high','critical'].includes(alert.riskLevel)?'bg-red-400/10 text-red-300':'bg-amber-400/10 text-amber-300'}`}>{alert.riskLevel}</span></div><p className="mt-2 text-xs text-white/45">{alert.summary}</p><p className="mt-1 font-mono text-[10px] text-white/25">{alert.subjectReference} · {alert.ruleKey} {alert.caseId?`· ${alert.caseId}`:''}</p></div><div className="text-left lg:text-right"><p className="font-semibold text-white/70">{alert.transactionCount} linked · {alert.aggregateAmountMinor} {alert.asset} minor units</p><p className="mt-1 text-[10px] text-white/30">SIMULATION ONLY</p></div></div><details className="mt-3"><summary className="cursor-pointer text-xs text-violet-200/70">Linked transactions and immutable history</summary><div className="mt-3 grid gap-3 lg:grid-cols-2"><div className="space-y-2">{alert.links.map(link=><div key={link.id} className="rounded-lg bg-white/[0.035] p-2 text-[10px]"><div className="flex justify-between gap-2"><span className="font-mono text-white/60">{link.transactionReference}</span><span>{link.amountMinor} {link.asset}</span></div><p className="mt-1 break-all font-mono text-white/25">SHA-256 {link.snapshotSha256}</p></div>)}</div><div className="space-y-2">{alert.events.map(event=><div key={event.id} className="rounded-lg bg-white/[0.035] p-2 text-[10px]"><p className="text-white/60">{event.action} · {event.fromStatus??'created'} → {event.toStatus}</p><p className="mt-1 text-white/35">{event.rationale}</p><p className="mt-1 font-mono text-white/20">{event.actorType}:{event.actorId}</p></div>)}</div></div></details><div className="mt-3 flex flex-wrap gap-2">{alert.status==='new'&&<button disabled={busy} onClick={()=>void monitoringAction('start_review',alert.id)} className="rounded-lg bg-sky-400/10 px-3 py-2 text-xs text-sky-300">Start review</button>}{['new','reviewing'].includes(alert.status)&&<button disabled={busy} onClick={()=>void monitoringAction('escalate',alert.id)} className="rounded-lg bg-amber-400/10 px-3 py-2 text-xs text-amber-300">Escalate case</button>}{['reviewing','escalated'].includes(alert.status)&&<button disabled={busy} onClick={()=>void monitoringAction('submit_resolution',alert.id)} className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs text-emerald-300">Submit resolution to checker</button>}{alert.status==='resolution_pending'&&<span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/40">Awaiting isolated independent checker</span>}</div></article>)}</div>}
       </section>
       <section className="rounded-2xl border border-primary/15 bg-primary/[0.025] p-4"><div className="flex items-center justify-between"><div><h2 className="font-semibold">Registration intake and review queues</h2><p className="mt-1 text-xs text-foreground/45">Every successful registration enters the persistent intake immediately. Submitted cases then receive a separate compliance-review position.</p></div><div className="flex gap-2"><span className="rounded-full bg-white/5 px-3 py-1 text-xs text-foreground/55">{cases.filter(item=>item.intakePosition).length} active</span><span className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">{cases.filter(item=>item.queuePosition).length} in review</span></div></div></section>
+      <section aria-label="Case queue filters" className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+        <div className="grid gap-3 md:grid-cols-[2fr_1fr_1fr]">
+          <label className="space-y-1 text-xs text-foreground/60"><span>Search cases</span><input type="search" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Case ID, customer ID or reviewer ID" className="w-full rounded-lg border border-white/10 bg-background p-2.5 text-sm text-foreground"/></label>
+          <label className="space-y-1 text-xs text-foreground/60"><span>Case status</span><select value={statusFilter} onChange={event => { setStatusFilter(event.target.value as Status | 'all'); setPage(1); }} className="w-full rounded-lg border border-white/10 bg-background p-2.5 text-sm text-foreground"><option value="all">All statuses ({cases.length})</option>{(Object.keys(STATUS_LABELS) as Status[]).map(status => <option key={status} value={status}>{STATUS_LABELS[status]} ({cases.filter(item => item.status === status).length})</option>)}</select></label>
+          <label className="space-y-1 text-xs text-foreground/60"><span>Sort cases</span><select value={sortOrder} onChange={event => { setSortOrder(event.target.value); setPage(1); }} className="w-full rounded-lg border border-white/10 bg-background p-2.5 text-sm text-foreground"><option value="recent">Recently updated</option><option value="oldest">Oldest update first</option><option value="queue">Queue position</option></select></label>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><p role="status" className="text-foreground/50">{filteredCases.length} of {cases.length} loaded cases match. Filters do not change case status.</p>{(search || statusFilter !== 'all') && <button onClick={() => { setSearch(''); setStatusFilter('all'); setPage(1); }} className="rounded-lg border border-white/10 px-3 py-1.5">Clear filters</button>}</div>
+      </section>
       <div className="grid lg:grid-cols-[1fr_1.4fr] gap-5">
         <div className="rounded-2xl border border-white/10 overflow-hidden">
-          {loading ? <div className="p-8 flex justify-center"><Loader2 className="animate-spin"/></div> : cases.length === 0 ? <div className="p-8 text-sm text-foreground/45">No onboarding cases yet.</div> : cases.map(item => <button key={item.id} onClick={() => void openCase(item.id)} className="w-full text-left p-4 border-b border-white/8 hover:bg-white/5">
-            <div className="flex justify-between gap-3"><span className="font-semibold">{item.userId}</span><span className="text-xs uppercase text-primary">{item.intakePosition ? `Intake #${item.intakePosition} · ` : ''}{item.queuePosition ? `Review #${item.queuePosition} · ` : ''}{item.status.replace('_',' ')}</span></div>
+          {cases.length === 0 ? <div className="p-8 text-sm text-foreground/45">No onboarding cases yet.</div> : visibleCases.length === 0 ? <div className="p-8 text-sm text-foreground/45">No cases match these filters. Clear the filters to see the loaded queue.</div> : visibleCases.map(item => <button key={item.id} disabled={busy} aria-pressed={selected?.case.id === item.id} onClick={() => void openCase(item.id)} className={`w-full text-left p-4 border-b border-white/8 hover:bg-white/5 disabled:opacity-40 ${selected?.case.id === item.id ? 'bg-primary/10 ring-1 ring-inset ring-primary/30' : ''}`}>
+            <div className="flex flex-wrap items-start justify-between gap-3"><span className="font-semibold break-all">{item.userId}</span><CaseStatus status={item.status}/></div>
+            <p className="mt-2 break-all font-mono text-[11px] text-foreground/50">{item.id}</p>
+            <p className="mt-1 text-xs text-primary">{item.intakePosition ? `Intake #${item.intakePosition} ` : ''}{item.queuePosition ? `Review #${item.queuePosition}` : ''}</p>
             <div className="text-xs text-foreground/40 mt-1">{item.caseType} · version {item.version} · {new Date(item.updatedAt).toLocaleString()}</div>
           </button>)}
+          {filteredCases.length > 0 && <nav aria-label="Case queue pages" className="flex items-center justify-between gap-2 p-3 text-xs"><button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} className="rounded-lg border border-white/10 px-3 py-2 disabled:opacity-35">Previous</button><span>Page {currentPage} of {totalPages}</span><button disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} className="rounded-lg border border-white/10 px-3 py-2 disabled:opacity-35">Next</button></nav>}
         </div>
-        <div className="rounded-2xl border border-white/10 p-5">
-          {!selected ? <div className="h-full min-h-64 flex items-center justify-center text-foreground/40"><FileCheck2 className="mr-2"/> Select a case</div> : <div className="space-y-5">
-            <div><h2 className="font-bold text-lg">Case {selected.case.id}</h2><p className="text-xs text-foreground/45">Submitter: {selected.case.submittedBy ?? 'not submitted'} · Last editor: {selected.case.lastEditedBy}</p></div>
+        <div aria-busy={caseLoading} className="min-w-0 rounded-2xl border border-white/10 p-5">
+          {caseLoading ? <div role="status" className="flex min-h-64 items-center justify-center gap-2 text-sm text-foreground/60"><Loader2 size={18} className="animate-spin"/>Loading case details...</div> : !selected ? <div className="h-full min-h-64 flex items-center justify-center text-foreground/40"><FileCheck2 className="mr-2"/> Select a case</div> : <div className="space-y-5">
+            <div><div className="flex flex-wrap items-start justify-between gap-2"><h2 className="break-all font-bold text-lg">Case {selected.case.id}</h2><CaseStatus status={selected.case.status}/></div><p className="mt-2 text-xs text-foreground/45">Submitter: {selected.case.submittedBy ?? 'not submitted'} · Last editor: {selected.case.lastEditedBy} · Version {selected.case.version}</p>{!filteredCases.some(item => item.id === selected.case.id) && <p className="mt-2 text-xs text-amber-300">This selected case is outside the current queue filters.</p>}</div>
             {selected.customer && <section className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
               <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">Final registration control</h3><p className="text-xs text-foreground/45">{selected.customer.name} · {selected.customer.email}</p></div><span className="rounded-full bg-white/5 px-2 py-1 text-xs uppercase">{selected.customer.status.replace('_',' ')}</span></div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">{[
@@ -160,7 +222,7 @@ export default function AdminOnboardingPage() {
               ['Screening', selected.providerVerifications.checks.screeningClear],
               ['Maker-checker', selected.case.submittedBy !== admin?.id && selected.case.lastEditedBy !== admin?.id],
             ].map(([label, passed]) => <div key={String(label)} className={`rounded-lg p-2 text-xs ${passed ? 'bg-emerald-400/10 text-emerald-300' : 'bg-amber-400/10 text-amber-300'}`}>{passed ? '✓' : '○'} {String(label)}</div>)}</div>{selected.providerVerifications.events.length === 0 ? <p className="text-xs text-foreground/40">No signed provider events received.</p> : selected.providerVerifications.events.map(event => <div key={event.id} className="rounded-xl bg-white/5 p-3 mb-2 text-xs"><div className="flex justify-between gap-2"><span className="font-semibold uppercase">{event.providerCode} · {event.kind}</span><span className={event.status === 'accepted' ? 'text-emerald-300' : 'text-amber-300'}>{event.status}</span></div><p className="text-foreground/40 font-mono mt-1 break-all">{event.providerRef}</p>{event.screening && <p className="text-foreground/45 mt-1">Sanctions {event.screening.sanctions} · PEP {event.screening.pep} · Adverse media {event.screening.adverseMedia}</p>}</div>)}</section>
-            <section><h3 className="text-xs font-bold uppercase text-foreground/50 mb-2">Immutable history</h3>{selected.events.map(e => <div key={e.id} className="flex gap-2 text-xs py-2 border-b border-white/5"><Clock size={12}/><span>{new Date(e.createdAt).toLocaleString()} · {e.action} · {e.actorId}</span></div>)}</section>
+            <section aria-label="Case activity history"><div className="mb-3 flex items-center justify-between gap-2"><h3 className="text-xs font-bold uppercase text-foreground/50">Immutable history</h3><span className="text-xs text-foreground/40">{selected.events.length} events</span></div><p className="mb-3 text-xs text-foreground/40">Latest first. These entries are recorded by the server, not generated by this page.</p>{selected.events.length === 0 ? <p className="rounded-xl bg-white/5 p-3 text-xs text-foreground/45">No recorded case activity.</p> : <ol className="space-y-2">{[...selected.events].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(event => <li key={event.id} className="flex gap-3 rounded-xl border border-white/5 bg-white/[0.025] p-3"><Clock size={14} className="mt-0.5 shrink-0 text-primary"/><div className="min-w-0 space-y-1 text-xs"><p className="font-medium">{event.action.replaceAll('_', ' ')}</p>{(event.fromStatus || event.toStatus) && <p className="text-foreground/60">{(event.fromStatus ?? 'Created').replaceAll('_', ' ')} to {(event.toStatus ?? 'unchanged').replaceAll('_', ' ')}</p>}<p className="break-all text-foreground/45">Actor: {event.actorId}</p><time dateTime={event.createdAt} className="block text-foreground/40">{new Date(event.createdAt).toLocaleString()}</time></div></li>)}</ol>}</section>
             <section className="space-y-2"><h3 className="text-xs font-bold uppercase text-foreground/50">AML and sanctions cases</h3>{complianceCases.map(item=><div key={item.id} className="rounded-xl bg-white/5 p-3"><div className="flex justify-between text-sm"><span className="font-semibold uppercase">{item.kind}</span><span>{item.status}</span></div><p className="text-xs text-foreground/45 my-2">{item.summary}</p>{!['cleared','blocked'].includes(item.status)&&<div className="flex gap-2"><button onClick={()=>void transitionCompliance(item,'escalated')} className="text-xs text-amber-300">Escalate</button><button onClick={()=>void transitionCompliance(item,'cleared')} className="text-xs text-emerald-300">Clear</button><button onClick={()=>void transitionCompliance(item,'blocked')} className="text-xs text-red-300">Block</button></div>}</div>)}<div className="grid grid-cols-[auto_1fr_auto] gap-2"><select value={caseKind} onChange={e=>setCaseKind(e.target.value as 'aml'|'sanctions')} className="bg-white/5 border border-white/10 rounded-lg p-2 text-sm"><option value="aml">AML</option><option value="sanctions">Sanctions</option></select><input value={caseSummary} onChange={e=>setCaseSummary(e.target.value)} placeholder="Case summary" className="bg-white/5 border border-white/10 rounded-lg p-2 text-sm"/><button onClick={()=>void openComplianceCase()} className="px-3 rounded-lg bg-primary/20 text-primary text-sm">Open</button></div></section>
             {['submitted','under_review','needs_info'].includes(selected.case.status) && <section className="space-y-3"><textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="Required review rationale (10–1,000 characters)" className="w-full min-h-24 rounded-xl bg-white/5 border border-white/10 p-3 text-sm"/><div className="grid gap-2 sm:grid-cols-2"><select value={reasonCode} onChange={e=>setReasonCode(e.target.value)} className="rounded-lg border border-white/10 bg-background p-2 text-sm"><option value="other">Other</option><option value="unreadable">Unreadable</option><option value="expired_doc">Expired document</option><option value="name_mismatch">Name mismatch</option><option value="wrong_type">Wrong evidence type</option><option value="missing_document">Missing document</option><option value="provider_review">Provider review</option><option value="fraud">Fraud concern</option></select><select multiple value={requestedKinds} onChange={e=>setRequestedKinds(Array.from(e.target.selectedOptions,item=>item.value))} className="rounded-lg border border-white/10 bg-background p-2 text-sm"><option value="identity_front">Identity front</option><option value="identity_back">Identity back</option><option value="proof_of_address">Proof of address</option><option value="additional">Additional evidence</option></select></div>{error && <p className="text-sm text-red-400 flex gap-2"><ShieldAlert size={15}/>{error}</p>}<div className="flex flex-wrap gap-2"><button disabled={busy} onClick={()=>void decide('under_review')} className="px-3 py-2 rounded-lg bg-blue-500/15 text-blue-300">Start review</button><button disabled={busy} onClick={()=>void decide('needs_info')} className="px-3 py-2 rounded-lg bg-amber-500/15 text-amber-300">Request information</button><button disabled={busy} onClick={()=>void decide('approved')} className="px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-300 flex gap-1"><CheckCircle2 size={15}/>Approve</button><button disabled={busy} onClick={()=>void decide('rejected')} className="px-3 py-2 rounded-lg bg-red-500/15 text-red-300 flex gap-1"><XCircle size={15}/>Reject</button></div></section>}
           </div>}
