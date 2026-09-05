@@ -8,7 +8,9 @@ export function sumsubConfiguration(environment = process.env) {
     approved, webhookConfigured,
     receiverReady: approved && webhookConfigured,
     applicantCreationImplemented: false,
-    screeningMappingImplemented: false,
+    scope: 'sandbox_kyc_only',
+    amlInScope: false,
+    liveFinancialActivityInScope: false,
     webhookPath: '/api/providers/onboarding/webhook/sumsub',
     supportedEvents: ['applicantReviewed'],
   };
@@ -38,6 +40,6 @@ export async function getSumsubReadiness() {
   return {
     ...configuration, evidenceStatus, evidence,
     status: !configuration.receiverReady ? 'not_configured' : evidenceStatus === 'unavailable' ? 'unknown' : 'incomplete',
-    message: 'Signed identity/KYB results are supported. Applicant creation and explicit AML screening integration remain incomplete. A GREEN identity result does not establish sanctions, PEP or adverse-media clearance.',
+    message: "Sandbox identity verification only. Applicant creation and an isolated sandbox receiver remain incomplete. Existing receiver configuration is not evidence of a working sandbox integration. No live financial activity is in scope.",
   };
 }

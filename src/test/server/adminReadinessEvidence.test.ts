@@ -31,9 +31,9 @@ describe('admin evidence presentation', () => {
     for (const date of ['anything', '2026-09-06T10:00:00Z', '2025-09-04T10:00:00Z']) expect(restoreEvidence({ ...env, BACKUP_LAST_RESTORE_TEST_AT: date }, now).complete).toBe(false);
     expect(restoreEvidence({ ...env, BACKUP_RESTORE_EVIDENCE_ID: '' }, now).complete).toBe(false);
   });
-  it('does not equate webhook configuration with implemented applicant or AML flows', () => {
+  it('does not equate existing webhook configuration with a working sandbox KYC flow', () => {
     const evidence = sumsubConfiguration({ APPROVED_ONBOARDING_PROVIDERS: 'sumsub', ONBOARDING_PROVIDER_WEBHOOK_SECRET_SUMSUB: 'x'.repeat(32) });
-    expect(evidence).toMatchObject({ receiverReady: true, applicantCreationImplemented: false, screeningMappingImplemented: false });
+    expect(evidence).toMatchObject({ receiverReady: true, applicantCreationImplemented: false, scope: 'sandbox_kyc_only', amlInScope: false, liveFinancialActivityInScope: false });
     expect(sumsubConfiguration({}).receiverReady).toBe(false);
   });
 });

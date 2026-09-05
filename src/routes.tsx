@@ -1,4 +1,7 @@
 import { useAdminAuth } from '@/lib/adminAuth';
+import { useClientHydrated } from './lib/useClientHydrated';
+import SandboxScopePage from './components/SandboxScopePage';
+import { isOutsideSandboxKycScope } from './shared/productScope';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { lazy,useEffect,type ReactNode } from 'react';
 import type { RouteObject } from 'react-router-dom';
@@ -13,17 +16,21 @@ export type Params = Record<string, string | undefined>;
 
 /** Redirect to /admin/login if not authenticated as admin */
 function AdminOnly({ children }: { children: ReactNode }) {
+  const hydrated = useClientHydrated();
   const { admin, loading } = useAdminAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   useEffect(() => {
     if (!loading && !admin) navigate('/admin/login', { replace: true });
   }, [admin, loading, navigate]);
-  if (loading || !admin) return null;
+  if (!hydrated || loading || !admin) return null;
+  if (isOutsideSandboxKycScope(location.pathname)) return <SandboxScopePage />;
   return <>{children}</>;
 }
 
 /** Redirect to /login if not authenticated as customer */
 function CustomerOnly({ children }: { children: ReactNode }) {
+  const hydrated = useClientHydrated();
   const { customer, loading } = useCustomerAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,8 +39,9 @@ function CustomerOnly({ children }: { children: ReactNode }) {
     if (!loading && !customer) navigate('/login?reason=session_expired', { replace: true });
     else if (!loading && customer?.accessMode === 'onboarding' && !onboardingRoute) navigate('/kyc', { replace: true });
   }, [customer, loading, navigate, onboardingRoute]);
-  if (loading || !customer) return null;
+  if (!hydrated || loading || !customer) return null;
   if (customer.accessMode === 'onboarding' && !onboardingRoute) return null;
+  if (isOutsideSandboxKycScope(location.pathname)) return <SandboxScopePage />;
   return <>
     <div className={customer.accessMode === 'full' ? 'pb-16 md:pb-0' : undefined}>{children}</div>
     {customer.accessMode === 'full' && <CustomerMobileNav />}

@@ -1,3 +1,4 @@
+import { isOutsideSandboxKycScope } from '../shared/productScope';
 import { adminHealthState, type AdminHealthState } from '@/lib/adminHealthPresentation';
 /**
  * AdminLayout — Enterprise Super Admin Control Center Shell
@@ -72,7 +73,7 @@ interface NavItem {
 const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: 'Operations',
-    items: [
+    items: ([
       { label: 'Control Center', href: '/admin',             icon: LayoutDashboard, badge: null, desc: 'Platform overview, health & operational controls' },
       { label: 'Operations Inbox', href: '/admin/operations', icon: Inbox,          badge: null, desc: 'All customer submissions & approvals' },
       { label: 'Customers',    href: '/admin/customers',    icon: Users,           badge: null, desc: 'Customer profiles, accounts, access and lifecycle controls' },
@@ -84,37 +85,37 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Cards',        href: '/admin/cards',        icon: CreditCard,      badge: null, desc: 'Card records, controls, limits & lifecycle requests' },
       { label: 'Wallets & Digital Assets', href: '/admin/crypto', icon: Bitcoin, badge: null, desc: 'Customer wallet records and digital-asset controls' },
       { label: 'Trading',      href: '/admin/trading',      icon: BarChart2,       badge: null, desc: 'Positions, orders & risk' },
-    ],
+    ]).filter(item => !isOutsideSandboxKycScope(item.href)),
   },
   {
     label: 'Customer Success',
-    items: [
+    items: ([
       { label: 'Support',      href: '/admin/support',      icon: HeadphonesIcon,  badge: null, desc: 'Tickets & live chat' },
       { label: 'Notifications', href: '/admin/notifications', icon: Bell,           badge: null, desc: 'Customer and service communications' },
-    ],
+    ]).filter(item => !isOutsideSandboxKycScope(item.href)),
   },
   {
     label: 'Intelligence',
-    items: [
+    items: ([
       { label: 'Reports',      href: '/admin/reports',      icon: PieChart,        badge: null, desc: 'Operational, customer and service reporting' },
       { label: 'Compliance',   href: '/admin/compliance',   icon: Scale,           badge: null, desc: 'Compliance reviews, monitoring and evidence' },
       { label: 'Audit Log',    href: '/admin/audit',        icon: ClipboardList,   badge: null, desc: 'Full platform audit trail' },
       { label: 'Security',     href: '/admin/security',     icon: Shield,          badge: null, desc: 'Threats, sessions & IPs' },
       { label: 'Administrators', href: '/admin/administrators', icon: UserCog,      badge: null, desc: 'Administrator identities, roles and session posture' },
-    ],
+    ]).filter(item => !isOutsideSandboxKycScope(item.href)),
   },
   {
     label: 'Platform',
-    items: [
+    items: ([
       { label: 'CMS',           href: '/admin/cms',          icon: FileText,           badge: null, desc: 'Content management' },
       { label: 'Media Library', href: '/admin/media',        icon: Image,              badge: null, desc: 'Images, videos & documents' },
       { label: 'Website',       href: '/admin/website',      icon: Globe,              badge: null, desc: 'Site settings & SEO' },
       { label: 'Email Center',  href: '/admin/email',        icon: Mailbox,            badge: null, desc: 'Templates, queue & logs' },
-    ],
+    ]).filter(item => !isOutsideSandboxKycScope(item.href)),
   },
   {
     label: 'Configuration',
-    items: [
+    items: ([
       { label: 'Config Center',    href: '/admin/config',        icon: SlidersHorizontal,  badge: null, desc: 'App-wide configuration' },
       { label: 'Feature Flags',    href: '/admin/config?section=featureToggles', icon: ToggleLeft, badge: null, desc: 'Customer module availability and workflow controls' },
       { label: 'Integrations',     href: '/admin/integrations',  icon: Plug,               badge: null, desc: 'Third-party service connections' },
@@ -124,7 +125,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Database',         href: '/admin/database',      icon: Database,           badge: null, desc: 'Read-only PostgreSQL, migration, RLS and storage diagnostics' },
       { label: 'Reconciliation', href: '/admin/reconciliation', icon: Scale, badge: null, desc: 'Three-way matching, exceptions and evidence' },
       { label: 'Disputes', href: '/admin/disputes', icon: FileWarning, badge: null, desc: 'Payment errors, evidence and controlled remediation' },
-    ],
+    ]).filter(item => !isOutsideSandboxKycScope(item.href)),
   },
 ];
 

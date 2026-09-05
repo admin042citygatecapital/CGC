@@ -58,7 +58,7 @@ test('public site renders the owned brand without unsupported banking claims', a
 });
 
 test('public account options never expose a synthetic customer dashboard', async ({ page }) => {
-  await page.goto('/accounts');
+  await page.goto('/accounts', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { level: 1, name: 'Choose the Account That Fits Your Ambition' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start Your Application' }).first()).toBeVisible();
   await expect(page.getByRole('link', { name: 'Explore Digital Banking' }).first()).toBeVisible();
@@ -125,7 +125,7 @@ test('customer login establishes a persistent browser session and financial writ
   expect(loginResponse.status()).toBe(200);
   await expect(loginResponse.json()).resolves.not.toHaveProperty('token');
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page).toHaveTitle(/Dashboard/i);
+  await expect(page.getByRole('heading', { name: "Financial activity is outside this project's scope" })).toBeVisible();
   await page.reload();
   await expect(page).toHaveURL(/\/dashboard$/);
 
@@ -197,7 +197,7 @@ test('2FA is required at login and a valid authenticator code establishes the se
   await expect(page).toHaveURL(/\/dashboard$/);
 });
 
-test('account, transaction, beneficiary and support views remain usable on mobile without moving money', async ({ page }) => {
+test('financial screens stay excluded on mobile while support and session controls remain available', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('cgc_analytics_consent_v1', JSON.stringify({ analytics: false, timestamp: Date.now() }));
   });
@@ -207,9 +207,9 @@ test('account, transaction, beneficiary and support views remain usable on mobil
   await expect(page).toHaveURL(/\/dashboard$/);
 
   for (const [path, heading] of [
-    ['/dashboard/accounts', 'My Accounts'],
-    ['/dashboard/transactions', 'Transactions'],
-    ['/dashboard/beneficiaries', 'Beneficiaries'],
+    ['/dashboard/accounts', "Financial activity is outside this project's scope"],
+    ['/dashboard/transactions', "Financial activity is outside this project's scope"],
+    ['/dashboard/beneficiaries', "Financial activity is outside this project's scope"],
     ['/dashboard/support', 'Support centre'],
   ] as const) {
     await page.goto(path);

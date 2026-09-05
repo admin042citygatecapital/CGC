@@ -1,4 +1,5 @@
 import type { Response } from 'express';
+import { LIVE_FINANCIAL_ACTIVITY_IN_SCOPE } from '../../shared/productScope.js';
 
 export const platformMode = (process.env.PLATFORM_MODE ?? 'preview').toLowerCase();
 export const isPreviewMode = platformMode !== 'live';
@@ -61,6 +62,9 @@ export function getLiveFinancialReadinessGaps(): string[] {
   if (!LIVE_PROVIDER_ADAPTERS_IMPLEMENTED) {
     gaps.push('Reviewed sponsor/provider adapters and a reconciled double-entry ledger are not implemented');
   }
+  if (!LIVE_FINANCIAL_ACTIVITY_IN_SCOPE) {
+    gaps.push('Live financial activity is outside the sandbox KYC product scope');
+  }
   return gaps;
 }
 
@@ -83,8 +87,8 @@ export function requireFinancialOperations(res: Response): boolean {
   ) return true;
   res.status(503).json({
     error: platformMode === 'live'
-      ? 'Financial operations are unavailable until production compliance and provider integrations are approved.'
-      : 'Financial operations are disabled in this product-preview environment.',
+      ? 'Live financial activity is outside this sandbox KYC product scope.'
+      : 'Financial operations are disabled in this sandbox KYC environment.',
     code: platformMode === 'live' ? 'LIVE_READINESS_INCOMPLETE' : 'PREVIEW_MODE',
   });
   return false;
@@ -98,7 +102,7 @@ export function requireFinancialOperations(res: Response): boolean {
 export function requireCardOperations(res: Response): boolean {
   if (!LIVE_CARD_ISSUER_ADAPTER_IMPLEMENTED) {
     res.status(503).json({
-      error: 'Card issuing and lifecycle controls are unavailable until a contracted issuer adapter is implemented and approved.',
+      error: 'Card issuing and lifecycle controls are outside this sandbox KYC product scope.',
       code: 'CARD_ISSUER_ADAPTER_UNAVAILABLE',
     });
     return false;
@@ -108,7 +112,7 @@ export function requireCardOperations(res: Response): boolean {
 
 export function requirePaperTrading(res: Response): boolean {
   if (process.env.NODE_ENV !== 'production' && !developmentLocksAreEnforced()) return true;
-  if (process.env.ENABLE_PAPER_TRADING === '1') return true;
+  if (LIVE_FINANCIAL_ACTIVITY_IN_SCOPE && process.env.ENABLE_PAPER_TRADING === '1') return true;
   res.status(503).json({
     error: 'Paper trading is disabled in this product-preview environment.',
     code: 'PREVIEW_MODE',

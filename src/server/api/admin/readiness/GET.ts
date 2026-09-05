@@ -1,3 +1,4 @@
+import { LIVE_FINANCIAL_ACTIVITY_IN_SCOPE } from '../../../../shared/productScope.js';
 import { getSumsubReadiness } from '../../../lib/onboardingProviderReadiness.js';
 import { restoreEvidence } from '../../../lib/databaseEvidence.js';
 /**
@@ -295,6 +296,10 @@ async function checkDatabase(): Promise<ReadinessCheck> {
 }
 
 function checkFinancialLaunchGate(): ReadinessCheck {
+  if (!LIVE_FINANCIAL_ACTIVITY_IN_SCOPE) {
+    return { id: 'financial_launch', name: 'Financial activity excluded', subsystem: 'Product scope', status: 'PASS', critical: false, message: 'Sandbox KYC only. Live financial activity is excluded by code; financial execution protections remain enforced.' };
+  }
+
   const gaps = getLiveFinancialReadinessGaps();
   if (platformMode !== 'live') {
     return {
@@ -535,7 +540,7 @@ export default async function handler(_req: Request, res: Response): Promise<voi
     checkStorageBackend(),
     checkBackupReadiness(),
     checkFinancialLaunchGate(),
-    { id: 'sumsub', name: 'Sumsub onboarding integration', subsystem: 'Compliance & Providers', status: 'WARN', critical: false,
+    { id: 'sumsub', name: 'Sumsub sandbox KYC integration', subsystem: 'Compliance & Providers', status: 'WARN', critical: false,
       message: sumsub.message,
       detail: 'Allow-listed: ' + sumsub.approved + '\nSigning secret configured: ' + sumsub.webhookConfigured + '\nSigned events: ' + (sumsub.evidence?.eventCount ?? 'unavailable') + '\nApplicant creation: not implemented\nAML mapping: not implemented' },
   ];

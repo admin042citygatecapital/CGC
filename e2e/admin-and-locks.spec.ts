@@ -40,10 +40,10 @@ test('development surfaces stay outside the production administration API', asyn
   expect((await page.request.get('/api/admin/env-report')).status()).toBe(404);
 });
 
-test('admin login reaches pre-deployment controls and authenticated money mutations remain locked', async ({ page }) => {
+test('admin financial screens are excluded and authenticated money mutations remain locked', async ({ page }) => {
   await loginAdmin(page);
   await page.goto('/admin/transactions');
-  await expect(page.getByText('Persistent demonstration register', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Financial activity is outside this project's scope" })).toBeVisible();
   await expect(page.getByRole('button', { name: /create transaction/i })).toHaveCount(0);
 
   const csrfResponse = await page.request.get('/api/csrf');
@@ -89,7 +89,7 @@ test('admin health and Sumsub evidence stay truthful through loading and failure
     await route.fulfill({ json: { integrations: [], sumsub: {
       approved: false, webhookConfigured: false, receiverReady: false, status: 'not_configured',
       evidenceStatus: 'available', evidence: { eventCount: 0, latestEventAt: null, identityEvents: 0, screeningEvents: 0 },
-      message: 'Applicant creation and explicit AML screening integration remain incomplete.',
+      message: 'Sandbox identity verification only. Applicant creation and an isolated sandbox receiver remain incomplete.',
     } } });
   });
   await page.goto('/admin/integrations');
@@ -113,4 +113,17 @@ test('session list distinguishes idle unexpired sessions from recent activity', 
   await page.getByRole('button', { name: 'Sessions', exact: true }).click();
   await expect(page.getByText('1 unexpired admin session; 0 active in the last 60 minutes')).toBeVisible();
   await expect(page.getByText('Idle - unexpired', { exact: true })).toBeVisible();
+});
+
+test('sandbox KYC hides financial navigation and blocks direct financial screens', async ({ page }) => {
+  await loginAdmin(page);
+  await expect(page.getByRole('link', { name: 'KYC & Onboarding', exact: true })).toBeVisible();
+  for (const name of ['Trading', 'Transfers', 'Accounts', 'Cards', 'Reconciliation']) {
+    await expect(page.getByRole('navigation').getByRole('link', { name, exact: true })).toHaveCount(0);
+  }
+  for (const route of ['/admin/trading', '/admin/transfers', '/admin/cards', '/admin/crypto', '/admin/accounts', '/admin/reconciliation']) {
+    await page.goto(route);
+    await expect(page.getByRole('heading', { name: "Financial activity is outside this project's scope" })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open KYC workspace' })).toHaveAttribute('href', '/admin/onboarding');
+  }
 });
