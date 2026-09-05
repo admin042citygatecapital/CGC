@@ -378,8 +378,8 @@ export async function sendAdminNewUserAlert(adminEmail: string, user: { name: st
            ['Time',    new Date().toUTCString()],
          ].map(([k, v]) =>
            `<tr>
-             <td style="color:rgba(255,255,255,0.4);font-size:13px;padding:6px 0;width:120px;">${k}</td>
-             <td style="color:#fff;font-size:13px;padding:6px 0;">${v}</td>
+             <td style="color:rgba(255,255,255,0.4);font-size:13px;padding:6px 0;width:120px;">${escapeEmailHtml(k)}</td>
+             <td style="color:#fff;font-size:13px;padding:6px 0;">${escapeEmailHtml(v)}</td>
            </tr>`
          ).join('')}
        </table>
@@ -427,23 +427,23 @@ export async function sendAdminOtpEmail(
     to,
     subject: '🔐 Admin Login Verification Code — City Gate Capital',
     html: emailWrapper('Your Admin Verification Code',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Hello <strong style="color:#fff;">${name}</strong>,</p>
+      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Hello <strong style="color:#fff;">${escapeEmailHtml(name)}</strong>,</p>
        <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">A login attempt was made to the City Gate Capital Admin Panel. Use the code below to complete verification.</p>
        <div style="margin:28px 0;text-align:center;">
          <div style="display:inline-block;background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:24px 40px;">
            <p style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin:0 0 12px;">Verification Code</p>
-           <p style="color:#C9A84C;font-size:42px;font-weight:800;letter-spacing:0.3em;margin:0;font-family:monospace;">${otp}</p>
+           <p style="color:#C9A84C;font-size:42px;font-weight:800;letter-spacing:0.3em;margin:0;font-family:monospace;">${escapeEmailHtml(otp)}</p>
            <p style="color:rgba(255,255,255,0.3);font-size:12px;margin:12px 0 0;">Expires in ${ttlSeconds} seconds</p>
          </div>
        </div>
        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
          <tr>
            <td style="color:rgba(255,255,255,0.4);font-size:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">IP Address</td>
-           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;">${ip}</td>
+           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;">${escapeEmailHtml(ip)}</td>
          </tr>
          <tr>
            <td style="color:rgba(255,255,255,0.4);font-size:12px;padding:6px 0;">Device</td>
-           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:6px 0;text-align:right;">${deviceLabel}</td>
+           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:6px 0;text-align:right;">${escapeEmailHtml(deviceLabel)}</td>
          </tr>
        </table>
        <p style="color:rgba(255,255,255,0.4);font-size:13px;line-height:1.6;">
@@ -473,7 +473,7 @@ export async function sendAdminLoginAlertEmail(
     subject,
     html: emailWrapper(
       isTrustedDevice ? 'Admin Login via Trusted Device' : 'New Admin Login Detected',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Hello <strong style="color:#fff;">${name}</strong>,</p>
+      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Hello <strong style="color:#fff;">${escapeEmailHtml(name)}</strong>,</p>
        <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">A successful login to the City Gate Capital Admin Panel was recorded.</p>
        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
          <tr>
@@ -482,11 +482,11 @@ export async function sendAdminLoginAlertEmail(
          </tr>
          <tr>
            <td style="color:rgba(255,255,255,0.4);font-size:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">IP Address</td>
-           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;">${ip}</td>
+           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;">${escapeEmailHtml(ip)}</td>
          </tr>
          <tr>
            <td style="color:rgba(255,255,255,0.4);font-size:12px;padding:8px 0;">Device</td>
-           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:8px 0;text-align:right;">${device}</td>
+           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:8px 0;text-align:right;">${escapeEmailHtml(device)}</td>
          </tr>
        </table>
        <p style="color:rgba(255,255,255,0.4);font-size:13px;line-height:1.6;">
@@ -508,7 +508,7 @@ export async function sendAdminFailedOtpAlertEmail(
     to,
     subject: '⚠️ Failed 2FA Attempts Detected — City Gate Capital',
     html: emailWrapper('Failed 2FA Attempt Alert',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Hello <strong style="color:#fff;">${name}</strong>,</p>
+      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Hello <strong style="color:#fff;">${escapeEmailHtml(name)}</strong>,</p>
        <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">There have been <strong style="color:#C9A84C;">${attempts} failed 2FA verification attempt${attempts === 1 ? '' : 's'}</strong> on your admin account.</p>
        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
          <tr>
@@ -517,11 +517,11 @@ export async function sendAdminFailedOtpAlertEmail(
          </tr>
          <tr>
            <td style="color:rgba(255,255,255,0.4);font-size:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">IP Address</td>
-           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;">${ip}</td>
+           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;">${escapeEmailHtml(ip)}</td>
          </tr>
          <tr>
            <td style="color:rgba(255,255,255,0.4);font-size:12px;padding:8px 0;">Device</td>
-           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:8px 0;text-align:right;">${parseUaShort(ua)}</td>
+           <td style="color:rgba(255,255,255,0.7);font-size:12px;padding:8px 0;text-align:right;">${escapeEmailHtml(parseUaShort(ua))}</td>
          </tr>
        </table>
        <p style="color:rgba(255,255,255,0.4);font-size:13px;">
@@ -588,8 +588,8 @@ export async function sendAdminPasswordResetEmail(
     to,
     subject: '🔐 Admin Password Reset — City Gate Capital',
     html: emailWrapper('Admin Password Reset Request',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Hello <strong style="color:#fff;">${name}</strong>,</p>
-       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">A password reset was requested for the City Gate Capital Admin Panel from IP <strong style="color:#C9A84C;">${ip}</strong>.</p>
+      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Hello <strong style="color:#fff;">${escapeEmailHtml(name)}</strong>,</p>
+       <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">A password reset was requested for the City Gate Capital Admin Panel from IP <strong style="color:#C9A84C;">${escapeEmailHtml(ip)}</strong>.</p>
        <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Click the button below to set a new admin password. This link is <strong style="color:#fff;">single-use</strong> and expires in <strong style="color:#fff;">${expiryMinutes} minutes</strong>.</p>
        <p style="margin:32px 0;">${goldButton('Reset Admin Password', resetUrl)}</p>
        <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:16px 20px;margin:24px 0;">
@@ -623,7 +623,7 @@ export async function sendBalanceAdjustmentEmail(  to: string,
     to,
     subject: `Account Record Updated — City Gate Capital`,
     html: emailWrapper('Account Record Updated',
-      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${name}</strong>,</p>
+      `<p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">Dear <strong style="color:#fff;">${escapeEmailHtml(name)}</strong>,</p>
        <p style="color:rgba(255,255,255,0.7);font-size:15px;line-height:1.7;">An internal account record has been updated. It does not represent settled customer funds and cannot be deposited, withdrawn, or transferred.</p>
        <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:20px 24px;margin:24px 0;">
          <table style="width:100%;border-collapse:collapse;">
@@ -644,7 +644,7 @@ export async function sendBalanceAdjustmentEmail(  to: string,
              <td style="color:#C9A84C;font-size:16px;font-weight:700;text-align:right;padding:10px 0 6px;">${newFmt} USD</td>
            </tr>
          </table>
-         ${note ? `<p style="color:rgba(255,255,255,0.4);font-size:12px;margin:12px 0 0;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">Note: ${note}</p>` : ''}
+         ${note ? `<p style="color:rgba(255,255,255,0.4);font-size:12px;margin:12px 0 0;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">Note: ${escapeEmailHtml(note)}</p>` : ''}
        </div>
        <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.7;">If you have questions about this account record, please contact our support team.</p>
        <p style="margin:28px 0;">${goldButton('View Your Account', 'https://citygate.capital/dashboard')}</p>

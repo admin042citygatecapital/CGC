@@ -23,9 +23,14 @@ vi.mock('../../server/lib/emailQueue.js', () => ({
 }));
 
 import {
+  sendAdminFailedOtpAlertEmail,
   sendAdminLoginAlertEmail,
+  sendAdminNewUserAlert,
   sendAdminOtpEmail,
+  sendAdminPasswordResetEmail,
+  sendBalanceAdjustmentEmail,
 } from '../../server/lib/emailService.js';
+import { escapeEmailHtml } from '../../server/lib/emailLayout.js';
 
 const originalE2eMode = process.env.E2E_TEST_MODE;
 const originalE2eOtp = process.env.E2E_ADMIN_OTP;
@@ -53,6 +58,28 @@ describe('admin OTP delivery contract', () => {
   afterEach(() => {
     restoreEnvironment();
     vi.restoreAllMocks();
+  });
+
+  const untrustedText = `O'Connor & <img src=x onerror=alert(1)>`;
+  const recipient = 'admin@example.test';
+  it.each([
+    ['registration', () => sendAdminNewUserAlert(recipient, { name: untrustedText, email: untrustedText, country: untrustedText, ip: untrustedText })],
+    ['login', () => sendAdminLoginAlertEmail(recipient, untrustedText, untrustedText, '', untrustedText)],
+    ['OTP', () => sendAdminOtpEmail(recipient, untrustedText, untrustedText, untrustedText, '')],
+    ['failed OTP', () => sendAdminFailedOtpAlertEmail(recipient, untrustedText, untrustedText, '', 2)],
+    ['password reset', () => sendAdminPasswordResetEmail(recipient, untrustedText, 'synthetic-reset-token', untrustedText, 15)],
+    ['record notification', () => sendBalanceAdjustmentEmail(recipient, untrustedText, 'credit', 1, 0, 1, untrustedText)],
+  ] as const)('escapes untrusted text in %s HTML without changing the recipient', async (_label, sendNotification) => {
+    dependencies.smtpSend.mockResolvedValue({ success: true, attempts: 1, durationMs: 1 });
+    await sendNotification();
+    expect(dependencies.smtpSend).toHaveBeenCalledOnce();
+    const payload = dependencies.smtpSend.mock.calls[0][0];
+    expect(payload.to).toBe(recipient);
+    expect(payload.html).toContain(escapeEmailHtml(untrustedText));
+    expect(payload.html).not.toContain(untrustedText);
+    expect(payload.html).not.toContain('<img src=x');
+    expect(payload.html).not.toContain('&amp;lt;img');
+    expect(dependencies.enqueueEmail).not.toHaveBeenCalled();
   });
 
   it('rejects admin login when the OTP transport reports a failed delivery', async () => {
