@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminFetch, useAdminAuth } from '@/lib/adminAuth';
 
-type Test = { externalUserId: string; applicantId: string | null; status: string | null; reviewedAt: string | null };
+type Test = { externalUserId: string; applicantId: string | null; status: string | null; reviewedAt: string | null; canRetry: boolean };
 type Configuration = { ready: boolean; missing: string[]; webhookPath: string };
 
 async function readSandboxResponse(response: Response) {
@@ -64,7 +64,7 @@ export default function SumsubSandboxTests() {
     <ul className="space-y-2 text-sm">{tests.map(test => <li key={test.externalUserId} className="rounded-lg bg-white/5 p-3 break-all">
       <span className="font-mono">{test.externalUserId}</span>: {test.status ? `Sandbox result: ${test.status}` : test.applicantId ? 'Waiting for signed result' : 'Applicant creation pending; retry the request'}
       {test.reviewedAt && <span> ({new Date(test.reviewedAt).toLocaleString()})</span>}
-      {admin?.role === 'SUPER_ADMIN' && !test.status && <button type="button" disabled={busy || !configuration?.ready} onClick={() => void run(true, test.externalUserId)} className="ml-3 underline disabled:opacity-40">Retry this sandbox test</button>}
+      {admin?.role === 'SUPER_ADMIN' && test.canRetry === true && !test.status && <button type="button" disabled={busy || !configuration?.ready} onClick={() => void run(true, test.externalUserId)} className="ml-3 underline disabled:opacity-40">Retry this sandbox test</button>}
     </li>)}</ul>
     {!tests.length && configuration && <p className="text-sm text-white/60">No sandbox tests recorded yet.</p>}
   </section>;
