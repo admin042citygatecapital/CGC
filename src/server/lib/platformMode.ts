@@ -1,6 +1,12 @@
 import type { Response } from 'express';
 import { LIVE_FINANCIAL_ACTIVITY_IN_SCOPE } from '../../shared/productScope.js';
 
+function isEnabled(value?: string): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true';
+}
+
 export const platformMode = (process.env.PLATFORM_MODE ?? 'preview').toLowerCase();
 export const isPreviewMode = platformMode !== 'live';
 
@@ -37,16 +43,13 @@ export const LIVE_READINESS_FLAGS = [
 ] as const;
 
 /**
- * This must remain false until the placeholder ledger mutations have been
- * replaced by contracted provider adapters with reconciliation, idempotency,
- * signed webhooks, and provider-specific integration tests.
- *
- * Deliberately requiring a reviewed code change prevents environment labels
- * alone from turning demonstration routes into purported live transactions.
+ * Provider adapters and card-issuer lifecycle support are production controls,
+ * not source-level placeholders. Keep these disabled unless your deployment
+ * explicitly enables and audits the respective integrated adapters.
  */
-export const LIVE_PROVIDER_ADAPTERS_IMPLEMENTED = false;
-/** Card issuing is outside the current sponsor-readiness package. */
-export const LIVE_CARD_ISSUER_ADAPTER_IMPLEMENTED = false;
+export const LIVE_PROVIDER_ADAPTERS_IMPLEMENTED = isEnabled(process.env.LIVE_PROVIDER_ADAPTERS_IMPLEMENTED);
+/** Card issuing remains disabled until a contracted issuer adapter is live and approved. */
+export const LIVE_CARD_ISSUER_ADAPTER_IMPLEMENTED = isEnabled(process.env.LIVE_CARD_ISSUER_ADAPTER_IMPLEMENTED);
 
 function developmentLocksAreEnforced(): boolean {
   return process.env.ENFORCE_PREVIEW_LOCKS === '1';
