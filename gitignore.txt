@@ -1,0 +1,89 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+pnpm-lock.yaml
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+.env.*
+!.env.example
+
+# Secrets / service-role credentials
+secrets/
+airo-secrets/
+*.service-role.key
+*serviceRoleKey*
+*.pem
+*.key
+
+# Build outputs
+build/
+.next/
+out/
+
+# Vercel CLI local project link
+.vercel
+
+# Testing
+coverage/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.vite/
+
+# Publish temporary files
+.publish/
+
+# OS generated files
+Thumbs.db
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Development port configuration
+.dev-ports.json
+
+# Generated API
+.api/
+
+# SSL certificates
+.ssl/*.pem
+
+# AI Assistant Files
+.claude/
+
+# Import temporary files
+.import-*

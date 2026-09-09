@@ -30,10 +30,9 @@ See [`.env.example`](.env.example) for the full list with descriptions. At minim
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` | Supabase Postgres connection string (Project Settings → Database) |
-| `SUPABASE_URL` | Supabase project URL used by the server |
-| `SUPABASE_ANON_KEY` / `SUPABASE_PUBLISHABLE_KEY` | Public anon/publishable key (server-side configuration unless browser access is deliberately adopted) |
-| `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SECRET_KEY` | Server-only privileged key — never expose through `VITE_` variables or client code |
-| `SUPABASE_STORAGE_BUCKET` | Managed Storage bucket name; defaults to `cgc-media` |
+| `SUPABASE_URL` / `VITE_SUPABASE_URL` | Supabase project URL (server / client) |
+| `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_ANON_KEY` | Public anon/publishable key |
+| `SUPABASE_SECRET_KEY` | Server-only service-role key — never expose to the client |
 
 This is a **Vite app, not Next.js** — client-exposed env vars use the `VITE_` prefix (see `envPrefix` in `vite.config.ts`), not `NEXT_PUBLIC_`.
 
@@ -73,16 +72,6 @@ src/
 Deployed on Vercel. The Express app in `src/server/entry.ts` calls `httpServer.listen(port)`, which matches Vercel's native Node.js server auto-detection — no `vercel.json` is required for routing. The build command (`npm run build`) produces `dist/client/` (static assets) and `dist/server.bundle.mjs` (SSR server).
 
 Set all variables from `.env.example` in the Vercel project's Environment Variables (Production) before deploying — the app falls back to local flat-file storage silently if `DATABASE_URL` is missing, so a deployment can succeed while running in a degraded, non-persistent mode if secrets aren't configured.
-
-### ⚠️ Production Launch: Compliance & Legal Requirements
-
-**Before deploying any real-money banking platform to production, you must:**
-
-1. **Review [`COMPLIANCE.md`](./COMPLIANCE.md)** — Critical legal disclaimers, regulatory framework, and mandatory pre-deployment checks
-2. **Complete the [deployment pre-flight checklist](./docs/DEPLOYMENT_CHECKLIST.md)** — Technical, compliance, and operational verification
-3. **Consult jurisdiction-specific requirements** — See [`docs/compliance/`](./docs/compliance/) for your country/region
-
-These documents outline what this software provides (technical infrastructure) vs. what it does NOT provide (regulatory authorization, licenses, payment processing, etc.). **A real-money launch requires legal counsel, regulatory approval, banking partnerships, and a comprehensive compliance framework.**
 
 ## Testing
 
