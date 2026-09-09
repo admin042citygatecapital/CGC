@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import SumsubSandboxTests from './SumsubSandboxTests';
+import { useAdminAuth } from '@/lib/adminAuth';
 
 export interface SumsubReadiness {
   approved: boolean; webhookConfigured: boolean; receiverReady: boolean;
@@ -8,6 +9,8 @@ export interface SumsubReadiness {
 }
 
 export default function SumsubReadinessPanel({ data, loading, error }: { data: SumsubReadiness | null; loading: boolean; error: boolean }) {
+  const { admin } = useAdminAuth();
+  const canViewSandbox = admin?.role === 'SUPER_ADMIN' || admin?.permissions.includes('compliance.view') || admin?.permissions.includes('*');
   return <section aria-label="Sumsub readiness" className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-5 space-y-3">
     <h2 className="font-semibold text-white">Sumsub sandbox KYC readiness</h2>
     <p className="text-xs leading-relaxed text-white/60">Identity verification tests only. Signed sandbox results are stored separately from customer approvals.</p>
@@ -23,6 +26,6 @@ export default function SumsubReadinessPanel({ data, loading, error }: { data: S
         <p className="text-xs leading-relaxed text-white/60">{data.message}</p>
       </>}
     <div className="flex gap-4 text-sm text-primary"><Link to="/admin/onboarding">Onboarding cases</Link><Link to="/admin/readiness">Full readiness report</Link></div>
-    <SumsubSandboxTests />
+    {canViewSandbox && <SumsubSandboxTests />}
   </section>;
 }

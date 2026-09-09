@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { getQueryClient } from '../db/db.js';
-import { approvedOnboardingProviders, OnboardingProviderError, verifySumsubWebhook } from './onboardingProviderWebhook.js';
+import { approvedOnboardingProviders, OnboardingProviderError, verifySumsubSandboxWebhook } from './onboardingProviderWebhook.js';
 
 export const SANDBOX_WEBHOOK_PATH = '/api/providers/onboarding/webhook/sumsub-sandbox';
 
@@ -116,7 +116,7 @@ export function parseSandboxEvent(input: unknown) {
 
 export async function receiveSandboxEvent(rawBody: Buffer, signature: string, algorithm: string) {
   assertSandbox();
-  verifySumsubWebhook({ rawBody, signature, algorithm, secret: process.env.SUMSUB_SANDBOX_WEBHOOK_SECRET!.trim() });
+  verifySumsubSandboxWebhook({ rawBody, signature, algorithm, secret: process.env.SUMSUB_SANDBOX_WEBHOOK_SECRET!.trim() });
   let input: unknown;
   try { input = JSON.parse(rawBody.toString('utf8')); } catch { throw new OnboardingProviderError('Invalid JSON.', 'INVALID_PAYLOAD'); }
   const event = parseSandboxEvent(input);
