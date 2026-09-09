@@ -1,9 +1,11 @@
 import { getQueryClient, isDatabaseConfigured } from '../db/db.js';
 import { approvedOnboardingProviders, providerWebhookSecret } from './onboardingProviderWebhook.js';
 
+const MIN_PROVIDER_WEBHOOK_SECRET_LENGTH = 16;
+
 export function sumsubConfiguration(environment = process.env) {
   const approved = approvedOnboardingProviders(environment).includes('sumsub');
-  const webhookConfigured = providerWebhookSecret('sumsub', environment).length >= 32;
+  const webhookConfigured = providerWebhookSecret('sumsub', environment).length >= MIN_PROVIDER_WEBHOOK_SECRET_LENGTH;
   return {
     approved, webhookConfigured,
     receiverReady: approved && webhookConfigured,

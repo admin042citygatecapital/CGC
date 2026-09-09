@@ -104,7 +104,7 @@ export function verifySumsubWebhook(input: { rawBody: Buffer; signature: string;
   };
   const algorithm = algorithms[input.algorithm as SumsubDigestAlgorithm];
   if (!algorithm) throw new OnboardingProviderError('Unsupported Sumsub webhook digest algorithm.', 'INVALID_SIGNATURE_ALGORITHM', 401);
-  if (input.secret.length < 32) throw new OnboardingProviderError('Approved provider webhook secret is not configured.', 'PROVIDER_SECRET_MISSING', 503);
+  if (input.secret.length < MIN_PROVIDER_WEBHOOK_SECRET_LENGTH) throw new OnboardingProviderError('Approved provider webhook secret is not configured.', 'PROVIDER_SECRET_MISSING', 503);
   const expectedHex = crypto.createHmac(algorithm, input.secret).update(input.rawBody).digest('hex');
   if (!new RegExp(`^[a-f0-9]{${expectedHex.length}}$`, 'i').test(input.signature)) throw new OnboardingProviderError('Invalid webhook signature.', 'INVALID_SIGNATURE', 401);
   const expected = Buffer.from(expectedHex, 'hex');
