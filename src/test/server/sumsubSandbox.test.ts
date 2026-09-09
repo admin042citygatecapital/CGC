@@ -8,7 +8,7 @@ import { mapSumsubWebhookPayload } from '../../server/lib/onboardingProviderWebh
 
 const configuration = {
   SUMSUB_MODE: 'sandbox', APPROVED_ONBOARDING_PROVIDERS: 'sumsub',
-  SUMSUB_SANDBOX_APP_TOKEN: 'sandbox-test-token', SUMSUB_SANDBOX_SECRET_KEY: 'sandbox-test-signing-key',
+  SUMSUB_SANDBOX_APP_TOKEN: 'sbx:sandbox-test-token', SUMSUB_SANDBOX_SECRET_KEY: 'sandbox-test-signing-key',
   SUMSUB_SANDBOX_LEVEL_NAME: 'basic test+level', SUMSUB_SANDBOX_WEBHOOK_SECRET: 'sandbox-webhook-secret-for-tests',
 };
 const requestId = '01234567-89ab-4def-8123-456789abcdef';
@@ -43,9 +43,28 @@ describe('isolated Sumsub sandbox', () => {
       .update(headers['X-App-Access-Ts'] + 'POST' + path + options.body).digest('hex'));
     expect(signSumsubRequest('1', 'GET', '/test', '', 'key')).not.toBe(signSumsubRequest('1', 'POST', '/test', '', 'key'));
   });
+  it('accepts documented applicant profiles without a webhook sandbox marker', () => {
+    expect(validateSandboxApplicant({ id: applicantId, externalUserId, type: 'individual' }, externalUserId)).toBe(applicantId);
+    for (const sandboxMode of [false, null, 'true', 1]) {
+      expect(() => validateSandboxApplicant({ id: applicantId, externalUserId, sandboxMode }, externalUserId)).toThrow();
+    }
+    expect(() => validateSandboxApplicant({ id: 'invalid', externalUserId }, externalUserId)).toThrow();
+    expect(() => validateSandboxApplicant({ id: applicantId, externalUserId: 'other' }, externalUserId)).toThrow();
+  });
+  it('blocks non-sandbox credentials before making any provider request', async () => {
+    const mockedFetch = vi.fn();
+    vi.stubGlobal('fetch', mockedFetch);
+    for (const token of ['production-token', 'prod:token', 'sbx:', 'sbx:invalid token']) {
+      vi.stubEnv('SUMSUB_SANDBOX_APP_TOKEN', token);
+      expect(sandboxConfiguration().ready).toBe(false);
+      await expect(sandboxRequest('GET', '/resources/applicants/test/one')).rejects.toMatchObject({ code: 'SANDBOX_NOT_CONFIGURED' });
+      expect(() => validateSandboxApplicant({ id: applicantId, externalUserId }, externalUserId)).toThrow();
+    }
+    expect(mockedFetch).not.toHaveBeenCalled();
+  });
   it('recovers an existing applicant after an interrupted create without creating another', async () => {
     database.query.mockResolvedValueOnce([]).mockResolvedValueOnce([{ applicant_id: null, created_by: 'admin' }]).mockResolvedValueOnce([]);
-    const mockedFetch = vi.fn().mockResolvedValueOnce(reply({ id: applicantId, externalUserId, sandboxMode: true }))
+    const mockedFetch = vi.fn().mockResolvedValueOnce(reply({ id: applicantId, externalUserId, type: 'individual' }))
       .mockResolvedValueOnce(reply({ url: 'https://api.sumsub.com/idensic/l/test' }));
     vi.stubGlobal('fetch', mockedFetch);
     await expect(createSandboxTest(requestId, 'admin')).resolves.toMatchObject({ externalUserId, applicantId, mode: 'sandbox' });
@@ -55,7 +74,7 @@ describe('isolated Sumsub sandbox', () => {
   it('creates a new synthetic applicant only after a provider 404', async () => {
     database.query.mockResolvedValueOnce([]).mockResolvedValueOnce([{ applicant_id: null, created_by: 'admin' }]).mockResolvedValueOnce([]);
     const mockedFetch = vi.fn().mockResolvedValueOnce(reply({}, 404))
-      .mockResolvedValueOnce(reply({ id: applicantId, externalUserId, sandboxMode: true }))
+      .mockResolvedValueOnce(reply({ id: applicantId, externalUserId, type: 'individual' }))
       .mockResolvedValueOnce(reply({ url: 'https://api.sumsub.com/idensic/l/test' }));
     vi.stubGlobal('fetch', mockedFetch);
     await createSandboxTest(requestId, 'admin');
