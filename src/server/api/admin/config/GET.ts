@@ -1,9 +1,10 @@
 import type { Request, Response } from 'express';
-import { getConfig } from '../../../lib/configStore.js';
+import { getConfig, redactConfigSecrets } from '../../../lib/configStore.js';
 import { buildEnvReport } from '../../../lib/envValidator.js';
 import { homepageAdminView, readHomepageDocument } from '../../../lib/homepageCmsStore.js';
 
 export default async function handler(req: Request, res: Response) {
+  res.setHeader('Cache-Control', 'no-store');
   try {
     const { section } = req.query as { section?: string };
 
@@ -26,17 +27,16 @@ export default async function handler(req: Request, res: Response) {
     }
 
     if (section) {
-      const cfg = getConfig();
-      if (!(section in cfg)) return res.status(400).json({ error: `Unknown section: ${section}` });
+      const cfg = redactConfigSecrets(getConfig());
+      if (!Object.prototype.hasOwnProperty.call(cfg, section)) return res.status(400).json({ error: `Unknown section: ${section}` });
       return res.json({ [section]: (cfg as any)[section] });
     }
 
     // Full config — homepage comes from content file, rest from configStore
     const cfg = getConfig();
     const safe = {
-      ...cfg,
+      ...redactConfigSecrets(cfg),
       homepage:     homepageAdminView((await readHomepageDocument()).content),
-      exchangeRates: { ...cfg.exchangeRates, apiKey: cfg.exchangeRates.apiKey ? '••••••••' : '' },
     };
     res.json(safe);
   } catch (err) {

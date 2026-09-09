@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { updateSection, resetSection } from '../../../lib/configStore.js';
+import { updateSection, resetSection, redactConfigSecrets } from '../../../lib/configStore.js';
 import { appendCriticalAudit } from '../../../lib/auditLog.js';
 import { authorizeRecentAdminStepUp } from '../../../lib/rbacMiddleware.js';
 import {
@@ -23,6 +23,7 @@ const VALID_SECTIONS: ConfigSection[] = [
 ];
 
 export default async function handler(req: Request, res: Response) {
+  res.setHeader('Cache-Control', 'no-store');
   try {
     const { section, action, data, reason, confirmation } =
       req.body as { section: ConfigSection; action?: string; data?: Record<string, unknown>; reason?: string; confirmation?: string };
@@ -77,7 +78,7 @@ export default async function handler(req: Request, res: Response) {
     // ── All other sections: configStore ──────────────────────────────────────
     if (action === 'reset') {
       const cfg = await resetSection(section);
-      return res.json({ ok: true, config: cfg });
+      return res.json({ ok: true, config: redactConfigSecrets(cfg) });
     }
 
     if (!data || typeof data !== 'object') {
@@ -92,7 +93,7 @@ export default async function handler(req: Request, res: Response) {
         meta: { enabled: Boolean(data?.enabled) },
       });
     }
-    const safe = { ...cfg, exchangeRates: { ...cfg.exchangeRates, apiKey: cfg.exchangeRates.apiKey ? '••••••••' : '' } };
+    const safe = redactConfigSecrets(cfg);
     res.json({ ok: true, config: safe });
   } catch (err) {
     console.error('admin.config.save.error', { errorType: err instanceof Error ? err.name : 'UnknownError' });
