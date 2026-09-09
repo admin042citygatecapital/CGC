@@ -10,6 +10,8 @@ const dependencies = vi.hoisted(() => ({
 vi.mock('../../server/lib/configStore.js', () => ({
   updateSection: dependencies.updateSection,
   resetSection: dependencies.resetSection,
+  // These fixtures contain no secrets; redaction behavior is tested separately.
+  redactConfigSecrets: vi.fn((config: unknown) => config),
 }));
 
 vi.mock('../../server/lib/auditLog.js', () => ({
@@ -26,7 +28,7 @@ function request(body: Record<string, unknown>): Request {
 }
 
 function response(): Response {
-  const res = { status: vi.fn(() => res), json: vi.fn(() => res) };
+  const res = { status: vi.fn(() => res), json: vi.fn(() => res), setHeader: vi.fn(() => res) };
   return res as unknown as Response;
 }
 

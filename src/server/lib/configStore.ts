@@ -375,6 +375,11 @@ export async function updateSection<K extends keyof Omit<AppConfig, 'updatedAt'>
 ): Promise<AppConfig> {
   const current = readConfig();
   const next = { ...(current as any)[section], ...patch };
+  // A browser round-trip of a redacted key must not replace the stored secret.
+  // Omitting apiKey preserves it; an explicit empty string still clears it.
+  if (section === 'exchangeRates' && next.apiKey === CONFIG_SECRET_MASK) {
+    next.apiKey = current.exchangeRates.apiKey;
+  }
   if (section === 'featureToggles') {
     next.featureAccess = normalizePlatformFeatureAccess(next.featureAccess);
   }
@@ -397,4 +402,17 @@ export async function resetSection<K extends keyof Omit<AppConfig, 'updatedAt'>>
   } as AppConfig;
   await writeConfig(cfg);
   return cfg;
+}
+
+const CONFIG_SECRET_MASK = '\u2022'.repeat(8);
+
+/** Response-only projection. Never mutate or persist the redacted copy. */
+export function redactConfigSecrets(cfg: AppConfig): AppConfig {
+  return {
+    ...cfg,
+    exchangeRates: {
+      ...cfg.exchangeRates,
+      apiKey: cfg.exchangeRates.apiKey ? CONFIG_SECRET_MASK : '',
+    },
+  };
 }
