@@ -1,8 +1,17 @@
 import { useEffect, useState } from 'react';
 import { adminFetch, useAdminAuth } from '@/lib/adminAuth';
 
-type Test = { externalUserId: string; applicantId: string | null; status: string | null; reviewedAt: string | null };
+type Test = { externalUserId: string; applicantId: string | null; status: string | null; reviewedAt: string | null; canRetry: boolean };
 type Configuration = { ready: boolean; missing: string[]; webhookPath: string };
+
+async function readSandboxResponse(response: Response) {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.toLowerCase().includes('application/json')) {
+    throw new Error(`Sandbox request returned a non-JSON response (HTTP ${response.status}). Retry the existing test; do not create another applicant.`);
+  }
+  try { return await response.json(); }
+  catch { throw new Error(`Sandbox response could not be read (HTTP ${response.status}). Retry the existing test.`); }
+}
 
 export default function SumsubSandboxTests() {
   const { admin } = useAdminAuth();
@@ -15,21 +24,24 @@ export default function SumsubSandboxTests() {
 
   async function refresh() {
     const response = await adminFetch('/api/admin/onboarding/sandbox');
-    const data = await response.json();
+    const data = await readSandboxResponse(response);
     if (!response.ok) throw new Error(data.error || 'Unable to load sandbox tests.');
     setConfiguration(data.configuration); setTests(data.tests);
   }
   useEffect(() => { void refresh().catch(e => setError(e.message)); }, []);
 
-  async function run(create: boolean) {
+  async function run(create: boolean, retryExternalId?: string) {
     setBusy(true); setError('');
     try {
       if (create) {
         setLink(null);
+        const existingId = retryExternalId?.match(/^sbx_([a-f0-9]{8})([a-f0-9]{4})([a-f0-9]{4})([a-f0-9]{4})([a-f0-9]{12})$/);
+        const attemptId = existingId ? existingId.slice(1).join('-') : requestId;
+        if (retryExternalId && !existingId) throw new Error('Invalid sandbox test reference.');
         const response = await adminFetch('/api/admin/onboarding/sandbox', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId }),
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: attemptId }),
         });
-        const data = await response.json();
+        const data = await readSandboxResponse(response);
         if (!response.ok) throw new Error(data.error || 'Unable to create sandbox applicant.');
         setLink({ url: data.verificationUrl, expiresAt: data.expiresAt });
         setRequestId(crypto.randomUUID());
@@ -52,6 +64,7 @@ export default function SumsubSandboxTests() {
     <ul className="space-y-2 text-sm">{tests.map(test => <li key={test.externalUserId} className="rounded-lg bg-white/5 p-3 break-all">
       <span className="font-mono">{test.externalUserId}</span>: {test.status ? `Sandbox result: ${test.status}` : test.applicantId ? 'Waiting for signed result' : 'Applicant creation pending; retry the request'}
       {test.reviewedAt && <span> ({new Date(test.reviewedAt).toLocaleString()})</span>}
+      {admin?.role === 'SUPER_ADMIN' && test.canRetry === true && !test.status && <button type="button" disabled={busy || !configuration?.ready} onClick={() => void run(true, test.externalUserId)} className="ml-3 underline disabled:opacity-40">Retry this sandbox test</button>}
     </li>)}</ul>
     {!tests.length && configuration && <p className="text-sm text-white/60">No sandbox tests recorded yet.</p>}
   </section>;

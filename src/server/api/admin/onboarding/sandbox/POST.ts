@@ -8,6 +8,12 @@ export default async function handler(req: Request, res: Response) {
   res.set('Cache-Control', 'no-store');
   try { return res.json(await createSandboxTest(String(req.body?.requestId ?? ''), req.adminSession!.adminId)); }
   catch (error) {
+    // Never log provider bodies, credentials, verification links or customer data.
+    console.error(JSON.stringify({
+      event: 'sumsub.sandbox.creation_failed',
+      code: error instanceof OnboardingProviderError ? error.code : 'SANDBOX_STORAGE_UNAVAILABLE',
+      status: error instanceof OnboardingProviderError ? error.status : 503,
+    }));
     if (error instanceof OnboardingProviderError) return res.status(error.status).json({ error: error.message, code: error.code });
     return res.status(503).json({ error: 'Sandbox storage unavailable. Apply migration 0057 and check database connectivity.', code: 'SANDBOX_STORAGE_UNAVAILABLE' });
   }

@@ -131,9 +131,11 @@ export async function receiveSandboxEvent(rawBody: Buffer, signature: string, al
   return { ok: true, duplicate: rows.length === 0, mode: 'sandbox', financialActivationEffect: 'NONE' };
 }
 
-export async function listSandboxTests() {
+export async function listSandboxTests(adminId: string) {
   return getQueryClient()`SELECT a.external_user_id AS "externalUserId", a.applicant_id AS "applicantId", a.created_at AS "createdAt",
-    e.status, e.occurred_at AS "reviewedAt" FROM sumsub_sandbox_applicants a
+    e.status, e.occurred_at AS "reviewedAt", (a.created_by = ${adminId}) AS "canRetry" FROM sumsub_sandbox_applicants a
     LEFT JOIN LATERAL (SELECT status, occurred_at FROM sumsub_sandbox_events WHERE external_user_id = a.external_user_id ORDER BY occurred_at DESC, received_at DESC LIMIT 1) e ON true
-    ORDER BY a.created_at DESC LIMIT 20`;
+    WHERE (a.created_by = ${adminId} AND e.status IS NULL)
+      OR a.external_user_id IN (SELECT external_user_id FROM sumsub_sandbox_applicants ORDER BY created_at DESC LIMIT 20)
+    ORDER BY a.created_at DESC`;
 }
