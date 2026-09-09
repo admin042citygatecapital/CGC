@@ -16,6 +16,8 @@ describe('protected route hydration', () => {
   it('matches the empty server shell when authentication resolves before client hydration', async () => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
     const container = document.createElement('div');
+    // Fixed React-generated server markup is required to exercise hydration; no external input.
+    // eslint-disable-next-line no-unsanitized/property
     container.innerHTML = renderToString(<Suspense fallback={null}><ProtectedShell authenticated={false} /></Suspense>);
     document.body.appendChild(container);
     const errors = vi.fn();
