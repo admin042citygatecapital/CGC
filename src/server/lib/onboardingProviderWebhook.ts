@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
 
+const MIN_PROVIDER_WEBHOOK_SECRET_LENGTH = 16;
+
 export type ProviderVerificationKind = 'identity' | 'kyb' | 'screening';
 export type ProviderVerificationStatus = 'accepted' | 'review' | 'rejected';
 export type ScreeningDisposition = 'clear' | 'match' | 'not_run';
@@ -34,7 +36,7 @@ export function providerWebhookSecret(providerCode: string, environment = proces
 
 export function onboardingProviderConfigured(environment = process.env): boolean {
   const providers = approvedOnboardingProviders(environment);
-  return providers.length > 0 && providers.every(provider => providerWebhookSecret(provider, environment).length >= 32);
+  return providers.length > 0 && providers.every(provider => providerWebhookSecret(provider, environment).length >= MIN_PROVIDER_WEBHOOK_SECRET_LENGTH);
 }
 
 export function assertApprovedProvider(providerCode: string, environment = process.env): string {
@@ -42,7 +44,7 @@ export function assertApprovedProvider(providerCode: string, environment = proce
   if (!approvedOnboardingProviders(environment).includes(normalized)) {
     throw new OnboardingProviderError('Provider is not approved for onboarding.', 'PROVIDER_NOT_APPROVED', 403);
   }
-  if (providerWebhookSecret(normalized, environment).length < 32) {
+  if (providerWebhookSecret(normalized, environment).length < MIN_PROVIDER_WEBHOOK_SECRET_LENGTH) {
     throw new OnboardingProviderError('Approved provider webhook secret is not configured.', 'PROVIDER_SECRET_MISSING', 503);
   }
   return normalized;
