@@ -8,6 +8,7 @@ export function sandboxConfiguration(environment = process.env) {
   const missing = ['SUMSUB_SANDBOX_APP_TOKEN', 'SUMSUB_SANDBOX_SECRET_KEY', 'SUMSUB_SANDBOX_LEVEL_NAME', 'SUMSUB_SANDBOX_WEBHOOK_SECRET']
     .filter(key => !environment[key]?.trim());
   if (environment.SUMSUB_MODE !== 'sandbox') missing.push('SUMSUB_MODE=sandbox');
+  if (environment.SUMSUB_SANDBOX_APP_TOKEN && !/^sbx:\S+$/.test(environment.SUMSUB_SANDBOX_APP_TOKEN.trim())) missing.push('SUMSUB_SANDBOX_APP_TOKEN (sandbox token required)');
   if (!approvedOnboardingProviders(environment).includes('sumsub')) missing.push('APPROVED_ONBOARDING_PROVIDERS=sumsub');
   if (environment.SUMSUB_SANDBOX_WEBHOOK_SECRET && environment.SUMSUB_SANDBOX_WEBHOOK_SECRET.trim().length < 16) missing.push('SUMSUB_SANDBOX_WEBHOOK_SECRET (minimum 16 characters)');
   return { ready: missing.length === 0, missing, webhookPath: SANDBOX_WEBHOOK_PATH };
@@ -47,7 +48,15 @@ export async function sandboxRequest(method: 'GET' | 'POST', path: string, paylo
 }
 
 export function validateSandboxApplicant(value: Record<string, unknown>, externalUserId: string): string {
-  if (value.sandboxMode !== true || value.externalUserId !== externalUserId || !/^[a-f0-9]{24}$/.test(String(value.id ?? ''))) {
+  assertSandbox();
+  // Applicant profiles do not promise the webhook-only sandboxMode field.
+  // Environment isolation is enforced by the sandbox credential used for the
+  // authenticated request. Reject any contradictory marker if one is returned.
+  if (!value || typeof value !== 'object' || Array.isArray(value)
+    || (value.sandboxMode !== undefined && value.sandboxMode !== true)
+    || !/^sbx_[a-f0-9]{32}$/.test(externalUserId)
+    || value.externalUserId !== externalUserId
+    || typeof value.id !== 'string' || !/^[a-f0-9]{24}$/.test(value.id)) {
     throw new OnboardingProviderError('Applicant must be a sandbox applicant matching this test reference.', 'SANDBOX_APPLICANT_MISMATCH', 502);
   }
   return String(value.id);
