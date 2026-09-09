@@ -112,11 +112,10 @@ export function verifySumsubWebhook(input: { rawBody: Buffer; signature: string;
   if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) throw new OnboardingProviderError('Invalid webhook signature.', 'INVALID_SIGNATURE', 401);
 }
 
-export function mapSumsubWebhookPayload(input: unknown, environment = process.env): { eventId: string; payload: ProviderWebhookPayload } {
+export function mapSumsubWebhookPayload(input: unknown, _environment = process.env): { eventId: string; payload: ProviderWebhookPayload } {
   if (!input || typeof input !== 'object') throw new OnboardingProviderError('Sumsub webhook payload must be an object.', 'INVALID_PAYLOAD');
   const value = input as Record<string, unknown>;
-  const isSandboxMode = String(environment.SUMSUB_MODE ?? '').toLowerCase() === 'sandbox';
-  if (!isSandboxMode && (value.testMode != null && value.testMode !== false || value.sandboxMode != null && value.sandboxMode !== false)) {
+  if (value.testMode != null && value.testMode !== false || value.sandboxMode != null && value.sandboxMode !== false) {
     throw new OnboardingProviderError('Test and sandbox events cannot become production onboarding evidence.', 'NON_PRODUCTION_PROVIDER_EVENT', 422);
   }
   const externalUserId = String(value.externalUserId ?? '').trim();

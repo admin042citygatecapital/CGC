@@ -1,19 +1,22 @@
 import { getQueryClient, isDatabaseConfigured } from '../db/db.js';
-import { approvedOnboardingProviders, providerWebhookSecret } from './onboardingProviderWebhook.js';
+import { approvedOnboardingProviders } from './onboardingProviderWebhook.js';
+import { sandboxConfiguration, SANDBOX_WEBHOOK_PATH } from './sumsubSandbox.js';
 
 const MIN_PROVIDER_WEBHOOK_SECRET_LENGTH = 16;
 
 export function sumsubConfiguration(environment = process.env) {
   const approved = approvedOnboardingProviders(environment).includes('sumsub');
-  const webhookConfigured = providerWebhookSecret('sumsub', environment).length >= MIN_PROVIDER_WEBHOOK_SECRET_LENGTH;
+  const webhookConfigured = String(environment.SUMSUB_SANDBOX_WEBHOOK_SECRET ?? '').trim().length >= MIN_PROVIDER_WEBHOOK_SECRET_LENGTH;
+  const sandbox = sandboxConfiguration(environment);
   return {
     approved, webhookConfigured,
-    receiverReady: approved && webhookConfigured,
-    applicantCreationImplemented: false,
+    receiverReady: sandbox.ready,
+    applicantCreationImplemented: true,
+    missing: sandbox.missing,
     scope: 'sandbox_kyc_only',
     amlInScope: false,
     liveFinancialActivityInScope: false,
-    webhookPath: '/api/providers/onboarding/webhook/sumsub',
+    webhookPath: SANDBOX_WEBHOOK_PATH,
     supportedEvents: ['applicantReviewed'],
   };
 }
@@ -26,9 +29,8 @@ export async function getSumsubReadiness() {
     try {
       const rows = await getQueryClient()`
         SELECT count(*)::int AS "eventCount", max(received_at)::text AS "latestEventAt",
-          count(*) FILTER (WHERE kind IN ('identity', 'kyb'))::int AS "identityEvents",
-          count(*) FILTER (WHERE kind = 'screening')::int AS "screeningEvents"
-        FROM onboarding_provider_events WHERE provider_code = 'sumsub'
+          count(*)::int AS "identityEvents", 0::int AS "screeningEvents"
+        FROM sumsub_sandbox_events
       `;
       if (rows[0]) {
         evidence = {
@@ -41,7 +43,10 @@ export async function getSumsubReadiness() {
   }
   return {
     ...configuration, evidenceStatus, evidence,
-    status: !configuration.receiverReady ? 'not_configured' : evidenceStatus === 'unavailable' ? 'unknown' : 'incomplete',
-    message: "Sandbox identity verification only. Applicant creation and an isolated sandbox receiver remain incomplete. Existing receiver configuration is not evidence of a working sandbox integration. No live financial activity is in scope.",
+    status: !configuration.receiverReady ? 'not_configured' : evidenceStatus === 'unavailable' ? 'unknown' : evidence && evidence.eventCount > 0 ? 'ready' : 'awaiting_test',
+    message: !configuration.receiverReady ? `Sandbox configuration required: ${configuration.missing.join(', ')}`
+      : evidenceStatus === 'unavailable' ? 'Sandbox storage unavailable. Apply migration 0057 and check database connectivity.'
+      : evidence && evidence.eventCount > 0 ? 'A signed result has been recorded for a mapped sandbox applicant. Customer approval, AML clearance and financial activity remain separate.'
+      : 'Sandbox applicant creation and isolated receiver are configured. Create a sandbox test and complete verification to record a signed result.',
   };
 }

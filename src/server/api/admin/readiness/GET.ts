@@ -540,9 +540,9 @@ export default async function handler(_req: Request, res: Response): Promise<voi
     checkStorageBackend(),
     checkBackupReadiness(),
     checkFinancialLaunchGate(),
-    { id: 'sumsub', name: 'Sumsub sandbox KYC integration', subsystem: 'Compliance & Providers', status: 'WARN', critical: false,
+    { id: 'sumsub', name: 'Sumsub sandbox KYC integration', subsystem: 'Compliance & Providers', status: sumsub.status === 'ready' ? 'PASS' : 'WARN', critical: false,
       message: sumsub.message,
-      detail: 'Allow-listed: ' + sumsub.approved + '\nSigning secret configured: ' + sumsub.webhookConfigured + '\nSigned events: ' + (sumsub.evidence?.eventCount ?? 'unavailable') + '\nApplicant creation: not implemented\nAML mapping: not implemented' },
+      detail: 'Allow-listed: ' + sumsub.approved + '\nSandbox signing secret configured: ' + sumsub.webhookConfigured + '\nSandbox signed events: ' + (sumsub.evidence?.eventCount ?? 'unavailable') + '\nApplicant creation: implemented\nAML mapping: outside sandbox identity scope' },
   ];
 
   const pass     = checks.filter(c => c.status === 'PASS').length;
