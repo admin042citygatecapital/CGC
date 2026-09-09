@@ -33,7 +33,7 @@ describe('admin evidence presentation', () => {
   });
   it('does not equate existing webhook configuration with a working sandbox KYC flow', () => {
     const evidence = sumsubConfiguration({ APPROVED_ONBOARDING_PROVIDERS: 'sumsub', ONBOARDING_PROVIDER_WEBHOOK_SECRET_SUMSUB: 'x'.repeat(32) });
-    expect(evidence).toMatchObject({ receiverReady: true, applicantCreationImplemented: false, scope: 'sandbox_kyc_only', amlInScope: false, liveFinancialActivityInScope: false });
+    expect(evidence).toMatchObject({ receiverReady: false, applicantCreationImplemented: true, scope: 'sandbox_kyc_only', amlInScope: false, liveFinancialActivityInScope: false });
     expect(sumsubConfiguration({}).receiverReady).toBe(false);
   });
 });

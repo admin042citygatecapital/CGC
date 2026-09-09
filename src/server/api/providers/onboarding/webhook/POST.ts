@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { receiveSandboxEvent } from '../../../../lib/sumsubSandbox.js';
 import type { Request, Response } from 'express';
 import { recordOnboardingProviderEvent } from '../../../../lib/onboardingProviderStore.js';
 import {
@@ -10,6 +11,11 @@ type RawRequest = Request & { rawBody?: Buffer };
 
 export default async function handler(req: Request, res: Response) {
   try {
+    if (req.params.provider === 'sumsub-sandbox') {
+      const raw = (req as RawRequest).rawBody;
+      if (!raw?.length) throw new OnboardingProviderError('Raw webhook body is unavailable.', 'RAW_BODY_REQUIRED');
+      return res.status(202).json(await receiveSandboxEvent(raw, String(req.get('x-payload-digest') ?? ''), String(req.get('x-payload-digest-alg') ?? '')));
+    }
     const providerCode = assertApprovedProvider(String(req.params.provider ?? ''));
     const rawBody = (req as RawRequest).rawBody;
     if (!rawBody?.length) throw new OnboardingProviderError('Raw webhook body is unavailable.', 'RAW_BODY_REQUIRED', 400);

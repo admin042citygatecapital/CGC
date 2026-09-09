@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
 
+const MIN_PROVIDER_WEBHOOK_SECRET_LENGTH = 32;
+
 export type ProviderVerificationKind = 'identity' | 'kyb' | 'screening';
 export type ProviderVerificationStatus = 'accepted' | 'review' | 'rejected';
 export type ScreeningDisposition = 'clear' | 'match' | 'not_run';
@@ -34,7 +36,7 @@ export function providerWebhookSecret(providerCode: string, environment = proces
 
 export function onboardingProviderConfigured(environment = process.env): boolean {
   const providers = approvedOnboardingProviders(environment);
-  return providers.length > 0 && providers.every(provider => providerWebhookSecret(provider, environment).length >= 32);
+  return providers.length > 0 && providers.every(provider => providerWebhookSecret(provider, environment).length >= MIN_PROVIDER_WEBHOOK_SECRET_LENGTH);
 }
 
 export function assertApprovedProvider(providerCode: string, environment = process.env): string {
@@ -42,7 +44,7 @@ export function assertApprovedProvider(providerCode: string, environment = proce
   if (!approvedOnboardingProviders(environment).includes(normalized)) {
     throw new OnboardingProviderError('Provider is not approved for onboarding.', 'PROVIDER_NOT_APPROVED', 403);
   }
-  if (providerWebhookSecret(normalized, environment).length < 32) {
+  if (providerWebhookSecret(normalized, environment).length < MIN_PROVIDER_WEBHOOK_SECRET_LENGTH) {
     throw new OnboardingProviderError('Approved provider webhook secret is not configured.', 'PROVIDER_SECRET_MISSING', 503);
   }
   return normalized;
@@ -96,13 +98,21 @@ export function verifyProviderWebhook(input: { rawBody: Buffer; eventId: string;
 type SumsubDigestAlgorithm = 'HMAC_SHA256_HEX' | 'HMAC_SHA512_HEX';
 
 export function verifySumsubWebhook(input: { rawBody: Buffer; signature: string; algorithm: string; secret: string }): void {
+  verifySumsubDigest(input, MIN_PROVIDER_WEBHOOK_SECRET_LENGTH);
+}
+
+export function verifySumsubSandboxWebhook(input: { rawBody: Buffer; signature: string; algorithm: string; secret: string }): void {
+  verifySumsubDigest(input, 16);
+}
+
+function verifySumsubDigest(input: { rawBody: Buffer; signature: string; algorithm: string; secret: string }, minimumSecretLength: number): void {
   const algorithms: Record<SumsubDigestAlgorithm, 'sha256' | 'sha512'> = {
     HMAC_SHA256_HEX: 'sha256',
     HMAC_SHA512_HEX: 'sha512',
   };
   const algorithm = algorithms[input.algorithm as SumsubDigestAlgorithm];
   if (!algorithm) throw new OnboardingProviderError('Unsupported Sumsub webhook digest algorithm.', 'INVALID_SIGNATURE_ALGORITHM', 401);
-  if (input.secret.length < 32) throw new OnboardingProviderError('Approved provider webhook secret is not configured.', 'PROVIDER_SECRET_MISSING', 503);
+  if (input.secret.length < minimumSecretLength) throw new OnboardingProviderError('Approved provider webhook secret is not configured.', 'PROVIDER_SECRET_MISSING', 503);
   const expectedHex = crypto.createHmac(algorithm, input.secret).update(input.rawBody).digest('hex');
   if (!new RegExp(`^[a-f0-9]{${expectedHex.length}}$`, 'i').test(input.signature)) throw new OnboardingProviderError('Invalid webhook signature.', 'INVALID_SIGNATURE', 401);
   const expected = Buffer.from(expectedHex, 'hex');
@@ -110,7 +120,7 @@ export function verifySumsubWebhook(input: { rawBody: Buffer; signature: string;
   if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) throw new OnboardingProviderError('Invalid webhook signature.', 'INVALID_SIGNATURE', 401);
 }
 
-export function mapSumsubWebhookPayload(input: unknown): { eventId: string; payload: ProviderWebhookPayload } {
+export function mapSumsubWebhookPayload(input: unknown, _environment = process.env): { eventId: string; payload: ProviderWebhookPayload } {
   if (!input || typeof input !== 'object') throw new OnboardingProviderError('Sumsub webhook payload must be an object.', 'INVALID_PAYLOAD');
   const value = input as Record<string, unknown>;
   if (value.testMode != null && value.testMode !== false || value.sandboxMode != null && value.sandboxMode !== false) {

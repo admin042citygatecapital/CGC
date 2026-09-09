@@ -37,15 +37,11 @@ export const LIVE_READINESS_FLAGS = [
 ] as const;
 
 /**
- * This must remain false until the placeholder ledger mutations have been
- * replaced by contracted provider adapters with reconciliation, idempotency,
- * signed webhooks, and provider-specific integration tests.
- *
- * Deliberately requiring a reviewed code change prevents environment labels
- * alone from turning demonstration routes into purported live transactions.
+ * Implementation readiness is code-controlled. Environment attestations cannot
+ * substitute for reviewed provider adapters and card-issuer lifecycle support.
  */
 export const LIVE_PROVIDER_ADAPTERS_IMPLEMENTED = false;
-/** Card issuing is outside the current sponsor-readiness package. */
+/** Card issuing remains disabled until a contracted issuer adapter is live and approved. */
 export const LIVE_CARD_ISSUER_ADAPTER_IMPLEMENTED = false;
 
 function developmentLocksAreEnforced(): boolean {
