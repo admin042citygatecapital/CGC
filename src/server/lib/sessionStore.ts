@@ -123,7 +123,8 @@ export async function createSession(
         SELECT token_hash
         FROM admin_sessions
         WHERE admin_id = ${data.adminId}
-        ORDER BY created_at ASC
+        -- Keep the newest sessions; evict older rows to make room for this login.
+        ORDER BY created_at DESC, token_hash DESC
         OFFSET ${MAX_SESSIONS_PER_ADMIN - 1}
       )
     `;
