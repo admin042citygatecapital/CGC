@@ -28,13 +28,9 @@ function getUrl(): string {
   ).trim();
 }
 
-function createClient(): ReturnType<typeof postgres> {
+function createClient(): ReturnType<typeof postgres> | null {
   const url = getUrl();
-  if (!url) {
-    throw new Error(
-      'DATABASE_URL is not set. Provide a PostgreSQL connection string before starting the service.'
-    );
-  }
+  if (!url) return null;
 
   return postgres(url, {
     max: getPoolSize(),
@@ -45,7 +41,13 @@ function createClient(): ReturnType<typeof postgres> {
 }
 
 export function getQueryClient(): ReturnType<typeof postgres> {
-  if (!queryClient) queryClient = createClient();
+  if (!queryClient) {
+    const client = createClient();
+    if (!client) {
+      throw new Error('Database not configured');
+    }
+    queryClient = client;
+  }
   return queryClient;
 }
 

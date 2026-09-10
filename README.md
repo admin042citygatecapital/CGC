@@ -1,26 +1,36 @@
-# City Gate Capital
+# City Gate Capital Platform
 
-A full-stack digital banking platform: customer-facing accounts, cards, transfers, and trading, plus an internal admin panel for KYC, compliance, and support. Vite + React SSR frontend, Express backend, Drizzle ORM over Supabase Postgres.
+Sophisticated Vite + React SSR frontend with an Express backend, utilizing Drizzle ORM and Supabase for data persistence.
 
-## Tech Stack
+## Architecture
+- **Frontend**: Vite, React, Tailwind CSS.
+- **Backend**: Node.js, Express.
+- **Database**: PostgreSQL (via Supabase) with Drizzle ORM.
+- **Auth**: Role-Based Access Control (RBAC) with Argon2id password hashing.
 
-- **Frontend**: React 18, TypeScript, Vite 6, React Router (data mode), Tailwind CSS, Radix UI
-- **Backend**: Express (custom SSR server, `src/server/entry.ts`), Node.js
-- **Database**: Supabase Postgres via [`postgres`](https://github.com/porsager/postgres) (postgres.js) + [Drizzle ORM](https://orm.drizzle.team/)
-- **Auth/Storage/Realtime**: Supabase (`src/lib/supabaseClient.ts` for the browser, `src/server/lib/supabaseStorage.ts` for server-side Storage)
-- **Email**: Zoho Mail HTTP API (primary) with Resend HTTP API as queue fallback — no raw SMTP
-- **Testing**: Vitest
+## Development Mode & Fallbacks
+The platform is designed to be "developer-friendly." If `DATABASE_URL` is not provided in the environment, the server will still boot in development mode. 
 
-The app runs with **flat-file (JSONL) storage as a dev-only fallback** when `DATABASE_URL` is unset — see `isDatabaseConfigured()` in `src/server/db/db.ts`. Production always requires Supabase.
+### Static Identity Fallback
+When the database is unavailable, the system falls back to an environment-backed static identity system. This allows developers to test the Admin Panel and authentication flows without needing a live PostgreSQL instance.
+
+- **Admin Login**: Uses `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` for fallback authentication.
+- **Data Stores**: Most stores (User, Session, etc.) implement a `.flatfile.ts` fallback that uses JSONL storage or static mocks.
 
 ## Getting Started
 
+### Environment Variables
+Copy `.env.example` to `.env` and fill in the required secrets.
+
+### Installation
 ```bash
 npm install
-cp .env.example .env   # fill in your Supabase project's values
-npm run dev
 ```
 
+### Running the App
+```bash
+npm run dev
+```
 The dev server runs on `http://localhost:5173` (configurable via `PORT`).
 
 ## Environment Variables
@@ -68,10 +78,7 @@ src/
 ```
 
 ## Deployment
-
-Deployed on Vercel. The Express app in `src/server/entry.ts` calls `httpServer.listen(port)`, which matches Vercel's native Node.js server auto-detection — no `vercel.json` is required for routing. The build command (`npm run build`) produces `dist/client/` (static assets) and `dist/server.bundle.mjs` (SSR server).
-
-Set all variables from `.env.example` in the Vercel project's Environment Variables (Production) before deploying — the app falls back to local flat-file storage silently if `DATABASE_URL` is missing, so a deployment can succeed while running in a degraded, non-persistent mode if secrets aren't configured.
+The project is configured for deployment on **Render**. See `render.yaml` for the service specifications.
 
 ## Testing
 
