@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { getConfig } from "../../../lib/configStore.js";
 import { FINANCIAL_CAPABILITY_MAP } from "../../../lib/financialCapabilityMap.js";
 import { FinancialSandboxError } from "../../../lib/financialSandbox.js";
 import { financialSandbox } from "../../../lib/financialSandboxStore.js";
@@ -44,6 +45,7 @@ export default async function handler(req: Request, res: Response) {
         overview,
         railInstructions,
         capabilities: FINANCIAL_CAPABILITY_MAP,
+        mutationsEnabled: getConfig().featureToggles.sandboxFinancialControlsEnabled === true,
         syntheticOnly: true,
         executionSource: "SIMULATION",
         liveProviderAdaptersImplemented: false,

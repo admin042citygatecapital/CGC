@@ -139,6 +139,8 @@ export interface MaintenanceModeConfig {
 }
 
 export interface FeatureTogglesConfig {
+  kycApprovalsEnabled:        boolean;
+  sandboxFinancialControlsEnabled: boolean;
   accountApplicationsEnabled: boolean;
   contactFormsEnabled:        boolean;
   newsletterSignupEnabled:    boolean;
@@ -287,6 +289,8 @@ function defaultConfig(): AppConfig {
       showCountdown:    false,
     },
     featureToggles: {
+      kycApprovalsEnabled:         false,
+      sandboxFinancialControlsEnabled: false,
       accountApplicationsEnabled: true,
       contactFormsEnabled:        true,
       newsletterSignupEnabled:    true,

@@ -677,6 +677,8 @@ export default function AdminConfigPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
                           ['virtualCardsEnabled',     'Virtual Cards',          'Issue virtual debit cards'],
+                          ['kycApprovalsEnabled', 'KYC Approvals', 'Permit evidence-backed reviews; provider verification and independent review remain required'],
+                          ['sandboxFinancialControlsEnabled', 'Sandbox Financial Controls', 'Enable synthetic accounts, transfers and adjustments only; never enables live money movement'],
                           ['cryptoWalletEnabled',     'Crypto Wallet',          'Cryptocurrency wallet features'],
                           ['p2pTransfersEnabled',     'P2P Transfers',          'Peer-to-peer money transfers'],
                           ['internationalTransfers',  'International Transfers','Cross-border wire transfers'],

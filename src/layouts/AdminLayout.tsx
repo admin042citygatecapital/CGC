@@ -117,6 +117,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Configuration',
     items: ([
       { label: 'Config Center',    href: '/admin/config',        icon: SlidersHorizontal,  badge: null, desc: 'App-wide configuration' },
+      { label: 'Financial Sandbox', href: '/admin/financial-sandbox', icon: ToggleLeft, badge: null, desc: 'Isolated simulations; no live money movement' },
       { label: 'Feature Flags',    href: '/admin/config?section=featureToggles', icon: ToggleLeft, badge: null, desc: 'Customer module availability and workflow controls' },
       { label: 'Integrations',     href: '/admin/integrations',  icon: Plug,               badge: null, desc: 'Third-party service connections' },
       { label: 'Rates & Fees',     href: '/admin/rates',         icon: BarChart2,          badge: null, desc: 'Fee matrix & FX markup' },

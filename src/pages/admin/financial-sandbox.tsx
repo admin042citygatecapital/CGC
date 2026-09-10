@@ -86,6 +86,7 @@ type Overview = {
   integrityBreaks: number;
 };
 type Payload = {
+  mutationsEnabled?: boolean;
   accounts: Account[];
   data: Transaction[];
   total: number;
@@ -230,6 +231,10 @@ export default function AdminFinancialSandbox() {
   }, [load]);
 
   async function submit(body: Record<string, unknown>) {
+    if (payload.mutationsEnabled !== true) {
+      setError('Sandbox financial controls are disabled. Ask a super admin to enable Sandbox Financial Controls in Configuration > Feature Toggles. Existing records remain viewable.');
+      return;
+    }
     setBusy(true);
     setError("");
     try {

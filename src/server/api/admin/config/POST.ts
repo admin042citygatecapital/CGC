@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { updateSection, resetSection, redactConfigSecrets } from '../../../lib/configStore.js';
+import { getConfig, updateSection, resetSection, redactConfigSecrets } from '../../../lib/configStore.js';
 import { appendCriticalAudit } from '../../../lib/auditLog.js';
 import { authorizeRecentAdminStepUp } from '../../../lib/rbacMiddleware.js';
 import {
@@ -44,6 +44,29 @@ export default async function handler(req: Request, res: Response) {
         reason: String(reason),
         meta: { enabled: Boolean(data?.enabled), requestId: String(req.get('X-Request-ID') ?? '') },
       });
+    }
+
+    if (section === 'featureToggles') {
+      const controls = ['kycApprovalsEnabled', 'sandboxFinancialControlsEnabled'] as const;
+      const current = getConfig().featureToggles;
+      const changes: Record<string, { before: boolean; after: boolean }> = {};
+      for (const control of controls) {
+        if (action !== 'reset' && !Object.prototype.hasOwnProperty.call(data ?? {}, control)) continue;
+        const value = action === 'reset' ? false : data?.[control];
+        if (typeof value !== 'boolean') return res.status(400).json({ error: `${control} must be a boolean.` });
+        const before = current[control] === true;
+        if (before !== value) changes[control] = { before, after: value };
+      }
+      if (Object.keys(changes).length) {
+        if (req.adminSession?.role !== 'SUPER_ADMIN') return res.status(403).json({ error: 'Only a super admin can change KYC approval and financial sandbox controls.' });
+        if (!authorizeRecentAdminStepUp(req, res)) return;
+        await appendCriticalAudit({
+          event: 'admin_workflow_controls_change_authorized',
+          adminId: req.adminSession.adminId, email: req.adminSession.email, ip: req.ip,
+          reason: 'Configuration Center workflow control change',
+          meta: { changes, liveFinancialOperationsUnchanged: true },
+        });
+      }
     }
 
     // ── Homepage: read/write the actual content JSON (virtual:content source of truth) ──

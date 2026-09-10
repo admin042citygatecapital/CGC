@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { getConfig } from './configStore.js';
 import { and, eq } from 'drizzle-orm';
 import { getDb } from '../db/db.js';
 import { auditLog, onboardingCases, onboardingEvents, users } from '../db/schema.js';
@@ -29,6 +30,9 @@ export interface KycReviewInput {
 }
 
 export async function decideKycCase(input: KycReviewInput) {
+  if (input.decision === 'approved' && getConfig().featureToggles.kycApprovalsEnabled !== true) {
+    throw Object.assign(new Error('KYC approvals are disabled. A super admin can enable them in Configuration > Feature Toggles. Production provider evidence is still required.'), { code: 'KYC_APPROVALS_DISABLED' });
+  }
   if (!DECISIONS.has(input.decision)) throw Object.assign(new Error('Invalid KYC review decision.'), { code: 'INVALID_DECISION' });
   const reason = sanitizeNote(input.reason).slice(0, 1000);
   if (reason.length < 10) throw Object.assign(new Error('Review rationale must be between 10 and 1,000 characters.'), { code: 'INVALID_REASON' });
