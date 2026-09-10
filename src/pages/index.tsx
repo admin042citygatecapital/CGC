@@ -71,7 +71,7 @@ function HomePageContent() {
             </div>
             <div className="min-w-0 flex-1 overflow-hidden py-2.5">
               <div className="flex w-max gap-10 whitespace-nowrap pl-6" style={{ animation: 'ticker 50s linear infinite', willChange: 'transform' }}>
-              {[...tickers, ...tickers].map((ticker, index) => (
+              {tickers.map((ticker, index) => (
                 <span key={index} className="inline-flex shrink-0 items-center gap-2 text-xs" aria-label={`${ticker.symbol} ${ticker.price}, ${ticker.change}`}>
                   <span className="font-medium tracking-wide text-foreground/65">{ticker.symbol}</span>
                   <span className="font-semibold tabular-nums text-foreground">{ticker.price}</span>
