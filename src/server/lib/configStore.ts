@@ -4,12 +4,48 @@
  * Config is stored in the `config` table under key 'app_config'.
  * Falls back to defaultConfig() when DATABASE_URL is not set.
  */
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { config as configTable } from '../db/schema.js';
 import { normalizePlatformFeatureAccess, type PlatformFeatureAccessScopes } from '../../shared/platformFeatures.js';
 
 const CONFIG_KEY = 'app_config';
+const WORKFLOW_KEY = 'admin_workflow_controls';
+const WORKFLOW_KEYS = ['kycApprovalsEnabled', 'sandboxFinancialControlsEnabled'] as const;
+type WorkflowControls = Pick<FeatureTogglesConfig, typeof WORKFLOW_KEYS[number]>;
+const DISABLED_WORKFLOWS: WorkflowControls = { kycApprovalsEnabled: false, sandboxFinancialControlsEnabled: false };
+
+/** Authorization state is never read from the process-local configuration cache. */
+export async function readWorkflowControls(): Promise<WorkflowControls> {
+  if (!isDatabaseConfigured()) {
+    if (process.env.NODE_ENV === 'production') return { ...DISABLED_WORKFLOWS };
+    const local = readConfig().featureToggles;
+    return { kycApprovalsEnabled: local.kycApprovalsEnabled === true, sandboxFinancialControlsEnabled: local.sandboxFinancialControlsEnabled === true };
+  }
+  try {
+    const rows = await getDb().select().from(configTable).where(eq(configTable.key, WORKFLOW_KEY));
+    const value = rows[0]?.value as Partial<WorkflowControls> | undefined;
+    return { kycApprovalsEnabled: value?.kycApprovalsEnabled === true, sandboxFinancialControlsEnabled: value?.sandboxFinancialControlsEnabled === true };
+  } catch {
+    console.warn('admin.workflow_controls.read_unavailable');
+    return { ...DISABLED_WORKFLOWS };
+  }
+}
+
+async function persistWorkflowControls(patch: Partial<WorkflowControls>): Promise<void> {
+  if (!Object.keys(patch).length) return;
+  if (!isDatabaseConfigured()) {
+    if (process.env.NODE_ENV === 'production') throw new Error('Workflow controls require PostgreSQL in production.');
+    return;
+  }
+  // Merge only explicitly supplied switches at the database boundary. An
+  // unrelated app_config save or a different instance cannot restore stale gates.
+  await getDb().insert(configTable).values({
+    key: WORKFLOW_KEY, value: { ...DISABLED_WORKFLOWS, ...patch }, updatedBy: 'admin',
+  }).onConflictDoUpdate({ target: configTable.key, set: {
+    value: sql`${configTable.value} || ${JSON.stringify(patch)}::jsonb`, updatedAt: new Date(),
+  } });
+}
 
 // ── In-memory write-through cache ─────────────────────────────────────────────
 let _cache: AppConfig | null = null;
@@ -393,6 +429,17 @@ export async function updateSection<K extends keyof Omit<AppConfig, 'updatedAt'>
     updatedAt: new Date().toISOString(),
   } as AppConfig;
   await writeConfig(cfg);
+  if (section === 'featureToggles') {
+    const workflowPatch: Partial<WorkflowControls> = {};
+    for (const key of WORKFLOW_KEYS) {
+      if (Object.prototype.hasOwnProperty.call(patch, key)) {
+        const value = (patch as Partial<FeatureTogglesConfig>)[key];
+        if (typeof value !== 'boolean') throw new Error(`${key} must be a boolean.`);
+        workflowPatch[key] = value;
+      }
+    }
+    await persistWorkflowControls(workflowPatch);
+  }
   return cfg;
 }
 
@@ -405,6 +452,7 @@ export async function resetSection<K extends keyof Omit<AppConfig, 'updatedAt'>>
     updatedAt: new Date().toISOString(),
   } as AppConfig;
   await writeConfig(cfg);
+  if (section === 'featureToggles') await persistWorkflowControls(DISABLED_WORKFLOWS);
   return cfg;
 }
 

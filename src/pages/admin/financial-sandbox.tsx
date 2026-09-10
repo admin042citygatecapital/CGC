@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/layouts/AdminLayout";
-import { authHeaders } from "@/lib/adminAuth";
+import { authHeaders, useAdminAuth } from "@/lib/adminAuth";
 
 type Account = {
   id: string;
@@ -147,6 +147,7 @@ function key() {
 }
 
 export default function AdminFinancialSandbox() {
+  const { admin } = useAdminAuth();
   const [payload, setPayload] = useState<Payload>({
     accounts: [],
     data: [],
@@ -341,6 +342,7 @@ export default function AdminFinancialSandbox() {
       )),
     [payload.accounts],
   );
+  if (admin?.role !== 'SUPER_ADMIN') return <AdminLayout title="Financial Sandbox"><p role="alert">Super admin access is required for the financial sandbox.</p></AdminLayout>;
   return (
     <AdminLayout title="Financial Sandbox">
       <Helmet>

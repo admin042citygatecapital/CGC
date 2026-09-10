@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { getConfig, updateSection, resetSection, redactConfigSecrets } from '../../../lib/configStore.js';
+import { readWorkflowControls, updateSection, resetSection, redactConfigSecrets } from '../../../lib/configStore.js';
 import { appendCriticalAudit } from '../../../lib/auditLog.js';
 import { authorizeRecentAdminStepUp } from '../../../lib/rbacMiddleware.js';
 import {
@@ -48,14 +48,14 @@ export default async function handler(req: Request, res: Response) {
 
     if (section === 'featureToggles') {
       const controls = ['kycApprovalsEnabled', 'sandboxFinancialControlsEnabled'] as const;
-      const current = getConfig().featureToggles;
+      const current = await readWorkflowControls();
       const changes: Record<string, { before: boolean; after: boolean }> = {};
       for (const control of controls) {
         if (action !== 'reset' && !Object.prototype.hasOwnProperty.call(data ?? {}, control)) continue;
         const value = action === 'reset' ? false : data?.[control];
         if (typeof value !== 'boolean') return res.status(400).json({ error: `${control} must be a boolean.` });
         const before = current[control] === true;
-        if (before !== value) changes[control] = { before, after: value };
+        changes[control] = { before, after: value };
       }
       if (Object.keys(changes).length) {
         if (req.adminSession?.role !== 'SUPER_ADMIN') return res.status(403).json({ error: 'Only a super admin can change KYC approval and financial sandbox controls.' });

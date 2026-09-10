@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { getConfig } from "../../../lib/configStore.js";
+import { readWorkflowControls } from "../../../lib/configStore.js";
 import type { Request, Response } from "express";
 import { FinancialSandboxError } from "../../../lib/financialSandbox.js";
 import { financialSandbox } from "../../../lib/financialSandboxStore.js";
@@ -16,7 +16,8 @@ const serialize = (value: unknown) =>
   );
 
 export default async function handler(req: Request, res: Response) {
-  if (getConfig().featureToggles.sandboxFinancialControlsEnabled !== true) {
+  if (req.adminSession?.role !== 'SUPER_ADMIN') return res.status(403).json({ error: 'Super admin access is required.', code: 'SUPER_ADMIN_REQUIRED' });
+  if ((await readWorkflowControls()).sandboxFinancialControlsEnabled !== true) {
     return res.status(403).json({ error: 'Sandbox financial controls are disabled. A super admin can enable them in Configuration > Feature Toggles. This never enables real money movement.', code: 'SANDBOX_FINANCIAL_CONTROLS_DISABLED' });
   }
   const session = req.adminSession!;
