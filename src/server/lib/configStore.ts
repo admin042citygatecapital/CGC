@@ -4,7 +4,8 @@
  * Config is stored in the `config` table under key 'app_config'.
  * Falls back to defaultConfig() when DATABASE_URL is not set.
  */
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { config as configTable } from '../db/schema.js';
 import { normalizePlatformFeatureAccess, type PlatformFeatureAccessScopes } from '../../shared/platformFeatures.js';
@@ -14,37 +15,57 @@ const WORKFLOW_KEY = 'admin_workflow_controls';
 const WORKFLOW_KEYS = ['kycApprovalsEnabled', 'sandboxFinancialControlsEnabled'] as const;
 type WorkflowControls = Pick<FeatureTogglesConfig, typeof WORKFLOW_KEYS[number]>;
 const DISABLED_WORKFLOWS: WorkflowControls = { kycApprovalsEnabled: false, sandboxFinancialControlsEnabled: false };
+let localWorkflowVersion = 'initial';
+export class WorkflowConflictError extends Error {
+  constructor() { super('Workflow controls changed. Reload before saving.'); }
+}
 
 /** Authorization state is never read from the process-local configuration cache. */
 export async function readWorkflowControls(): Promise<WorkflowControls> {
+  return (await readWorkflowState()).controls;
+}
+
+export async function readWorkflowState(): Promise<{ controls: WorkflowControls; version: string | null }> {
   if (!isDatabaseConfigured()) {
-    if (process.env.NODE_ENV === 'production') return { ...DISABLED_WORKFLOWS };
+    if (process.env.NODE_ENV === 'production') return { controls: { ...DISABLED_WORKFLOWS }, version: null };
     const local = readConfig().featureToggles;
-    return { kycApprovalsEnabled: local.kycApprovalsEnabled === true, sandboxFinancialControlsEnabled: local.sandboxFinancialControlsEnabled === true };
+    return { controls: { kycApprovalsEnabled: local.kycApprovalsEnabled === true, sandboxFinancialControlsEnabled: local.sandboxFinancialControlsEnabled === true }, version: localWorkflowVersion };
   }
   try {
     const rows = await getDb().select().from(configTable).where(eq(configTable.key, WORKFLOW_KEY));
-    const value = rows[0]?.value as Partial<WorkflowControls> | undefined;
-    return { kycApprovalsEnabled: value?.kycApprovalsEnabled === true, sandboxFinancialControlsEnabled: value?.sandboxFinancialControlsEnabled === true };
+    const value = rows[0]?.value as (Partial<WorkflowControls> & { version?: string }) | undefined;
+    return { controls: { kycApprovalsEnabled: value?.kycApprovalsEnabled === true, sandboxFinancialControlsEnabled: value?.sandboxFinancialControlsEnabled === true }, version: typeof value?.version === 'string' ? value.version : 'initial' };
   } catch {
     console.warn('admin.workflow_controls.read_unavailable');
-    return { ...DISABLED_WORKFLOWS };
+    return { controls: { ...DISABLED_WORKFLOWS }, version: null };
   }
 }
 
-async function persistWorkflowControls(patch: Partial<WorkflowControls>): Promise<void> {
-  if (!Object.keys(patch).length) return;
+async function writeWorkflowConfig(cfg: AppConfig, patch: Partial<WorkflowControls>, expectedVersion?: string): Promise<void> {
+  if (!Object.keys(patch).length) { await writeConfig(cfg); return; }
   if (!isDatabaseConfigured()) {
     if (process.env.NODE_ENV === 'production') throw new Error('Workflow controls require PostgreSQL in production.');
+    if (expectedVersion !== undefined && expectedVersion !== localWorkflowVersion) throw new WorkflowConflictError();
+    await writeConfig(cfg);
+    localWorkflowVersion = randomUUID();
     return;
   }
-  // Merge only explicitly supplied switches at the database boundary. An
-  // unrelated app_config save or a different instance cannot restore stale gates.
-  await getDb().insert(configTable).values({
-    key: WORKFLOW_KEY, value: { ...DISABLED_WORKFLOWS, ...patch }, updatedBy: 'admin',
-  }).onConflictDoUpdate({ target: configTable.key, set: {
-    value: sql`${configTable.value} || ${JSON.stringify(patch)}::jsonb`, updatedAt: new Date(),
-  } });
+  if (!expectedVersion) throw new WorkflowConflictError();
+  await getDb().transaction(async tx => {
+    // Initialize without overwriting an existing decision, then compare and
+    // update atomically. A stale request rolls back every configuration write.
+    await tx.insert(configTable).values({ key: WORKFLOW_KEY, value: { ...DISABLED_WORKFLOWS, version: 'initial' }, updatedBy: 'admin' })
+      .onConflictDoNothing({ target: configTable.key });
+    const updated = await tx.update(configTable).set({
+      value: sql`${configTable.value} || ${JSON.stringify({ ...patch, version: randomUUID() })}::jsonb`,
+      updatedAt: new Date(),
+    }).where(and(eq(configTable.key, WORKFLOW_KEY), sql`coalesce(${configTable.value}->>'version', 'initial') = ${expectedVersion}`))
+      .returning({ key: configTable.key });
+    if (!updated.length) throw new WorkflowConflictError();
+    await tx.insert(configTable).values({ key: CONFIG_KEY, value: cfg as unknown as Record<string, unknown>, updatedBy: 'admin' })
+      .onConflictDoUpdate({ target: configTable.key, set: { value: cfg as unknown as Record<string, unknown>, updatedAt: new Date() } });
+  });
+  _cache = cfg;
 }
 
 // ── In-memory write-through cache ─────────────────────────────────────────────
@@ -411,7 +432,8 @@ export function getSection<K extends keyof AppConfig>(section: K): AppConfig[K] 
 
 export async function updateSection<K extends keyof Omit<AppConfig, 'updatedAt'>>(
   section: K,
-  patch: Partial<AppConfig[K]>
+  patch: Partial<AppConfig[K]>,
+  expectedWorkflowVersion?: string,
 ): Promise<AppConfig> {
   const current = readConfig();
   const next = { ...(current as any)[section], ...patch };
@@ -428,7 +450,6 @@ export async function updateSection<K extends keyof Omit<AppConfig, 'updatedAt'>
     [section]: next,
     updatedAt: new Date().toISOString(),
   } as AppConfig;
-  await writeConfig(cfg);
   if (section === 'featureToggles') {
     const workflowPatch: Partial<WorkflowControls> = {};
     for (const key of WORKFLOW_KEYS) {
@@ -438,12 +459,12 @@ export async function updateSection<K extends keyof Omit<AppConfig, 'updatedAt'>
         workflowPatch[key] = value;
       }
     }
-    await persistWorkflowControls(workflowPatch);
-  }
+    await writeWorkflowConfig(cfg, workflowPatch, expectedWorkflowVersion);
+  } else await writeConfig(cfg);
   return cfg;
 }
 
-export async function resetSection<K extends keyof Omit<AppConfig, 'updatedAt'>>(section: K): Promise<AppConfig> {
+export async function resetSection<K extends keyof Omit<AppConfig, 'updatedAt'>>(section: K, expectedWorkflowVersion?: string): Promise<AppConfig> {
   const current = readConfig();
   const def = defaultConfig();
   const cfg = {
@@ -451,8 +472,8 @@ export async function resetSection<K extends keyof Omit<AppConfig, 'updatedAt'>>
     [section]: (def as any)[section],
     updatedAt: new Date().toISOString(),
   } as AppConfig;
-  await writeConfig(cfg);
-  if (section === 'featureToggles') await persistWorkflowControls(DISABLED_WORKFLOWS);
+  if (section === 'featureToggles') await writeWorkflowConfig(cfg, DISABLED_WORKFLOWS, expectedWorkflowVersion);
+  else await writeConfig(cfg);
   return cfg;
 }
 

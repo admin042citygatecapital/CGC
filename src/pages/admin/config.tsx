@@ -31,6 +31,7 @@ Wrench
 import { AnimatePresence,motion } from 'motion/react';
 import { useCallback,useEffect,useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { workflowControlPatch } from '@/shared/workflowControlPatch';
 
 // ─── Types (mirrors configStore.ts) ──────────────────────────────────────────
 
@@ -152,6 +153,8 @@ export default function AdminConfigPage() {
   const [saving,   setSaving]   = useState(false);
   const [toast,    setToast]    = useState<{ msg: string; ok: boolean } | null>(null);
   const [dirty,    setDirty]    = useState(false);
+  const [workflowBaseline, setWorkflowBaseline] = useState<Record<string, unknown>>({});
+  const [workflowVersion, setWorkflowVersion] = useState<string | null>(null);
   const [scopeKind, setScopeKind] = useState<FeatureScopeKind>('users');
   const [scopeIdentifier, setScopeIdentifier] = useState('');
   const [scopeFeature, setScopeFeature] = useState('accounts');
@@ -170,7 +173,13 @@ export default function AdminConfigPage() {
   const loadConfig = useCallback(async () => {
     setLoading(true);
     const r = await fetch('/api/admin/config', { headers: authHeaders() });
-    if (r.ok) setConfig(await r.json());
+    if (r.ok) {
+      const loaded = await r.json();
+      setConfig(loaded);
+      setWorkflowBaseline(loaded.featureToggles ?? {});
+      setWorkflowVersion(loaded.workflowVersion ?? null);
+      setDirty(false);
+    }
     setLoading(false);
   }, []);
 
@@ -234,15 +243,21 @@ export default function AdminConfigPage() {
 
   async function save() {
     if (activeSection === 'env') return;
+    const data = activeSection === 'featureToggles'
+      ? workflowControlPatch(config.featureToggles ?? {}, workflowBaseline)
+      : config[activeSection];
     setSaving(true);
     const r = await fetch('/api/admin/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ section: activeSection, data: config[activeSection] }),
+      body: JSON.stringify({ section: activeSection, data, expectedWorkflowVersion: workflowVersion }),
     });
     setSaving(false);
-    if (r.ok) { showToast('Configuration saved'); setDirty(false); }
-    else showToast('Save failed', false);
+    if (r.ok) {
+      if (activeSection === 'featureToggles') await loadConfig();
+      showToast('Configuration saved'); setDirty(false);
+    }
+    else showToast(r.status === 409 || r.status === 428 ? 'Workflow controls changed or are unavailable. Reload before saving.' : 'Save failed', false);
   }
 
   async function reset() {
@@ -251,11 +266,11 @@ export default function AdminConfigPage() {
     const r = await fetch('/api/admin/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ section: activeSection, action: 'reset' }),
+      body: JSON.stringify({ section: activeSection, action: 'reset', expectedWorkflowVersion: workflowVersion }),
     });
     setSaving(false);
-    if (r.ok) { const d = await r.json(); setConfig(current => ({ ...current, ...d.config })); showToast('Reset to defaults'); setDirty(false); }
-    else showToast('Reset failed', false);
+    if (r.ok) { const d = await r.json(); setConfig(current => ({ ...current, ...d.config })); if (activeSection === 'featureToggles') await loadConfig(); showToast('Reset to defaults'); setDirty(false); }
+    else showToast(r.status === 409 || r.status === 428 ? 'Workflow controls changed or are unavailable. Reload before resetting.' : 'Reset failed', false);
   }
 
   const s = (section: string) => config[section] ?? {};

@@ -40,7 +40,7 @@ function response() {
   return res;
 }
 function request(body: Record<string, unknown>, role = 'SUPER_ADMIN') {
-  return { body, adminSession: { adminId: 'test-checker', email: 'checker@example.test', role },
+  return { body: { expectedWorkflowVersion: 'initial', ...body }, adminSession: { adminId: 'test-checker', email: 'checker@example.test', role },
     ip: '127.0.0.1', get: () => 'test-request' } as unknown as Request;
 }
 const review = {
@@ -123,7 +123,7 @@ describe('workflow configuration switches', () => {
     await post(request({ section: 'featureToggles', action: 'reset' }, 'COMPLIANCE_ADMIN'), denied as unknown as Response);
     expect(denied.status).toHaveBeenCalledWith(403);
     for (const control of controls) expect(store.getConfig().featureToggles[control]).toBe(true);
-    await post(request({ section: 'featureToggles', action: 'reset' }), response() as unknown as Response);
+    await post(request({ section: 'featureToggles', action: 'reset', expectedWorkflowVersion: (await store.readWorkflowState()).version }), response() as unknown as Response);
     for (const control of controls) expect(store.getConfig().featureToggles[control]).toBe(false);
     expect(mocks.stepUp).toHaveBeenCalledOnce();
   });
