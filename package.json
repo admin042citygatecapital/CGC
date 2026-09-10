@@ -180,7 +180,7 @@
     "vitest": "^4.1.10"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.22.2"
   },
   "overrides": {
     "cmdk": "^1.1.1",
