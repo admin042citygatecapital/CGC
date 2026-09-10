@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [contentPlugin()],
   test: {
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: ['./src/test/server/setup.ts'],
     environment: 'node',
     globals: true,
     pool: 'forks',
