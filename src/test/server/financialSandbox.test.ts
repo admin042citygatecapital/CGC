@@ -114,14 +114,19 @@ describe("financial administration sandbox", () => {
     );
   });
 
-  it("keeps the isolated implementation outside the production navigation", () => {
-    expect(readFileSync("src/layouts/AdminLayout.tsx", "utf8")).not.toContain(
+  it("exposes the isolated simulation behind administrator authentication and an explicit mutation gate", () => {
+    expect(readFileSync("src/layouts/AdminLayout.tsx", "utf8")).toContain(
       "href: '/admin/financial-sandbox'",
     );
-    expect(readFileSync("src/routes.tsx", "utf8")).not.toContain(
-      "path: '/admin/financial-sandbox'",
+    expect(readFileSync("src/routes.tsx", "utf8")).toContain(
+      "path: '/admin/financial-sandbox', element: <AdminOnly><AdminFinancialSandbox /></AdminOnly>",
     );
+    const api = readFileSync("src/server/api/admin/financial-sandbox/POST.ts", "utf8");
+    expect(api).toContain('sandboxFinancialControlsEnabled !== true');
+    expect(api).toContain('SANDBOX_FINANCIAL_CONTROLS_DISABLED');
     const page = readFileSync("src/pages/admin/financial-sandbox.tsx", "utf8");
+    expect(page).toContain('SIMULATION');
+    expect(page).toContain('Production locks preserved');
     expect(page).toContain("Pending mock transaction");
     expect(page).toContain("Cancel mock transaction");
     expect(page).toContain("Controlled reversal");

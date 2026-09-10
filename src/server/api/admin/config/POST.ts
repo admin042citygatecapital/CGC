@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { updateSection, resetSection, redactConfigSecrets } from '../../../lib/configStore.js';
+import { readWorkflowControls, updateSection, resetSection, redactConfigSecrets } from '../../../lib/configStore.js';
 import { appendCriticalAudit } from '../../../lib/auditLog.js';
 import { authorizeRecentAdminStepUp } from '../../../lib/rbacMiddleware.js';
 import {
@@ -25,8 +25,8 @@ const VALID_SECTIONS: ConfigSection[] = [
 export default async function handler(req: Request, res: Response) {
   res.setHeader('Cache-Control', 'no-store');
   try {
-    const { section, action, data, reason, confirmation } =
-      req.body as { section: ConfigSection; action?: string; data?: Record<string, unknown>; reason?: string; confirmation?: string };
+    const { section, action, data, reason, confirmation, expectedWorkflowVersion } =
+      req.body as { section: ConfigSection; action?: string; data?: Record<string, unknown>; reason?: string; confirmation?: string; expectedWorkflowVersion?: string };
 
     if (!section || !VALID_SECTIONS.includes(section)) {
       return res.status(400).json({ error: `Invalid section. Must be one of: ${VALID_SECTIONS.join(', ')}` });
@@ -44,6 +44,32 @@ export default async function handler(req: Request, res: Response) {
         reason: String(reason),
         meta: { enabled: Boolean(data?.enabled), requestId: String(req.get('X-Request-ID') ?? '') },
       });
+    }
+
+    if (section === 'featureToggles') {
+      const controls = ['kycApprovalsEnabled', 'sandboxFinancialControlsEnabled'] as const;
+      const current = await readWorkflowControls();
+      const changes: Record<string, { before: boolean; after: boolean }> = {};
+      for (const control of controls) {
+        if (action !== 'reset' && !Object.prototype.hasOwnProperty.call(data ?? {}, control)) continue;
+        const value = action === 'reset' ? false : data?.[control];
+        if (typeof value !== 'boolean') return res.status(400).json({ error: `${control} must be a boolean.` });
+        const before = current[control] === true;
+        changes[control] = { before, after: value };
+      }
+      if (Object.keys(changes).length) {
+        if (req.adminSession?.role !== 'SUPER_ADMIN') return res.status(403).json({ error: 'Only a super admin can change KYC approval and financial sandbox controls.' });
+        if (!authorizeRecentAdminStepUp(req, res)) return;
+        if (typeof expectedWorkflowVersion !== 'string' || !expectedWorkflowVersion || expectedWorkflowVersion.length > 64) {
+          return res.status(428).json({ error: 'Reload workflow controls before saving.', code: 'WORKFLOW_VERSION_REQUIRED' });
+        }
+        await appendCriticalAudit({
+          event: 'admin_workflow_controls_change_authorized',
+          adminId: req.adminSession.adminId, email: req.adminSession.email, ip: req.ip,
+          reason: 'Configuration Center workflow control change',
+          meta: { changes, liveFinancialOperationsUnchanged: true },
+        });
+      }
     }
 
     // ── Homepage: read/write the actual content JSON (virtual:content source of truth) ──
@@ -77,7 +103,7 @@ export default async function handler(req: Request, res: Response) {
 
     // ── All other sections: configStore ──────────────────────────────────────
     if (action === 'reset') {
-      const cfg = await resetSection(section);
+      const cfg = section === 'featureToggles' ? await resetSection(section, expectedWorkflowVersion) : await resetSection(section);
       return res.json({ ok: true, config: redactConfigSecrets(cfg) });
     }
 
@@ -85,7 +111,7 @@ export default async function handler(req: Request, res: Response) {
       return res.status(400).json({ error: 'data object required' });
     }
 
-    const cfg = await updateSection(section, data as any);
+    const cfg = section === 'featureToggles' ? await updateSection(section, data as any, expectedWorkflowVersion) : await updateSection(section, data as any);
     if (section === 'maintenanceMode') {
       await appendCriticalAudit({
         event: 'admin_maintenance_mode_changed', adminId: req.adminSession?.adminId,
@@ -96,6 +122,9 @@ export default async function handler(req: Request, res: Response) {
     const safe = redactConfigSecrets(cfg);
     res.json({ ok: true, config: safe });
   } catch (err) {
+    if (err instanceof Error && err.message === 'Workflow controls changed. Reload before saving.') {
+      return res.status(409).json({ error: err.message, code: 'WORKFLOW_CONFLICT' });
+    }
     console.error('admin.config.save.error', { errorType: err instanceof Error ? err.name : 'UnknownError' });
     res.status(500).json({ error: 'Failed to save configuration.' });
   }

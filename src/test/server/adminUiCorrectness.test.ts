@@ -20,12 +20,14 @@ describe('administrator UI correctness', () => {
   });
 
   it('keeps development and secret-inventory surfaces out of production admin navigation', () => {
-    for (const label of ['API Docs', 'Sponsor Readiness', 'Provider Sandbox', 'Financial Sandbox', 'Assurance Exercises', 'Developer']) {
+    for (const label of ['API Docs', 'Sponsor Readiness', 'Provider Sandbox', 'Assurance Exercises', 'Developer']) {
       expect(layout).not.toContain(`label: '${label}'`);
     }
     expect(routes).not.toContain("path: '/admin/developer'");
     expect(routes).not.toContain("path: '/admin/provider-sandbox'");
-    expect(routes).not.toContain("path: '/admin/financial-sandbox'");
+    expect(routes).toContain("path: '/admin/financial-sandbox', element: <AdminOnly><AdminFinancialSandbox /></AdminOnly>");
+    expect(layout).toContain("label: 'Financial Sandbox', href: '/admin/financial-sandbox'");
+    expect(layout).toContain('Isolated simulations; no live money movement');
     expect(routes).toContain("path: '/admin/wallets',      element: <Navigate to=\"/admin/crypto\" replace />");
     expect(entry).not.toContain('app.get("/api/admin/developer"');
     expect(entry).not.toContain('app.get("/api/admin/env-report"');
