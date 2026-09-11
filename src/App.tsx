@@ -14,9 +14,9 @@ import TawkWidget from '@/components/TawkWidget';
 import AiroErrorBoundary from '../export-plugins/AiroErrorBoundary';
 import PageSkeleton from './components/PageSkeleton';
 import RootLayout from './layouts/RootLayout';
-import { AdminAuthProvider } from './lib/adminAuth';
-import { CustomerAuthProvider } from './lib/customerAuth';
-import { PlatformFeatureProvider } from './lib/platformFeatures';
+import { AdminAuthProvider } from './lib/adminAuthProvider';
+import { CustomerAuthProvider } from './lib/customerAuthProvider';
+import { PlatformFeatureProvider } from './lib/platformFeatureProvider';
 import { routes } from './routes';
 
 const CookieBanner = lazy(() =>

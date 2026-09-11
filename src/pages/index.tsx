@@ -1,7 +1,8 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { WsStatusBadge } from '@/components/WsStatusBadge';
-import { HomepageContentProvider, useHomepageContent } from '@/lib/homepageContentContext';
+import { HomepageContentProvider } from '@/lib/homepageContentProvider';
+import { useHomepageContent } from '@/lib/homepageContentContext';
 import { useLiveTicker } from '@/lib/useLiveTicker';
 import { useMarketWebSocket } from '@/lib/useMarketWebSocket';
 import {

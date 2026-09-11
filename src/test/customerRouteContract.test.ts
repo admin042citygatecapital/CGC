@@ -3,6 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const routes = fs.readFileSync(path.resolve(process.cwd(), 'src/routes.tsx'), 'utf8');
+const routeGuards = fs.readFileSync(path.resolve(process.cwd(), 'src/components/routeGuards.tsx'), 'utf8');
 
 describe('customer route contract', () => {
   const requiredRoutes = [
@@ -36,9 +37,9 @@ describe('customer route contract', () => {
   });
 
   it('never sends the customer authentication boundary to administration', () => {
-    const start = routes.indexOf('function CustomerOnly');
-    const end = routes.indexOf('function FeatureOnly');
-    const customerBoundary = routes.slice(start, end);
+    const start = routeGuards.indexOf('function CustomerOnly');
+    const end = routeGuards.indexOf('function FeatureOnly');
+    const customerBoundary = routeGuards.slice(start, end);
     expect(customerBoundary).toContain("navigate('/login?reason=session_expired'");
     expect(customerBoundary).not.toContain('/admin');
   });

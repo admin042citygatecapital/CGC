@@ -232,7 +232,7 @@ export default function SecurityCenter() {
       const d = await api<{ roles: Role[]; permissions: PermissionDef[] }>('/api/admin/security/roles');
       setRoles(d.roles); setPermCat(d.permissions);
     } finally { setLoading(false); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── 2FA Policy ─────────────────────────────────────────────────────────────
   const [policy, setPolicy]           = useState<TwoFAPolicy | null>(null);
@@ -246,7 +246,7 @@ export default function SecurityCenter() {
       const d = await api<{ policy: TwoFAPolicy }>('/api/admin/security/two-fa');
       setPolicy(d.policy); setPolicyDraft(d.policy);
     } finally { setLoading(false); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Sessions ───────────────────────────────────────────────────────────────
   const [sessions, setSessions]       = useState<AdminSession[]>([]);
@@ -260,7 +260,7 @@ export default function SecurityCenter() {
       const d = await api<{ sessions: AdminSession[] }>('/api/admin/security/sessions');
       setSessions(d.sessions ?? []); setSessionsLoaded(true);
     } catch { setSessionsError('Session data is unavailable. Refresh to retry.'); } finally { setLoading(false); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Devices ────────────────────────────────────────────────────────────────
   const [devices, setDevices]         = useState<TrustedDevice[]>([]);
@@ -272,7 +272,7 @@ export default function SecurityCenter() {
       const d = await api<{ devices: TrustedDevice[] }>('/api/admin/security/devices');
       setDevices(d.devices ?? []);
     } finally { setLoading(false); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Login History ──────────────────────────────────────────────────────────
   const [loginLogs, setLoginLogs]     = useState<LoginEvent[]>([]);
@@ -292,7 +292,7 @@ export default function SecurityCenter() {
       const d = await api<{ data: LoginEvent[]; total: number }>(`/api/admin/security/logs?${p}`);
       setLoginLogs(d.data ?? []); setLoginTotal(d.total ?? 0);
     } finally { setLoading(false); }
-  }, [loginActor, loginResult, loginSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loginActor, loginResult, loginSearch]);
 
   // ── Audit Logs ─────────────────────────────────────────────────────────────
   const [auditLogs, setAuditLogs]     = useState<AuditEntry[]>([]);
@@ -308,7 +308,7 @@ export default function SecurityCenter() {
       const d = await api<{ data: AuditEntry[]; total: number; pages: number }>(`/api/admin/audit?${p}`);
       setAuditLogs(d.data ?? []); setAuditTotal(d.total ?? 0);
     } finally { setLoading(false); }
-  }, [auditSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [auditSearch]);
 
   // ── Security Alerts ────────────────────────────────────────────────────────
   const [alerts, setAlerts]           = useState<SecurityAlert[]>([]);
@@ -322,7 +322,7 @@ export default function SecurityCenter() {
       const d = await api<{ alerts: SecurityAlert[]; stats: typeof alertStats }>('/api/admin/security/alerts?limit=200');
       setAlerts(d.alerts ?? []); setAlertStats(d.stats ?? null);
     } finally { setLoading(false); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── IP Restrictions ────────────────────────────────────────────────────────
   const [ipLists, setIpLists]         = useState<IpLists | null>(null);
@@ -338,7 +338,7 @@ export default function SecurityCenter() {
       const d = await api<IpLists>('/api/admin/security/ip-lists');
       setIpLists(d);
     } finally { setLoading(false); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Rate Limits ────────────────────────────────────────────────────────────
   const [rateLimits, setRateLimits]   = useState<RateLimitRule[]>([]);
@@ -352,7 +352,7 @@ export default function SecurityCenter() {
       const d = await api<{ rules: RateLimitRule[] }>('/api/admin/security/rate-limits');
       setRateLimits(d.rules ?? []);
     } finally { setLoading(false); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Tab load dispatch ──────────────────────────────────────────────────────
   useEffect(() => {

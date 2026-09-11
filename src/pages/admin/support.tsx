@@ -283,11 +283,17 @@ export default function AdminSupport() {
   }, [selected?.messages.length]);
 
   // Load user profile when ticket selected
+  // `selected` is replaced on every conversation append, so the effect below reads it
+  // through a latest-value ref and keys on the ticket id — otherwise the assign input
+  // would be reset mid-edit on each new message.
+  const selectedRef = useRef(selected);
+  useEffect(() => { selectedRef.current = selected; });
   useEffect(() => {
-    if (!selected) { setUserProfile(null); return; }
-    setAssignInput(selected.assignedTo ?? '');
+    const current = selectedRef.current;
+    if (!current) { setUserProfile(null); return; }
+    setAssignInput(current.assignedTo ?? '');
     if (detailTab !== 'user') return;
-    void loadUserProfile(selected.userId);
+    void loadUserProfile(current.userId);
   }, [selected?.id, detailTab]);
 
   async function loadUserProfile(userId: string) {
