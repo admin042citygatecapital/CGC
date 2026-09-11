@@ -6,6 +6,14 @@
  *
  * The client reads this as a plain ReadableStream<string> — no special protocol needed.
  *
+ * Input budgets (in addition to the global /api rate limit applied in entry.ts):
+ *  - At most MAX_MESSAGES conversation turns, each at most MAX_MESSAGE_LENGTH
+ *    characters, so a client cannot grow the provider bill by resending an
+ *    unbounded history.
+ *  - Output capped at MAX_OUTPUT_TOKENS per response.
+ *  - A hard stream timeout: the provider call is aborted when the response
+ *    closes or after STREAM_TIMEOUT_MS, whichever comes first.
+ *
  * For AGENT MODE: Uncomment the two import lines at the top and the
  * tools/maxSteps block inside streamText() below, then implement your tools.
  *
@@ -16,33 +24,75 @@ import type { Request, Response } from 'express';
 import { streamText } from 'ai';
 // import { tool } from 'ai';   // ← Uncomment for agent mode
 // import { z } from 'zod';     // ← Uncomment for agent mode
-import { getChatModel, SYSTEM_PROMPT } from '@/lib/chatbot/chat-config';
+import { getChatModel, getSystemPrompt } from '@/lib/chatbot/chat-config';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-export default async function handler(req: Request, res: Response) {
-  const messages = req.body?.messages as ChatMessage[] | undefined;
+const MAX_MESSAGES = 24;
+const MAX_MESSAGE_LENGTH = 4_000;
+const MAX_OUTPUT_TOKENS = 1_000;
+const STREAM_TIMEOUT_MS = 60_000;
 
-  if (!Array.isArray(messages)) {
+export default async function handler(req: Request, res: Response) {
+  const messages = req.body?.messages as unknown;
+
+  if (!Array.isArray(messages) || messages.length === 0) {
     res.status(400).json({ error: 'Missing or invalid messages array' });
     return;
   }
+  if (messages.length > MAX_MESSAGES) {
+    res.status(400).json({ error: `Conversation history is limited to ${MAX_MESSAGES} messages` });
+    return;
+  }
 
-  // Strip any system-role messages from the client — the server-side SYSTEM_PROMPT
-  // is the only authoritative system context. Allowing 'system' from the client
-  // would enable prompt injection attacks.
-  const safeMessages = messages.filter((m) => m.role === 'user' || m.role === 'assistant');
+  // Validate and rebuild every turn from its parts — client objects are never
+  // forwarded as-is. Anything that is not a plain user/assistant turn is
+  // rejected: a system-role entry would enable prompt injection, and a null
+  // or non-object element must not crash the handler outside this contract.
+  const safeMessages: ChatMessage[] = [];
+  for (const entry of messages) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      res.status(400).json({ error: 'Each message must be an object with role and content' });
+      return;
+    }
+    const { role, content } = entry as Record<string, unknown>;
+    if (role !== 'user' && role !== 'assistant') {
+      res.status(400).json({ error: 'Messages may only use the user or assistant roles' });
+      return;
+    }
+    if (typeof content !== 'string' || content.trim().length === 0) {
+      res.status(400).json({ error: 'Each message requires non-empty text content' });
+      return;
+    }
+    if (content.length > MAX_MESSAGE_LENGTH) {
+      res.status(400).json({ error: `Each message is limited to ${MAX_MESSAGE_LENGTH} characters` });
+      return;
+    }
+    safeMessages.push({ role, content });
+  }
+
+  // Hard stop for stalled streams: abort the provider call when the response
+  // lifecycle ends (client disconnected or finished) or on the timeout.
+  const timeout = new AbortController();
+  const timer = setTimeout(() => timeout.abort(), STREAM_TIMEOUT_MS);
+  res.on('close', () => {
+    timeout.abort();
+    clearTimeout(timer);
+  });
+  res.on('finish', () => clearTimeout(timer));
 
   try {
     const model = getChatModel();
 
     const result = streamText({
       model,
-      system: SYSTEM_PROMPT,
+      system: getSystemPrompt(),
       messages: safeMessages,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      abortSignal: timeout.signal,
 
       // ─── AGENT MODE ──────────────────────────────────────────────────────
       // Uncomment tools and maxSteps to enable multi-step tool calling.
