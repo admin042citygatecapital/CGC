@@ -16,6 +16,7 @@ import {
   Gift,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
+import { useModalA11y } from '@/lib/useModalA11y';
 import CgcLogo from '@/components/CgcLogo';
 import { CurrencyMark } from '@/components/CurrencyMark';
 import { usePlatformFeatures } from '@/lib/platformFeatures';
@@ -294,6 +295,7 @@ function SettingsPanel({
   onChangePassword: () => void;
   onLogout: () => void;
 }) {
+  const settingsPanelRef = useModalA11y(open, onClose);
   return (
     <AnimatePresence>
       {open && (
@@ -304,6 +306,8 @@ function SettingsPanel({
             onClick={onClose}
           />
           <motion.div
+            ref={settingsPanelRef}
+            role="dialog" aria-modal="true" aria-label="Settings"
             initial={{ opacity: 0, x: 320 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 320 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             className="fixed right-0 top-0 bottom-0 z-50 w-80 flex flex-col border-l border-white/8 overflow-y-auto"
@@ -315,7 +319,7 @@ function SettingsPanel({
                 <Settings size={15} style={{ color: '#C9A84C' }} />
                 <span className="text-sm font-semibold text-foreground">Settings</span>
               </div>
-              <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors">
+              <button onClick={onClose} aria-label="Close settings" className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors">
                 <X size={13} />
               </button>
             </div>
@@ -515,6 +519,7 @@ function SettingsRow({
   return (
     <button
       onClick={() => onChange(!checked)}
+      role="switch" aria-checked={checked}
       className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.03] transition-colors w-full text-left"
     >
       <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/6 flex items-center justify-center shrink-0">
@@ -526,6 +531,7 @@ function SettingsRow({
       </div>
       {/* Toggle */}
       <div
+        aria-hidden="true"
         className="relative w-9 h-5 rounded-full transition-all shrink-0"
         style={{ background: checked ? 'rgba(201,168,76,0.3)' : 'rgba(255,255,255,0.08)' }}
       >
@@ -546,6 +552,7 @@ function WalletTxModal({
   currency, txList, privacy, onClose,
 }: { currency: string; txList: Tx[]; privacy: boolean; onClose: () => void }) {
   const filtered = txList.filter(t => t.currency === currency).slice(0, 20);
+  const walletTxModalRef = useModalA11y(true, onClose);
   return (
     <AnimatePresence>
       <motion.div
@@ -554,6 +561,8 @@ function WalletTxModal({
         onClick={onClose}
       >
         <motion.div
+          ref={walletTxModalRef}
+          role="dialog" aria-modal="true" aria-label={`${currency} transactions`}
           initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
           transition={{ type: 'spring', damping: 28, stiffness: 300 }}
           className="w-full max-w-md rounded-3xl border border-white/8 overflow-hidden"
@@ -568,7 +577,7 @@ function WalletTxModal({
                 <p className="text-[10px] text-foreground/30">{filtered.length} recent entries</p>
               </div>
             </div>
-            <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors">
+            <button onClick={onClose} aria-label="Close transaction history" className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors">
               <X size={13} />
             </button>
           </div>
@@ -997,7 +1006,7 @@ export default function DashboardPage() {
               <div ref={bellRef} className="relative">
                 <button onClick={handleBellClick}
                   className="relative w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-foreground/50 hover:text-foreground transition-colors"
-                  aria-label="Notifications">
+                  aria-label="Notifications" aria-haspopup="true" aria-expanded={bellOpen}>
                   <Bell size={15} />
                   {unreadCount > 0 && (
                     <motion.span
@@ -1591,6 +1600,7 @@ export default function DashboardPage() {
                                     onClick={() => !privacy && setRevealedCvv(prev => prev === card.id ? null : card.id)}
                                     className="text-white text-[11px] font-semibold font-mono"
                                     disabled={privacy}
+                                    aria-label={revealedCvv === card.id && !privacy ? 'Hide CVV' : 'Show CVV'}
                                   >
                                     {privacy ? '•••' : (revealedCvv === card.id ? card.cvv : '•••')}
                                   </button>
@@ -1605,6 +1615,7 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-center gap-1.5 mt-2.5">
                           {cards.map((_, i) => (
                             <button key={i} onClick={() => setActiveCard(i)}
+                              aria-label={`Show card ${i + 1} of ${cards.length}`}
                               className="rounded-full transition-all"
                               style={{ width: i === activeCard ? '18px' : '5px', height: '5px', background: i === activeCard ? '#C9A84C' : 'rgba(255,255,255,0.12)' }} />
                           ))}
@@ -1662,12 +1673,12 @@ export default function DashboardPage() {
 
                         {cards.length > 1 && (
                           <div className="flex items-center justify-between mt-auto">
-                            <button onClick={() => setActiveCard(i => Math.max(0, i - 1))} disabled={activeCard === 0}
+                            <button onClick={() => setActiveCard(i => Math.max(0, i - 1))} disabled={activeCard === 0} aria-label="Previous card"
                               className="w-8 h-8 rounded-xl bg-white/4 border border-white/6 flex items-center justify-center text-foreground/35 hover:text-foreground disabled:opacity-20 transition-colors">
                               <ChevronLeft size={13} />
                             </button>
                             <span className="text-xs text-foreground/25">{activeCard + 1} of {cards.length}</span>
-                            <button onClick={() => setActiveCard(i => Math.min(cards.length - 1, i + 1))} disabled={activeCard === cards.length - 1}
+                            <button onClick={() => setActiveCard(i => Math.min(cards.length - 1, i + 1))} disabled={activeCard === cards.length - 1} aria-label="Next card"
                               className="w-8 h-8 rounded-xl bg-white/4 border border-white/6 flex items-center justify-center text-foreground/35 hover:text-foreground disabled:opacity-20 transition-colors">
                               <ChevronRight size={13} />
                             </button>

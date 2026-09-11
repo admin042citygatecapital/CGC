@@ -22,6 +22,7 @@ import { Link,useNavigate } from 'react-router-dom';
 
 import { useBackgroundSync } from '@/lib/backgroundSync';
 import { useCustomerAuth } from '@/lib/customerAuth';
+import { useModalA11y } from '@/lib/useModalA11y';
 import { newIdempotencyKey } from '@/lib/idempotency';
 import { useMarketWebSocket } from '@/lib/useMarketWebSocket';
 import { VirtualList } from '@/lib/VirtualList';
@@ -422,6 +423,7 @@ function TransferModal({
   const [loading, setLoading] = useState(false);
   const [done, setDone]     = useState(false);
   const [error, setError]   = useState('');
+  const transferModalRef = useModalA11y(true, onClose);
 
   const maxAmt   = dir === 'bank_to_trading' ? bankBalance : tradingBalance;
   const fromLbl  = dir === 'bank_to_trading' ? 'Banking Wallet' : 'Trading Wallet';
@@ -452,6 +454,8 @@ function TransferModal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
       onClick={onClose}>
       <motion.div
+        ref={transferModalRef}
+        role="dialog" aria-modal="true" aria-label="Transfer funds"
         initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
         transition={{ duration: 0.22 }}
         className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111] p-6 space-y-5"
@@ -464,7 +468,7 @@ function TransferModal({
             </div>
             <span className="font-semibold text-white">Transfer Funds</span>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/8 text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close transfer dialog" className="p-1.5 rounded-lg hover:bg-white/8 text-white/40 hover:text-white transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -510,10 +514,10 @@ function TransferModal({
 
             {/* Amount input */}
             <div>
-              <label className="text-xs text-white/40 mb-1.5 block">Amount (USD)</label>
+              <label htmlFor="transfer-amount" className="text-xs text-white/40 mb-1.5 block">Amount (USD)</label>
               <div className="flex items-center gap-2 bg-white/6 border border-white/10 rounded-xl px-4 py-3 focus-within:border-amber-400/40 transition-colors">
                 <span className="text-white/30 text-sm font-semibold">$</span>
-                <input type="number" min="0" step="0.01" value={amount}
+                <input id="transfer-amount" type="number" min="0" step="0.01" value={amount}
                   onChange={e => { setAmount(e.target.value); setError(''); }}
                   placeholder="0.00"
                   className="flex-1 bg-transparent text-white text-sm font-mono outline-none placeholder-white/20" />
@@ -524,7 +528,7 @@ function TransferModal({
                 </button>
               </div>
               {error && (
-                <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
+                <p role="alert" className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {error}
                 </p>
               )}
@@ -560,11 +564,14 @@ function QuickActionModal({ action, onClose }: {
   };
   const m    = META[action];
   const Icon = m.icon;
+  const quickActionModalRef = useModalA11y(true, onClose);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
       onClick={onClose}>
       <motion.div
+        ref={quickActionModalRef}
+        role="dialog" aria-modal="true" aria-label={m.title}
         initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
         transition={{ duration: 0.22 }}
         className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#111] p-6 space-y-5"
@@ -577,7 +584,7 @@ function QuickActionModal({ action, onClose }: {
             </div>
             <span className="font-semibold text-white text-base">{m.title}</span>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/8 text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close dialog" className="p-1.5 rounded-lg hover:bg-white/8 text-white/40 hover:text-white transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -758,12 +765,12 @@ export default function WalletsPage() {
         )}
       </AnimatePresence>
 
-      <div className="min-h-screen bg-[#0A0A0A] text-white">
+      <div className="dashboard-accessible min-h-screen bg-[#0A0A0A] text-white">
 
         {/* ── Sticky header ── */}
         <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#0A0A0A]/95 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center gap-3">
-            <Link to="/dashboard"
+            <Link to="/dashboard" aria-label="Back to dashboard"
               className="w-8 h-8 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-white/40 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </Link>
@@ -783,11 +790,11 @@ export default function WalletsPage() {
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              <button onClick={() => { void loadOverview(); void loadTx(); }}
+              <button onClick={() => { void loadOverview(); void loadTx(); }} aria-label="Refresh wallet data"
                 className="p-2 rounded-xl hover:bg-white/6 transition-colors text-white/30 hover:text-white">
                 <RefreshCw className={`w-3.5 h-3.5 ${ovLoading ? 'animate-spin' : ''}`} />
               </button>
-              <button onClick={togglePrivacy}
+              <button onClick={togglePrivacy} aria-label={privacy ? 'Disable privacy mode' : 'Enable privacy mode'} aria-pressed={privacy}
                 className="p-2 rounded-xl border transition-all"
                 style={{
                   background:   privacy ? `${GOLD}12` : 'rgba(255,255,255,0.04)',
@@ -914,7 +921,7 @@ export default function WalletsPage() {
           {token && <PlaidLinkCard token={token} />}
 
           {/* ── ③ Live ticker strip ── */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {WATCH_SYMBOLS.map(sym => <TickerPill key={sym} symbol={sym} />)}
           </div>
 

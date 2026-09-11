@@ -3,6 +3,7 @@ import { Activity, ArrowDownLeft, ArrowLeft, ArrowUpRight, ChevronLeft, ChevronR
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCustomerAuth } from '@/lib/customerAuth';
+import { useModalA11y } from '@/lib/useModalA11y';
 
 interface Transaction {
   id: string; type: string; status: string; amount: number; currency: string;
@@ -124,9 +125,9 @@ export default function TransactionsPage() {
         </section>
 
         {pageCount > 1 && <nav aria-label="Transaction pages" className="flex items-center justify-center gap-3">
-          <button type="button" disabled={page === 1} onClick={() => setPage(value => Math.max(1, value - 1))} className="w-9 h-9 rounded-xl border border-white/8 flex items-center justify-center disabled:opacity-25"><ChevronLeft size={15} /></button>
+          <button type="button" disabled={page === 1} onClick={() => setPage(value => Math.max(1, value - 1))} aria-label="Previous page" className="w-9 h-9 rounded-xl border border-white/8 flex items-center justify-center disabled:opacity-25"><ChevronLeft size={15} /></button>
           <span className="text-xs text-white/40">Page {page} of {pageCount}</span>
-          <button type="button" disabled={page === pageCount} onClick={() => setPage(value => Math.min(pageCount, value + 1))} className="w-9 h-9 rounded-xl border border-white/8 flex items-center justify-center disabled:opacity-25"><ChevronRight size={15} /></button>
+          <button type="button" disabled={page === pageCount} onClick={() => setPage(value => Math.min(pageCount, value + 1))} aria-label="Next page" className="w-9 h-9 rounded-xl border border-white/8 flex items-center justify-center disabled:opacity-25"><ChevronRight size={15} /></button>
         </nav>}
       </main>
       {selected && <TransactionDetails transaction={selected} privacy={privacy} onClose={() => setSelected(null)} />}
@@ -149,13 +150,14 @@ function TransactionRow({ transaction, privacy, last, onSelect }: { transaction:
 }
 
 function TransactionDetails({ transaction, privacy, onClose }: { transaction: Transaction; privacy: boolean; onClose: () => void }) {
+  const dialogRef = useModalA11y(true, onClose);
   const details = [
     ['Amount', privacy ? '••••••' : `${isCredit(transaction) ? '+' : '−'}${formatAmount(transaction.amount, transaction.currency)}`],
     ['Status', label(transaction.status)], ['Category', label(transaction.type)],
     ['Date and time', new Date(transaction.createdAt).toLocaleString()],
     ['Reference', transaction.reference || 'Not provided'], ['Currency', transaction.currency],
   ];
-  return <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Transaction details" onMouseDown={event => { if (event.currentTarget === event.target) onClose(); }}>
+  return <div ref={dialogRef} className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Transaction details" onMouseDown={event => { if (event.currentTarget === event.target) onClose(); }}>
     <div className="w-full max-w-md rounded-3xl border border-primary/20 bg-[#0d0d0d] p-6 shadow-2xl">
       <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] uppercase tracking-widest text-primary">Transaction details</p><h2 className="mt-2 text-lg font-semibold">{transaction.description || label(transaction.type)}</h2></div><button type="button" onClick={onClose} aria-label="Close transaction details" className="w-8 h-8 rounded-lg border border-white/8 flex items-center justify-center text-white/40"><X size={14} /></button></div>
       <dl className="mt-6 divide-y divide-white/5 text-sm">{details.map(([term, value]) => <div key={term} className="flex justify-between gap-4 py-3"><dt className="text-white/35">{term}</dt><dd className="text-right text-white/75 break-all">{value}</dd></div>)}</dl>

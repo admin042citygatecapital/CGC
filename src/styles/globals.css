@@ -141,6 +141,7 @@ button, [role="button"] {
 @layer utilities {
   /* Dashboard captions must remain legible against the near-black product surface. */
   .dashboard-accessible [class*="text-foreground/"],
+  .dashboard-accessible [class*="text-white/"],
   .admin-accessible [class*="text-foreground/"],
   .admin-accessible [class*="text-white/"] {
     color: rgb(255 255 255 / 0.72) !important;

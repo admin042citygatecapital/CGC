@@ -193,7 +193,7 @@ export default function RegisterPage() {
             <p className="text-sm text-foreground/50 mb-8">Register your interest and create a secure platform profile. Account or service activation remains subject to eligibility, verification, and an approved provider.</p>
 
             {error && (
-              <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 mb-6">
+              <div role="alert" className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 mb-6">
                 <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
                 <p className="text-sm text-red-300">{error}</p>
               </div>

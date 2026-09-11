@@ -11,6 +11,7 @@ import {
   User, Shield, Wallet, Building2,
 } from 'lucide-react';
 import { adminFetch } from '@/lib/adminAuth';
+import { useModalA11y } from '@/lib/useModalA11y';
 
 export interface EditableUser {
   id: string;
@@ -65,6 +66,8 @@ export default function ClientEditModal({ user, onClose, onSuccess }: Props) {
   const [success, setSuccess] = useState('');
   const [confirm, setConfirm] = useState(false);
 
+  const dialogRef = useModalA11y(true, onClose);
+
   function set<K extends keyof EditableUser>(key: K, value: EditableUser[K]) {
     setForm(prev => ({ ...prev, [key]: value }));
   }
@@ -115,7 +118,8 @@ export default function ClientEditModal({ user, onClose, onSuccess }: Props) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
       onClick={onClose}>
-      <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+      <motion.div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Edit client account"
+        initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.92, opacity: 0 }} transition={{ type: 'spring', damping: 28, stiffness: 280 }}
         className="w-full max-w-2xl rounded-2xl border border-white/8 overflow-hidden"
         style={{ background: 'rgba(10,10,10,0.98)' }}
@@ -133,7 +137,7 @@ export default function ClientEditModal({ user, onClose, onSuccess }: Props) {
               <p className="text-white/30 text-xs">{user.email} · {user.id}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors"><X size={16} /></button>
+          <button onClick={onClose} aria-label="Close editor" className="text-white/30 hover:text-white transition-colors"><X size={16} /></button>
         </div>
 
         {/* Tabs */}
