@@ -7,8 +7,10 @@
  *     constructor, prototype keys from reaching any object spread or store.
  *  2. ID format validation — safeParseId() rejects anything that isn't a plain
  *     alphanumeric/underscore/hyphen string (prevents path traversal & injection).
- *  3. String sanitisation — sanitizeString() strips HTML, dangerous chars, and
- *     SQL injection keywords (defence-in-depth; primary protection is allowlists).
+ *  3. String sanitisation — sanitizeString() strips markup and control
+ *     characters and enforces a length cap. SQL injection is prevented
+ *     structurally (parameterised queries); keyword blacklisting corrupted
+ *     legitimate text and was removed.
  *  4. Enum validation — isOneOf() for strict allowlist checks.
  */
 
@@ -66,16 +68,22 @@ export function safeParseId(id: unknown): string | null {
 
 // ── String sanitisation ───────────────────────────────────────────────────────
 
-const SQL_INJECTION_PATTERN =
-  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|TRUNCATE|DECLARE|CAST|CONVERT|CHAR|NCHAR|VARCHAR|NVARCHAR|SCRIPT|XTYPE|SYSOBJECTS|SYSCOLUMNS)\b|--|\/\*|\*\/|;\s*(DROP|DELETE|INSERT|UPDATE|SELECT))/gi;
-
-/** Strip HTML tags, dangerous characters, and SQL injection patterns to prevent XSS/SQLi */
+/**
+ * Normalise free-text input for storage: strip markup and non-printable
+ * control characters (tab/newline preserved) and enforce a length cap.
+ *
+ * SQL injection is prevented structurally by parameterised queries — a
+ * keyword blacklist corrupted legitimate stored text ("O'Brien" → "OBrien",
+ * notes containing "SELECT") without adding real security. Rendered output
+ * is escaped by React; the only raw-HTML render surface is the sandboxed
+ * admin email-template preview.
+ */
 export function sanitizeString(input: unknown, maxLen = 2000): string {
   if (typeof input !== 'string') return '';
   return input
     .replace(/<[^>]*>/g, '')
-    .replace(/[<>"'`]/g, '')
-    .replace(SQL_INJECTION_PATTERN, '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
     .trim()
     .slice(0, maxLen);
 }

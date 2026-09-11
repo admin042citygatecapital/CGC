@@ -54,6 +54,21 @@ describe('sanitizeString', () => {
     const result = sanitizeString(long, 100);
     expect(result.length).toBeLessThanOrEqual(100);
   });
+
+  it('preserves legitimate apostrophes, quotes and SQL keywords in free text', async () => {
+    const { sanitizeString } = await import('../../server/lib/inputValidator.js');
+    // Keyword blacklisting corrupted real customer data; storage is
+    // parameterised, so these must survive sanitisation intact.
+    expect(sanitizeString("O'Brien")).toBe("O'Brien");
+    expect(sanitizeString('The "SELECT" plan')).toBe('The "SELECT" plan');
+    expect(sanitizeString('note -- with dashes')).toBe('note -- with dashes');
+  });
+
+  it('strips control characters but keeps tab and newline', async () => {
+    const { sanitizeString } = await import('../../server/lib/inputValidator.js');
+    expect(sanitizeString('a\u0000b\u0007c')).toBe('abc');
+    expect(sanitizeString('line1\nline2\tcol')).toBe('line1\nline2\tcol');
+  });
 });
 
 describe('safeParseId', () => {

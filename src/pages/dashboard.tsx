@@ -702,27 +702,38 @@ export default function DashboardPage() {
     if (!loading && !customer) navigate('/login?reason=session_expired', { replace: true });
   }, [customer, loading, navigate]);
 
+  // Data-load failures are surfaced, never masked — a banking dashboard must
+  // not present zeros as real balances when an API call fails.
+  const [txLoadError, setTxLoadError]           = useState(false);
+  const [balanceLoadError, setBalanceLoadError] = useState(false);
+  const [cardsLoadError, setCardsLoadError]     = useState(false);
+  const [reloadKey, setReloadKey]               = useState(0);
+
   useEffect(() => {
     if (!token) return;
     setTxLoading(true);
+    setTxLoadError(false);
     Promise.all([
       fetch('/api/users/transactions?limit=5',    { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : null),
       fetch('/api/users/transactions?limit=1000', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : null),
     ]).then(([recent, all]) => {
       if (recent?.transactions) setRecentTx(recent.transactions);
       if (all?.transactions)    setAllTx(all.transactions);
-    }).catch(() => {}).finally(() => setTxLoading(false));
-  }, [token]);
+    }).catch(() => setTxLoadError(true)).finally(() => setTxLoading(false));
+  }, [token, reloadKey]);
 
   useEffect(() => {
     if (!token) return;
     setBalanceLoading(true);
     fetch('/api/users/balance', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) { setBalanceData(data); setLastUpdated(new Date()); } })
-      .catch(() => {})
+      .then(data => {
+        if (data) { setBalanceData(data); setLastUpdated(new Date()); }
+        else setBalanceLoadError(true);
+      })
+      .catch(() => setBalanceLoadError(true))
       .finally(() => setBalanceLoading(false));
-  }, [token]);
+  }, [token, reloadKey]);
 
   useEffect(() => {
     if (!token) return;
@@ -736,11 +747,15 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!token) return;
     setCardsLoading(true);
+    setCardsLoadError(false);
     fetch('/api/users/cards', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.cards) setCards(data.cards.filter((c: VirtualCard) => c.status !== 'deleted')); })
-      .catch(() => {}).finally(() => setCardsLoading(false));
-  }, [token]);
+      .then(data => {
+        if (data?.cards) setCards(data.cards.filter((c: VirtualCard) => c.status !== 'deleted'));
+        else setCardsLoadError(true);
+      })
+      .catch(() => setCardsLoadError(true)).finally(() => setCardsLoading(false));
+  }, [token, reloadKey]);
 
   // ── Derived data ──────────────────────────────────────────────────────────────
 
@@ -906,6 +921,25 @@ export default function DashboardPage() {
       )}
 
       <div className="dashboard-accessible min-h-screen bg-background text-foreground">
+
+        {/* Data-load errors — a failed fetch must never silently render as an
+            empty state or a zero balance on a banking dashboard. */}
+        {(txLoadError || balanceLoadError || cardsLoadError) && (
+          <div role="alert" className="max-w-7xl mx-auto px-4 md:px-6 mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3">
+              <p className="text-xs text-amber-200">
+                Some account data could not be loaded
+                {balanceLoadError ? ' (balances)' : ''}
+                {txLoadError ? ' (transactions)' : ''}
+                {cardsLoadError ? ' (cards)' : ''}. Figures shown may be incomplete — do not treat them as current.
+              </p>
+              <button onClick={() => setReloadKey(k => k + 1)}
+                className="px-3 py-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-200 text-xs font-semibold hover:bg-amber-400/15 transition-colors">
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Top nav ─────────────────────────────────────────────────────────── */}
         <header className="sticky top-0 z-40 border-b border-white/5 bg-[rgba(10,10,10,0.92)] backdrop-blur-xl">

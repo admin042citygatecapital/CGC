@@ -154,6 +154,9 @@ function OrderBook({ midPrice, onPriceClick }: { midPrice: number; onPriceClick:
       <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2">
         <Activity className="w-4 h-4" style={{ color: GOLD }} />
         <span className="text-sm font-semibold text-white">Order Book</span>
+        {/* The book is synthesised locally until a real depth feed is wired —
+            it must be labelled so customers never read it as live market data. */}
+        <span className="text-[9px] px-1.5 py-0.5 rounded-md border border-white/10 text-white/40 uppercase tracking-wide font-semibold">Simulated</span>
       </div>
       <div className="p-3 space-y-0.5">
         {/* Header */}

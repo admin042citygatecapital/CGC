@@ -14,6 +14,7 @@ import { AnimatePresence,motion } from 'motion/react';
 import {
 useCallback,
 useEffect,
+useMemo,
 useState,
 type ElementType,type ReactNode
 } from 'react';
@@ -249,15 +250,23 @@ function DonutChart({ items }: { items: AllocationItem[] }) {
 // Portfolio Performance bar chart
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PERF_SEED: Record<PerfPeriod, number[]> = {
-  '1D': [100, 101.2, 100.8, 102.1, 101.5, 103.4, 102.8, 104.1, 103.6, 105.2, 104.7, 106.3],
-  '1W': [100, 98.5, 101.2, 103.4, 102.1, 105.6, 107.2, 106.8, 108.4, 107.9, 110.1, 109.5],
-  '1M': [100, 103, 101, 107, 105, 110, 108, 113, 111, 116, 114, 119],
-  '3M': [100, 95, 102, 98, 108, 104, 112, 109, 118, 115, 122, 120],
-};
+const PERF_WINDOW_DAYS: Record<PerfPeriod, number> = { '1D': 1, '1W': 7, '1M': 30, '3M': 90 };
 
-function PerfChart({ period, color }: { period: PerfPeriod; color: string }) {
-  const data = PERF_SEED[period];
+/**
+ * Portfolio Performance chart. Series are derived from real transaction
+ * history (index starting at 100, cumulative signed flow). Periods without
+ * enough recorded activity render an honest empty state — a banking UI must
+ * never chart fabricated data.
+ */
+function PerfChart({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <p className="text-xs text-white/40">Not enough account activity in this period yet.</p>
+        <p className="text-[10px] text-white/25 mt-1">Performance appears once transactions are recorded.</p>
+      </div>
+    );
+  }
   const min  = Math.min(...data);
   const max  = Math.max(...data);
   const range = max - min || 1;
@@ -275,7 +284,7 @@ function PerfChart({ period, color }: { period: PerfPeriod; color: string }) {
         const isLast = i === data.length - 1;
         return (
           <motion.rect
-            key={`${period}-${i}`}
+            key={`bar-${i}`}
             x={x} y={y} width={barW} height={barH}
             rx="3"
             fill={isLast ? color : `${color}40`}
@@ -609,6 +618,7 @@ export default function WalletsPage() {
   const [ovError, setOvError]       = useState('');
   const [allTx, setAllTx]           = useState<Tx[]>([]);
   const [txLoading, setTxLoading]   = useState(true);
+  const [txError, setTxError]       = useState(false);
 
   // UI state
   const [txTab, setTxTab]           = useState<'banking' | 'trading'>('banking');
@@ -620,8 +630,40 @@ export default function WalletsPage() {
   // WS status for ticker strip
   const { status: wsStatus, isLive } = useMarketWebSocket(WATCH_SYMBOLS, 8_000);
 
-  // Fake sparkline (replace with real historical endpoint when available)
-  const sparkData = [100, 102, 98, 105, 103, 108, 106, 112, 110, 115, 113, 118];
+  // Portfolio value trend — cumulative signed flow over real transaction
+  // history (same derivation as the dashboard overview sparkline).
+  const sparkData = useMemo(() => {
+    if (allTx.length === 0) return [];
+    const sorted = [...allTx].sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt));
+    let running = 0;
+    const points: number[] = [];
+    for (const tx of sorted) {
+      const amount = Number(tx.amount ?? 0);
+      running += isCredit(tx.type) ? amount : -amount;
+      points.push(running);
+    }
+    return points;
+  }, [allTx]);
+
+  // Performance index per period (base 100 + cumulative signed flow) from
+  // real transactions; empty arrays render an honest empty state.
+  const perfSeries = useMemo(() => {
+    const series = {} as Record<PerfPeriod, number[]>;
+    for (const period of Object.keys(PERF_WINDOW_DAYS) as PerfPeriod[]) {
+      const cutoff = Date.now() - PERF_WINDOW_DAYS[period] * 86_400_000;
+      const inWindow = allTx
+        .filter(tx => +new Date(tx.createdAt) >= cutoff)
+        .sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt));
+      let running = 0;
+      series[period] = inWindow.map(tx => {
+        const amount = Number(tx.amount ?? 0);
+        running += isCredit(tx.type) ? amount : -amount;
+        return 100 + running;
+      });
+    }
+    return series;
+  }, [allTx]);
+  const perfData = perfSeries[perfPeriod];
 
   const loadOverview = useCallback(async () => {
     if (!token) return;
@@ -643,15 +685,17 @@ export default function WalletsPage() {
   const loadTx = useCallback(async () => {
     if (!token) return;
     setTxLoading(true);
+    setTxError(false);
     try {
       const res = await fetch('/api/users/transactions?limit=50', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        const d = await res.json() as { transactions: Tx[] };
-        setAllTx(d.transactions ?? []);
-      }
-    } catch { /* silent */ } finally { setTxLoading(false); }
+      if (!res.ok) throw new Error('Failed to load transactions');
+      const d = await res.json() as { transactions: Tx[] };
+      setAllTx(d.transactions ?? []);
+    } catch {
+      setTxError(true); // surfaced near the transactions list — never masked as empty
+    } finally { setTxLoading(false); }
   }, [token]);
 
   useEffect(() => {
@@ -1039,7 +1083,7 @@ export default function WalletsPage() {
 
                   <AnimatePresence mode="wait">
                     <motion.div key={perfPeriod} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                      <PerfChart period={perfPeriod} color={totalUp ? EMERALD : RED} />
+                      <PerfChart data={perfData} color={totalUp ? EMERALD : RED} />
                     </motion.div>
                   </AnimatePresence>
 
@@ -1142,6 +1186,15 @@ export default function WalletsPage() {
                       txLoading ? (
                         <div className="flex items-center justify-center py-10">
                           <Loader2 className="w-5 h-5 animate-spin text-white/20" />
+                        </div>
+                      ) : txError ? (
+                        <div role="alert" className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                          <History className="w-6 h-6 text-amber-300/60" />
+                          <p className="text-xs text-white/50">Couldn't load transactions.</p>
+                          <button onClick={() => void loadTx()}
+                            className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-[10px] font-semibold text-white/60 hover:text-white/85 hover:bg-white/[0.07] transition-colors">
+                            Retry
+                          </button>
                         </div>
                       ) : walletTx.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 gap-2 text-white/20">
