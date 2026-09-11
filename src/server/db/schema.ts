@@ -158,6 +158,7 @@ export const users = pgTable(
     // TOTP
     totpSecret: text('totp_secret'),
     totpEnabled: boolean('totp_enabled').default(false),
+    totpRecoveryHashes: jsonb('totp_recovery_hashes').$type<string[]>(),
     // Locale/timezone/currency prefs
     locale: text('locale'),
     timezone: text('timezone'),

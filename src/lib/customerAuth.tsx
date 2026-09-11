@@ -39,11 +39,38 @@ interface CustomerAuthCtx {
   loading:  boolean;
   login:    (email: string, password: string, otp?: string) => Promise<{ ok?: boolean; error?: string; code?: string; nextPath?: string }>;
   logout:   () => void;
+  /** Re-fetches the session and updates the customer state (e.g. after 2FA changes). */
+  refresh:  () => Promise<void>;
 }
 
 const Ctx = createContext<CustomerAuthCtx | null>(null);
 const LEGACY_TOKEN_KEY = 'cgc_customer_token';
 const SESSION_READY = 'cookie-session';
+
+/** Normalizes a session payload into the shared CustomerUser shape. */
+function mapCustomerUser(user: Record<string, unknown> | undefined, accessMode: unknown): CustomerUser | null {
+  if (!user) return null;
+  const u = user as Record<string, unknown> & { accessMode?: string };
+  return {
+    ...u,
+    accessMode: (accessMode ?? u.accessMode ?? 'full') as 'full' | 'onboarding',
+    phone:       (u.phone       as string) ?? '',
+    country:     (u.country     as string) ?? '',
+    balance:     (u.balance     as number) ?? 0,
+    avatarUrl:   (u.avatarUrl   as string) ?? '',
+    walletBtc:   (u.walletBtc   as string) ?? '',
+    walletEth:   (u.walletEth   as string) ?? '',
+    walletUsdt:  (u.walletUsdt  as string) ?? '',
+    walletSol:   (u.walletSol   as string) ?? '',
+    dateOfBirth: (u.dateOfBirth as string) ?? '',
+    address:     (u.address     as string) ?? '',
+    city:        (u.city        as string) ?? '',
+    postalCode:  (u.postalCode  as string) ?? '',
+    idType:      (u.idType      as string) ?? '',
+    idNumber:    (u.idNumber    as string) ?? '',
+    kycSubmittedAt: (u.kycSubmittedAt as string) ?? '',
+  } as CustomerUser;
+}
 
 export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   const [customer, setCustomer] = useState<CustomerUser | null>(null);
@@ -63,25 +90,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.user) {
-          setCustomer({
-            ...data.user,
-            accessMode: data.accessMode ?? data.user.accessMode ?? 'full',
-            phone:       data.user.phone       ?? '',
-            country:     data.user.country     ?? '',
-            balance:     data.user.balance     ?? 0,
-            avatarUrl:   data.user.avatarUrl   ?? '',
-            walletBtc:   data.user.walletBtc   ?? '',
-            walletEth:   data.user.walletEth   ?? '',
-            walletUsdt:  data.user.walletUsdt  ?? '',
-            walletSol:   data.user.walletSol   ?? '',
-            dateOfBirth: data.user.dateOfBirth ?? '',
-            address:     data.user.address     ?? '',
-            city:        data.user.city        ?? '',
-            postalCode:  data.user.postalCode  ?? '',
-            idType:      data.user.idType      ?? '',
-            idNumber:    data.user.idNumber    ?? '',
-            kycSubmittedAt: data.user.kycSubmittedAt ?? '',
-          });
+          setCustomer(mapCustomerUser(data.user, data.accessMode));
           setToken(SESSION_READY);
         } else {
           setToken(null);
@@ -106,26 +115,27 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
 
     if (typeof window !== 'undefined') localStorage.removeItem(LEGACY_TOKEN_KEY);
     setToken(SESSION_READY);
-    setCustomer(data.user ? {
-      ...data.user,
-      accessMode: data.accessMode ?? data.user.accessMode ?? 'full',
-      phone:       data.user.phone       ?? '',
-      country:     data.user.country     ?? '',
-      balance:     data.user.balance     ?? 0,
-      avatarUrl:   data.user.avatarUrl   ?? '',
-      walletBtc:   data.user.walletBtc   ?? '',
-      walletEth:   data.user.walletEth   ?? '',
-      walletUsdt:  data.user.walletUsdt  ?? '',
-      walletSol:   data.user.walletSol   ?? '',
-      dateOfBirth: data.user.dateOfBirth ?? '',
-      address:     data.user.address     ?? '',
-      city:        data.user.city        ?? '',
-      postalCode:  data.user.postalCode  ?? '',
-      idType:      data.user.idType      ?? '',
-      idNumber:    data.user.idNumber    ?? '',
-      kycSubmittedAt: data.user.kycSubmittedAt ?? '',
-    } : null);
+    setCustomer(mapCustomerUser(data.user, data.accessMode));
     return { ok: true, nextPath: data.nextPath ?? (data.accessMode === 'onboarding' ? '/kyc' : '/dashboard') };
+  }
+
+  // Re-syncs the customer state from the session endpoint. Used after
+  // security-relevant changes (2FA enable/disable) so dependent pages read
+  // the updated flags without a full reload.
+  async function refresh() {
+    try {
+      const res = await fetch('/api/users/session', { credentials: 'same-origin' });
+      const data = res.ok ? await res.json().catch(() => null) : null;
+      if (data?.user) {
+        setCustomer(mapCustomerUser(data.user, data.accessMode));
+        setToken(SESSION_READY);
+      } else {
+        setToken(null);
+        setCustomer(null);
+      }
+    } catch {
+      // Network error: keep the current in-memory state.
+    }
   }
 
   function logout() {
@@ -142,7 +152,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ customer, token, loading, login, logout }}>
+    <Ctx.Provider value={{ customer, token, loading, login, logout, refresh }}>
       {children}
     </Ctx.Provider>
   );

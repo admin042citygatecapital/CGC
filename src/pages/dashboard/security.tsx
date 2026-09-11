@@ -67,7 +67,7 @@ function timeAgo(dateStr: string): string {
 type Tab = 'overview'|'sessions'|'devices'|'history'|'2fa';
 
 export default function DashboardSecurityPage() {
-  const { token, customer, logout } = useCustomerAuth();
+  const { token, customer, logout, refresh } = useCustomerAuth();
   const navigate = useNavigate();
   const [tab,          setTab]          = useState<Tab>('overview');
   const [events,       setEvents]       = useState<SecurityEvent[]>([]);
@@ -83,6 +83,14 @@ export default function DashboardSecurityPage() {
   const [totpLoading,  setTotpLoading]  = useState(false);
   const [totpMsg,      setTotpMsg]      = useState<{ text: string; ok: boolean } | null>(null);
   const [copied,       setCopied]       = useState(false);
+  // Recovery codes are shown exactly once, right after enabling 2FA.
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+  const [codesCopied,   setCodesCopied]   = useState(false);
+  // Disable flow state (password + code step-up, both required server-side).
+  const [disablePassword, setDisablePassword] = useState('');
+  const [disableCode,     setDisableCode]     = useState('');
+  const [disableLoading,  setDisableLoading]  = useState(false);
+  const [disableMsg,      setDisableMsg]      = useState<{ text: string; ok: boolean } | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -175,15 +183,50 @@ export default function DashboardSecurityPage() {
         body: JSON.stringify({ code: totpCode }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok) { setTotpMsg({ text: '2FA enabled successfully!', ok: true }); setTotpSecret(null); setTotpQr(null); setTotpCode(''); }
+      if (res.ok) {
+        setTotpMsg({ text: '2FA enabled successfully!', ok: true });
+        setTotpSecret(null); setTotpQr(null); setTotpCode('');
+        if (Array.isArray(data.recoveryCodes) && data.recoveryCodes.length > 0) {
+          setRecoveryCodes(data.recoveryCodes);
+        }
+        void refresh();
+      }
       else setTotpMsg({ text: data.error ?? 'Invalid code. Please try again.', ok: false });
     } catch { setTotpMsg({ text: 'Network error.', ok: false }); }
     finally { setTotpLoading(false); }
   }
 
+  async function handleDisable2FA() {
+    if (!token || disableLoading) return;
+    if (!disablePassword || disableCode.length < 6) return;
+    setDisableLoading(true); setDisableMsg(null);
+    try {
+      const res = await fetch('/api/users/2fa/disable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: disablePassword, code: disableCode }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setDisableMsg({ text: data.message ?? 'Two-factor authentication is disabled.', ok: true });
+        setDisablePassword(''); setDisableCode('');
+        setRecoveryCodes(null);
+        void refresh();
+      } else {
+        setDisableMsg({ text: data.error ?? 'Unable to disable 2FA. Please try again.', ok: false });
+      }
+    } catch { setDisableMsg({ text: 'Network error.', ok: false }); }
+    finally { setDisableLoading(false); }
+  }
+
   function copySecret() {
     if (!totpSecret) return;
     navigator.clipboard.writeText(totpSecret).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+
+  function copyRecoveryCodes() {
+    if (!recoveryCodes) return;
+    navigator.clipboard.writeText(recoveryCodes.join('\n')).then(() => { setCodesCopied(true); setTimeout(() => setCodesCopied(false), 2000); });
   }
 
   if (loading || !customer) {
@@ -280,7 +323,7 @@ export default function DashboardSecurityPage() {
                   {[
                     { icon: CheckCircle2, label: 'Email Verified', sub: customer.email, done: true, color: '#10B981' },
                     { icon: customer.kycStatus === 'approved' ? CheckCircle2 : AlertTriangle, label: 'KYC Verification', sub: customer.kycStatus === 'approved' ? 'Identity verified' : 'Complete KYC to unlock full features', done: customer.kycStatus === 'approved', color: customer.kycStatus === 'approved' ? '#10B981' : '#F59E0B', action: customer.kycStatus !== 'approved' ? { label: 'Verify Now', href: '/kyc' } : undefined },
-                    { icon: Fingerprint, label: 'Two-Factor Authentication', sub: 'Tap 2FA tab to set up', done: false, color: '#F59E0B', action: { label: 'Set Up', onClick: () => setTab('2fa') } },
+                    { icon: Fingerprint, label: 'Two-Factor Authentication', sub: customer.totpEnabled ? 'Authenticator app active' : 'Tap 2FA tab to set up', done: Boolean(customer.totpEnabled), color: customer.totpEnabled ? '#10B981' : '#F59E0B', action: customer.totpEnabled ? undefined : { label: 'Set Up', onClick: () => setTab('2fa') } },
                     { icon: Bell, label: 'Login Notifications', sub: 'Get alerted on new sign-ins', done: true, color: '#10B981' },
                     { icon: Lock, label: 'Strong Password', sub: 'Use a unique, complex password', done: true, color: '#10B981' },
                   ].map(({ icon: Icon, label, sub, done, color, action }) => (
@@ -461,7 +504,71 @@ export default function DashboardSecurityPage() {
                     </div>
                   )}
 
-                  {!totpSecret ? (
+                  {customer.totpEnabled ? (
+                    /* ── Enabled: management view ─────────────────────── */
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/8 border border-emerald-500/20">
+                        <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+                        <p className="text-xs text-emerald-400">Two-factor authentication is active on this account.</p>
+                      </div>
+
+                      {/* One-time recovery codes */}
+                      {recoveryCodes && (
+                        <div className="p-4 rounded-xl border border-amber-500/25" style={{ background: 'rgba(245,158,11,0.06)' }}>
+                          <p className="text-xs font-semibold text-amber-400 mb-1">Recovery codes — shown only once</p>
+                          <p className="text-[10px] text-foreground/40 mb-2 leading-relaxed">
+                            Store these single-use codes somewhere safe (password manager or printed). Each works once at sign-in
+                            if your authenticator is unavailable, and consuming one removes it. Disabling and re-enabling 2FA
+                            replaces the whole set.
+                          </p>
+                          <div className="grid grid-cols-2 gap-1.5 mb-3">
+                            {recoveryCodes.map(code => (
+                              <code key={code} className="px-2 py-1.5 rounded-lg bg-black/40 border border-white/8 text-[11px] font-mono text-foreground/80 text-center">{code}</code>
+                            ))}
+                          </div>
+                          <button onClick={copyRecoveryCodes}
+                            className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground/50 hover:text-foreground/80 transition-colors">
+                            {codesCopied ? <CheckCheck size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                            {codesCopied ? 'Copied' : 'Copy all codes'}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Disable */}
+                      <div className="pt-1 border-t border-white/6">
+                        <p className="text-[10px] font-semibold text-foreground/30 uppercase tracking-[0.12em] mt-4 mb-2">Disable two-factor authentication</p>
+                        <p className="text-[10px] text-foreground/35 mb-3 leading-relaxed">
+                          Requires your current password plus a valid code (authenticator or a recovery code). If your
+                          authenticator is lost, sign in with a recovery code and use it here.
+                        </p>
+                        {disableMsg && (
+                          <div className={`flex items-center gap-2 px-4 py-3 rounded-xl mb-3 text-xs ${disableMsg.ok ? 'bg-emerald-500/8 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/8 text-red-400 border border-red-500/20'}`}>
+                            {disableMsg.ok ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
+                            {disableMsg.text}
+                          </div>
+                        )}
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="password" autoComplete="current-password" placeholder="Current password"
+                            value={disablePassword} onChange={e => setDisablePassword(e.target.value)}
+                            className="bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-sm text-foreground/80 placeholder-foreground/20 focus:outline-none focus:border-primary/40"
+                          />
+                          <input
+                            type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={11}
+                            placeholder="6-digit code or xxxx-xxxx recovery code"
+                            value={disableCode} onChange={e => setDisableCode(e.target.value)}
+                            className="bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-sm font-mono text-foreground/80 placeholder-foreground/20 focus:outline-none focus:border-primary/40"
+                          />
+                          <button onClick={handleDisable2FA} disabled={disableLoading || !disablePassword || disableCode.length < 6}
+                            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40"
+                            style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.25)' }}>
+                            {disableLoading ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />}
+                            Disable 2FA
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : !totpSecret ? (
                     <div className="flex flex-col gap-4">
                       <p className="text-xs text-foreground/50 leading-relaxed">
                         Use an authenticator app (Google Authenticator, Authy, 1Password) to scan a QR code and generate time-based one-time passwords.
