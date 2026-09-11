@@ -45,7 +45,7 @@ export default async function handler(req: Request, res: Response) {
     return res.status(400).json({ error: 'This reset link is invalid or has expired. Please request a new one.' });
   }
 
-  appendAudit({ event: 'admin_password_reset_unavailable', adminId: 'admin_001', ip });
+  appendAudit({ event: 'admin_password_reset_unavailable', ip });
   return res.status(503).json({
     error: 'Administrator password changes are temporarily unavailable while managed authentication is being migrated.',
   });

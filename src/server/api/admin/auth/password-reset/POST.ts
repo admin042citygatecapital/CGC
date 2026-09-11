@@ -8,7 +8,11 @@
  *  - Always returns the same generic success message regardless of whether
  *    the email matches a registered admin (no account enumeration)
  *  - Raw token is never logged — only the SHA-256 hash is stored
- *  - Sends reset email only when the email matches the registered admin
+ *  - Sends reset email only when the email matches the registered admin, and
+ *    only when the token hash could be persisted (a token that no validation
+ *    path accepts must never reach the inbox)
+ *  - Email delivery failures are logged and audited server-side, never
+ *    exposed to the caller
  *
  * Body: { email: string }
  */
@@ -33,15 +37,24 @@ export default async function handler(req: Request, res: Response) {
   const admin = await findAdminByEmail(normalised);
 
   if (admin) {
-    // Issue token and send email — fire-and-forget so timing is not leaked
     const rawToken = await issueResetToken();
     appendAudit({ event: 'admin_password_reset_requested', email: normalised, ip });
 
-    // Do NOT await — return generic response immediately to prevent timing oracle
-    sendAdminPasswordResetEmail(admin.email, admin.name, rawToken, ip, EXPIRY_MINUTES)
-      .catch(() => {
-        // Swallow silently — never expose email delivery errors to the caller
-      });
+    if (rawToken) {
+      // Do NOT await — return generic response immediately to prevent timing oracle
+      sendAdminPasswordResetEmail(admin.email, admin.name, rawToken, ip, EXPIRY_MINUTES)
+        .catch(() => {
+          // Delivery failures never reach the caller, but they must be
+          // observable server-side — a silently dropped email leaves the
+          // admin locked out with no trace of why.
+          console.error('admin_password_reset_email_failed', { ip });
+          appendAudit({ event: 'admin_password_reset_email_failed', email: normalised, ip });
+        });
+    } else {
+      // Token hash not persisted: skip the email — the link would be dead.
+      console.error('admin_password_reset_issue_failed', { ip });
+      appendAudit({ event: 'admin_password_reset_issue_failed', email: normalised, ip });
+    }
   } else {
     // Simulate a small async delay so timing is indistinguishable from the
     // real path (which fires off an async email send)
