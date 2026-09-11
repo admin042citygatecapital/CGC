@@ -16,6 +16,7 @@
  *   the new hash so the caller can persist it. No forced password resets.
  */
 
+import { timingSafeEqual } from 'node:crypto';
 import { argon2id, argon2Verify } from 'hash-wasm';
 
 const ARGON2_PARAMS = {
@@ -101,7 +102,12 @@ export async function verifyPassword(plain: string, stored: string): Promise<Ver
         { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
         keyMaterial, 256
       );
-      const ok = btoa(String.fromCharCode(...new Uint8Array(derived))) === hashB64;
+      // Constant-time comparison — the legacy hash length is public, so the
+      // derived bytes are padded to the stored length before comparing.
+      const derivedBytes = new Uint8Array(derived);
+      const storedBytes = Uint8Array.from(atob(hashB64), c => c.charCodeAt(0));
+      const ok = derivedBytes.length === storedBytes.length &&
+        timingSafeEqual(Buffer.from(derivedBytes), Buffer.from(storedBytes));
       if (!ok) return { ok: false };
       const rehash = await hashPassword(plain);
       return { ok: true, rehash };
