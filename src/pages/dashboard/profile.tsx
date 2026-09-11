@@ -26,8 +26,8 @@ export default function ProfilePage() {
     if (!loading && !customer) navigate('/login?reason=session_expired', { replace: true });
     if (customer) {
       setName(customer.name ?? '');
-      setPhone((customer as any).phone ?? '');
-      setAddress((customer as any).address ?? '');
+      setPhone(customer.phone ?? '');
+      setAddress(customer.address ?? '');
     }
   }, [customer, loading, navigate]);
 

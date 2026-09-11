@@ -4,7 +4,20 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import AdminLayout from '@/layouts/AdminLayout';
 import { authHeaders } from '@/lib/adminAuth';
 
-type Health = Record<string, any>;
+// Shape consumed from /api/admin/health by the diagnostics cards below.
+type HealthState = 'healthy' | 'warning' | 'degraded' | 'not_configured' | 'unknown';
+
+interface Health {
+  environment?: string;
+  database?: { latencyMs?: number };
+  email?: { provider?: string };
+  runtime?: { nodeVersion?: string; activeAdminSessions?: number; activeCustomerSessions?: number };
+  uptime?: { human?: string };
+  memory?: { heapUsagePct?: number; heapUsedMb?: number; heapLimitMb?: number };
+  configuration?: { optionalWarnings?: number; sponsorReview?: string };
+  storage?: { trackedRecords?: number };
+  components?: Record<string, { state?: HealthState; required?: boolean }>;
+}
 
 type StatusState = 'healthy' | 'warning' | 'degraded' | 'not_configured' | 'unknown' | undefined;
 

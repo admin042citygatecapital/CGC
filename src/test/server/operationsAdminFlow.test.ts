@@ -17,11 +17,14 @@ afterAll(() => {
   delete process.env.PRIVATE_DATA_ROOT;
 });
 
+// Submission list and update payloads; item carries the admin notes list the flow asserts on.
+type AdminFlowBody = { data?: unknown[]; item?: { adminNotes?: unknown[]; [key: string]: unknown }; [key: string]: unknown };
+
 function response() {
-  const state: { status: number; body?: any } = { status: 200 };
+  const state: { status: number; body?: AdminFlowBody } = { status: 200 };
   const res = {
     status(code: number) { state.status = code; return res; },
-    json(body: unknown) { state.body = body; return res; },
+    json(body: unknown) { state.body = body as AdminFlowBody; return res; },
   } as unknown as Response;
   return { res, state };
 }
@@ -37,7 +40,7 @@ describe('operations administration acceptance flow', () => {
     const listed = response();
     await getHandler({ query: { search: 'buyer-test' } } as unknown as Request, listed.res);
     expect(listed.state.status).toBe(200);
-    expect(listed.state.body.data).toHaveLength(1);
+    expect(listed.state.body?.data).toHaveLength(1);
 
     const postHandler = (await import('../../server/api/admin/operations/POST.js')).default;
     const updated = response();
@@ -47,7 +50,7 @@ describe('operations administration acceptance flow', () => {
       adminSession: { adminId: 'admin-test', email: 'admin@example.test', role: 'SUPER_ADMIN' },
     } as unknown as Request, updated.res);
     expect(updated.state.status).toBe(200);
-    expect(updated.state.body.item).toMatchObject({ status: 'resolved', priority: 'high', assignedTo: 'Operations' });
-    expect(updated.state.body.item.adminNotes).toHaveLength(1);
+    expect(updated.state.body?.item).toMatchObject({ status: 'resolved', priority: 'high', assignedTo: 'Operations' });
+    expect(updated.state.body?.item?.adminNotes).toHaveLength(1);
   });
 });

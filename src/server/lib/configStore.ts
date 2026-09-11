@@ -439,14 +439,16 @@ export async function updateSection<K extends keyof Omit<AppConfig, 'updatedAt'>
   expectedWorkflowVersion?: string,
 ): Promise<AppConfig> {
   const current = readConfig();
-  const next = { ...(current as any)[section], ...patch };
+  const next = { ...current[section], ...patch } as AppConfig[K];
   // A browser round-trip of a redacted key must not replace the stored secret.
   // Omitting apiKey preserves it; an explicit empty string still clears it.
-  if (section === 'exchangeRates' && next.apiKey === CONFIG_SECRET_MASK) {
-    next.apiKey = current.exchangeRates.apiKey;
+  if (section === 'exchangeRates') {
+    const rates = next as AppConfig['exchangeRates'];
+    if (rates.apiKey === CONFIG_SECRET_MASK) rates.apiKey = current.exchangeRates.apiKey;
   }
   if (section === 'featureToggles') {
-    next.featureAccess = normalizePlatformFeatureAccess(next.featureAccess);
+    const toggles = next as AppConfig['featureToggles'];
+    toggles.featureAccess = normalizePlatformFeatureAccess(toggles.featureAccess);
   }
   const cfg = {
     ...current,
@@ -472,7 +474,7 @@ export async function resetSection<K extends keyof Omit<AppConfig, 'updatedAt'>>
   const def = defaultConfig();
   const cfg = {
     ...current,
-    [section]: (def as any)[section],
+    [section]: def[section],
     updatedAt: new Date().toISOString(),
   } as AppConfig;
   if (section === 'featureToggles') await writeWorkflowConfig(cfg, DISABLED_WORKFLOWS, expectedWorkflowVersion);

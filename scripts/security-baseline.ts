@@ -10,7 +10,9 @@ const probes: SecurityProbe[] = [
 ];
 
 const health = await request('/api/health');
-let healthBody: Record<string, any> = {};
+// Shape of the public /api/health payload consumed by the probes below.
+type HealthBody = { status?: string; database?: { status?: string }; release?: { commit?: string } };
+let healthBody: HealthBody = {};
 try { healthBody = await health.json(); } catch { /* reported by probes below */ }
 probes.push(
   { name: 'health', passed: health.status === 200 && healthBody.status === 'ok', observed: `HTTP ${health.status}; status=${String(healthBody.status)}`, requirement: 'Public health endpoint reports ok' },

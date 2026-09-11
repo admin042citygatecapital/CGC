@@ -45,6 +45,68 @@ interface EnvVar {
   description: string; status: 'PRESENT' | 'MISSING' | 'DEFAULT'; isPublic: boolean;
 }
 
+// Fields the Configuration Center reads or writes per section. The index
+// signature keeps untouched server keys passable through unchanged.
+type ScopedFeatureAccess = Partial<Record<'plans' | FeatureScopeKind, Record<string, Record<string, boolean>>>>;
+
+interface ConfigSection {
+  [key: string]: unknown;
+  // branding
+  appName?: string; tagline?: string; supportEmail?: string; supportPhone?: string;
+  websiteUrl?: string; primaryColor?: string; accentColor?: string;
+  logoUrl?: string; faviconUrl?: string; footerText?: string;
+  // theme
+  mode?: string; fontFamily?: string; borderRadius?: string; density?: string;
+  animationsEnabled?: boolean; sidebarCollapsed?: boolean;
+  // homepage
+  trustBadge?: string; headline1?: string; headlineAccent?: string; headline2?: string;
+  subheadline?: string; ctaSecondary?: string; heroCTAControl?: string;
+  heroCTAUrgency?: string; heroCTABenefit?: string;
+  announcementBannerEnabled?: boolean; announcementBannerText?: string; announcementBannerType?: string;
+  showStats?: boolean; showTestimonials?: boolean; showPartners?: boolean; showNewsSection?: boolean;
+  // dashboard widgets
+  accountApplicationsEnabled?: boolean; contactFormsEnabled?: boolean;
+  newsletterSignupEnabled?: boolean; supportTicketsEnabled?: boolean; cardRequestsEnabled?: boolean;
+  showBalanceWidget?: boolean; showTransactionFeed?: boolean; showSpendingChart?: boolean;
+  showCurrencyRates?: boolean; showQuickTransfer?: boolean; showCardWidget?: boolean;
+  showNotificationsPanel?: boolean; showMarketData?: boolean;
+  defaultCurrency?: string; transactionFeedLimit?: number;
+  // notifications
+  emailNotificationsEnabled?: boolean; smsNotificationsEnabled?: boolean;
+  pushNotificationsEnabled?: boolean; loginAlertEmail?: boolean; loginAlertSms?: boolean;
+  transactionAlertEmail?: boolean; transactionAlertSms?: boolean;
+  kycStatusEmail?: boolean; marketingEmailsEnabled?: boolean; digestFrequency?: string;
+  // maintenance mode
+  enabled?: boolean; message?: string; estimatedEndTime?: string;
+  allowAdminAccess?: boolean; showCountdown?: boolean; allowedIPs?: string[];
+  // feature toggles
+  platformFeatures?: Partial<Record<(typeof PLATFORM_MODULES)[number][0], boolean>>;
+  featureAccess?: ScopedFeatureAccess;
+  maxDailyTransferLimit?: number; maxSingleTransferLimit?: number;
+  virtualCardsEnabled?: boolean; kycApprovalsEnabled?: boolean;
+  sandboxFinancialControlsEnabled?: boolean; cryptoWalletEnabled?: boolean;
+  p2pTransfersEnabled?: boolean; internationalTransfers?: boolean;
+  savingsAccountEnabled?: boolean; loanApplicationEnabled?: boolean;
+  referralProgramEnabled?: boolean; twoFactorRequired?: boolean;
+  biometricLoginEnabled?: boolean; darkModeEnabled?: boolean;
+  chatSupportEnabled?: boolean; kycRequiredForTransfers?: boolean;
+  // exchange rates
+  baseCurrency?: string;
+  provider?: string; apiKey?: string; markupPercent?: number;
+  updateIntervalMins?: number; roundingDecimalPlaces?: number;
+  displayedCurrencies?: string[]; autoUpdateEnabled?: boolean;
+  // language
+  defaultLocale?: string; dateFormat?: string; timeFormat?: string; numberFormat?: string;
+  supportedLocales?: string[]; rtlEnabled?: boolean;
+  // currency
+  currencyPosition?: string; thousandsSeparator?: string; decimalSeparator?: string;
+  supportedCurrencies?: string[]; showCurrencyCode?: boolean;
+  // timezone
+  defaultTimezone?: string; displayTimezone?: string;
+  businessHoursStart?: string; businessHoursEnd?: string;
+  businessDays?: number[]; useUserTimezone?: boolean;
+}
+
 const PLATFORM_MODULES = [
   ['accounts','Accounts'], ['multiCurrency','Multi-Currency'], ['fx','FX & Exchange'],
   ['transfers','Transfers'], ['cards','Cards'], ['wallets','Wallets'],
@@ -147,7 +209,7 @@ export default function AdminConfigPage() {
   const [activeSection, setActiveSection] = useState<SectionKey | 'env'>(() =>
     isSectionId(requestedSection) ? requestedSection : 'branding'
   );
-  const [config,   setConfig]   = useState<Record<string, any>>({});
+  const [config,   setConfig]   = useState<Record<string, ConfigSection>>({});
   const [envVars,  setEnvVars]  = useState<EnvVar[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
@@ -212,10 +274,10 @@ export default function AdminConfigPage() {
     const normalizedIdentifier = kind === 'countries' || kind === 'internalRoles' ? identifier.trim().toUpperCase() : identifier.trim();
     if (!normalizedIdentifier) return;
     setConfig(current => {
-      const featureToggles = current.featureToggles ?? {};
-      const featureAccess = featureToggles.featureAccess ?? {};
-      const scope = featureAccess[kind] ?? {};
-      const nextOverrides = { ...(scope[normalizedIdentifier] ?? {}) };
+      const featureToggles: ConfigSection = current.featureToggles ?? {};
+      const featureAccess: ScopedFeatureAccess = featureToggles.featureAccess ?? {};
+      const scope: Record<string, Record<string, boolean>> = featureAccess[kind] ?? {};
+      const nextOverrides: Record<string, boolean> = { ...(scope[normalizedIdentifier] ?? {}) };
       if (restricted) nextOverrides[feature] = false;
       else delete nextOverrides[feature];
       const nextScope = { ...scope };
@@ -468,12 +530,12 @@ export default function AdminConfigPage() {
                       <div>
                         <p className="text-white/25 text-[10px] uppercase tracking-widest font-bold mb-3">Section Visibility</p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          {[
+                          {([
                             ['showStats',        'Stats Section'],
                             ['showTestimonials', 'Testimonials'],
                             ['showPartners',     'Partners'],
                             ['showNewsSection',  'News Section'],
-                          ].map(([k, l]) => (
+                          ] as const).map(([k, l]) => (
                             <div key={k} className="flex items-center justify-between p-3 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                               <p className="text-white/60 text-xs">{l}</p>
                               <Toggle label={l} value={s('homepage')[k] ?? true} onChange={v => patch('homepage', k, v)} />
@@ -519,7 +581,7 @@ export default function AdminConfigPage() {
                     <SectionHeader title="Dashboard Widgets" desc={SECTIONS[3].desc} onReset={reset} saving={saving} />
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {[
+                        {([
                           ['accountApplicationsEnabled','Account Applications', 'Accept and queue new account applications'],
                           ['contactFormsEnabled',       'Contact Forms',        'Accept public contact submissions'],
                           ['newsletterSignupEnabled',   'Newsletter Signup',    'Accept newsletter subscriptions'],
@@ -533,7 +595,7 @@ export default function AdminConfigPage() {
                           ['showCardWidget',         'Card Widget'],
                           ['showNotificationsPanel', 'Notifications Panel'],
                           ['showMarketData',         'Market Data'],
-                        ].map(([k, l]) => (
+                        ] as const).map(([k, l]) => (
                           <div key={k} className="flex items-center justify-between p-3.5 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                             <p className="text-white/60 text-sm">{l}</p>
                             <Toggle label={l} value={s('dashboardWidgets')[k] ?? true} onChange={v => patch('dashboardWidgets', k, v)} />
@@ -553,7 +615,7 @@ export default function AdminConfigPage() {
                   <>
                     <SectionHeader title="Notification Settings" desc={SECTIONS[4].desc} onReset={reset} saving={saving} />
                     <div className="space-y-3">
-                      {[
+                      {([
                         ['emailNotificationsEnabled',  'Email Notifications',    'Send notifications via email'],
                         ['smsNotificationsEnabled',    'SMS Notifications',      'Send notifications via SMS'],
                         ['pushNotificationsEnabled',   'Push Notifications',     'Browser/app push notifications'],
@@ -563,7 +625,7 @@ export default function AdminConfigPage() {
                         ['transactionAlertSms',        'Transaction Alert (SMS)',   'SMS on transactions'],
                         ['kycStatusEmail',             'KYC Status Email',       'Email on KYC status change'],
                         ['marketingEmailsEnabled',     'Marketing Emails',       'Promotional communications'],
-                      ].map(([k, l, d]) => (
+                      ] as const).map(([k, l, d]) => (
                         <div key={k} className="flex items-center justify-between p-4 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                           <div>
                             <p className="text-white/70 text-sm font-medium">{l}</p>
@@ -690,7 +752,7 @@ export default function AdminConfigPage() {
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {[
+                        {([
                           ['virtualCardsEnabled',     'Virtual Cards',          'Issue virtual debit cards'],
                           ['kycApprovalsEnabled', 'KYC Approvals', 'Permit evidence-backed reviews; provider verification and independent review remain required'],
                           ['sandboxFinancialControlsEnabled', 'Sandbox Financial Controls', 'Enable synthetic accounts, transfers and adjustments only; never enables live money movement'],
@@ -705,7 +767,7 @@ export default function AdminConfigPage() {
                           ['darkModeEnabled',         'Dark Mode',              'Allow users to toggle dark mode'],
                           ['chatSupportEnabled',      'Chat Support',           'Live chat widget for customers'],
                           ['kycRequiredForTransfers', 'KYC for Transfers',      'Require KYC before transfers'],
-                        ].map(([k, l, d]) => (
+                        ] as const).map(([k, l, d]) => (
                           <div key={k} className="flex items-center justify-between p-3.5 rounded-xl border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                             <div>
                               <p className="text-white/70 text-sm font-medium">{l}</p>

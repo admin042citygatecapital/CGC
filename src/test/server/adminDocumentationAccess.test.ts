@@ -6,7 +6,7 @@ import { allowedRolesForAdminRequest } from '../../server/lib/adminAuthorization
 import handler from '../../server/api/admin/documentation/[format]/GET.js';
 
 function response() {
-  const state: { status: number; body?: any; headers: Record<string, string> } = {
+  const state: { status: number; body?: unknown; headers: Record<string, string> } = {
     status: 200,
     headers: {},
   };
@@ -43,7 +43,7 @@ describe('administrator API documentation access', () => {
     expect(result.state.headers['cache-control']).toBe('private, no-store');
     expect(result.state.headers['x-cgc-documentation-status']).toBe('reference-snapshot');
     expect(Buffer.isBuffer(result.state.body)).toBe(true);
-    expect(result.state.body.length).toBeGreaterThan(100);
+    expect((result.state.body as Buffer).length).toBeGreaterThan(100);
   });
 
   it('rejects unknown formats without resolving arbitrary paths', () => {

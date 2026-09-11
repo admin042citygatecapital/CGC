@@ -10,7 +10,7 @@
  *  - all free-text fields sanitized and length-capped
  */
 import type { Request, Response } from 'express';
-import { findUserBySessionToken, updateUser } from '../../../lib/userStore.js';
+import { findUserBySessionToken, updateUser, type UserUpdatePatch } from '../../../lib/userStore.js';
 import {
   sanitizeString,
   safeWalletAddress,
@@ -31,7 +31,7 @@ export default async function handler(req: Request, res: Response) {
     dateOfBirth, address, city, postalCode, idType, idNumber, idDocumentBase64,
   } = req.body ?? {};
 
-  const patch: Record<string, unknown> = {};
+  const patch: UserUpdatePatch = {};
 
   if (name !== undefined) {
     const trimmed = sanitizeString(name, 100);
@@ -83,7 +83,7 @@ export default async function handler(req: Request, res: Response) {
     return res.status(400).json({ error: 'No valid fields provided to update.' });
   }
 
-  const updated = await updateUser(user.id, patch as any);
+  const updated = await updateUser(user.id, patch);
   if (!updated) return res.status(500).json({ error: 'Failed to update profile.' });
 
   return res.json({
@@ -98,7 +98,7 @@ export default async function handler(req: Request, res: Response) {
       amlStatus:   updated.amlStatus ?? 'not_screened',
       amlRiskLevel: updated.amlRiskLevel ?? 'unrated',
       balance:     updated.balance   ?? 0,
-      avatarUrl:   (updated as any).avatarUrl ?? '',
+      avatarUrl:   updated.avatarUrl ?? '',
       walletBtc:   updated.walletBtc  ?? '',
       walletEth:   updated.walletEth  ?? '',
       walletUsdt:  updated.walletUsdt ?? '',

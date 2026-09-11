@@ -320,10 +320,70 @@ function SaveBtn({ saving, onClick }: { saving: boolean; onClick: () => void }) 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CMS config / entity shapes
+// ─────────────────────────────────────────────────────────────────────────────
+interface HeroCfg {
+  heroMediaType?: 'none' | 'image' | 'video';
+  heroImageUrl?: string;
+  heroImageAlt?: string;
+  heroVideoUrl?: string;
+  heroVideoType?: string;
+  heroVideoAutoplay?: boolean;
+  heroVideoMuted?: boolean;
+  heroVideoLoop?: boolean;
+  backgroundOverlay?: number;
+}
+
+interface LogoCfg {
+  primaryLogoUrl?: string;
+  darkLogoUrl?: string;
+  faviconUrl?: string;
+  logoAlt?: string;
+  logoWidth?: number;
+  logoHeight?: number;
+}
+
+interface NavLink {
+  id: string;
+  label: string;
+  href: string;
+  target: string;
+  order: number;
+  section: string;
+  enabled: boolean;
+  children?: NavLink[];
+}
+
+interface Feature {
+  id?: string;
+  title?: string;
+  description?: string;
+  icon?: string;
+  badge?: string;
+  page?: string;
+  imageUrl?: string;
+  enabled?: boolean;
+}
+
+interface Article {
+  id?: string;
+  title?: string;
+  excerpt?: string;
+  body?: string;
+  category?: string;
+  tags?: string[];
+  author?: string;
+  status?: string;
+  featured?: boolean;
+  imageUrl?: string;
+  createdAt?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Hero Media Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function HeroMediaTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
-  const [cfg,     setCfg]     = useState<any>({});
+  const [cfg,     setCfg]     = useState<HeroCfg>({});
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
 
@@ -349,7 +409,7 @@ function HeroMediaTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
         <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Media Type</label>
         <div className="flex gap-2">
           {(['none','image','video'] as const).map(t => (
-            <button key={t} type="button" onClick={() => setCfg((p: any) => ({ ...p, heroMediaType: t }))}
+            <button key={t} type="button" onClick={() => setCfg(p => ({ ...p, heroMediaType: t }))}
               className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors capitalize ${cfg.heroMediaType === t ? 'border-primary/40 bg-primary/10 text-primary' : 'border-white/8 text-white/40 hover:text-white'}`}>
               {t === 'none' ? 'Color Only' : t === 'image' ? 'Image' : 'Video'}
             </button>
@@ -359,8 +419,8 @@ function HeroMediaTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
 
       {cfg.heroMediaType === 'image' && (
         <div className="space-y-4">
-          <Field label="Hero Image URL" value={cfg.heroImageUrl ?? ''} onChange={v => setCfg((p: any) => ({ ...p, heroImageUrl: v }))} />
-          <Field label="Image Alt Text" value={cfg.heroImageAlt ?? ''} onChange={v => setCfg((p: any) => ({ ...p, heroImageAlt: v }))} />
+          <Field label="Hero Image URL" value={cfg.heroImageUrl ?? ''} onChange={v => setCfg(p => ({ ...p, heroImageUrl: v }))} />
+          <Field label="Image Alt Text" value={cfg.heroImageAlt ?? ''} onChange={v => setCfg(p => ({ ...p, heroImageAlt: v }))} />
           {cfg.heroImageUrl && (
             <div className="rounded-xl overflow-hidden border border-white/8" style={{ maxHeight: 180 }}>
               <img src={cfg.heroImageUrl} alt="pre-deployment" className="w-full h-full object-cover" />
@@ -371,17 +431,17 @@ function HeroMediaTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
 
       {cfg.heroMediaType === 'video' && (
         <div className="space-y-4">
-          <Field label="Video URL (mp4 / YouTube / Vimeo)" value={cfg.heroVideoUrl ?? ''} onChange={v => setCfg((p: any) => ({ ...p, heroVideoUrl: v }))} />
+          <Field label="Video URL (mp4 / YouTube / Vimeo)" value={cfg.heroVideoUrl ?? ''} onChange={v => setCfg(p => ({ ...p, heroVideoUrl: v }))} />
           <div>
             <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Video Type</label>
-            <select value={cfg.heroVideoType ?? 'mp4'} onChange={e => setCfg((p: any) => ({ ...p, heroVideoType: e.target.value }))}
+            <select value={cfg.heroVideoType ?? 'mp4'} onChange={e => setCfg(p => ({ ...p, heroVideoType: e.target.value }))}
               className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none">
               {['mp4','webm','youtube','vimeo'].map(t => <option key={t} value={t} className="bg-[#0A0A0A] uppercase">{t.toUpperCase()}</option>)}
             </select>
           </div>
           <div className="flex gap-4">
-            {[['heroVideoAutoplay','Autoplay'],['heroVideoMuted','Muted'],['heroVideoLoop','Loop']].map(([k,l]) => (
-              <button key={k} type="button" onClick={() => setCfg((p: any) => ({ ...p, [k]: !p[k] }))}
+            {([['heroVideoAutoplay','Autoplay'],['heroVideoMuted','Muted'],['heroVideoLoop','Loop']] as const).map(([k,l]) => (
+              <button key={k} type="button" onClick={() => setCfg(p => ({ ...p, [k]: !p[k] }))}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${cfg[k] ? 'border-primary/30 bg-primary/10 text-primary' : 'border-white/8 text-white/40'}`}>
                 {l}
               </button>
@@ -392,7 +452,7 @@ function HeroMediaTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
 
       <div>
         <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Background Overlay Opacity: {cfg.backgroundOverlay ?? 40}%</label>
-        <input type="range" min={0} max={100} value={cfg.backgroundOverlay ?? 40} onChange={e => setCfg((p: any) => ({ ...p, backgroundOverlay: parseInt(e.target.value, 10) }))}
+        <input type="range" min={0} max={100} value={cfg.backgroundOverlay ?? 40} onChange={e => setCfg(p => ({ ...p, backgroundOverlay: parseInt(e.target.value, 10) }))}
           className="w-full accent-primary" />
       </div>
 
@@ -405,7 +465,7 @@ function HeroMediaTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
 // Logo Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function LogoTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
-  const [cfg,     setCfg]     = useState<any>({});
+  const [cfg,     setCfg]     = useState<LogoCfg>({});
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
 
@@ -429,23 +489,23 @@ function LogoTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="space-y-4">
-          {[
+          {([
             ['primaryLogoUrl', 'Primary Logo URL (light background)'],
             ['darkLogoUrl',    'Dark Logo URL (dark background)'],
             ['faviconUrl',     'Favicon URL (.ico / .png)'],
             ['logoAlt',        'Logo Alt Text'],
-          ].map(([k, l]) => (
-            <Field key={k} label={l} value={cfg[k] ?? ''} onChange={v => setCfg((p: any) => ({ ...p, [k]: v }))} />
+          ] as const).map(([k, l]) => (
+            <Field key={k} label={l} value={cfg[k] ?? ''} onChange={v => setCfg(p => ({ ...p, [k]: v }))} />
           ))}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Width (px)</label>
-              <input type="number" value={cfg.logoWidth ?? 160} onChange={e => setCfg((p: any) => ({ ...p, logoWidth: parseInt(e.target.value, 10) }))}
+              <input type="number" value={cfg.logoWidth ?? 160} onChange={e => setCfg(p => ({ ...p, logoWidth: parseInt(e.target.value, 10) }))}
                 className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
             </div>
             <div>
               <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Height (px)</label>
-              <input type="number" value={cfg.logoHeight ?? 40} onChange={e => setCfg((p: any) => ({ ...p, logoHeight: parseInt(e.target.value, 10) }))}
+              <input type="number" value={cfg.logoHeight ?? 40} onChange={e => setCfg(p => ({ ...p, logoHeight: parseInt(e.target.value, 10) }))}
                 className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
             </div>
           </div>
@@ -479,7 +539,7 @@ function LogoTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }
 // Navigation Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function NavigationTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
-  const [links,   setLinks]   = useState<any[]>([]);
+  const [links,   setLinks]   = useState<NavLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
 
@@ -498,7 +558,7 @@ function NavigationTab({ showToast }: { showToast: (m: string, ok?: boolean) => 
     showToast(r.ok ? 'Navigation saved' : 'Save failed', r.ok);
   }
 
-  function updateLink(id: string, patch: Record<string, unknown>) {
+  function updateLink(id: string, patch: Partial<NavLink>) {
     setLinks(ls => ls.map(l => l.id === id ? { ...l, ...patch } : l));
   }
   function addLink() {
@@ -565,9 +625,9 @@ function NavigationTab({ showToast }: { showToast: (m: string, ok?: boolean) => 
 // Features Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function FeaturesTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
-  const [items,   setItems]   = useState<any[]>([]);
+  const [items,   setItems]   = useState<Feature[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<any | null>(null);
+  const [editing, setEditing] = useState<Feature | null>(null);
   const [saving,  setSaving]  = useState(false);
 
   const load = useCallback(async () => {
@@ -585,11 +645,11 @@ function FeaturesTab({ showToast }: { showToast: (m: string, ok?: boolean) => vo
     setSaving(false);
     if (r.ok) { showToast(editing.id ? 'Feature updated' : 'Feature added'); setEditing(null); load(); } else showToast('Save failed', false);
   }
-  async function del(id: string) {
+  async function del(id?: string) {
     const r = await fetch('/api/admin/cms/features', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action: 'delete', id }) });
     if (r.ok) { showToast('Deleted'); load(); } else showToast('Delete failed', false);
   }
-  async function toggle(item: any) {
+  async function toggle(item: Feature) {
     await fetch('/api/admin/cms/features', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ id: item.id, enabled: !item.enabled }) });
     load();
   }
@@ -644,16 +704,16 @@ function FeaturesTab({ showToast }: { showToast: (m: string, ok?: boolean) => vo
                 <p className="text-white font-semibold">{editing.id ? 'Edit Feature' : 'Add Feature'}</p>
                 <button type="button" onClick={() => setEditing(null)} className="text-white/30 hover:text-white"><X size={16} /></button>
               </div>
-              {[['title','Title'],['description','Description'],['icon','Icon Name (Lucide)'],['badge','Badge Label (optional)'],['imageUrl','Image URL (optional)']].map(([k,l]) => (
+              {([['title','Title'],['description','Description'],['icon','Icon Name (Lucide)'],['badge','Badge Label (optional)'],['imageUrl','Image URL (optional)']] as const).map(([k,l]) => (
                 <div key={k}>
                   <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">{l}</label>
-                  <input value={editing[k] ?? ''} onChange={e => setEditing((p: any) => ({ ...p, [k]: e.target.value }))}
+                  <input value={editing[k] ?? ''} onChange={e => setEditing(p => ({ ...p, [k]: e.target.value }))}
                     className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
                 </div>
               ))}
               <div>
                 <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Page</label>
-                <input value={editing.page ?? 'home'} onChange={e => setEditing((p: any) => ({ ...p, page: e.target.value }))} placeholder="home, digital-banking, etc."
+                <input value={editing.page ?? 'home'} onChange={e => setEditing(p => ({ ...p, page: e.target.value }))} placeholder="home, digital-banking, etc."
                   className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
               </div>
               <button type="button" onClick={save} disabled={saving || !editing.title}
@@ -681,12 +741,12 @@ function ArticleEditor({
   categories: string[];
   showToast: (m: string, ok?: boolean) => void;
 }) {
-  const [items,   setItems]   = useState<any[]>([]);
+  const [items,   setItems]   = useState<Article[]>([]);
   const [, setTotal]          = useState(0);
   const [loading, setLoading] = useState(true);
   const [status,  setStatus]  = useState('');
   const [search,  setSearch]  = useState('');
-  const [editing, setEditing] = useState<any | null>(null);
+  const [editing, setEditing] = useState<Article | null>(null);
   const [saving,  setSaving]  = useState(false);
 
   const load = useCallback(async () => {
@@ -708,11 +768,11 @@ function ArticleEditor({
     setSaving(false);
     if (r.ok) { showToast(editing.id ? 'Updated' : 'Created'); setEditing(null); load(); } else showToast('Save failed', false);
   }
-  async function del(id: string) {
+  async function del(id?: string) {
     const r = await fetch(`/api/admin/cms/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action: 'delete', id }) });
     if (r.ok) { showToast('Deleted'); load(); } else showToast('Delete failed', false);
   }
-  async function publish(id: string) {
+  async function publish(id?: string) {
     const r = await fetch(`/api/admin/cms/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ id, status: 'published' }) });
     if (r.ok) { showToast('Published'); load(); } else showToast('Failed', false);
   }
@@ -748,12 +808,12 @@ function ArticleEditor({
             <div key={item.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/5 hover:border-white/10" style={{ background: 'rgba(255,255,255,0.02)' }}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full capitalize ${STATUS_ART[item.status]}`}>{item.status}</span>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full capitalize ${STATUS_ART[item.status ?? '']}`}>{item.status}</span>
                   {item.featured && <Star size={9} className="text-amber-400 fill-amber-400" />}
                   <span className="text-white/20 text-[9px]">{item.category}</span>
                 </div>
                 <p className="text-white/80 text-sm font-medium truncate">{item.title}</p>
-                <p className="text-white/30 text-[10px]">{item.author} · {fmtDateShort(item.createdAt)}</p>
+                <p className="text-white/30 text-[10px]">{item.author} · {fmtDateShort(item.createdAt ?? '')}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 {item.status === 'draft' && (
@@ -785,49 +845,49 @@ function ArticleEditor({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Title</label>
-                    <input value={editing.title ?? ''} onChange={e => setEditing((p: any) => ({ ...p, title: e.target.value }))}
+                    <input value={editing.title ?? ''} onChange={e => setEditing(p => ({ ...p, title: e.target.value }))}
                       className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
                   </div>
                   <div>
                     <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Category</label>
-                    <input value={editing.category ?? ''} onChange={e => setEditing((p: any) => ({ ...p, category: e.target.value }))} list="art-cats"
+                    <input value={editing.category ?? ''} onChange={e => setEditing(p => ({ ...p, category: e.target.value }))} list="art-cats"
                       className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
                     <datalist id="art-cats">{categories.map(c => <option key={c} value={c} />)}</datalist>
                   </div>
                   <div>
                     <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Author</label>
-                    <input value={editing.author ?? ''} onChange={e => setEditing((p: any) => ({ ...p, author: e.target.value }))}
+                    <input value={editing.author ?? ''} onChange={e => setEditing(p => ({ ...p, author: e.target.value }))}
                       className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
                   </div>
                   <div>
                     <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Status</label>
-                    <select value={editing.status ?? 'draft'} onChange={e => setEditing((p: any) => ({ ...p, status: e.target.value }))}
+                    <select value={editing.status ?? 'draft'} onChange={e => setEditing(p => ({ ...p, status: e.target.value }))}
                       className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none">
                       {['draft','published','archived'].map(s => <option key={s} value={s} className="bg-[#0A0A0A] capitalize">{s}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Tags (comma-separated)</label>
-                    <input value={(editing.tags ?? []).join(', ')} onChange={e => setEditing((p: any) => ({ ...p, tags: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) }))}
+                    <input value={(editing.tags ?? []).join(', ')} onChange={e => setEditing(p => ({ ...p, tags: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) }))}
                       className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
                   </div>
                   <div className="col-span-2">
                     <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Cover Image URL</label>
-                    <input value={editing.imageUrl ?? ''} onChange={e => setEditing((p: any) => ({ ...p, imageUrl: e.target.value }))}
+                    <input value={editing.imageUrl ?? ''} onChange={e => setEditing(p => ({ ...p, imageUrl: e.target.value }))}
                       className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
                   </div>
                   <div className="col-span-2">
                     <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Excerpt</label>
-                    <textarea rows={2} value={editing.excerpt ?? ''} onChange={e => setEditing((p: any) => ({ ...p, excerpt: e.target.value }))}
+                    <textarea rows={2} value={editing.excerpt ?? ''} onChange={e => setEditing(p => ({ ...p, excerpt: e.target.value }))}
                       className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40 resize-none" />
                   </div>
                   <div className="col-span-2">
                     <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Body (Markdown / HTML)</label>
-                    <textarea rows={10} value={editing.body ?? ''} onChange={e => setEditing((p: any) => ({ ...p, body: e.target.value }))}
+                    <textarea rows={10} value={editing.body ?? ''} onChange={e => setEditing(p => ({ ...p, body: e.target.value }))}
                       className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-primary/40 resize-none" />
                   </div>
                   <div className="col-span-2 flex items-center gap-3">
-                    <button type="button" onClick={() => setEditing((p: any) => ({ ...p, featured: !p.featured }))}
+                    <button type="button" onClick={() => setEditing(p => p ? { ...p, featured: !p.featured } : p)}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${editing.featured ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-white/8 text-white/40'}`}>
                       <Star size={11} /> Featured
                     </button>

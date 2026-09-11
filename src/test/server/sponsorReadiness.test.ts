@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
-import type { SponsorEvidenceRow, SponsorPackageRow } from '../../server/db/schema.js';
+import type { BeneficialOwnerRecordRow, LegalEntityProfileRow, SponsorEvidenceRow, SponsorPackageRow } from '../../server/db/schema.js';
 import { allowedRolesForAdminRequest } from '../../server/lib/adminAuthorizationMiddleware.js';
 import { externalRequirementForControl } from '../../server/lib/externalSponsorEvidence.js';
 import { LIVE_PROVIDER_ADAPTERS_IMPLEMENTED } from '../../server/lib/platformMode.js';
@@ -269,8 +269,9 @@ describe('sponsor provider pack', () => {
     const allEvidence = SPONSOR_CONTROLS.map(control => evidence(control.key));
     const approvedPackage = { ...packageRow, status: 'approved' as const, submittedBy: 'super-a', reviewedBy: 'super-b' };
     expect(buildSponsorReadinessSnapshot(approvedPackage, allEvidence, []).summary.sponsorSubmissionReady).toBe(false);
-    const entity = { id: 'le_test', status: 'verified', expiresAt: new Date('2030-01-01'), registrySha256: 'a'.repeat(64), authorityType: 'board_resolution', authorityReference: 'AUTH-TEST-001', authoritySha256: 'b'.repeat(64), authorizedOfficerRef: 'officer-test', authorityIssuedAt: new Date('2026-01-01'), authorityExpiresAt: new Date('2030-01-01') } as any;
-    const owner = { id: 'bor_test', entityId: 'le_test', active: true, status: 'verified', expiresAt: new Date('2030-01-01') } as any;
+    // Partial row fixtures: the snapshot only reads the structured-verification fields set below.
+    const entity = { id: 'le_test', status: 'verified', expiresAt: new Date('2030-01-01'), registrySha256: 'a'.repeat(64), authorityType: 'board_resolution', authorityReference: 'AUTH-TEST-001', authoritySha256: 'b'.repeat(64), authorizedOfficerRef: 'officer-test', authorityIssuedAt: new Date('2026-01-01'), authorityExpiresAt: new Date('2030-01-01') } as unknown as LegalEntityProfileRow;
+    const owner = { id: 'bor_test', entityId: 'le_test', active: true, status: 'verified', expiresAt: new Date('2030-01-01') } as unknown as BeneficialOwnerRecordRow;
     const snapshot = buildSponsorReadinessSnapshot(approvedPackage, allEvidence, [], entity, [owner]);
     expect(snapshot.summary.sponsorSubmissionReady).toBe(true);
     expect(buildSponsorPackFiles(snapshot).README).toBeUndefined();

@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { getConfig, readWorkflowState, redactConfigSecrets } from '../../../lib/configStore.js';
+import { getConfig, readWorkflowState, redactConfigSecrets, type AppConfig } from '../../../lib/configStore.js';
 import { buildEnvReport } from '../../../lib/envValidator.js';
 import { homepageAdminView, readHomepageDocument } from '../../../lib/homepageCmsStore.js';
 
@@ -33,7 +33,7 @@ export default async function handler(req: Request, res: Response) {
         return res.json({ featureToggles: { ...cfg.featureToggles, ...workflow.controls }, workflowVersion: workflow.version });
       }
       if (!Object.prototype.hasOwnProperty.call(cfg, section)) return res.status(400).json({ error: `Unknown section: ${section}` });
-      return res.json({ [section]: (cfg as any)[section] });
+      return res.json({ [section]: cfg[section as keyof AppConfig] });
     }
 
     // Full config — homepage comes from content file, rest from configStore
