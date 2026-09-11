@@ -1,7 +1,12 @@
 /**
  * seedFromFlatFiles.ts
- * Populates all /private/* flat-file stores with realistic demo data.
- * Safe to re-run — skips any store that already has data.
+ * Populates the private flat-file stores with realistic demo data for a
+ * development/preview environment. Refuses to run in production. Safe to
+ * re-run — skips any store that already has data.
+ *
+ * Only path families with an actual consumer are generated; messages and
+ * canned responses follow the same field contract the support store and the
+ * flat-file importer use (from/text/ts/adminName, body, admin-notes.jsonl).
  *
  * Usage:  npx tsx src/server/db/seedFromFlatFiles.ts
  */
@@ -10,6 +15,8 @@ import fs   from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import { privateSubdirectory } from '../lib/storagePaths.js';
+import { isProd } from '../lib/envConfig.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -48,7 +55,7 @@ function ref(): string {
 
 // ─── 1. USERS ────────────────────────────────────────────────────────────────
 
-const USERS_FILE = '/private/users/users.jsonl';
+const USERS_FILE = privateSubdirectory('users/users.jsonl');
 
 interface SeedUser { id: string; email: string; name: string; ip: string; status: string; kycStatus: string; }
 
@@ -160,7 +167,7 @@ async function seedUsers(): Promise<SeedUser[]> {
 
 // ─── 2. TRANSACTIONS ─────────────────────────────────────────────────────────
 
-const TX_FILE = '/private/transactions/transactions.jsonl';
+const TX_FILE = privateSubdirectory('transactions/transactions.jsonl');
 
 function seedTransactions(users: SeedUser[]) {
   if (fileHasData(TX_FILE)) { console.log('  transactions: already seeded — skipping'); return; }
@@ -218,9 +225,9 @@ function seedTransactions(users: SeedUser[]) {
 
 // ─── 3. SUPPORT CONVERSATIONS ─────────────────────────────────────────────────
 
-const SUPPORT_FILE = '/private/support/conversations.jsonl';
-const CANNED_FILE  = '/private/support/canned-responses.json';
-const ROUTING_FILE = '/private/support/routing-rules.json';
+const SUPPORT_FILE = privateSubdirectory('support/conversations.jsonl');
+const CANNED_FILE  = privateSubdirectory('support/canned-responses.json');
+const ROUTING_FILE = privateSubdirectory('support/routing-rules.json');
 
 function seedSupport(users: SeedUser[]) {
   if (!fileHasData(SUPPORT_FILE)) {
@@ -254,17 +261,17 @@ function seedSupport(users: SeedUser[]) {
         messages: [
           {
             id:        uid('msg'),
-            role:      'customer',
-            content:   `Hello, I need help with: ${subjects[i % subjects.length].toLowerCase()}.`,
-            createdAt: daysAgo(createdDays),
+            from:      'customer',
+            text:   `Hello, I need help with: ${subjects[i % subjects.length].toLowerCase()}.`,
+            ts:        daysAgo(createdDays),
             read:      true,
           },
           {
             id:        uid('msg'),
-            role:      'agent',
-            content:   'Thank you for reaching out. We are looking into this for you and will respond within 24 hours.',
-            agentName: 'Support Team',
-            createdAt: daysAgo(createdDays - 1),
+            from:      'admin',
+            text:   'Thank you for reaching out. We are looking into this for you and will respond within 24 hours.',
+            adminName: 'Support Team',
+            ts:        daysAgo(createdDays - 1),
             read:      true,
           },
         ],
@@ -281,11 +288,11 @@ function seedSupport(users: SeedUser[]) {
 
   if (!fileHasData(CANNED_FILE)) {
     const canned = [
-      { id: uid('cr'), title: 'Welcome greeting',         category: 'general',   content: 'Thank you for contacting City Gate Capital support. How can we assist you today?', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
-      { id: uid('cr'), title: 'KYC pending response',     category: 'kyc',       content: 'Your KYC documents are currently under review. This process typically takes 1–3 business days. We will notify you by email once complete.', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
-      { id: uid('cr'), title: 'Transfer delay explanation',category: 'transfers', content: 'International wire transfers can take 2–5 business days depending on the destination bank and correspondent banking relationships. Your reference number is available in your transaction history.', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
-      { id: uid('cr'), title: 'Account suspended notice', category: 'compliance',content: 'Your account has been temporarily suspended pending a compliance review. Our team will contact you within 48 hours with further instructions.', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
-      { id: uid('cr'), title: 'Closing / resolved',       category: 'general',   content: 'We are glad we could assist you today. If you have any further questions, please do not hesitate to contact us. Have a great day!', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
+      { id: uid('cr'), title: 'Welcome greeting',         category: 'general',   body: 'Thank you for contacting City Gate Capital support. How can we assist you today?', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
+      { id: uid('cr'), title: 'KYC pending response',     category: 'kyc',       body: 'Your KYC documents are currently under review. This process typically takes 1–3 business days. We will notify you by email once complete.', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
+      { id: uid('cr'), title: 'Transfer delay explanation',category: 'transfers', body: 'International wire transfers can take 2–5 business days depending on the destination bank and correspondent banking relationships. Your reference number is available in your transaction history.', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
+      { id: uid('cr'), title: 'Account suspended notice', category: 'compliance',body: 'Your account has been temporarily suspended pending a compliance review. Our team will contact you within 48 hours with further instructions.', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
+      { id: uid('cr'), title: 'Closing / resolved',       category: 'general',   body: 'We are glad we could assist you today. If you have any further questions, please do not hesitate to contact us. Have a great day!', usageCount: 0, createdAt: daysAgo(30), updatedAt: daysAgo(30) },
     ];
     writeJson(CANNED_FILE, canned);
     console.log(`  canned responses: seeded ${canned.length} records`);
@@ -308,8 +315,8 @@ function seedSupport(users: SeedUser[]) {
 
 // ─── 4. SECURITY FLAGS ────────────────────────────────────────────────────────
 
-const FLAGS_FILE = '/private/security/flags.jsonl';
-const IP_FILE    = '/private/security/ip-lists.json';
+const FLAGS_FILE = privateSubdirectory('security/flags.jsonl');
+const IP_FILE    = privateSubdirectory('security/ip-lists.json');
 
 function seedSecurity(users: SeedUser[]) {
   if (!fileHasData(FLAGS_FILE)) {
@@ -354,7 +361,7 @@ function seedSecurity(users: SeedUser[]) {
 
 // ─── 5. NEWSLETTER SUBSCRIBERS ───────────────────────────────────────────────
 
-const SUBS_FILE = '/private/newsletter/subscribers.jsonl';
+const SUBS_FILE = privateSubdirectory('newsletter/subscribers.jsonl');
 
 function seedSubscribers() {
   if (fileHasData(SUBS_FILE)) { console.log('  subscribers: already seeded — skipping'); return; }
@@ -376,7 +383,7 @@ function seedSubscribers() {
 
 // ─── 6. KYC NOTES ────────────────────────────────────────────────────────────
 
-const KYC_NOTES_FILE = '/private/kyc/notes.jsonl';
+const KYC_NOTES_FILE = privateSubdirectory('kyc/admin-notes.jsonl');
 
 function seedKycNotes(users: SeedUser[]) {
   if (fileHasData(KYC_NOTES_FILE)) { console.log('  kyc notes: already seeded — skipping'); return; }
@@ -392,7 +399,7 @@ function seedKycNotes(users: SeedUser[]) {
       note:      i === 0
         ? 'Documents appear genuine. Passport photo matches selfie. Awaiting address verification.'
         : 'ID document uploaded. Selfie quality is acceptable. Pending final compliance sign-off.',
-      addedBy:   'operations@citygate.capital',
+      adminName: 'Operations',
       createdAt: daysAgo(2),
     });
   });
@@ -405,80 +412,14 @@ function seedKycNotes(users: SeedUser[]) {
   }
 }
 
-// ─── 7. WALLET ADDRESSES ─────────────────────────────────────────────────────
-
-const WALLETS_FILE = '/private/wallets/addresses.jsonl';
-
-function seedWallets(users: SeedUser[]) {
-  if (fileHasData(WALLETS_FILE)) { console.log('  wallets: already seeded — skipping'); return; }
-
-  const wallets: object[] = [];
-  const networks = ['BTC', 'ETH', 'USDT', 'SOL'];
-  const sampleAddresses: Record<string, string[]> = {
-    BTC:  ['1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf', 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'],
-    ETH:  ['0x742d35Cc6634C0532925a3b844Bc454e4438f44e', '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BA'],
-    USDT: ['0x742d35Cc6634C0532925a3b844Bc454e4438f44e', '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BA'],
-    SOL:  ['DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm32hy', 'HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH'],
-  };
-
-  users.filter(u => u.status === 'active').slice(0, 4).forEach((user, ui) => {
-    const net = networks[ui % networks.length];
-    const addr = sampleAddresses[net][ui % 2];
-    wallets.push({
-      id:        uid('wa'),
-      userId:    user.id,
-      userEmail: user.email,
-      network:   net,
-      address:   addr,
-      label:     `${user.name}'s ${net} wallet`,
-      active:    true,
-      createdAt: daysAgo(30 - ui * 5),
-      updatedAt: daysAgo(30 - ui * 5),
-    });
-  });
-
-  writeJsonl(WALLETS_FILE, wallets);
-  console.log(`  wallets: seeded ${wallets.length} records`);
-}
-
-// ─── 8. AUDIT LOG ────────────────────────────────────────────────────────────
-
-const AUDIT_FILE = '/private/audit/log.jsonl';
-
-function seedAuditLog(users: SeedUser[]) {
-  if (fileHasData(AUDIT_FILE)) { console.log('  audit log: already seeded — skipping'); return; }
-
-  const entries: object[] = [];
-  const actions = [
-    { action: 'user.approved',    actor: 'admin@citygate.capital',      detail: 'User account approved after KYC review' },
-    { action: 'kyc.approved',     actor: 'operations@citygate.capital', detail: 'KYC documents verified and approved' },
-    { action: 'user.suspended',   actor: 'admin@citygate.capital',      detail: 'Account suspended — compliance review' },
-    { action: 'tx.approved',      actor: 'operations@citygate.capital', detail: 'Wire transfer approved' },
-    { action: 'admin.login',      actor: 'admin@citygate.capital',      detail: 'Admin login from 127.0.0.1' },
-    { action: 'rates.updated',    actor: 'operations@citygate.capital', detail: 'FX markup updated for EUR corridor' },
-    { action: 'security.flag',    actor: 'system',                      detail: 'Automated security flag raised' },
-    { action: 'balance.adjusted', actor: 'admin@citygate.capital',      detail: 'Manual credit applied — fee reversal' },
-  ];
-
-  actions.forEach((a, i) => {
-    entries.push({
-      id:        uid('al'),
-      action:    a.action,
-      actor:     a.actor,
-      targetId:  users[i % users.length]?.id,
-      detail:    a.detail,
-      ip:        '127.0.0.1',
-      createdAt: daysAgo(i + 1),
-    });
-  });
-
-  writeJsonl(AUDIT_FILE, entries);
-  console.log(`  audit log: seeded ${entries.length} records`);
-}
-
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 async function main() {
+  if (isProd) {
+    console.error('❌ seedFromFlatFiles generates demo data and must not run in a production environment.');
+    process.exit(1);
+  }
+
   console.log('\n🌱  City Gate Capital — flat-file seed\n');
 
   const users = await seedUsers();
@@ -487,8 +428,6 @@ async function main() {
   seedSecurity(users);
   seedSubscribers();
   seedKycNotes(users);
-  seedWallets(users);
-  seedAuditLog(users);
 
   console.log('\n✅  Seed complete.\n');
   console.log('  Demo login credentials (all accounts):');
