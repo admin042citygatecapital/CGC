@@ -22,13 +22,15 @@ export interface Ticker {
   name: string;
   assetClass: AssetClass;
   price: number;
-  change24h: number;
+  // Absolute 24h change and the session open are not available from the
+  // live ticker stream (it carries a percentage) — null, not fabricated.
+  change24h: number | null;
   changePct24h: number;
   volume24h: number;
   marketCap?: number;
   high24h: number;
   low24h: number;
-  open24h: number;
+  open24h: number | null;
   currency: string;
   timestamp: number;
   provider: string;
@@ -97,7 +99,7 @@ export function useTicker(
   const tickers = useMemo<Ticker[]>(() => {
     if (wsMap.size === 0) return [];
     return symbols
-      .map(sym => {
+      .map((sym): Ticker | null => {
         const t = wsMap.get(sym);
         if (!t) return null;
         return {
@@ -105,12 +107,16 @@ export function useTicker(
           name:        t.symbol.replace('USDT', ''),
           assetClass:  (assetClass ?? 'crypto') as AssetClass,
           price:       t.price,
-          change24h:   t.change24h,
+          // TickerData.change24h is a percentage (parseRestTicker prefers the
+          // percent field) and carries no absolute move or session open —
+          // leave those null rather than mislabelling the percentage or
+          // passing the current price off as the open.
+          change24h:   null,
           changePct24h: t.change24h,
           volume24h:   t.volume24h,
           high24h:     t.high24h,
           low24h:      t.low24h,
-          open24h:     t.price,
+          open24h:     null,
           currency:    'USD',
           timestamp:   t.ts,
           provider:    isLive ? 'websocket' : 'rest',
