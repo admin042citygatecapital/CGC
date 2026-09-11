@@ -10,7 +10,7 @@
  *   --force          Re-import even if records already exist (upsert mode).
  *
  * What this script migrates:
- *   /private/users/users.jsonl              → users + customer_sessions
+ *   /private/users/users.jsonl              → users
  *   /private/transactions/transactions.jsonl → transactions
  *   /private/cards/cards.jsonl              → cards
  *   /private/cards/activity.jsonl           → card_activity
@@ -25,13 +25,19 @@
  *   /private/support/conversations.jsonl    → support_conversations + support_messages + support_notes
  *   /private/support/canned-responses.json → canned_responses
  *   /private/logs/login.jsonl               → login_events
- *   /private/admin/sessions.json            → admin_sessions
+ *   /private/admin/sessions.json            → (skipped — sessions are ephemeral
+ *     bearer credentials; importing them would restore raw credentials)
  *
  * Safety:
- *   - All inserts use ON CONFLICT DO NOTHING (idempotent — safe to re-run).
+ *   - Inserts are idempotent: most use ON CONFLICT DO NOTHING; --force upserts
+ *     users and wallets, and kyc_settings always upserts (DO UPDATE).
  *   - The script validates every record before inserting.
- *   - A migration report is written to /private/migration-report.json.
- *   - On any error, the script rolls back the current batch and continues.
+ *   - A migration report is written to the private data root.
+ *   - There is NO per-batch rollback: records are inserted one by one and a
+ *     failed record is recorded in the report while the rest continue, so a
+ *     run can leave a partial import (the exit code reflects that).
+ *   - --dry-run makes no database writes, but still reads input files and
+ *     overwrites the migration report.
  */
 
 import fs     from 'node:fs';
@@ -165,7 +171,7 @@ async function migrateUsers() {
           ${u.country ? String(u.country) : null},
           ${String(u.status || 'pending_verification')},
           ${String(u.kycStatus || 'not_submitted')},
-          ${Boolean(u.emailVerified)},
+          ${(u.emailVerified === true || u.emailVerified === 'true')},
           ${u.emailVerifyToken ? String(u.emailVerifyToken) : null},
           ${ts(u.emailVerifyExpiry as string)},
           ${String(u.passwordHash)},
@@ -204,7 +210,7 @@ async function migrateUsers() {
           ${String(u.primaryCurrency || 'USD')},
           ${String(u.accountTier || 'personal')},
           ${u.totpSecret ? String(u.totpSecret) : null},
-          ${Boolean(u.totpEnabled)},
+          ${(u.totpEnabled === true || u.totpEnabled === 'true')},
           ${u.locale ? String(u.locale) : null},
           ${u.timezone ? String(u.timezone) : null},
           ${ts(u.createdAt as string) ?? new Date()},
@@ -284,7 +290,7 @@ async function migrateTransactions() {
             ${t.frozenBy ? String(t.frozenBy) : null},
             ${ts(t.frozenAt as string)},
             ${t.adminNote ? String(t.adminNote) : null},
-            ${Boolean(t.flagged)},
+            ${(t.flagged === true || t.flagged === 'true')},
             ${t.ip ? String(t.ip) : null},
             ${ts(t.createdAt as string) ?? new Date()},
             ${ts(t.updatedAt as string) ?? new Date()}
@@ -340,7 +346,7 @@ async function migrateCards() {
           ${String(c.type || 'virtual')},
           ${String(c.network || 'Visa')},
           ${String(c.status || 'active')},
-          ${Boolean(c.frozen)},
+          ${(c.frozen === true || c.frozen === 'true')},
           ${c.spendingLimit ? Number(c.spendingLimit) : null},
           ${c.pin ? String(c.pin) : null},
           ${String(c.color || '#1a1a2e')},
@@ -705,7 +711,11 @@ async function migrateSupport() {
             )
             ON CONFLICT (id) DO NOTHING
           `;
-        } catch { /* ignore duplicate messages */ }
+        } catch (err) {
+            // DO NOTHING already dedupes by id — a caught error here is a real
+            // failure and must reach the report instead of vanishing.
+            r.errors.push(`Message ${mid} in ${c.id}: ${String(err).slice(0, 200)}`);
+          }
       }
 
       // Migrate embedded internal notes
@@ -722,7 +732,9 @@ async function migrateSupport() {
             )
             ON CONFLICT (id) DO NOTHING
           `;
-        } catch { /* ignore duplicate notes */ }
+        } catch (err) {
+          r.errors.push(`Note ${nid} in ${c.id}: ${String(err).slice(0, 200)}`);
+        }
       }
     } catch (err) {
       r.errors.push(`Conversation ${c.id}: ${String(err).slice(0, 200)}`);
