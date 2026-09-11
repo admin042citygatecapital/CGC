@@ -74,3 +74,14 @@ expected there — do not infer production state from them.
    reviewer appointed yet").
 3. Re-run after configuring: the boot log should show a clean validation
    pass; confirm with a fresh deploy and this file updated.
+
+## Related decisions recorded
+
+- **Neon PostgreSQL stays PARKED** (decision 2026-09-11, owner-confirmed).
+  Per `docs/NEON-READINESS-ASSESSMENT.md`: free-plan project with 6h
+  retention, no branch protection, and exported plaintext credentials
+  that would need rotation before any real use. It remains an unused
+  parallel database, not a migration target. Do not point any
+  environment's `DATABASE_URL` at it without reopening that assessment:
+  rotate the credentials, pick branch protection and a retention tier,
+  and write an approved migration plan first.
