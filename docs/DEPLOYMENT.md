@@ -21,7 +21,7 @@ When applying `render.yaml`, provide these secret values in the Render dashboard
 - `DATABASE_URL`: the managed PostgreSQL connection string.
 - `SESSION_SECRET`: at least 32 cryptographically random characters.
 - `CARD_ENCRYPTION_KEY`: exactly 64 hexadecimal characters.
-- `ADMIN_PASSWORD_HASH`: a bcrypt hash with cost 10–12.
+- `ADMIN_PASSWORD_HASH`: an Argon2id hash (the platform's hash policy); legacy bcrypt hashes with cost 10–12 remain verifiable for existing installations.
 - `ADMIN_EMAIL`: the preview administrator email address.
 - `PREVIEW_USER_EMAIL`: the customer email used to review the hosted dashboard.
 - `PREVIEW_USER_PASSWORD`: a strong temporary password for that preview customer.
