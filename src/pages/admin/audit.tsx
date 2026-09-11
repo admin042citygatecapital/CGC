@@ -3,11 +3,15 @@
  *
  * Features:
  *  - Paginated audit trail from /api/admin/audit
- *  - Filter by: severity, actor, action type, date range
+ *  - Filter by: severity, actor/action/resource search
  *  - Expandable row detail (full payload)
- *  - Export to CSV
+ *  - CSV export of the currently loaded page
  *  - Color-coded severity: INFO / WARN / CRITICAL
  *  - User attribution with IP address
+ *
+ * Severity is either declared by the record itself or assessed from the
+ * action name — an assessed severity is labelled as such, never presented
+ * as a recorded classification.
  */
 import AdminLayout from '@/layouts/AdminLayout';
 import { authHeaders,useAdminAuth } from '@/lib/adminAuth';
@@ -39,6 +43,8 @@ interface AuditEntry {
   resource?: string;
   resourceId?: string;
   severity: 'info' | 'warn' | 'critical';
+  /** 'declared' when the record carried a severity, 'assessed' when derived. */
+  severitySource?: 'declared' | 'assessed';
   ip?: string;
   userAgent?: string;
   payload?: Record<string, unknown>;
@@ -51,17 +57,28 @@ const SEV_CFG = {
   critical: { color: '#EF4444', bg: 'rgba(239,68,68,0.12)',   label: 'CRITICAL', Icon: AlertCircle },
 };
 
+/**
+ * Quote a CSV cell: embedded quotes doubled, the whole field wrapped, and
+ * spreadsheet-interpretable leading characters (= - + @, tab) escaped with a
+ * leading apostrophe so a crafted audit value cannot execute as a formula.
+ */
+function csvCell(value: string): string {
+  const guarded = /^[=+\-@\t]/.test(value) ? `'${value}` : value;
+  return `"${guarded.replaceAll('"', '""')}"`;
+}
+
 function exportCSV(entries: AuditEntry[]) {
-  const header = 'Timestamp,Actor,Role,Action,Resource,Severity,IP,Result\n';
+  const header = 'Timestamp,Actor,Role,Action,Resource,Severity,Severity Source,IP,Result\n';
   const rows = entries.map(e => [
-    new Date(e.ts).toISOString(),
-    `"${e.actor}"`,
-    e.actorRole ?? '',
-    `"${e.action}"`,
-    `"${e.resource ?? ''}"`,
-    e.severity,
-    e.ip ?? '',
-    e.result ?? '',
+    csvCell(new Date(e.ts).toISOString()),
+    csvCell(e.actor),
+    csvCell(e.actorRole ?? ''),
+    csvCell(e.action),
+    csvCell(e.resource ?? ''),
+    csvCell(e.severity),
+    csvCell(e.severitySource ?? 'declared'),
+    csvCell(e.ip ?? ''),
+    csvCell(e.result ?? ''),
   ].join(',')).join('\n');
   const blob = new Blob([header + rows], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
@@ -75,6 +92,7 @@ export default function AdminAudit() {
   const navigate = useNavigate();
   const [entries, setEntries]   = useState<AuditEntry[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
   const [search, setSearch]     = useState('');
   const [severity, setSeverity] = useState('all');
   const [page, setPage]         = useState(1);
@@ -84,7 +102,7 @@ export default function AdminAudit() {
 
   useEffect(() => { if (!authLoading && !admin) navigate('/admin/login'); }, [admin, authLoading, navigate]);
 
-  const fetchAudit = useCallback(async () => {
+  const fetchAudit = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -92,16 +110,30 @@ export default function AdminAudit() {
         ...(search   ? { search }   : {}),
         ...(severity !== 'all' ? { severity } : {}),
       });
-      const res = await fetch(`/api/admin/audit?${params}`, { headers: authHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        setEntries(data.data ?? data.entries ?? data.logs ?? []);
-        setTotal(data.total ?? data.data?.length ?? data.entries?.length ?? 0);
+      const res = await fetch(`/api/admin/audit?${params}`, { headers: authHeaders(), signal });
+      if (!res.ok) {
+        setError(`Audit service returned ${res.status} — the list may be stale.`);
+        return;
       }
+      const data = await res.json();
+      // The endpoint's contract is { data, total, page, limit, pages }; the
+      // fallbacks cover the compatibility aliases only, never the envelope.
+      setEntries(data.data ?? []);
+      setTotal(data.total ?? 0);
+      setError(null);
+    } catch (fetchError) {
+      if (fetchError instanceof DOMException && fetchError.name === 'AbortError') return;
+      setError('Audit service unreachable — the list may be stale.');
     } finally { setLoading(false); }
   }, [page, search, severity]);
 
-  useEffect(() => { fetchAudit(); }, [fetchAudit]);
+  useEffect(() => {
+    // Each effect run owns its request: an aborted or superseded response can
+    // never overwrite the state of a newer page/filter selection.
+    const controller = new AbortController();
+    void fetchAudit(controller.signal);
+    return () => controller.abort();
+  }, [fetchAudit]);
 
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
 
@@ -121,14 +153,15 @@ export default function AdminAudit() {
             <h1 className="text-white text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)' }}>
               <ClipboardList size={18} style={{ color: '#C9A84C' }} /> Audit Log
             </h1>
-            <p className="text-white/30 text-xs mt-0.5">{total.toLocaleString()} total entries · immutable record of all platform actions</p>
+            <p className="text-white/30 text-xs mt-0.5">{total.toLocaleString()} entries · paginated audit trail (not an immutable record)</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => exportCSV(entries)} disabled={entries.length === 0}
+              title="Exports the currently loaded page only — up to 25 rows"
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-white/50 hover:text-white text-xs transition-colors disabled:opacity-40">
-              <Download size={12} /> Export CSV
+              <Download size={12} /> Export page (CSV)
             </button>
-            <button onClick={fetchAudit}
+            <button onClick={() => void fetchAudit()}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] text-white/50 hover:text-white text-xs transition-colors">
               <RefreshCw size={12} /> Refresh
             </button>
@@ -141,11 +174,12 @@ export default function AdminAudit() {
             <Search size={12} className="text-white/30 shrink-0" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search actor, action, resource…"
+              aria-label="Search audit entries by actor, action or resource"
               className="bg-transparent text-xs text-white placeholder:text-white/25 focus:outline-none flex-1" />
           </div>
           <div className="flex gap-1.5">
             {(['all', 'info', 'warn', 'critical'] as const).map(s => (
-              <button key={s} onClick={() => { setSeverity(s); setPage(1); }}
+              <button key={s} onClick={() => { setSeverity(s); setPage(1); }} aria-pressed={severity === s}
                 className="px-3 py-2 rounded-xl text-xs font-semibold transition-all capitalize"
                 style={{
                   background: severity === s ? (s === 'all' ? 'rgba(201,168,76,0.15)' : `${SEV_CFG[s]?.bg ?? 'rgba(201,168,76,0.15)'}`) : 'rgba(255,255,255,0.04)',
@@ -158,10 +192,23 @@ export default function AdminAudit() {
           </div>
         </div>
 
+        {/* Error / stale-data banner */}
+        {error && (
+          <div role="alert" className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 text-xs">
+            <AlertCircle size={14} className="shrink-0" />
+            <span>{error}{entries.length > 0 ? ' Previously loaded entries are shown below.' : ''}</span>
+          </div>
+        )}
+
         {/* Table */}
         <div className="rounded-2xl border border-white/[0.05] overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)' }}>
           {loading ? (
             <div className="flex items-center justify-center py-16"><Loader2 size={20} className="animate-spin text-white/25" /></div>
+          ) : error && entries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-white/20">
+              <ClipboardList size={28} />
+              <p className="text-sm">Audit entries are unavailable right now</p>
+            </div>
           ) : entries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-white/20">
               <ClipboardList size={28} />
@@ -174,6 +221,7 @@ export default function AdminAudit() {
               <div key={entry.id} className={i < entries.length - 1 ? 'border-b border-white/[0.04]' : ''}>
                 <button
                   onClick={() => setExpanded(isExpanded ? null : entry.id)}
+                  aria-expanded={isExpanded}
                   className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-white/[0.025] transition-colors text-left">
                   {/* Severity */}
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -217,7 +265,7 @@ export default function AdminAudit() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3 text-xs">
                           <div><p className="text-white/30 mb-0.5">Actor ID</p><p className="text-white/60 font-mono">{entry.actorId ?? '—'}</p></div>
                           <div><p className="text-white/30 mb-0.5">IP Address</p><p className="text-white/60 font-mono">{entry.ip ?? '—'}</p></div>
-                          <div><p className="text-white/30 mb-0.5">Severity</p><p style={{ color: sev.color }} className="font-semibold">{sev.label}</p></div>
+                          <div><p className="text-white/30 mb-0.5">Severity</p><p style={{ color: sev.color }} className="font-semibold">{sev.label}{entry.severitySource === 'assessed' ? ' (assessed)' : ''}</p></div>
                           <div><p className="text-white/30 mb-0.5">Result</p><p className={entry.result === 'success' ? 'text-emerald-400' : 'text-red-400'}>{entry.result ?? '—'}</p></div>
                         </div>
                         {entry.userAgent && <p className="text-white/20 text-[10px] mb-3 font-mono truncate">{entry.userAgent}</p>}
@@ -244,6 +292,7 @@ export default function AdminAudit() {
             <p className="text-white/30 text-xs">Page {page} of {pages} · {total.toLocaleString()} entries</p>
             <div className="flex items-center gap-2">
               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                aria-label="Previous page"
                 className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-white/40 hover:text-white disabled:opacity-30 transition-colors">
                 <ChevronLeft size={13} />
               </button>
@@ -261,6 +310,7 @@ export default function AdminAudit() {
                 );
               })}
               <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}
+                aria-label="Next page"
                 className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-white/40 hover:text-white disabled:opacity-30 transition-colors">
                 <ChevronRight size={13} />
               </button>
