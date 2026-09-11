@@ -1,25 +1,11 @@
 import type { Request, Response } from 'express';
-import fs from 'node:fs';
-import type { AnalyticsEvent } from '../event/POST.js';
-import { privateSubdirectory } from '../../../lib/storagePaths.js';
-
-const DATA_FILE = privateSubdirectory('analytics/events.jsonl');
-
-function readEvents(): AnalyticsEvent[] {
-  if (!fs.existsSync(DATA_FILE)) return [];
-  const raw = fs.readFileSync(DATA_FILE, 'utf8');
-  const events: AnalyticsEvent[] = [];
-  for (const line of raw.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    try {
-      events.push(JSON.parse(trimmed) as AnalyticsEvent);
-    } catch {
-      // skip malformed lines
-    }
-  }
-  return events;
-}
+import {
+  MAX_REPORT_DAYS,
+  parseReportDays,
+  readEventsFile,
+  reportWindowStartUtc,
+  utcDayKey,
+} from '../reportShared.js';
 
 function countBy<T>(items: T[], key: (item: T) => string): { label: string; count: number }[] {
   const map = new Map<string, number>();
@@ -34,21 +20,27 @@ function countBy<T>(items: T[], key: (item: T) => string): { label: string; coun
 
 export default function handler(req: Request, res: Response) {
   try {
-    const days = Math.min(Number(req.query.days ?? 30), 365);
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const days = parseReportDays(req);
+    if (days === null) {
+      return res.status(400).json({ error: `days must be an integer between 1 and ${MAX_REPORT_DAYS}` });
+    }
+    const since = reportWindowStartUtc(days);
 
-    const all = readEvents();
+    const { events: all, malformedLines } = readEventsFile();
     const filtered = all.filter(e => new Date(e.timestamp) >= since);
     const pageviews = filtered.filter(e => e.type === 'pageview');
 
-    // Daily pageview trend (last N days)
+    // Daily pageview trend, keyed on UTC calendar dates. The window start is a
+    // UTC midnight, so every event counted in `totals` falls inside one of
+    // these buckets and vice versa.
     const dailyMap = new Map<string, number>();
     for (let i = 0; i < days; i++) {
-      const d = new Date(Date.now() - i * 86400000);
+      const d = new Date(since);
+      d.setUTCDate(d.getUTCDate() + i);
       dailyMap.set(d.toISOString().slice(0, 10), 0);
     }
     for (const e of pageviews) {
-      const day = e.timestamp.slice(0, 10);
+      const day = utcDayKey(e.timestamp);
       if (dailyMap.has(day)) dailyMap.set(day, (dailyMap.get(day) ?? 0) + 1);
     }
     const dailyTrend = Array.from(dailyMap.entries())
@@ -76,11 +68,12 @@ export default function handler(req: Request, res: Response) {
     // Devices
     const devices = countBy(pageviews, e => e.device);
 
-    // Hourly distribution (0-23)
+    // Hourly distribution (0-23), bucketed in UTC so the chart is stable no
+    // matter which timezone the server runs in.
     const hourlyMap = new Map<number, number>();
     for (let h = 0; h < 24; h++) hourlyMap.set(h, 0);
     for (const e of pageviews) {
-      const h = new Date(e.timestamp).getHours();
+      const h = new Date(e.timestamp).getUTCHours();
       hourlyMap.set(h, (hourlyMap.get(h) ?? 0) + 1);
     }
     const hourlyDistribution = Array.from(hourlyMap.entries())
@@ -88,7 +81,7 @@ export default function handler(req: Request, res: Response) {
       .sort((a, b) => a.hour - b.hour);
 
     res.json({
-      period: { days, since: since.toISOString() },
+      period: { days, since: since.toISOString(), timezone: 'UTC' },
       totals: {
         pageviews: pageviews.length,
         events: filtered.length,
@@ -99,6 +92,7 @@ export default function handler(req: Request, res: Response) {
       referrers,
       devices,
       hourlyDistribution,
+      dataQuality: { malformedLines },
     });
   } catch (err) {
     console.error('analytics.summary.error', err);

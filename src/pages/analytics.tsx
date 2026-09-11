@@ -37,12 +37,13 @@ interface FunnelStep { step: string; type: string; count: number }
 interface PlanBreakdown { plan: string; count: number }
 
 interface ConversionSummary {
-  period: { days: number; since: string };
-  totals: { pageviews: number; conversions: number; conversionRate: string };
+  period: { days: number; since: string; timezone: string };
+  totals: { pageviews: number; conversions: number; signupStartRate: string };
   byType: Record<string, number>;
   funnel: FunnelStep[];
   dailyTrend: Array<Record<string, number | string>>;
   planBreakdown: PlanBreakdown[];
+  dataQuality: { malformedLines: number };
 }
 
 interface VariantStats {
@@ -51,7 +52,8 @@ interface VariantStats {
   conversions: number;
   conversionRate: number;
   liftVsControl: number | null;
-  confidence: 'low' | 'medium' | 'high';
+  /** Traffic-volume tier — not statistical confidence. */
+  sampleTier: 'low' | 'medium' | 'high';
 }
 
 interface ExperimentResult {
@@ -59,22 +61,25 @@ interface ExperimentResult {
   totalImpressions: number;
   totalConversions: number;
   variants: VariantStats[];
+  /** Null when fewer than two variants have ≥50 impressions or rates are tied. */
   winner: string | null;
 }
 
 interface ABResults {
-  period: { days: number; since: string };
+  period: { days: number; since: string; timezone: string };
   experiments: ExperimentResult[];
+  dataQuality: { malformedLines: number };
 }
 
 interface Summary {
-  period: { days: number; since: string };
+  period: { days: number; since: string; timezone: string };
   totals: { pageviews: number; events: number; uniqueSessions: number };
   dailyTrend: DailyPoint[];
   topPages: LabelCount[];
   referrers: LabelCount[];
   devices: LabelCount[];
   hourlyDistribution: HourPoint[];
+  dataQuality: { malformedLines: number };
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -488,7 +493,7 @@ export default function AnalyticsPage() {
 
             {/* Conversion KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <KpiCard icon={Percent}  label="Conversion Rate"   value={conversions?.totals.conversionRate ?? '—'} color="#C9A84C" delay={0.4}  sub="Signups / page views" />
+              <KpiCard icon={Percent}  label="Signup Start Rate"  value={conversions?.totals.signupStartRate ?? '—'} color="#C9A84C" delay={0.4}  sub="Signup starts / page views" />
               <KpiCard icon={UserPlus} label="Signups Started"   value={fmt(conversions?.byType['signup_started'] ?? 0)}   color="#627EEA" delay={0.45} sub="Open Account clicks" />
               <KpiCard icon={Send}     label="Transfers Initiated" value={fmt(conversions?.byType['transfer_initiated'] ?? 0)} color="#10B981" delay={0.5}  sub="Send Now clicks" />
             </div>
@@ -502,10 +507,11 @@ export default function AnalyticsPage() {
                 transition={{ duration: 0.4, delay: 0.45 }}
                 className="rounded-2xl border border-primary/10 bg-white/[0.03] p-6"
               >
-                <div className="flex items-center gap-2 mb-5">
+                <div className="flex items-center gap-2 mb-1">
                   <Target size={16} className="text-primary" />
                   <span className="text-sm font-semibold text-foreground">Conversion Funnel</span>
                 </div>
+                <p className="text-[10px] text-foreground/30 mb-4">Independent event counts per step, not a cohort funnel — steps are not strict subsets.</p>
                 {conversions?.funnel.length ? (
                   <div className="space-y-3">
                     {conversions.funnel.map((step, i) => {
@@ -589,11 +595,14 @@ export default function AnalyticsPage() {
 
           {/* ── A/B Testing Results ─────────────────────────────────────── */}
           <div className="mt-6">
-            <div className="flex items-center gap-2 mb-5">
+            <div className="flex items-center gap-2 mb-1">
               <FlaskConical size={16} className="text-purple-400" />
               <h2 className="text-base font-semibold text-foreground">A/B Test Results</h2>
               <span className="text-xs text-foreground/30 ml-auto">Variant performance</span>
             </div>
+            <p className="text-[10px] text-foreground/30 mb-4">
+              Sample tiers reflect traffic volume, not statistical significance. A leader is shown only with ≥50 impressions per variant and no tie.
+            </p>
 
             {abResults?.experiments.length ? (
               <div className="space-y-4">
@@ -645,11 +654,11 @@ export default function AnalyticsPage() {
                                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary">winner</span>
                                 )}
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                  v.confidence === 'high' ? 'bg-emerald-500/15 text-emerald-400' :
-                                  v.confidence === 'medium' ? 'bg-yellow-500/15 text-yellow-400' :
+                                  v.sampleTier === 'high' ? 'bg-emerald-500/15 text-emerald-400' :
+                                  v.sampleTier === 'medium' ? 'bg-yellow-500/15 text-yellow-400' :
                                   'bg-white/10 text-foreground/30'
                                 }`}>
-                                  {v.confidence} confidence
+                                  {v.sampleTier} sample
                                 </span>
                               </div>
                               <div className="flex items-center gap-3 text-xs">
