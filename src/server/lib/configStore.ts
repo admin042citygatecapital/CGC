@@ -346,7 +346,7 @@ function defaultConfig(): AppConfig {
       showCountdown:    false,
     },
     featureToggles: {
-      kycApprovalsEnabled:         false,
+      kycApprovalsEnabled:         true,
       sandboxFinancialControlsEnabled: false,
       accountApplicationsEnabled: true,
       contactFormsEnabled:        true,

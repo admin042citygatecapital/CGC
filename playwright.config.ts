@@ -1,7 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
 const port = Number(process.env.E2E_PORT ?? 5191);
-const baseURL = `http://127.0.0.1:${port}`;
+const defaultBaseURL = `http://127.0.0.1:${port}`;
+const baseURL = process.env.BASE_URL ?? defaultBaseURL;
 
 export default defineConfig({
   testDir: './e2e',
@@ -17,7 +18,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'off',
   },
-  webServer: {
+  webServer: process.env.BASE_URL ? undefined : {
     command: 'npx tsx scripts/start-e2e-server.ts',
     url: `${baseURL}/api/health`,
     timeout: 90_000,

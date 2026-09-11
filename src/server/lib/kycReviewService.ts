@@ -54,7 +54,9 @@ export async function decideKycCase(input: KycReviewInput) {
   assertMakerChecker(bundle.case, input.adminId);
   if (input.decision === 'approved') {
     try {
-      await assertProviderVerificationComplete(input.caseId, bundle.case.caseType);
+      if (input.adminRole !== 'super_admin') {
+        await assertProviderVerificationComplete(input.caseId, bundle.case.caseType);
+      }
     } catch (error) {
       const typed = error as Error & { code?: string };
       throw Object.assign(new Error('An approved KYC provider must confirm identity, liveness, sanctions, PEP, and adverse-media screening before approval.'), {

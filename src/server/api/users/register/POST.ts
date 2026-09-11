@@ -134,6 +134,6 @@ export default async function handler(req: Request, res: Response) {
     intakePosition,
     selectedProductLabel,
     workflow: buildRegistrationWorkflow(user, { status: 'draft' }, 0, null),
-    kycAvailable: process.env.NODE_ENV !== 'production',
+    kycAvailable: process.env.ENABLE_KYC === '1',
   });
 }

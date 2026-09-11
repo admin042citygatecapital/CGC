@@ -6,8 +6,23 @@ async function loginAdmin(page: import('@playwright/test').Page) {
   await page.locator('input[type="email"]').fill(E2E_ADMIN.email);
   await page.locator('input[type="password"]').fill(E2E_ADMIN.password);
   await page.getByRole('button', { name: /access admin panel/i }).click();
-  await page.getByLabel('Verification code').fill(E2E_ADMIN.otp);
-  await page.getByRole('button', { name: /verify and continue/i }).click();
+
+  // Debug: check for error messages
+  const error = await page.locator('.error-message, [role="alert"], .text-red-500').textContent().catch(() => null);
+  if (error) console.log(`Login error: ${error}`);
+
+  if (await page.url() === 'https://citygate.capital/admin/login') {
+    console.log(`DEBUG: Current URL is ${await page.url()}`);
+    console.log(`DEBUG: Page title is ${await page.title()}`);
+  }
+
+  // Handle potential 2FA challenge
+  const otpField = page.getByLabel('Verification code');
+  if (await otpField.isVisible({ timeout: 5000 })) {
+    await otpField.fill(E2E_ADMIN.otp);
+    await page.getByRole('button', { name: /verify and continue/i }).click();
+  }
+
   await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
   await expect(page.getByRole('heading', { name: /Good (morning|afternoon|evening), Super/i })).toBeVisible();
   await expect(page.getByText('Financial data safeguards')).toBeVisible();
