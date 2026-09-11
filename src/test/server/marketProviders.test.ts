@@ -29,10 +29,14 @@ function fakeProvider(id: string, tickers: Ticker[]): MarketDataProvider {
 }
 
 describe('market provider fallbacks', () => {
-  it('converts common symbols to valid Coinbase product IDs', () => {
-    expect(toCoinbaseProductId('BTCUSDT')).toBe('BTC-USD');
+  it('converts supported symbols to Coinbase product IDs and refuses USDT pairs', () => {
+    // Coinbase Advanced Trade quotes USD only — a USDT request would silently
+    // receive USD-quoted data, so the adapter refuses it and the registry
+    // falls back to a provider that genuinely quotes USDT.
+    expect(toCoinbaseProductId('BTCUSD')).toBe('BTC-USD');
     expect(toCoinbaseProductId('ETHUSD')).toBe('ETH-USD');
     expect(toCoinbaseProductId('SOL/USD')).toBe('SOL-USD');
+    expect(() => toCoinbaseProductId('BTCUSDT')).toThrow(/USDT/);
   });
 
   it('falls back when a provider returns an empty ticker response', async () => {
@@ -60,20 +64,33 @@ describe('market provider fallbacks', () => {
     expect(registry.getStatus().find(provider => provider.id === 'binance')?.available).toBe(false);
   });
 
-  it('requests Coinbase with the corrected product ID', async () => {
+  it('requests Coinbase with the corrected product ID and no fabricated statistics', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
       trades: [{ price: '64000' }],
       best_bid_size: '2',
     }), { status: 200 }));
 
-    const tickers = await new CoinbaseProvider().getTicker(['BTCUSDT']);
+    const tickers = await new CoinbaseProvider().getTicker(['BTCUSD']);
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/BTC-USD/ticker'),
       expect.any(Object),
     );
     expect(tickers).toHaveLength(1);
+    expect(tickers[0].price).toBe(64000);
+    // The ticker endpoint exposes no 24h statistics: best-bid size must not
+    // pose as volume and the last price must not pose as high/low/open.
+    expect(tickers[0].volume24h).toBeNull();
+    expect(tickers[0].high24h).toBeNull();
+    expect(tickers[0].changePct24h).toBeNull();
     fetchMock.mockRestore();
+  });
+
+  it('refuses candle intervals the providers do not actually offer', async () => {
+    await expect(new CoinbaseProvider().getCandles('BTCUSD', '3m')).rejects.toThrow(/3m/);
+    await expect(new CoinbaseProvider().getCandles('BTCUSD', '1M')).rejects.toThrow(/1M/);
+    await expect(new KrakenProvider().getCandles('BTCUSDT', '2h')).rejects.toThrow(/2h/);
+    await expect(new KrakenProvider().getCandles('BTCUSDT', '1M')).rejects.toThrow(/1M/);
   });
 
   it('normalizes Kraken XBT responses to the platform BTC symbol', async () => {

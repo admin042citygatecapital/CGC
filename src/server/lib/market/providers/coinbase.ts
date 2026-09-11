@@ -15,12 +15,20 @@ import type {
 const REST_BASE = 'https://api.coinbase.com/api/v3/brokerage';
 const WS_URL    = 'wss://advanced-trade-ws.coinbase.com';
 
-const INTERVAL_MAP: Record<CandleInterval, string> = {
+/** Coinbase granularities that are actually offered — unsupported intervals
+ *  must be refused, not silently served at a different width. */
+const SUPPORTED_INTERVALS: ReadonlySet<CandleInterval> = new Set([
+  '1m', '5m', '15m', '30m', '1h', '2h', '6h', '1d',
+]);
+const GRANULARITY: Record<string, string> = {
   '1m': 'ONE_MINUTE', '5m': 'FIVE_MINUTE', '15m': 'FIFTEEN_MINUTE',
   '30m': 'THIRTY_MINUTE', '1h': 'ONE_HOUR', '2h': 'TWO_HOUR',
   '6h': 'SIX_HOUR', '1d': 'ONE_DAY',
-  '3m': 'FIVE_MINUTE', '4h': 'SIX_HOUR', '12h': 'ONE_DAY',
-  '1w': 'ONE_DAY', '1M': 'ONE_DAY',
+};
+const GRANULARITY_SECONDS: Record<string, number> = {
+  ONE_MINUTE: 60, FIVE_MINUTE: 300, FIFTEEN_MINUTE: 900,
+  THIRTY_MINUTE: 1800, ONE_HOUR: 3600, TWO_HOUR: 7200,
+  SIX_HOUR: 21600, ONE_DAY: 86400,
 };
 
 async function fetchJSON<T>(url: string): Promise<T> {
@@ -29,12 +37,28 @@ async function fetchJSON<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** Parse a provider string into a finite number, else null — never a
+ *  fabricated 0. */
+function num(value: unknown): number | null {
+  const n = parseFloat(String(value ?? ''));
+  return Number.isFinite(n) ? n : null;
+}
+
 export function toCoinbaseProductId(symbol: string): string {
-  // Coinbase uses BTC-USD format
+  // Coinbase Advanced Trade lists USD-quoted products. A USDT request would
+  // silently receive USD-quoted data, so refuse it and let the registry fall
+  // back to a provider that genuinely quotes USDT.
   const normalized = symbol.replace('/', '').replace('-', '').toUpperCase();
-  if (normalized.endsWith('USDT')) return `${normalized.slice(0, -4)}-USD`;
+  if (normalized.endsWith('USDT')) {
+    throw new Error(`Coinbase does not quote USDT pairs (${symbol} would be served as USD)`);
+  }
   if (normalized.endsWith('USD')) return `${normalized.slice(0, -3)}-USD`;
-  return symbol;
+  return normalized;
+}
+
+/** Map a provider-native product id back to the platform's canonical symbol. */
+export function fromCoinbaseProductId(productId: string): string {
+  return productId.replace('/', '').replace('-', '').toUpperCase();
 }
 
 export class CoinbaseProvider implements MarketDataProvider {
@@ -55,18 +79,22 @@ export class CoinbaseProvider implements MarketDataProvider {
         );
         const trades = (data.trades as Record<string, string>[])?.[0];
         if (!trades) continue;
-        const price = parseFloat(trades.price ?? '0');
+        const price = num(trades.price);
+        if (price === null) continue;
         results.push({
           symbol:      sym,
           name:        sym,
           assetClass:  'crypto',
           price,
-          change24h:   0,
-          changePct24h: 0,
-          volume24h:   parseFloat(String(data.best_bid_size ?? 0)),
-          high24h:     price,
-          low24h:      price,
-          open24h:     price,
+          // This endpoint exposes no 24h statistics — leave them null rather
+          // than reporting zeros, best-bid size as volume, or the last price
+          // as the day's high/low/open.
+          change24h:   null,
+          changePct24h: null,
+          volume24h:   null,
+          high24h:     null,
+          low24h:      null,
+          open24h:     null,
           currency:    'USD',
           timestamp:   Date.now(),
           provider:    'coinbase',
@@ -77,15 +105,13 @@ export class CoinbaseProvider implements MarketDataProvider {
   }
 
   async getCandles(symbol: string, interval: CandleInterval, limit = 200): Promise<Candle[]> {
+    if (!SUPPORTED_INTERVALS.has(interval)) {
+      throw new Error(`Coinbase does not support ${interval} candles`);
+    }
     const productId = toCoinbaseProductId(symbol);
-    const gran      = INTERVAL_MAP[interval] ?? 'ONE_HOUR';
+    const gran      = GRANULARITY[interval];
     const end       = Math.floor(Date.now() / 1000);
-    const granSecs: Record<string, number> = {
-      ONE_MINUTE: 60, FIVE_MINUTE: 300, FIFTEEN_MINUTE: 900,
-      THIRTY_MINUTE: 1800, ONE_HOUR: 3600, TWO_HOUR: 7200,
-      SIX_HOUR: 21600, ONE_DAY: 86400,
-    };
-    const start = end - (granSecs[gran] ?? 3600) * limit;
+    const start = end - (GRANULARITY_SECONDS[gran] ?? 3600) * limit;
     const data  = await fetchJSON<{ candles: Record<string, string>[] }>(
       `${REST_BASE}/market/products/${productId}/candles?start=${start}&end=${end}&granularity=${gran}`
     );
@@ -139,20 +165,22 @@ export class CoinbaseProvider implements MarketDataProvider {
         symbol:      p.product_id,
         name:        p.base_name ?? p.product_id,
         assetClass:  'crypto' as const,
-        price:       parseFloat(p.price ?? '0'),
-        change24h:   parseFloat(p.price_percentage_change_24h ?? '0'),
-        changePct24h: parseFloat(p.price_percentage_change_24h ?? '0'),
-        volume24h:   parseFloat(p.volume_24h ?? '0'),
-        high24h:     parseFloat(p.price ?? '0'),
-        low24h:      parseFloat(p.price ?? '0'),
-        open24h:     parseFloat(p.price ?? '0'),
+        price:       num(p.price) ?? 0,
+        // Percentage change and 24h volume are provided; the absolute change
+        // and the day's high/low/open are not — they stay null.
+        change24h:   null,
+        changePct24h: num(p.price_percentage_change_24h),
+        volume24h:   num(p.volume_24h),
+        high24h:     null,
+        low24h:      null,
+        open24h:     null,
         currency:    'USD',
         timestamp:   Date.now(),
         provider:    'coinbase',
       }));
 
-    const sorted = [...tickers].sort((a, b) => b.changePct24h - a.changePct24h);
-    const byVol  = [...tickers].sort((a, b) => b.volume24h - a.volume24h);
+    const sorted = [...tickers].sort((a, b) => (b.changePct24h ?? -Infinity) - (a.changePct24h ?? -Infinity));
+    const byVol  = [...tickers].sort((a, b) => (b.volume24h ?? -Infinity) - (a.volume24h ?? -Infinity));
     return {
       gainers:    sorted.slice(0, 10),
       losers:     sorted.slice(-10).reverse(),
@@ -170,7 +198,11 @@ export class CoinbaseProvider implements MarketDataProvider {
     let closed = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const productIds = symbols.map(toCoinbaseProductId);
+    // Skip symbols Coinbase cannot serve rather than aborting the stream.
+    const productIds: string[] = [];
+    for (const s of symbols) {
+      try { productIds.push(toCoinbaseProductId(s)); } catch { /* unsupported pair — skip */ }
+    }
 
     const connect = () => {
       if (closed) return;
@@ -191,16 +223,20 @@ export class CoinbaseProvider implements MarketDataProvider {
           for (const ev of d.events ?? []) {
             for (const t of ev.tickers ?? []) {
               onUpdate({
-                symbol:      t.product_id,
-                name:        t.product_id,
+                // Emit the platform's canonical symbol, not Coinbase's
+                // provider-native product id.
+                symbol:      fromCoinbaseProductId(t.product_id),
+                name:        fromCoinbaseProductId(t.product_id),
                 assetClass:  'crypto',
-                price:       parseFloat(t.price),
-                change24h:   parseFloat(t.price_percent_chg_24h ?? '0'),
-                changePct24h: parseFloat(t.price_percent_chg_24h ?? '0'),
-                volume24h:   parseFloat(t.volume_24h ?? '0'),
-                high24h:     parseFloat(t.high_52_week ?? t.price),
-                low24h:      parseFloat(t.low_52_week ?? t.price),
-                open24h:     parseFloat(t.price),
+                price:       num(t.price) ?? 0,
+                change24h:   null,
+                changePct24h: num(t.price_percent_chg_24h),
+                volume24h:   num(t.volume_24h),
+                // 52-week figures are a different horizon — never reuse them
+                // as 24h high/low.
+                high24h:     null,
+                low24h:      null,
+                open24h:     null,
                 currency:    'USD',
                 timestamp:   Date.now(),
                 provider:    'coinbase',

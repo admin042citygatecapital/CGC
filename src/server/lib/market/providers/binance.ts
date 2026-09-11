@@ -112,8 +112,8 @@ export class BinanceProvider implements MarketDataProvider {
       .filter(t => t.symbol.endsWith('USDT'))
       .map(parseTicker);
 
-    const sorted = [...tickers].sort((a, b) => b.changePct24h - a.changePct24h);
-    const byVol  = [...tickers].sort((a, b) => b.volume24h - a.volume24h);
+    const sorted = [...tickers].sort((a, b) => (b.changePct24h ?? -Infinity) - (a.changePct24h ?? -Infinity));
+    const byVol  = [...tickers].sort((a, b) => (b.volume24h ?? -Infinity) - (a.volume24h ?? -Infinity));
 
     return {
       gainers:    sorted.slice(0, 10),

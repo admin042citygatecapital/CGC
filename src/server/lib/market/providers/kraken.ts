@@ -15,11 +15,15 @@ import type {
 const REST_BASE = 'https://api.kraken.com/0/public';
 const WS_URL    = 'wss://ws.kraken.com/v2';
 
-// Kraken interval in minutes
-const INTERVAL_MAP: Record<CandleInterval, number> = {
+// Kraken interval in minutes. Only intervals Kraken actually offers are
+// listed — unsupported intervals must be refused, not served at a
+// substituted width (21600 is a 15-day bucket, not a monthly one).
+const SUPPORTED_INTERVALS: ReadonlySet<CandleInterval> = new Set([
+  '1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w',
+]);
+const INTERVAL_MAP: Record<string, number> = {
   '1m': 1, '5m': 5, '15m': 15, '30m': 30,
-  '1h': 60, '4h': 240, '1d': 1440, '1w': 10080, '1M': 21600,
-  '3m': 5, '2h': 240, '6h': 240, '12h': 1440,
+  '1h': 60, '4h': 240, '1d': 1440, '1w': 10080,
 };
 
 async function fetchJSON<T>(url: string): Promise<T> {
@@ -28,6 +32,13 @@ async function fetchJSON<T>(url: string): Promise<T> {
   const json = await res.json() as { error: string[]; result: T };
   if (json.error?.length) throw new Error(`Kraken: ${json.error.join(', ')}`);
   return json.result;
+}
+
+/** Parse a provider string into a finite number, else null — never a
+ *  fabricated 0. */
+function num(value: unknown): number | null {
+  const n = parseFloat(String(value ?? ''));
+  return Number.isFinite(n) ? n : null;
 }
 
 /** Convert BTC/USDT → XBTUSDT (Kraken naming) */
@@ -41,6 +52,12 @@ function fromKrakenPair(symbol: string): string {
     .toUpperCase()
     .replace(/^XBT/, 'BTC')
     .replace(/^XDG/, 'DOGE');
+}
+
+/** Report the pair's actual quote currency — a USDT-quoted pair must not be
+ *  labelled as USD data. */
+function quoteCurrency(canonicalSymbol: string): string {
+  return canonicalSymbol.endsWith('USDT') ? 'USDT' : 'USD';
 }
 
 export class KrakenProvider implements MarketDataProvider {
@@ -64,9 +81,10 @@ export class KrakenProvider implements MarketDataProvider {
       const v = t.v as string[];
       const price = parseFloat(c[0]);
       const open  = parseFloat(o);
+      const canonical = fromKrakenPair(pair);
       return {
-        symbol:      fromKrakenPair(pair),
-        name:        fromKrakenPair(pair),
+        symbol:      canonical,
+        name:        canonical,
         assetClass:  'crypto' as const,
         price,
         change24h:   price - open,
@@ -75,7 +93,7 @@ export class KrakenProvider implements MarketDataProvider {
         high24h:     parseFloat(h[1]),
         low24h:      parseFloat(l[1]),
         open24h:     open,
-        currency:    'USD',
+        currency:    quoteCurrency(canonical),
         timestamp:   Date.now(),
         provider:    'kraken',
       };
@@ -83,8 +101,11 @@ export class KrakenProvider implements MarketDataProvider {
   }
 
   async getCandles(symbol: string, interval: CandleInterval, limit = 200): Promise<Candle[]> {
+    if (!SUPPORTED_INTERVALS.has(interval)) {
+      throw new Error(`Kraken does not support ${interval} candles`);
+    }
     const pair = toKrakenPair(symbol);
-    const iv   = INTERVAL_MAP[interval] ?? 60;
+    const iv   = INTERVAL_MAP[interval];
     const data = await fetchJSON<Record<string, unknown>>(
       `${REST_BASE}/OHLC?pair=${pair}&interval=${iv}`
     );
@@ -145,9 +166,10 @@ export class KrakenProvider implements MarketDataProvider {
       const v = t.v as string[];
       const price = parseFloat(c[0]);
       const open  = parseFloat(o);
+      const canonical = fromKrakenPair(pair);
       return {
-        symbol:      fromKrakenPair(pair),
-        name:        fromKrakenPair(pair),
+        symbol:      canonical,
+        name:        canonical,
         assetClass:  'crypto' as const,
         price,
         change24h:   price - open,
@@ -156,7 +178,7 @@ export class KrakenProvider implements MarketDataProvider {
         high24h:     parseFloat(h[1]),
         low24h:      parseFloat(l[1]),
         open24h:     open,
-        currency:    'USD',
+        currency:    quoteCurrency(canonical),
         timestamp:   Date.now(),
         provider:    'kraken',
       };
@@ -197,18 +219,19 @@ export class KrakenProvider implements MarketDataProvider {
           const d = JSON.parse(raw.toString());
           if (d.channel !== 'ticker') return;
           for (const t of d.data ?? []) {
+            const canonical = fromKrakenPair(t.symbol);
             onUpdate({
-              symbol:      fromKrakenPair(t.symbol),
-              name:        fromKrakenPair(t.symbol),
+              symbol:      canonical,
+              name:        canonical,
               assetClass:  'crypto',
-              price:       t.last,
-              change24h:   t.change,
-              changePct24h: t.change_pct,
-              volume24h:   t.volume,
-              high24h:     t.high,
-              low24h:      t.low,
-              open24h:     t.open,
-              currency:    'USD',
+              price:       num(t.last) ?? 0,
+              change24h:   num(t.change),
+              changePct24h: num(t.change_pct),
+              volume24h:   num(t.volume),
+              high24h:     num(t.high),
+              low24h:      num(t.low),
+              open24h:     num(t.open),
+              currency:    quoteCurrency(canonical),
               timestamp:   Date.now(),
               provider:    'kraken',
             });
