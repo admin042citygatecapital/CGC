@@ -172,7 +172,7 @@ describe('customer TOTP controls', () => {
     const remaining = consumeRecoveryCode(hashes, codes[0]);
     expect(remaining).toEqual(hashes.filter((_, i) => i !== 0));
     // The updated list is what gets persisted — the consumed code must be gone.
-    expect(consumeRecoveryCode(remaining, codes[0])).toBeNull();
-    expect(consumeRecoveryCode(remaining, 'zzzz')).toBeNull();
+    expect(remaining && consumeRecoveryCode(remaining, codes[0])).toBeNull();
+    expect(remaining && consumeRecoveryCode(remaining, 'zzzz')).toBeNull();
   });
 });

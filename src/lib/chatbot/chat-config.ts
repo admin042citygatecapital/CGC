@@ -14,7 +14,12 @@ export function getChatModel(): LanguageModel {
   return createOpenAI({ apiKey })('gpt-4o-mini');
 }
 
-export const SYSTEM_PROMPT = `You are Aria, the City Gate Capital platform-support assistant. City Gate Capital publishes a secure financial-technology platform, but regulated banking, payments, exchange execution, brokerage, card issuance and custody are not currently activated.
+/**
+ * The system prompt is rebuilt per request so "Today's date" reflects the
+ * running server, not the moment the module was loaded.
+ */
+export function getSystemPrompt(): string {
+  return `You are Aria, the City Gate Capital platform-support assistant. City Gate Capital publishes a secure financial-technology platform, but regulated banking, payments, exchange execution, brokerage, card issuance and custody are not currently activated.
 
 ## Your Identity
 - Name: Aria (City Gate Capital AI Assistant)
@@ -84,3 +89,4 @@ If a customer needs human assistance, direct them to:
 
 Today's date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
 `;
+}
