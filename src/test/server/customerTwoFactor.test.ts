@@ -170,6 +170,7 @@ describe('customer TOTP controls', () => {
     const codes = generateRecoveryCodes();
     const hashes = codes.map(hashRecoveryCode);
     const remaining = consumeRecoveryCode(hashes, codes[0]);
+    if (!remaining) throw new Error('first consumption must leave the remaining hashes');
     expect(remaining).toEqual(hashes.filter((_, i) => i !== 0));
     // The updated list is what gets persisted — the consumed code must be gone.
     expect(consumeRecoveryCode(remaining, codes[0])).toBeNull();
