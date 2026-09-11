@@ -135,7 +135,6 @@ const AdminSponsorReadiness = lazy(() => import('./pages/admin/sponsor-readiness
 const AdminReadiness       = lazy(() => import('./pages/admin/readiness'));
 const AdminReconciliation = lazy(() => import('./pages/admin/reconciliation'));
 const AdminDisputes = lazy(() => import('./pages/admin/disputes'));
-const AdminLegalEntity = lazy(() => import('./pages/admin/legal-entity'));
 const AdminNotifications   = lazy(() => import('./pages/admin/notifications'));
 const AdminSystem          = lazy(() => import('./pages/admin/system'));
 const AdminEmailCenter     = lazy(() => import('./pages/admin/email'));
@@ -254,7 +253,6 @@ export const routes: RouteObject[] = [
   { path: '/admin/readiness',       element: <AdminOnly><AdminReadiness /></AdminOnly> },
   { path: '/admin/reconciliation', element: <AdminOnly><AdminReconciliation /></AdminOnly> },
   { path: '/admin/disputes', element: <AdminOnly><AdminDisputes /></AdminOnly> },
-  { path: '/admin/legal-entity', element: <AdminOnly><AdminLegalEntity /></AdminOnly> },
   { path: '/admin/notifications',   element: <AdminOnly><AdminNotifications /></AdminOnly> },
   { path: '/admin/audit',           element: <AdminOnly><AdminAudit /></AdminOnly> },
   { path: '/admin/email',           element: <AdminOnly><AdminEmailCenter /></AdminOnly> },
