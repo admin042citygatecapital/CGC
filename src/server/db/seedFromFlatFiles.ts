@@ -50,7 +50,9 @@ function ref(): string {
 
 const USERS_FILE = '/private/users/users.jsonl';
 
-async function seedUsers() {
+interface SeedUser { id: string; email: string; name: string; ip: string; status: string; kycStatus: string; }
+
+async function seedUsers(): Promise<SeedUser[]> {
   if (fileHasData(USERS_FILE)) { console.log('  users: already seeded — skipping'); return []; }
 
   const hash = await bcrypt.hash('Password1!', 10);
@@ -160,7 +162,7 @@ async function seedUsers() {
 
 const TX_FILE = '/private/transactions/transactions.jsonl';
 
-function seedTransactions(users: any[]) {
+function seedTransactions(users: SeedUser[]) {
   if (fileHasData(TX_FILE)) { console.log('  transactions: already seeded — skipping'); return; }
   if (!users.length) { console.log('  transactions: no users — skipping'); return; }
 
@@ -220,7 +222,7 @@ const SUPPORT_FILE = '/private/support/conversations.jsonl';
 const CANNED_FILE  = '/private/support/canned-responses.json';
 const ROUTING_FILE = '/private/support/routing-rules.json';
 
-function seedSupport(users: any[]) {
+function seedSupport(users: SeedUser[]) {
   if (!fileHasData(SUPPORT_FILE)) {
     const convos: object[] = [];
     const subjects = [
@@ -309,7 +311,7 @@ function seedSupport(users: any[]) {
 const FLAGS_FILE = '/private/security/flags.jsonl';
 const IP_FILE    = '/private/security/ip-lists.json';
 
-function seedSecurity(users: any[]) {
+function seedSecurity(users: SeedUser[]) {
   if (!fileHasData(FLAGS_FILE)) {
     const flags: object[] = [];
     const flagTypes = ['suspicious_login', 'multiple_failed_logins', 'unusual_transfer_amount', 'geo_anomaly', 'velocity_breach'];
@@ -376,7 +378,7 @@ function seedSubscribers() {
 
 const KYC_NOTES_FILE = '/private/kyc/notes.jsonl';
 
-function seedKycNotes(users: any[]) {
+function seedKycNotes(users: SeedUser[]) {
   if (fileHasData(KYC_NOTES_FILE)) { console.log('  kyc notes: already seeded — skipping'); return; }
 
   const notes: object[] = [];
@@ -407,7 +409,7 @@ function seedKycNotes(users: any[]) {
 
 const WALLETS_FILE = '/private/wallets/addresses.jsonl';
 
-function seedWallets(users: any[]) {
+function seedWallets(users: SeedUser[]) {
   if (fileHasData(WALLETS_FILE)) { console.log('  wallets: already seeded — skipping'); return; }
 
   const wallets: object[] = [];
@@ -443,7 +445,7 @@ function seedWallets(users: any[]) {
 
 const AUDIT_FILE = '/private/audit/log.jsonl';
 
-function seedAuditLog(users: any[]) {
+function seedAuditLog(users: SeedUser[]) {
   if (fileHasData(AUDIT_FILE)) { console.log('  audit log: already seeded — skipping'); return; }
 
   const entries: object[] = [];

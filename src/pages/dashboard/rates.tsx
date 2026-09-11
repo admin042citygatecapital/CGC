@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { useBackgroundSync } from '@/lib/backgroundSync';
-import { CurrencyMark, currencyOptionLabel } from '@/components/CurrencyMark';
+import { CurrencyMark } from '@/components/CurrencyMark';
+import { currencyOptionLabel } from '@/lib/currencyFormat';
 
 interface RateEntry {
   from:    string;

@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { readWorkflowControls, updateSection, resetSection, redactConfigSecrets } from '../../../lib/configStore.js';
+import { readWorkflowControls, updateSection, resetSection, redactConfigSecrets, type AppConfig } from '../../../lib/configStore.js';
 import { appendCriticalAudit } from '../../../lib/auditLog.js';
 import { authorizeRecentAdminStepUp } from '../../../lib/rbacMiddleware.js';
 import {
@@ -15,6 +15,8 @@ type ConfigSection =
   | 'branding' | 'theme' | 'homepage' | 'dashboardWidgets'
   | 'notificationSettings' | 'maintenanceMode' | 'featureToggles'
   | 'exchangeRates' | 'language' | 'currency' | 'timezone';
+
+type NonWorkflowSection = Exclude<ConfigSection, 'featureToggles'>;
 
 const VALID_SECTIONS: ConfigSection[] = [
   'branding', 'theme', 'homepage', 'dashboardWidgets',
@@ -111,7 +113,11 @@ export default async function handler(req: Request, res: Response) {
       return res.status(400).json({ error: 'data object required' });
     }
 
-    const cfg = section === 'featureToggles' ? await updateSection(section, data as any, expectedWorkflowVersion) : await updateSection(section, data as any);
+    // Admin-supplied section payload; updateSection persists it as-is (unchanged behavior).
+    const payload = (data ?? {}) as unknown;
+    const cfg = section === 'featureToggles'
+      ? await updateSection(section, payload as Partial<AppConfig['featureToggles']>, expectedWorkflowVersion)
+      : await updateSection(section as NonWorkflowSection, payload as Partial<AppConfig[NonWorkflowSection]>);
     if (section === 'maintenanceMode') {
       await appendCriticalAudit({
         event: 'admin_maintenance_mode_changed', adminId: req.adminSession?.adminId,
@@ -152,6 +158,6 @@ function mergeHomepage(
     showNewsSection:           Boolean(patch.showNewsSection          ?? current.showNewsSection),
     announcementBannerEnabled: Boolean(patch.announcementBannerEnabled ?? current.announcementBannerEnabled),
     announcementBannerText:    String(patch.announcementBannerText    ?? current.announcementBannerText),
-    announcementBannerType:    (patch.announcementBannerType as any)  ?? current.announcementBannerType,
+    announcementBannerType:    (patch.announcementBannerType as 'info' | 'warning' | 'success' | 'maintenance')  ?? current.announcementBannerType,
   };
 }

@@ -2,14 +2,6 @@ import type { SVGProps } from 'react';
 
 export type SocialPlatformId = 'twitter' | 'linkedin' | 'instagram' | 'facebook' | 'telegram' | 'whatsapp' | 'tiktok' | 'youtube' | 'discord';
 
-export const SOCIAL_PLATFORM_META: Record<SocialPlatformId, { label: string; color: string }> = {
-  twitter: { label: 'X / Twitter', color: '#E5E7EB' }, linkedin: { label: 'LinkedIn', color: '#0A66C2' },
-  instagram: { label: 'Instagram', color: '#E1306C' }, facebook: { label: 'Facebook', color: '#1877F2' },
-  telegram: { label: 'Telegram', color: '#26A5E4' }, whatsapp: { label: 'WhatsApp', color: '#25D366' },
-  tiktok: { label: 'TikTok', color: '#FF0050' }, youtube: { label: 'YouTube', color: '#FF0000' },
-  discord: { label: 'Discord', color: '#5865F2' },
-};
-
 export function SocialPlatformIcon({ platform, ...props }: SVGProps<SVGSVGElement> & { platform: string }) {
   const common = { viewBox: '0 0 24 24', fill: 'currentColor', 'aria-hidden': true, focusable: false, ...props } as SVGProps<SVGSVGElement>;
   switch (platform) {

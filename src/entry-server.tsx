@@ -1,22 +1,19 @@
 import type { HelmetServerState } from '@dr.pogodin/react-helmet';
 import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { QueryClient,QueryClientProvider } from '@tanstack/react-query';
-import { StrictMode,Suspense,type ReactNode } from 'react';
+import { StrictMode,type ReactNode } from 'react';
 import { renderToPipeableStream } from 'react-dom/server';
 import { PassThrough } from 'node:stream';
 import {
-Outlet,
 StaticRouterProvider,
 createStaticHandler,
 createStaticRouter,
-useLocation,
 type RouteObject,
 } from 'react-router-dom';
 
-import PageSkeleton from './components/PageSkeleton';
-import RootLayout from './layouts/RootLayout';
-import { AdminAuthProvider } from './lib/adminAuth';
-import { CustomerAuthProvider } from './lib/customerAuth';
+import { SSRLayoutWrapper } from './components/SSRLayoutWrapper';
+import { AdminAuthProvider } from './lib/adminAuthProvider';
+import { CustomerAuthProvider } from './lib/customerAuthProvider';
 import { routes } from './routes';
 
 export interface RenderResult {
@@ -24,34 +21,6 @@ export interface RenderResult {
   head: string;
   status: number;
   redirect?: string;
-}
-
-function SSRLayoutWrapper() {
-  const location = useLocation();
-  // Must stay in sync with STANDALONE_PREFIXES in App.tsx — SSR and the
-  // client agree on which routes render without the shared RootLayout chrome.
-  const standalonePrefixes = ['/admin', '/login', '/register', '/dashboard', '/plaid', '/sponsor-review'];
-  const isStandalone = standalonePrefixes.some(
-    prefix => location.pathname === prefix || location.pathname.startsWith(`${prefix}/`),
-  );
-  if (isStandalone) {
-    return (
-      <>
-        <Suspense fallback={<PageSkeleton admin />}>
-          <Outlet />
-        </Suspense>
-      </>
-    );
-  }
-  return (
-    <>
-      <Suspense fallback={<PageSkeleton />}>
-        <RootLayout>
-          <Outlet />
-        </RootLayout>
-      </Suspense>
-    </>
-  );
 }
 
 const routeTree: RouteObject[] = [

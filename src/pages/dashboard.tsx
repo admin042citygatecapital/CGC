@@ -1971,7 +1971,8 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-foreground/40">Account Tier</p>
                       <p className="text-xs font-medium text-foreground/70">
-                        {(customer as any).tier ?? 'Standard'}
+                        {/* tier is an optional API extension outside the typed customer payload */}
+                        {(customer as unknown as { tier?: string }).tier ?? 'Standard'}
                       </p>
                     </div>
                   </div>

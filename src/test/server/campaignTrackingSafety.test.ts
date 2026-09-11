@@ -18,10 +18,10 @@ afterAll(() => {
 });
 
 function response() {
-  const state: { status: number; body?: any } = { status: 200 };
+  const state: { status: number; body?: Record<string, unknown> } = { status: 200 };
   const res = {
     status(code: number) { state.status = code; return res; },
-    json(body: unknown) { state.body = body; return res; },
+    json(body: unknown) { state.body = body as Record<string, unknown>; return res; },
   } as unknown as Response;
   return { res, state };
 }
@@ -67,6 +67,6 @@ describe('newsletter campaign tracking classification', () => {
     const result = response();
     await handler({} as Request, result.res);
     expect(result.state.status).toBe(200);
-    expect(result.state.body.dataClassification).toBe('email_delivery_records_without_engagement_tracking');
+    expect(result.state.body?.dataClassification).toBe('email_delivery_records_without_engagement_tracking');
   });
 });

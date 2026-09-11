@@ -23,10 +23,10 @@ afterAll(() => {
 });
 
 function response() {
-  const state: { status: number; body?: any } = { status: 200 };
+  const state: { status: number; body?: Record<string, unknown> } = { status: 200 };
   const res = {
     status(code: number) { state.status = code; return res; },
-    json(body: unknown) { state.body = body; return res; },
+    json(body: unknown) { state.body = body as Record<string, unknown>; return res; },
   } as unknown as Response;
   return { res, state };
 }
@@ -64,7 +64,7 @@ describe('super-administrator transaction metadata correction', () => {
     }), result.res);
 
     expect(result.state.status).toBe(200);
-    expect(result.state.body.transaction).toMatchObject({
+    expect(result.state.body?.transaction).toMatchObject({
       description: 'Corrected description',
       adminNote: 'Reviewed against the customer support record.',
       flagged: true,
@@ -101,8 +101,8 @@ describe('super-administrator transaction metadata correction', () => {
     await handler(request({ txId: created.id, amount: 999999, currency: 'EUR', description: 'Tampered', reason: 'Attempting a forbidden monetary rewrite.' }), result.res);
 
     expect(result.state.status).toBe(400);
-    expect(result.state.body.code).toBe('IMMUTABLE_TRANSACTION_FIELDS');
-    expect(result.state.body.fields).toEqual(expect.arrayContaining(['amount', 'currency']));
+    expect(result.state.body?.code).toBe('IMMUTABLE_TRANSACTION_FIELDS');
+    expect(result.state.body?.fields).toEqual(expect.arrayContaining(['amount', 'currency']));
     expect(await store.findTransactionById(created.id)).toMatchObject({ amount: 10, currency: 'USD', description: 'Service fee' });
   });
 

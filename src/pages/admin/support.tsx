@@ -82,6 +82,30 @@ interface UserProfile {
   id: string; name: string; email: string; status: string; kycStatus: string;
   accountTier?: string; balance?: number; createdAt: string;
 }
+interface InboxMessage {
+  id: string; fromName: string; fromEmail: string; subject: string; body: string;
+  read: boolean; starred: boolean; createdAt: string;
+  replyBody?: string; repliedAt: string;
+}
+interface ContactSubmission {
+  id: string; name: string; email: string; phone?: string; subject: string;
+  source: string; status: string; message: string; createdAt: string;
+  replyBody?: string; repliedAt: string;
+}
+interface FeedbackItem {
+  id: string; type: string; status: string; title: string; body: string;
+  userName: string; upvotes: number; createdAt: string;
+  rating?: number; adminResponse?: string;
+}
+interface Complaint {
+  id: string; userName: string; userEmail: string; subject: string;
+  description: string; severity: string; status: string; category: string;
+  responseDueAt: string; regulatoryFlag: boolean; resolution?: string; createdAt: string;
+}
+interface Announcement {
+  id: string; title: string; body: string; type: string; audience: string;
+  channels?: string[]; status: string; createdAt: string;
+}
 
 // ── Style maps ────────────────────────────────────────────────────────────────
 
@@ -283,11 +307,17 @@ export default function AdminSupport() {
   }, [selected?.messages.length]);
 
   // Load user profile when ticket selected
+  // `selected` is replaced on every conversation append, so the effect below reads it
+  // through a latest-value ref and keys on the ticket id — otherwise the assign input
+  // would be reset mid-edit on each new message.
+  const selectedRef = useRef(selected);
+  useEffect(() => { selectedRef.current = selected; });
   useEffect(() => {
-    if (!selected) { setUserProfile(null); return; }
-    setAssignInput(selected.assignedTo ?? '');
+    const current = selectedRef.current;
+    if (!current) { setUserProfile(null); return; }
+    setAssignInput(current.assignedTo ?? '');
     if (detailTab !== 'user') return;
-    void loadUserProfile(selected.userId);
+    void loadUserProfile(current.userId);
   }, [selected?.id, detailTab]);
 
   async function loadUserProfile(userId: string) {
@@ -1491,10 +1521,10 @@ function ToggleRow({ label, value, onChange }: { label: string; value: boolean; 
 // Messages Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function MessagesTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
-  const [msgs,     setMsgs]     = useState<any[]>([]);
+  const [msgs,     setMsgs]     = useState<InboxMessage[]>([]);
   const [total,    setTotal]    = useState(0);
   const [loading,  setLoading]  = useState(true);
-  const [selected, setSelected] = useState<any | null>(null);
+  const [selected, setSelected] = useState<InboxMessage | null>(null);
   const [reply,    setReply]    = useState('');
   const [sending,  setSending]  = useState(false);
   const [search,   setSearch]   = useState('');
@@ -1508,7 +1538,7 @@ function MessagesTab({ showToast }: { showToast: (m: string, ok?: boolean) => vo
     if (filter === 'starred') p.set('starred', 'true');
     if (filter === 'archived') p.set('archived', 'true');
     const r = await fetch(`/api/admin/support/messages?${p}`, { headers: authHeaders() });
-    if (r.ok) { const d = await r.json(); setMsgs(d.data ?? []); setTotal(d.total ?? 0); }
+    if (r.ok) { const d: { data?: InboxMessage[]; total?: number } = await r.json(); setMsgs(d.data ?? []); setTotal(d.total ?? 0); }
     setLoading(false);
   }, [search, filter]);
 
@@ -1620,12 +1650,12 @@ function MessagesTab({ showToast }: { showToast: (m: string, ok?: boolean) => vo
 // Contact Forms Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function ContactFormsTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
-  const [items,   setItems]   = useState<any[]>([]);
+  const [items,   setItems]   = useState<ContactSubmission[]>([]);
   const [total,   setTotal]   = useState(0);
   const [loading, setLoading] = useState(true);
   const [status,  setStatus]  = useState('');
   const [search,  setSearch]  = useState('');
-  const [selected,setSelected]= useState<any | null>(null);
+  const [selected,setSelected]= useState<ContactSubmission | null>(null);
   const [reply,   setReply]   = useState('');
   const [sending, setSending] = useState(false);
 
@@ -1635,7 +1665,7 @@ function ContactFormsTab({ showToast }: { showToast: (m: string, ok?: boolean) =
     if (status) p.set('status', status);
     if (search) p.set('search', search);
     const r = await fetch(`/api/admin/support/contact-forms?${p}`, { headers: authHeaders() });
-    if (r.ok) { const d = await r.json(); setItems(d.data ?? []); setTotal(d.total ?? 0); }
+    if (r.ok) { const d: { data?: ContactSubmission[]; total?: number } = await r.json(); setItems(d.data ?? []); setTotal(d.total ?? 0); }
     setLoading(false);
   }, [status, search]);
 
@@ -1697,7 +1727,7 @@ function ContactFormsTab({ showToast }: { showToast: (m: string, ok?: boolean) =
                   <p className="text-white font-semibold">{selected.subject}</p>
                   <p className="text-white/30 text-xs">{selected.name} · {selected.email} {selected.phone && `· ${selected.phone}`}</p>
                 </div>
-                <select value={selected.status} onChange={e => { updateStatus(selected.id, e.target.value); setSelected((s: any) => ({ ...s, status: e.target.value })); }}
+                <select value={selected.status} onChange={e => { updateStatus(selected.id, e.target.value); setSelected(s => s ? { ...s, status: e.target.value } : s); }}
                   className={`text-[10px] font-bold px-2 py-1 rounded-full border-0 focus:outline-none cursor-pointer ${STATUS_CF[selected.status]}`} style={{ background: 'transparent' }}>
                   {['new','read','replied','archived'].map(s => <option key={s} value={s} className="bg-[#0A0A0A] text-white capitalize">{s}</option>)}
                 </select>
@@ -1734,13 +1764,13 @@ function ContactFormsTab({ showToast }: { showToast: (m: string, ok?: boolean) =
 // Feedback Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function FeedbackTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
-  const [items,   setItems]   = useState<any[]>([]);
+  const [items,   setItems]   = useState<FeedbackItem[]>([]);
   const [total,   setTotal]   = useState(0);
   const [loading, setLoading] = useState(true);
   const [type,    setType]    = useState('');
   const [status,  setStatus]  = useState('');
   const [search,  setSearch]  = useState('');
-  const [selected,setSelected]= useState<any | null>(null);
+  const [selected,setSelected]= useState<FeedbackItem | null>(null);
   const [response,setResponse]= useState('');
   const [saving,  setSaving]  = useState(false);
 
@@ -1751,7 +1781,7 @@ function FeedbackTab({ showToast }: { showToast: (m: string, ok?: boolean) => vo
     if (status) p.set('status', status);
     if (search) p.set('search', search);
     const r = await fetch(`/api/admin/support/feedback?${p}`, { headers: authHeaders() });
-    if (r.ok) { const d = await r.json(); setItems(d.data ?? []); setTotal(d.total ?? 0); }
+    if (r.ok) { const d: { data?: FeedbackItem[]; total?: number } = await r.json(); setItems(d.data ?? []); setTotal(d.total ?? 0); }
     setLoading(false);
   }, [type, status, search]);
 
@@ -1847,13 +1877,13 @@ function FeedbackTab({ showToast }: { showToast: (m: string, ok?: boolean) => vo
 // Complaints Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function ComplaintsTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
-  const [items,    setItems]    = useState<any[]>([]);
+  const [items,    setItems]    = useState<Complaint[]>([]);
   const [, setTotal]            = useState(0);
   const [loading,  setLoading]  = useState(true);
   const [status,   setStatus]   = useState('');
   const [severity, setSeverity] = useState('');
   const [search,   setSearch]   = useState('');
-  const [selected, setSelected] = useState<any | null>(null);
+  const [selected, setSelected] = useState<Complaint | null>(null);
   const [creating, setCreating] = useState(false);
   const [form,     setForm]     = useState<Record<string, string>>({});
   const [saving,   setSaving]   = useState(false);
@@ -1865,7 +1895,7 @@ function ComplaintsTab({ showToast }: { showToast: (m: string, ok?: boolean) => 
     if (severity) p.set('severity', severity);
     if (search)   p.set('search',   search);
     const r = await fetch(`/api/admin/support/complaints?${p}`, { headers: authHeaders() });
-    if (r.ok) { const d = await r.json(); setItems(d.data ?? []); setTotal(d.total ?? 0); }
+    if (r.ok) { const d: { data?: Complaint[]; total?: number } = await r.json(); setItems(d.data ?? []); setTotal(d.total ?? 0); }
     setLoading(false);
   }, [status, severity, search]);
 
@@ -1874,8 +1904,8 @@ function ComplaintsTab({ showToast }: { showToast: (m: string, ok?: boolean) => 
   async function updateItem(id: string, patch: Record<string, unknown>) {
     const r = await fetch('/api/admin/support/complaints', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action: 'update', id, ...patch }) });
     if (r.ok) {
-      const body = await r.json();
-      if (selected?.id === id) setSelected(body.complaint);
+      const body: { complaint?: Complaint; error?: string } = await r.json();
+      if (selected?.id === id) setSelected(body.complaint ?? null);
       showToast('Updated');
       load();
     } else {
@@ -2035,16 +2065,16 @@ function ComplaintsTab({ showToast }: { showToast: (m: string, ok?: boolean) => 
 // Announcements Tab
 // ─────────────────────────────────────────────────────────────────────────────
 function AnnouncementsTab({ showToast }: { showToast: (m: string, ok?: boolean) => void }) {
-  const [items,   setItems]   = useState<any[]>([]);
+  const [items,   setItems]   = useState<Announcement[]>([]);
   const [total,   setTotal]   = useState(0);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<any | null>(null);
+  const [editing, setEditing] = useState<Partial<Announcement> | null>(null);
   const [saving,  setSaving]  = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     const r = await fetch('/api/admin/support/announcements?limit=50', { headers: authHeaders() });
-    if (r.ok) { const d = await r.json(); setItems(d.data ?? []); setTotal(d.total ?? 0); }
+    if (r.ok) { const d: { data?: Announcement[]; total?: number } = await r.json(); setItems(d.data ?? []); setTotal(d.total ?? 0); }
     setLoading(false);
   }, []);
 
@@ -2128,24 +2158,24 @@ function AnnouncementsTab({ showToast }: { showToast: (m: string, ok?: boolean) 
               </div>
               <div>
                 <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Title</label>
-                <input value={editing.title ?? ''} onChange={e => setEditing((p: any) => ({ ...p, title: e.target.value }))}
+                <input value={editing.title ?? ''} onChange={e => setEditing(p => ({ ...p, title: e.target.value }))}
                   className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
               </div>
               <div>
                 <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Body</label>
-                <textarea rows={4} value={editing.body ?? ''} onChange={e => setEditing((p: any) => ({ ...p, body: e.target.value }))}
+                <textarea rows={4} value={editing.body ?? ''} onChange={e => setEditing(p => ({ ...p, body: e.target.value }))}
                   className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40 resize-none" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Type</label>
-                  <select value={editing.type ?? 'info'} onChange={e => setEditing((p: any) => ({ ...p, type: e.target.value }))} className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none">
+                  <select value={editing.type ?? 'info'} onChange={e => setEditing(p => ({ ...p, type: e.target.value }))} className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none">
                     {['info','warning','success','maintenance','promotion'].map(t => <option key={t} value={t} className="bg-[#0A0A0A] capitalize">{t}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Audience</label>
-                  <select value={editing.audience ?? 'all'} onChange={e => setEditing((p: any) => ({ ...p, audience: e.target.value }))} className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none">
+                  <select value={editing.audience ?? 'all'} onChange={e => setEditing(p => ({ ...p, audience: e.target.value }))} className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none">
                     {['all','verified','premium','admins'].map(a => <option key={a} value={a} className="bg-[#0A0A0A] capitalize">{a}</option>)}
                   </select>
                 </div>
@@ -2156,7 +2186,7 @@ function AnnouncementsTab({ showToast }: { showToast: (m: string, ok?: boolean) 
                   {['banner','email','push','dashboard'].map(ch => {
                     const active = (editing.channels ?? []).includes(ch);
                     return (
-                      <button key={ch} type="button" onClick={() => setEditing((p: any) => ({ ...p, channels: active ? p.channels.filter((c: string) => c !== ch) : [...(p.channels ?? []), ch] }))}
+                      <button key={ch} type="button" onClick={() => setEditing(p => ({ ...p, channels: active ? (p?.channels ?? []).filter(c => c !== ch) : [...(p?.channels ?? []), ch] }))}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors capitalize ${active ? 'border-primary/30 bg-primary/10 text-primary' : 'border-white/8 text-white/40 hover:text-white'}`}>
                         {ch}
                       </button>
@@ -2172,7 +2202,7 @@ function AnnouncementsTab({ showToast }: { showToast: (m: string, ok?: boolean) 
                   {editing.id ? 'Update' : 'Create'}
                 </button>
                 {!editing.id && (
-                  <button onClick={() => { setEditing((p: any) => ({ ...p, status: 'active' })); setTimeout(save, 50); }}
+                  <button onClick={() => { setEditing(p => ({ ...p, status: 'active' })); setTimeout(save, 50); }}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20">
                     <Zap size={12} /> Publish Now
                   </button>

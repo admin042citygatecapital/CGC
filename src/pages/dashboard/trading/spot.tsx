@@ -94,7 +94,7 @@ function PriceTicker({ ticker }: { ticker: Ticker | null }) {
     prevRef.current = t.price;
     const id = setTimeout(() => setFlash(null), 400);
     return () => clearTimeout(id);
-  }, [t?.price]);
+  }, [t]);
 
   return (
     <div className="flex items-baseline gap-3">
@@ -124,12 +124,40 @@ function PriceTicker({ ticker }: { ticker: Ticker | null }) {
 // Order book panel
 // ─────────────────────────────────────────────────────────────────────────────
 
+type BookLevel = { price: number; qty: number; total: number };
+
 function OrderBook({ midPrice, onPriceClick }: { midPrice: number; onPriceClick: (p: number) => void }) {
-  const [book, setBook] = useState(() => generateOrderBook(midPrice));
+  // Random rows are built only in effects, never in the first render — a
+  // server-rendered pass would otherwise disagree with the hydrated markup.
+  // midPrice is read through a ref by the interval so a moving quote rebuilds
+  // the book immediately without recreating the timer (which could starve it).
+  const midRef = useRef(midPrice);
+  const [book, setBook] = useState<{ asks: BookLevel[]; bids: BookLevel[] } | null>(null);
+
   useEffect(() => {
-    const id = setInterval(() => setBook(generateOrderBook(midPrice)), 2000);
-    return () => clearInterval(id);
+    midRef.current = midPrice;
+    setBook(generateOrderBook(midPrice));
   }, [midPrice]);
+
+  useEffect(() => {
+    const id = setInterval(() => setBook(generateOrderBook(midRef.current)), 2000);
+    return () => clearInterval(id);
+  }, []);
+
+  // No quote yet — show an inert placeholder instead of a synthetic book
+  // centred on a meaningless $0 midpoint.
+  if (midPrice <= 0 || !book) {
+    return (
+      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2">
+          <Activity className="w-4 h-4" style={{ color: GOLD }} />
+          <span className="text-sm font-semibold text-white">Order Book</span>
+          <span className="text-[9px] px-1.5 py-0.5 rounded-md border border-white/10 text-white/40 uppercase tracking-wide font-semibold">Simulated</span>
+        </div>
+        <div className="p-6 text-center text-xs text-white/30">Live quote unavailable — depth appears once the price feed connects.</div>
+      </div>
+    );
+  }
 
   const maxTotal = Math.max(
     book.asks[0]?.total ?? 1,
@@ -153,7 +181,7 @@ function OrderBook({ midPrice, onPriceClick }: { midPrice: number; onPriceClick:
           <span className="text-right">Total</span>
         </div>
         {/* Asks (sell orders) — reversed so lowest ask is closest to mid */}
-        {book.asks.map((a, i) => (
+        {(book?.asks ?? []).map((a, i) => (
           <button key={i} onClick={() => onPriceClick(a.price)}
             className="relative w-full grid grid-cols-3 text-xs px-1 py-0.5 rounded hover:bg-red-400/5 transition-colors group">
             <div className="absolute inset-0 rounded" style={{ background: `rgba(239,68,68,0.04)`, width: `${(a.total / maxTotal) * 100}%` }} />
@@ -166,11 +194,11 @@ function OrderBook({ midPrice, onPriceClick }: { midPrice: number; onPriceClick:
         <div className="flex items-center justify-center gap-2 py-1.5 border-y border-white/[0.05] my-1">
           <span className="text-xs font-bold text-white">${fmtPrice(midPrice)}</span>
           <span className="text-[10px] text-white/25">
-            Spread: ${((book.asks[book.asks.length - 1]?.price ?? midPrice) - (book.bids[0]?.price ?? midPrice)).toFixed(2)}
+            Spread: ${((book?.asks[book.asks.length - 1]?.price ?? midPrice) - (book?.bids[0]?.price ?? midPrice)).toFixed(2)}
           </span>
         </div>
         {/* Bids (buy orders) */}
-        {book.bids.map((b, i) => (
+        {(book?.bids ?? []).map((b, i) => (
           <button key={i} onClick={() => onPriceClick(b.price)}
             className="relative w-full grid grid-cols-3 text-xs px-1 py-0.5 rounded hover:bg-emerald-400/5 transition-colors">
             <div className="absolute inset-0 rounded" style={{ background: `rgba(16,185,129,0.04)`, width: `${(b.total / maxTotal) * 100}%` }} />
@@ -197,11 +225,25 @@ function RiskCalc({
   if (!qty || !entryPrice) return null;
   const notional  = qty * entryPrice;
   const margin    = notional / leverage;
-  const slDist    = stopLoss > 0 ? Math.abs(entryPrice - stopLoss) : 0;
-  const tpDist    = takeProfit > 0 ? Math.abs(takeProfit - entryPrice) : 0;
-  const slPnl     = stopLoss > 0 ? (side === 'buy' ? -1 : 1) * slDist * qty : null;
-  const tpPnl     = takeProfit > 0 ? (side === 'buy' ? 1 : -1) * tpDist * qty : null;
+
+  // Levels must sit on the side of entry that the order direction implies:
+  // a long loses below entry and takes profit above it; a short mirrors that.
+  const slOnSide  = side === 'buy' ? stopLoss < entryPrice : stopLoss > entryPrice;
+  const tpOnSide  = side === 'buy' ? takeProfit > entryPrice : takeProfit < entryPrice;
+  const slUsable  = stopLoss > 0 && slOnSide;
+  const tpUsable  = takeProfit > 0 && tpOnSide;
+  const slDist    = slUsable ? Math.abs(entryPrice - stopLoss) : 0;
+  const tpDist    = tpUsable ? Math.abs(takeProfit - entryPrice) : 0;
+  // PnL estimates scale with leverage to match the server's position math.
+  const slPnl     = slUsable ? -slDist * qty * leverage : null;
+  const tpPnl     = tpUsable ?  tpDist * qty * leverage : null;
   const rr        = slDist > 0 && tpDist > 0 ? (tpDist / slDist).toFixed(2) : null;
+  const slHint    = stopLoss > 0 && !slOnSide
+    ? `For a ${side === 'buy' ? 'long' : 'short'} position, the stop-loss should be ${side === 'buy' ? 'below' : 'above'} the entry price.`
+    : null;
+  const tpHint    = takeProfit > 0 && !tpOnSide
+    ? `For a ${side === 'buy' ? 'long' : 'short'} position, the take-profit should be ${side === 'buy' ? 'above' : 'below'} the entry price.`
+    : null;
 
   return (
     <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 space-y-2">
@@ -209,6 +251,15 @@ function RiskCalc({
         <Info className="w-3 h-3 text-white/30" />
         <span className="text-[10px] font-semibold text-white/30 uppercase tracking-widest">Risk Summary</span>
       </div>
+      {(slHint || tpHint) && (
+        <div className="flex items-start gap-1.5 rounded-lg border border-amber-400/20 bg-amber-400/5 px-2.5 py-2">
+          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-amber-400" />
+          <div className="text-[10px] leading-relaxed text-amber-200/80">
+            {slHint && <p>{slHint}</p>}
+            {tpHint && <p>{tpHint}</p>}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div>
           <p className="text-white/30">Notional</p>
@@ -239,6 +290,7 @@ function RiskCalc({
           </div>
         )}
       </div>
+      <p className="text-[9px] text-white/20">Estimates scale with leverage and exclude fees and slippage.</p>
     </div>
   );
 }
@@ -248,12 +300,14 @@ function RiskCalc({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function SpotTradingPage() {
-  const { token } = useCustomerAuth();
+  const { token, customer } = useCustomerAuth();
   const [searchParams] = useSearchParams();
 
   // Symbol
   const [symbol, setSymbol] = useState(searchParams.get('symbol') ?? 'BTCUSDT');
-  const symbolMeta = SYMBOLS.find(s => s.symbol === symbol) ?? SYMBOLS[0];
+  // An unknown ?symbol= (e.g. a stale shared link) must not silently trade as
+  // another market — the form stays visible but submission is blocked below.
+  const symbolMeta = SYMBOLS.find(s => s.symbol === symbol) ?? null;
 
   // Order form
   const [side, setSide]         = useState<'buy' | 'sell'>('buy');
@@ -269,7 +323,15 @@ export default function SpotTradingPage() {
   const [loading, setLoading]   = useState(false);
   const [success, setSuccess]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
-  const [lastOrder, setLastOrder] = useState<{ symbol: string; side: string; qty: number; price: number } | null>(null);
+  // Server-confirmed outcome only: status comes from the order record and
+  // fillPrice (when present) is the price the server recorded in its ledger.
+  const [lastOrder, setLastOrder] = useState<{
+    symbol: string; side: string; qty: number; status: string; fillPrice?: number;
+  } | null>(null);
+
+  // Available quote-currency balance for the quick-size buttons. It is the
+  // same balance shown on the dashboard — never an assumed figure.
+  const availableQuote = Number(customer?.balance ?? 0) || 0;
 
   // Live price
   const { tickers } = useTicker([symbol], 'crypto', 3000);
@@ -287,7 +349,16 @@ export default function SpotTradingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!symbolMeta) { setError('Unknown market — pick a symbol from the list'); return; }
     if (!qty || qty <= 0) { setError('Enter a valid quantity'); return; }
+    // Never submit an order the server would have to price itself: a missing
+    // quote or an unstated level would fabricate an execution price.
+    if (type === 'market' && !(currentPrice > 0)) {
+      setError('Live quote unavailable — wait for the price feed and try again');
+      return;
+    }
+    if (type === 'limit' && !(parseFloat(price) > 0)) { setError('Enter a valid limit price'); return; }
+    if (type === 'stop'  && !(parseFloat(price) > 0)) { setError('Enter a valid stop price'); return; }
     if (!token) { setError('Not authenticated'); return; }
     setLoading(true); setError(null);
     try {
@@ -295,7 +366,10 @@ export default function SpotTradingPage() {
         symbol, assetClass: symbolMeta.assetClass, side, type,
         quantity: qty, currency: 'USD', leverage,
       };
-      if (type !== 'market' && price) body.price = parseFloat(price);
+      // Limit orders carry their own price; stop orders send the trigger as
+      // stopPrice, which is what the server validates and stores separately.
+      if (type === 'limit') body.price     = parseFloat(price);
+      if (type === 'stop')  body.stopPrice = parseFloat(price);
       if (stopLoss)   body.stopLoss   = parseFloat(stopLoss);
       if (takeProfit) body.takeProfit = parseFloat(takeProfit);
 
@@ -304,10 +378,18 @@ export default function SpotTradingPage() {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json() as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? 'Order failed');
+      const data = await res.json() as {
+        order?: { id: string; status: string };
+        fillPrice?: number;
+        error?: string;
+      };
+      if (!res.ok || !data.order) throw new Error(data.error ?? 'Order failed');
 
-      setLastOrder({ symbol, side, qty, price: fillPx });
+      setLastOrder({
+        symbol, side, qty,
+        status: data.order.status,
+        fillPrice: data.fillPrice,
+      });
       setSuccess(true);
       setQuantity(''); setPrice(''); setStopLoss(''); setTakeProfit('');
       setTimeout(() => setSuccess(false), 4000);
@@ -316,6 +398,14 @@ export default function SpotTradingPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const selectSymbol = (next: string) => {
+    if (next === symbol) return;
+    setSymbol(next);
+    // Quantity and price levels are instrument-specific — stale values from
+    // the previous market must not ride into the next order.
+    setQuantity(''); setPrice(''); setStopLoss(''); setTakeProfit('');
   };
 
   const fmtVol = (n: number) => {
@@ -366,7 +456,7 @@ export default function SpotTradingPage() {
           {/* ── Symbol selector strip ── */}
           <div className="flex gap-2 overflow-x-auto pb-2 mb-5 scrollbar-none">
             {SYMBOLS.map(s => (
-              <button key={s.symbol} onClick={() => setSymbol(s.symbol)}
+              <button key={s.symbol} onClick={() => selectSymbol(s.symbol)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
                   symbol === s.symbol
                     ? 'border-amber-400/40 bg-amber-400/10 text-amber-400'
@@ -381,7 +471,9 @@ export default function SpotTradingPage() {
           <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 mb-5">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-1">
-                <p className="text-xs text-white/30 mb-1">{symbolMeta.label}</p>
+                <p className="text-xs text-white/30 mb-1">
+                  {symbolMeta ? symbolMeta.label : `${symbol} — unknown market`}
+                </p>
                 <PriceTicker ticker={tickers[0] ?? null} />
               </div>
               <div className="grid grid-cols-3 gap-4 text-xs">
@@ -422,9 +514,14 @@ export default function SpotTradingPage() {
                       >
                         <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-emerald-400">Order Placed Successfully</p>
+                          <p className="text-xs font-semibold text-emerald-400">
+                            {lastOrder.status === 'filled' ? 'Order Filled' : 'Order Accepted'}
+                          </p>
                           <p className="text-[10px] text-emerald-400/60">
-                            {lastOrder.side.toUpperCase()} {lastOrder.qty} {lastOrder.symbol} @ ${fmtPrice(lastOrder.price)}
+                            {lastOrder.side.toUpperCase()} {lastOrder.qty} {lastOrder.symbol}
+                            {lastOrder.status === 'filled' && lastOrder.fillPrice
+                              ? ` — filled at $${fmtPrice(lastOrder.fillPrice)}`
+                              : ' — open, awaiting fill (see Orders)'}
                           </p>
                         </div>
                         <button onClick={() => setSuccess(false)} className="text-emerald-400/50 hover:text-emerald-400">
@@ -481,20 +578,30 @@ export default function SpotTradingPage() {
                           {symbol.replace('USDT', '')}
                         </span>
                       </div>
-                      {/* Quick % buttons */}
-                      <div className="flex gap-1.5 mt-2">
-                        {[25, 50, 75, 100].map(pct => (
-                          <button key={pct} type="button"
-                            onClick={() => {
-                              if (currentPrice > 0) {
-                                const assumed = 1000; // assume $1000 available
-                                setQuantity(((assumed * pct / 100) / currentPrice).toFixed(6));
-                              }
-                            }}
-                            className="flex-1 py-1 rounded-lg text-[10px] font-semibold bg-white/[0.04] text-white/30 hover:bg-white/[0.08] hover:text-white/60 transition-colors">
-                            {pct}%
-                          </button>
-                        ))}
+                      {/* Quick % buttons — sized from the customer's actual
+                          quote balance (the dashboard figure), never an
+                          assumed amount. Disabled while the balance or the
+                          quote is unknown. */}
+                      <div className="mt-2">
+                        <p className="text-[9px] text-white/20 mb-1">
+                          {availableQuote > 0
+                            ? `Quick size from available quote balance: $${fmt(availableQuote)}`
+                            : 'Quote balance unavailable — quick sizing disabled'}
+                        </p>
+                        <div className="flex gap-1.5">
+                          {[25, 50, 75, 100].map(pct => (
+                            <button key={pct} type="button"
+                              onClick={() => {
+                                if (currentPrice > 0 && availableQuote > 0) {
+                                  setQuantity(((availableQuote * pct / 100) / currentPrice).toFixed(6));
+                                }
+                              }}
+                              disabled={availableQuote <= 0 || currentPrice <= 0}
+                              className="flex-1 py-1 rounded-lg text-[10px] font-semibold bg-white/[0.04] text-white/30 hover:bg-white/[0.08] hover:text-white/60 transition-colors disabled:opacity-40 disabled:pointer-events-none">
+                              {pct}%
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
@@ -511,7 +618,7 @@ export default function SpotTradingPage() {
                             placeholder={currentPrice > 0 ? fmtPrice(currentPrice) : '0.00'}
                             className="flex-1 bg-transparent text-white text-sm font-mono outline-none placeholder-white/20" />
                           {currentPrice > 0 && (
-                            <button type="button" onClick={() => setPrice(fmtPrice(currentPrice))}
+                            <button type="button" onClick={() => setPrice(String(currentPrice))}
                               className="text-[10px] px-2 py-0.5 rounded-lg font-semibold"
                               style={{ color: GOLD, background: `${GOLD}15` }}>
                               Mid
@@ -609,8 +716,9 @@ export default function SpotTradingPage() {
                       </div>
                     )}
 
-                    {/* Submit */}
-                    <button type="submit" disabled={loading || success || !qty}
+                    {/* Submit — also blocked while the market is unknown so a
+                        stale ?symbol= link can never place an order. */}
+                    <button type="submit" disabled={loading || success || !qty || !symbolMeta}
                       className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
                         success
                           ? 'bg-emerald-500 text-white'
@@ -647,9 +755,11 @@ export default function SpotTradingPage() {
             {/* ── Order book (3 cols) ── */}
             <div className="lg:col-span-3">
               <OrderBook
-                midPrice={currentPrice || 50000}
+                midPrice={currentPrice > 0 ? currentPrice : 0}
                 onPriceClick={(p) => {
-                  if (type !== 'market') setPrice(fmtPrice(p));
+                  // Numeric value only — locale-grouped display strings must
+                  // never reach the numeric input state.
+                  if (type !== 'market') setPrice(String(p));
                 }}
               />
             </div>
@@ -683,7 +793,7 @@ export default function SpotTradingPage() {
                   <span className="text-sm font-semibold text-white">Order Types</span>
                 </div>
                 {[
-                  { type: 'Market', desc: 'Execute immediately at the best available price. Guaranteed fill, price may vary.' },
+                  { type: 'Market', desc: 'Execute immediately at the best available price. The final fill price may differ from the last quoted price.' },
                   { type: 'Limit',  desc: 'Set a specific price. Order fills only when market reaches your price or better.' },
                   { type: 'Stop',   desc: 'Trigger a market order when price hits your stop level. Used for stop-loss entries.' },
                 ].map(info => (

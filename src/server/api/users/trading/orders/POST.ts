@@ -1,15 +1,17 @@
 /**
  * POST /api/users/trading/orders — place a new trading order.
- * Market orders are immediately filled at the simulated live price.
+ * Market orders are immediately filled at the live provider price for the
+ * symbol; without a price feed the fill is refused rather than fabricated.
  * Limit/stop orders are stored as "open" for future matching.
  */
 import type { Request, Response } from 'express';
 import { findUserBySessionToken } from '../../../../lib/userStore.js';
 import {
   createOrder, appendTrade, createPosition, updatePosition,
-  getPositions, getLivePrice,
+  getPositions,
   type AssetClass, type OrderSide, type OrderType,
 } from '../../../../lib/tradingStore.js';
+import { marketRegistry } from '../../../../lib/market/registry.js';
 import { requirePaperTrading } from '../../../../lib/platformMode.js';
 import { requireCustomerFinancialAccess } from '../../../../lib/complianceGate.js';
 
@@ -56,7 +58,25 @@ export default async (req: Request, res: Response) => {
     const price     = rawPrice     !== undefined ? Number(rawPrice)     : undefined;
     const stopPrice = rawStopPrice !== undefined ? Number(rawStopPrice) : undefined;
 
-    const livePrice = getLivePrice(symbol);
+    // A limit order without a price would fill at whatever the market feed
+    // says; require the customer's stated level instead.
+    if (orderType === 'limit' && price === undefined)
+      return res.status(400).json({ error: 'price is required for limit orders' });
+    if (orderType === 'stop' && stopPrice === undefined)
+      return res.status(400).json({ error: 'stopPrice is required for stop orders' });
+
+    // Resolve the execution reference price from the market data providers.
+    // A missing quote must never be recorded as a fill at 0.
+    let livePrice = 0;
+    try {
+      const tickers = await marketRegistry.getTicker([symbol], assetClass);
+      livePrice = tickers[0]?.price ?? 0;
+    } catch {
+      livePrice = 0;
+    }
+    if (orderType === 'market' && livePrice <= 0)
+      return res.status(503).json({ error: `Live pricing is unavailable for ${symbol}; order not placed` });
+
     const fillPrice = orderType === 'market' ? livePrice : (price ?? livePrice);
     const lev       = Number.isFinite(Number(leverage)) ? Math.min(Math.max(Number(leverage), 1), 100) : 1;
 
@@ -107,7 +127,12 @@ export default async (req: Request, res: Response) => {
       });
     }
 
-    res.status(201).json({ order });
+    // fillPrice is the price actually recorded in the trade ledger for
+    // market fills; limit/stop orders are returned open with no fill claim.
+    res.status(201).json({
+      order,
+      ...(orderType === 'market' ? { fillPrice } : {}),
+    });
   } catch (err) {
     console.error('[trading/orders POST]', err);
     res.status(500).json({ error: 'Failed to place order' });

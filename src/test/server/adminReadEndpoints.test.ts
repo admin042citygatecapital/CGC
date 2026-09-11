@@ -22,11 +22,14 @@ afterAll(() => {
   else process.env.DATABASE_URL = originalDatabaseUrl;
 });
 
+// List payloads the read endpoints return; index signature keeps extra keys readable.
+type AdminListBody = { data: unknown[]; logs: unknown[]; [key: string]: unknown };
+
 function response() {
-  const state: { status: number; body?: any } = { status: 200 };
+  const state: { status: number; body?: AdminListBody } = { status: 200 };
   const res = {
     status(code: number) { state.status = code; return res; },
-    json(body: unknown) { state.body = body; return res; },
+    json(body: unknown) { state.body = body as AdminListBody; return res; },
   } as unknown as Response;
   return { res, state };
 }
@@ -50,8 +53,8 @@ describe('admin read endpoint contracts', () => {
 
     expect(result.state.status).toBe(200);
     expect(result.state.body).toMatchObject({ total: 1, page: 1, limit: 25, pages: 1 });
-    expect(result.state.body.data).toHaveLength(1);
-    expect(result.state.body.data[0]).toMatchObject({
+    expect(result.state.body?.data).toHaveLength(1);
+    expect(result.state.body?.data[0]).toMatchObject({
       actor: 'audit-contract@example.test',
       actorId: 'admin-audit-contract',
       action: 'sponsor.evidence_rejected',
@@ -75,8 +78,8 @@ describe('admin read endpoint contracts', () => {
 
     expect(result.state.status).toBe(200);
     expect(result.state.body).toMatchObject({ total: 1, limit: 1, offset: 0, dataClassification: 'persisted_login_events' });
-    expect(result.state.body.data).toHaveLength(1);
-    expect(result.state.body.data[0]).toMatchObject({ email: 'customer@example.test', result: 'failed' });
+    expect(result.state.body?.data).toHaveLength(1);
+    expect(result.state.body?.data[0]).toMatchObject({ email: 'customer@example.test', result: 'failed' });
   });
 
   it('returns deferred trading administration logs with category filtering', async () => {
@@ -90,8 +93,8 @@ describe('admin read endpoint contracts', () => {
 
     expect(result.state.status).toBe(200);
     expect(result.state.body).toMatchObject({ total: 1, dataClassification: 'deferred_trading_admin_audit' });
-    expect(result.state.body.logs).toHaveLength(1);
-    expect(result.state.body.logs[0]).toMatchObject({ category: 'market', action: 'market_disabled' });
+    expect(result.state.body?.logs).toHaveLength(1);
+    expect(result.state.body?.logs[0]).toMatchObject({ category: 'market', action: 'market_disabled' });
   });
 
   it('returns a least-privilege customer support profile', async () => {

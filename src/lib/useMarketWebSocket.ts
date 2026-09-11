@@ -180,6 +180,9 @@ export function useMarketWebSocket(
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // Capture the URL once so the cleanup uses the same value this effect registered with
+    const url = wsUrl.current;
+
     // Seed from cache immediately so UI isn't blank
     const cacheKey = `market:ticker:${symbolsKey}`;
     const cached = apiCache.get<TickerData[]>(cacheKey);
@@ -195,7 +198,7 @@ export function useMarketWebSocket(
     startPolling();
 
     // Register symbols with the WS manager so the server gets a subscription message
-    wsRegisterSymbols(wsUrl.current, symbols);
+    wsRegisterSymbols(url, symbols);
 
     // Give WS a chance to connect; if it doesn't within WS_TIMEOUT_MS, stay on SSE/REST
     wsTimeoutId.current = setTimeout(() => {
@@ -206,7 +209,7 @@ export function useMarketWebSocket(
     }, WS_TIMEOUT_MS);
 
     // Subscribe to WS status
-    const unsubStatus = wsSubscribeStatus(wsUrl.current, (s) => {
+    const unsubStatus = wsSubscribeStatus(url, (s) => {
       setWsStatus(s);
       if (s === 'open') {
         wsConnected.current = true;
@@ -225,7 +228,7 @@ export function useMarketWebSocket(
     });
 
     // Subscribe to ticker messages
-    const unsubTicker = wsSubscribe(wsUrl.current, 'ticker', (msg) => {
+    const unsubTicker = wsSubscribe(url, 'ticker', (msg) => {
       const raw = msg as Record<string, unknown>;
 
       // Batch update: { type:'ticker', data: TickerData[] }
@@ -258,7 +261,7 @@ export function useMarketWebSocket(
       stopPolling();
       if (wsTimeoutId.current) clearTimeout(wsTimeoutId.current);
       // Unregister symbols so server stops streaming them if no other tab needs them
-      wsUnregisterSymbols(wsUrl.current, symbols);
+      wsUnregisterSymbols(url, symbols);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbolsKey]);

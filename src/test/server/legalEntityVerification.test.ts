@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { BeneficialOwnerRecordRow, LegalEntityProfileRow } from '../../server/db/schema.js';
 import { allowedRolesForAdminRequest } from '../../server/lib/adminAuthorizationMiddleware.js';
 import { assessLegalEntityVerification, assertEntityAuthorityComplete, assertLegalEntityMakerChecker, assertLegalEntityReviewOwnership } from '../../server/lib/legalEntityVerificationStore.js';
 import { deriveStructuredLegalEntityState } from '../../server/lib/sponsorReadinessStore.js';
@@ -8,8 +9,9 @@ import { deriveStructuredLegalEntityState } from '../../server/lib/sponsorReadin
 describe('legal entity and beneficial ownership verification', () => {
   const now = new Date('2026-08-11T00:00:00.000Z');
   const future = new Date('2027-08-11T00:00:00.000Z');
-  const entity = { status: 'verified', expiresAt: future, registrySha256: 'a'.repeat(64), authorityType: 'board_resolution', authorityReference: 'AUTH-2026-001', authoritySha256: 'b'.repeat(64), authorizedOfficerRef: 'officer-01', authorityIssuedAt: new Date('2026-08-01'), authorityExpiresAt: future } as any;
-  const owner = { active: true, status: 'verified', expiresAt: future } as any;
+  // Partial row fixtures: the verification helpers only read the fields set below.
+  const entity = { status: 'verified', expiresAt: future, registrySha256: 'a'.repeat(64), authorityType: 'board_resolution', authorityReference: 'AUTH-2026-001', authoritySha256: 'b'.repeat(64), authorizedOfficerRef: 'officer-01', authorityIssuedAt: new Date('2026-08-01'), authorityExpiresAt: future } as unknown as LegalEntityProfileRow;
+  const owner = { active: true, status: 'verified', expiresAt: future } as unknown as BeneficialOwnerRecordRow;
 
   it('requires a current verified entity and every active controller', () => {
     expect(deriveStructuredLegalEntityState(entity, [owner], now)).toBe('verified');

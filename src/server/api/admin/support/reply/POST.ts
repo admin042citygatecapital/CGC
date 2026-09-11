@@ -4,7 +4,7 @@
  * Body: { conversationId, message, status? }
  */
 import type { Request, Response } from 'express';
-import { addMessage, updateConversationStatus } from '../../../../lib/supportDatabaseStore.js';
+import { addMessage, updateConversationStatus, type SupportConversation } from '../../../../lib/supportDatabaseStore.js';
 import { createNotification } from '../../../../lib/notificationStore.js';
 import { appendAudit } from '../../../../lib/auditLog.js';
 import { sendSupportReplyEmail } from '../../../../lib/emailService.js';
@@ -26,7 +26,7 @@ export default async function handler(req: Request, res: Response) {
   if (!conv) return res.status(404).json({ error: 'Conversation not found' });
 
   // Update status if provided
-  if (status) await updateConversationStatus(String(conversationId), status as any);
+  if (status) await updateConversationStatus(String(conversationId), status as SupportConversation['status']);
 
   // Notify the customer
   await createNotification(

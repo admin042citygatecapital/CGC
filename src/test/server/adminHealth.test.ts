@@ -27,10 +27,10 @@ vi.mock('../../server/lib/envValidator.js', () => ({
 }));
 
 function response() {
-  const state: { status: number; body?: Record<string, any> } = { status: 200 };
+  const state: { status: number; body?: Record<string, unknown> } = { status: 200 };
   const res = {
     status(code: number) { state.status = code; return res; },
-    json(body: Record<string, any>) { state.body = body; return res; },
+    json(body: Record<string, unknown>) { state.body = body; return res; },
   } as unknown as Response;
   return { state, res };
 }
@@ -130,7 +130,8 @@ describe('admin platform health', () => {
         sponsorReview: 'not_configured',
       },
     });
-    expect(state.body?.memory.heapLimitMb).toBeGreaterThan(state.body?.memory.heapUsedMb);
+    const memory = state.body?.memory as { heapLimitMb: number; heapUsedMb: number };
+    expect(memory.heapLimitMb).toBeGreaterThan(memory.heapUsedMb);
   });
 
   it('fails closed when required protected configuration is invalid', async () => {

@@ -5,7 +5,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { ArrowRight, TrendingUp, TrendingDown, RefreshCw, Shield, Lock, Zap, Globe, ArrowLeftRight, CheckCircle, Copy, Save, Loader2, AlertCircle } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { newIdempotencyKey } from '@/lib/idempotency';
-import { CurrencyMark, currencyOptionLabel } from '@/components/CurrencyMark';
+import { CurrencyMark } from '@/components/CurrencyMark';
+import { currencyOptionLabel } from '@/lib/currencyFormat';
 
 // ── Static display data (portfolio overview / security sections) ──────────────
 // These are illustrative examples shown to all visitors, not real user balances.

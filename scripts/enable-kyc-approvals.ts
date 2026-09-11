@@ -17,7 +17,7 @@ async function main() {
 
     // 2. Read current value
     const rows = await db.select().from(configTable).where(eq(configTable.key, 'admin_workflow_controls'));
-    const current = rows[0]?.value as any || {};
+    const current = (rows[0]?.value ?? {}) as Record<string, unknown>;
     
     // 3. Merge and update
     const newValue = { ...current, kycApprovalsEnabled: true, version: 'manual-enable-' + Date.now() };
