@@ -20,6 +20,9 @@ const baseEnv: NodeJS.ProcessEnv = {
   ENFORCE_PREVIEW_LOCKS: '1',
   ENABLE_FINANCIAL_OPERATIONS: '0',
   ENABLE_PAPER_TRADING: '0',
+  // Registration reports kycAvailable from this flag; the e2e suite asserts
+  // customers learn KYC is available after signing up (sandbox KYC scope).
+  ENABLE_KYC: '1',
   ALLOW_PUBLIC_REGISTRATION: '1',
   DISABLE_EXTERNAL_MARKET_DATA: '1',
   E2E_TEST_MODE: '1',
