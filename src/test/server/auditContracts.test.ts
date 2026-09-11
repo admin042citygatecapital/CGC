@@ -32,7 +32,7 @@ describe('legacy audit shim contracts', () => {
     fs.rmSync(path.dirname(auditFile), { force: true, recursive: true });
   });
 
-  async function lastEntry(): Promise<{ action: string; details?: Record<string, unknown>; adminId: string; adminEmail: string }> {
+  async function lastEntry(): Promise<{ action: string; details?: Record<string, unknown> }> {
     const store = await import('../../server/lib/auditLog.flatfile.js');
     // appendAudit persists asynchronously (fire-and-forget with an error
     // handler); poll briefly until the record has been written.
@@ -193,7 +193,7 @@ describe('audit page fallback and endpoint contract', () => {
   }
 
   function response() {
-    const state: { status: number; body?: any } = { status: 200 };
+    const state: { status: number; body?: unknown } = { status: 200 };
     const res = {
       status(code: number) { state.status = code; return res; },
       json(body: unknown) { state.body = body; return res; },
@@ -259,7 +259,8 @@ describe('audit page fallback and endpoint contract', () => {
     expect(state.status).toBe(200);
     expect(state.body).toMatchObject({ total: 2, page: 1, limit: 10, pages: 1 });
 
-    const byAction = Object.fromEntries(state.body.data.map((d: { action: string } & Record<string, unknown>) => [d.action, d]));
+    const body = state.body as { data: ({ action: string } & Record<string, unknown>)[] };
+    const byAction = Object.fromEntries(body.data.map(d => [d.action, d]));
     expect(byAction.admin_action_failed).toMatchObject({
       actor: 'actor@example.test',
       actorId: 'admin-2',
