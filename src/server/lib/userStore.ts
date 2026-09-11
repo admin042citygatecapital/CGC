@@ -89,6 +89,7 @@ export interface UserRecord {
   requestedProduct?: string;
   totpSecret?: string;
   totpEnabled?: boolean;
+  totpRecoveryHashes?: string[];
   locale?: string;
   timezone?: string;
   notificationPrefs?: unknown;
@@ -114,7 +115,8 @@ export type CreateUserInput =
 type ExplicitlyClearableUserField =
   | 'emailVerifyToken'
   | 'emailVerifyExpiry'
-  | 'totpSecret';
+  | 'totpSecret'
+  | 'totpRecoveryHashes';
 
 export type UserUpdatePatch =
   Partial<Omit<UserRecord, ExplicitlyClearableUserField>>
@@ -182,6 +184,7 @@ function toRecord(u: User): UserRecord {
     requestedProduct:    u.requestedProduct ?? undefined,
     totpSecret:          u.totpSecret ?? undefined,
     totpEnabled:         u.totpEnabled ?? false,
+    totpRecoveryHashes:  u.totpRecoveryHashes ?? undefined,
     locale:              u.locale ?? undefined,
     timezone:            u.timezone ?? undefined,
     notificationPrefs:   u.notificationPrefs ?? undefined,
@@ -442,6 +445,7 @@ export async function updateUser(id: string, patch: UserUpdatePatch): Promise<Us
   if (safe.accountTier !== undefined)        dbPatch.accountTier        = safe.accountTier as User['accountTier'];
   if (safe.totpSecret !== undefined)         dbPatch.totpSecret         = safe.totpSecret ?? null;
   if (safe.totpEnabled !== undefined)        dbPatch.totpEnabled        = safe.totpEnabled;
+  if (safe.totpRecoveryHashes !== undefined) dbPatch.totpRecoveryHashes = safe.totpRecoveryHashes ?? null;
   if (safe.locale !== undefined)             dbPatch.locale             = safe.locale ?? null;
   if (safe.timezone !== undefined)           dbPatch.timezone           = safe.timezone ?? null;
   if (safe.notificationPrefs !== undefined)  dbPatch.notificationPrefs  = safe.notificationPrefs ?? null;

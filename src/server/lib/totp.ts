@@ -58,3 +58,36 @@ export function verifyTotp(secret: string, code: string, now = Date.now()): bool
   }
   return false;
 }
+
+/** Current 6-digit code for a secret at a point in time — test/parity helper. */
+export function totpCodeAt(secret: string, now = Date.now()): string {
+  return codeForCounter(secret, Math.floor(now / 30_000));
+}
+
+// ── Recovery codes ─────────────────────────────────────────────────────────────
+// Single-use backup codes for lost devices. Only SHA-256 hashes are stored;
+// the plaintext codes are returned to the customer exactly once at enable time.
+
+export const RECOVERY_CODE_COUNT = 10;
+
+export function generateRecoveryCodes(count = RECOVERY_CODE_COUNT): string[] {
+  return Array.from({ length: count }, () => {
+    const raw = crypto.randomBytes(5).toString('hex'); // 10 hex chars
+    return `${raw.slice(0, 5)}-${raw.slice(5)}`;
+  });
+}
+
+export function hashRecoveryCode(code: string): string {
+  return crypto.createHash('sha256').update(normalizeRecoveryCode(code)).digest('hex');
+}
+
+export function normalizeRecoveryCode(code: string): string {
+  return String(code).trim().toLowerCase().replace(/[^0-9a-f]/gu, '');
+}
+
+/** Returns the updated hash list with the consumed code removed, or null when the code does not match. */
+export function consumeRecoveryCode(hashes: string[], code: string): string[] | null {
+  const hash = hashRecoveryCode(code);
+  if (!hashes.includes(hash)) return null;
+  return hashes.filter(h => h !== hash);
+}

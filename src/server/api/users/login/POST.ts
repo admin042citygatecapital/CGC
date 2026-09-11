@@ -8,7 +8,7 @@ import { appendLoginEvent } from '../../../lib/loginLog.js';
 import { sanitizeString, isValidEmail } from '../../../lib/inputValidator.js';
 import { isRateLimited } from '../../../lib/rateLimiter.js';
 import { CUSTOMER_SESSION_COOKIE, customerSessionCookieOptions } from '../../../lib/customerSessionConfig.js';
-import { verifyTotp } from '../../../lib/totp.js';
+import { consumeRecoveryCode, verifyTotp } from '../../../lib/totp.js';
 import {
   checkLockout,
   getFailCount,
@@ -94,10 +94,19 @@ export default async function handler(req: Request, res: Response) {
       return res.status(401).json({ error: 'Enter the code from your authenticator app.', code: 'TWO_FACTOR_REQUIRED' });
     }
     if (!verifyTotp(user.totpSecret, otp)) {
-      await recordLoginFailure(email, ip, 'customer');
-      appendAudit({ event: 'user_login_2fa_failed', userId: user.id, email, ip });
-      await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'totp_failed', ip, ua, reason: 'invalid_totp' });
-      return res.status(401).json({ error: 'Invalid or expired authentication code.', code: 'INVALID_TWO_FACTOR' });
+      // Recovery-code fallback: a single-use backup code also satisfies the
+      // second factor (lost-device path). It is consumed on success.
+      const remainingHashes = user.totpRecoveryHashes
+        ? consumeRecoveryCode(user.totpRecoveryHashes, otp)
+        : null;
+      if (!remainingHashes) {
+        await recordLoginFailure(email, ip, 'customer');
+        appendAudit({ event: 'user_login_2fa_failed', userId: user.id, email, ip });
+        await appendLoginEvent({ actor: 'user', email, userId: user.id, result: 'totp_failed', ip, ua, reason: 'invalid_totp' });
+        return res.status(401).json({ error: 'Invalid or expired authentication code.', code: 'INVALID_TWO_FACTOR' });
+      }
+      await updateUser(user.id, { totpRecoveryHashes: remainingHashes });
+      appendAudit({ event: 'user_login_recovery_code_used', userId: user.id, email, ip, meta: { remaining: remainingHashes.length } });
     }
   }
 
