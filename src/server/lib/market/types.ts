@@ -10,13 +10,17 @@ export interface Ticker {
   name: string;
   assetClass: AssetClass;
   price: number;
-  change24h: number;       // absolute
-  changePct24h: number;    // percentage
-  volume24h: number;
+  // 24h statistics are `null` when the provider does not supply them.
+  // Consumers must treat null as "not available" (render an em dash) —
+  // providers must NEVER substitute an unrelated quantity or time horizon
+  // (e.g. best-bid size as volume, or a 52-week high as a 24h high).
+  change24h: number | null;       // absolute
+  changePct24h: number | null;    // percentage
+  volume24h: number | null;
   marketCap?: number;
-  high24h: number;
-  low24h: number;
-  open24h: number;
+  high24h: number | null;
+  low24h: number | null;
+  open24h: number | null;
   currency: string;
   timestamp: number;       // unix ms
   provider: string;
