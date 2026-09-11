@@ -151,8 +151,8 @@ export class CoinbaseProvider implements MarketDataProvider {
         provider:    'coinbase',
       }));
 
-    const sorted = [...tickers].sort((a, b) => b.changePct24h - a.changePct24h);
-    const byVol  = [...tickers].sort((a, b) => b.volume24h - a.volume24h);
+    const sorted = [...tickers].sort((a, b) => (b.changePct24h ?? -Infinity) - (a.changePct24h ?? -Infinity));
+    const byVol  = [...tickers].sort((a, b) => (b.volume24h ?? -Infinity) - (a.volume24h ?? -Infinity));
     return {
       gainers:    sorted.slice(0, 10),
       losers:     sorted.slice(-10).reverse(),

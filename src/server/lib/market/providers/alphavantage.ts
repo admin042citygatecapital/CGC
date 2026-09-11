@@ -13,11 +13,22 @@ import type {
 
 const BASE = 'https://www.alphavantage.co/query';
 
-const INTERVAL_MAP: Record<CandleInterval, string> = {
+/** Alpha Vantage granularities that are actually offered — unsupported
+ *  intervals must be refused, not silently served at a different width. */
+const SUPPORTED_INTERVALS: ReadonlySet<CandleInterval> = new Set([
+  '1m', '5m', '15m', '30m', '1h', '1d', '1w', '1M',
+]);
+const INTERVAL_MAP: Record<string, string> = {
   '1m': '1min', '5m': '5min', '15m': '15min', '30m': '30min', '1h': '60min',
   '1d': 'daily', '1w': 'weekly', '1M': 'monthly',
-  '3m': '5min', '2h': '60min', '4h': '60min', '6h': '60min', '12h': '60min',
 };
+
+/** Parse a provider string into a finite number, else null — never a
+ *  fabricated 0. */
+function num(value: unknown): number | null {
+  const n = parseFloat(String(value ?? ''));
+  return Number.isFinite(n) ? n : null;
+}
 
 function getKey(): string {
   const k = String(getSecret('ALPHA_VANTAGE_API_KEY') ?? '');
@@ -52,20 +63,21 @@ export class AlphaVantageProvider implements MarketDataProvider {
         });
         const q = data['Global Quote'];
         if (!q) continue;
-        const price  = parseFloat(q['05. price'] ?? '0');
-        const prev   = parseFloat(q['08. previous close'] ?? '0');
-        const change = parseFloat(q['09. change'] ?? '0');
+        const price = num(q['05. price']);
+        if (price === null) continue;
         results.push({
           symbol:      sym,
           name:        sym,
           assetClass:  'stock',
           price,
-          change24h:   change,
-          changePct24h: parseFloat(q['10. change percent']?.replace('%', '') ?? '0'),
-          volume24h:   parseFloat(q['06. volume'] ?? '0'),
-          high24h:     parseFloat(q['03. high'] ?? price.toString()),
-          low24h:      parseFloat(q['04. low'] ?? price.toString()),
-          open24h:     parseFloat(q['02. open'] ?? prev.toString()),
+          change24h:   num(q['09. change']),
+          changePct24h: num(q['10. change percent']?.replace('%', '')),
+          volume24h:   num(q['06. volume']),
+          // Missing quote fields stay null — no substitution with the price
+          // or the previous close.
+          high24h:     num(q['03. high']),
+          low24h:      num(q['04. low']),
+          open24h:     num(q['02. open']),
           currency:    'USD',
           timestamp:   Date.now(),
           provider:    'alpha-vantage',
@@ -76,7 +88,10 @@ export class AlphaVantageProvider implements MarketDataProvider {
   }
 
   async getCandles(symbol: string, interval: CandleInterval, limit = 100): Promise<Candle[]> {
-    const iv = INTERVAL_MAP[interval] ?? '60min';
+    if (!SUPPORTED_INTERVALS.has(interval)) {
+      throw new Error(`Alpha Vantage does not support ${interval} candles`);
+    }
+    const iv = INTERVAL_MAP[interval];
     const isIntraday = ['1min', '5min', '15min', '30min', '60min'].includes(iv);
 
     const data = await fetchJSON<Record<string, unknown>>(

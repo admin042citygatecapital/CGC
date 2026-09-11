@@ -45,6 +45,13 @@ async function fetchJSON<T>(path: string, params: Record<string, string> = {}): 
   return res.json() as Promise<T>;
 }
 
+/** Parse a provider string into a finite number, else null — never a
+ *  fabricated 0. */
+function num(value: unknown): number | null {
+  const n = parseFloat(String(value ?? ''));
+  return Number.isFinite(n) ? n : null;
+}
+
 export class PolygonProvider implements MarketDataProvider {
   readonly id   = 'polygon';
   readonly name = 'Polygon.io';
@@ -67,12 +74,14 @@ export class PolygonProvider implements MarketDataProvider {
           name:        sym,
           assetClass:  'stock',
           price,
-          change24h:   t.todaysChange ?? 0,
-          changePct24h: t.todaysChangePerc ?? 0,
-          volume24h:   t.day?.v ?? 0,
-          high24h:     t.day?.h ?? price,
-          low24h:      t.day?.l ?? price,
-          open24h:     t.day?.o ?? price,
+          change24h:   t.todaysChange ?? null,
+          changePct24h: t.todaysChangePerc ?? null,
+          volume24h:   t.day?.v ?? null,
+          // Missing day aggregates stay null — the last price does not stand
+          // in for the day's high/low/open.
+          high24h:     t.day?.h ?? null,
+          low24h:      t.day?.l ?? null,
+          open24h:     t.day?.o ?? null,
           currency:    'USD',
           timestamp:   Date.now(),
           provider:    'polygon',
@@ -128,12 +137,12 @@ export class PolygonProvider implements MarketDataProvider {
         name:        t.ticker,
         assetClass:  'stock',
         price:       t.lastTrade?.p ?? t.day?.c ?? 0,
-        change24h:   t.todaysChange,
-        changePct24h: t.todaysChangePerc,
-        volume24h:   t.day?.v ?? 0,
-        high24h:     t.day?.h ?? 0,
-        low24h:      t.day?.l ?? 0,
-        open24h:     t.day?.o ?? 0,
+        change24h:   t.todaysChange ?? null,
+        changePct24h: t.todaysChangePerc ?? null,
+        volume24h:   t.day?.v ?? null,
+        high24h:     t.day?.h ?? null,
+        low24h:      t.day?.l ?? null,
+        open24h:     t.day?.o ?? null,
         currency:    'USD',
         timestamp:   Date.now(),
         provider:    'polygon',
@@ -141,11 +150,18 @@ export class PolygonProvider implements MarketDataProvider {
 
       const losersData = await fetchJSON<typeof data>('/v2/snapshot/locale/us/markets/stocks/losers');
 
+      // mostActive is ranked by the day's volume; trending stays empty
+      // rather than re-serving the gainers list under a different label.
+      const mostActive = [...data.tickers]
+        .sort((a, b) => (b.day?.v ?? -Infinity) - (a.day?.v ?? -Infinity))
+        .slice(0, 10)
+        .map(toTicker);
+
       return {
         gainers:    data.tickers.slice(0, 10).map(toTicker),
         losers:     losersData.tickers.slice(0, 10).map(toTicker),
-        trending:   data.tickers.slice(0, 10).map(toTicker),
-        mostActive: data.tickers.slice(0, 10).map(toTicker),
+        trending:   [],
+        mostActive,
       };
     } catch {
       return { gainers: [], losers: [], trending: [], mostActive: [] };
@@ -182,15 +198,16 @@ export class PolygonProvider implements MarketDataProvider {
                 symbol:      String(msg.sym),
                 name:        String(msg.sym),
                 assetClass:  'stock',
-                price:       Number(msg.p),
-                change24h:   0,
-                changePct24h: 0,
-                volume24h:   Number(msg.s),
-                high24h:     Number(msg.p),
-                low24h:      Number(msg.p),
-                open24h:     Number(msg.p),
+                price:       num(msg.p) ?? 0,
+                change24h:   null,
+                changePct24h: null,
+                // The trade size is not a 24h volume figure.
+                volume24h:   null,
+                high24h:     null,
+                low24h:      null,
+                open24h:     null,
                 currency:    'USD',
-                timestamp:   Number(msg.t),
+                timestamp:   num(msg.t) ?? Date.now(),
                 provider:    'polygon',
               });
             }
