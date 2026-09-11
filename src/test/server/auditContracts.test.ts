@@ -32,7 +32,7 @@ describe('legacy audit shim contracts', () => {
     fs.rmSync(path.dirname(auditFile), { force: true, recursive: true });
   });
 
-  async function lastEntry(): Promise<{ action: string; details?: Record<string, unknown>; adminId: string; adminEmail: string }> {
+  async function lastEntry(): Promise<{ action: string; details?: Record<string, unknown> }> {
     const store = await import('../../server/lib/auditLog.flatfile.js');
     // appendAudit persists asynchronously (fire-and-forget with an error
     // handler); poll briefly until the record has been written.
