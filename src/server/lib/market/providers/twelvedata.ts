@@ -16,11 +16,23 @@ import type {
 const REST_BASE = 'https://api.twelvedata.com';
 const WS_URL    = 'wss://ws.twelvedata.com/v1/quotes/price';
 
-const INTERVAL_MAP: Record<CandleInterval, string> = {
+/** Twelve Data granularities that are actually offered — unsupported
+ *  intervals must be refused, not silently served at a different width. */
+const SUPPORTED_INTERVALS: ReadonlySet<CandleInterval> = new Set([
+  '1m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1w', '1M',
+]);
+const INTERVAL_MAP: Record<string, string> = {
   '1m': '1min', '5m': '5min', '15m': '15min', '30m': '30min',
   '1h': '1h', '2h': '2h', '4h': '4h', '1d': '1day', '1w': '1week',
-  '3m': '5min', '6h': '4h', '12h': '1day', '1M': '1month',
+  '1M': '1month',
 };
+
+/** Parse a provider string into a finite number, else null — never a
+ *  fabricated 0. */
+function num(value: unknown): number | null {
+  const n = parseFloat(String(value ?? ''));
+  return Number.isFinite(n) ? n : null;
+}
 
 function getKey(): string {
   const k = String(getSecret('TWELVE_DATA_API_KEY') ?? '');
@@ -52,36 +64,40 @@ export class TwelveDataProvider implements MarketDataProvider {
     // Single symbol returns { price: "..." }, multiple returns { SYM: { price: "..." } }
     const results: Ticker[] = [];
     if (symbols.length === 1) {
-      const price = parseFloat((data as unknown as { price: string }).price ?? '0');
+      const price = num((data as unknown as { price: string }).price);
+      if (price === null) return results;
       results.push({
         symbol:      symbols[0],
         name:        symbols[0],
         assetClass:  'stock',
         price,
-        change24h:   0,
-        changePct24h: 0,
-        volume24h:   0,
-        high24h:     price,
-        low24h:      price,
-        open24h:     price,
+        // The /price endpoint exposes nothing but the last price — the 24h
+        // statistics stay null rather than masquerade as zeros/price clones.
+        change24h:   null,
+        changePct24h: null,
+        volume24h:   null,
+        high24h:     null,
+        low24h:      null,
+        open24h:     null,
         currency:    'USD',
         timestamp:   Date.now(),
         provider:    'twelve-data',
       });
     } else {
       for (const [sym, v] of Object.entries(data)) {
-        const price = parseFloat(v.price ?? '0');
+        const price = num(v.price);
+        if (price === null) continue;
         results.push({
           symbol:      sym,
           name:        sym,
           assetClass:  'stock',
           price,
-          change24h:   0,
-          changePct24h: 0,
-          volume24h:   0,
-          high24h:     price,
-          low24h:      price,
-          open24h:     price,
+          change24h:   null,
+          changePct24h: null,
+          volume24h:   null,
+          high24h:     null,
+          low24h:      null,
+          open24h:     null,
           currency:    'USD',
           timestamp:   Date.now(),
           provider:    'twelve-data',
@@ -92,7 +108,10 @@ export class TwelveDataProvider implements MarketDataProvider {
   }
 
   async getCandles(symbol: string, interval: CandleInterval, limit = 200): Promise<Candle[]> {
-    const iv   = INTERVAL_MAP[interval] ?? '1h';
+    if (!SUPPORTED_INTERVALS.has(interval)) {
+      throw new Error(`Twelve Data does not support ${interval} candles`);
+    }
+    const iv   = INTERVAL_MAP[interval];
     const data = await fetchJSON<{ values: Record<string, string>[] }>(
       '/time_series',
       { symbol, interval: iv, outputsize: String(limit) }
@@ -158,19 +177,22 @@ export class TwelveDataProvider implements MarketDataProvider {
         try {
           const d = JSON.parse(raw.toString());
           if (d.event !== 'price') return;
+          const price    = num(d.price) ?? 0;
+          const change   = num(d.day_change);
+          const tsMs     = num(d.timestamp);
           onUpdate({
             symbol:      d.symbol,
             name:        d.symbol,
             assetClass:  'stock',
-            price:       d.price,
-            change24h:   d.day_change ?? 0,
-            changePct24h: d.day_volume ? (d.day_change / d.price) * 100 : 0,
-            volume24h:   d.day_volume ?? 0,
-            high24h:     d.price,
-            low24h:      d.price,
-            open24h:     d.price,
+            price,
+            change24h:   change,
+            changePct24h: change !== null && price ? (change / price) * 100 : null,
+            volume24h:   num(d.day_volume),
+            high24h:     null,
+            low24h:      null,
+            open24h:     null,
             currency:    'USD',
-            timestamp:   d.timestamp * 1000,
+            timestamp:   tsMs !== null ? tsMs * 1000 : Date.now(),
             provider:    'twelve-data',
           });
         } catch { /* ignore */ }

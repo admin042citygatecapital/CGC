@@ -16,11 +16,22 @@ import type {
 const REST_BASE = 'https://finnhub.io/api/v1';
 const WS_URL    = 'wss://ws.finnhub.io';
 
-const RESOLUTION_MAP: Record<CandleInterval, string> = {
+/** Finnhub resolutions that are actually offered — unsupported intervals
+ *  must be refused, not silently served at a different width. */
+const SUPPORTED_INTERVALS: ReadonlySet<CandleInterval> = new Set([
+  '1m', '5m', '15m', '30m', '1h', '1d', '1w', '1M',
+]);
+const RESOLUTION_MAP: Record<string, string> = {
   '1m': '1', '5m': '5', '15m': '15', '30m': '30', '1h': '60',
   '1d': 'D', '1w': 'W', '1M': 'M',
-  '3m': '5', '2h': '60', '4h': '60', '6h': '60', '12h': '60',
 };
+
+/** Parse a provider string into a finite number, else null — never a
+ *  fabricated 0. */
+function num(value: unknown): number | null {
+  const n = parseFloat(String(value ?? ''));
+  return Number.isFinite(n) ? n : null;
+}
 
 function getKey(): string {
   const k = String(getSecret('FINNHUB_API_KEY') ?? '');
@@ -56,12 +67,13 @@ export class FinnhubProvider implements MarketDataProvider {
           name:        (profile as Record<string, string>).name ?? sym,
           assetClass:  'stock',
           price:       quote.c ?? 0,
-          change24h:   quote.d ?? 0,
-          changePct24h: quote.dp ?? 0,
-          volume24h:   0,
-          high24h:     quote.h ?? 0,
-          low24h:      quote.l ?? 0,
-          open24h:     quote.o ?? 0,
+          change24h:   quote.d ?? null,
+          changePct24h: quote.dp ?? null,
+          // The quote endpoint has no volume figure — null, not a fake 0.
+          volume24h:   null,
+          high24h:     quote.h ?? null,
+          low24h:      quote.l ?? null,
+          open24h:     quote.o ?? null,
           currency:    'USD',
           timestamp:   (quote.t ?? 0) * 1000,
           provider:    'finnhub',
@@ -72,7 +84,10 @@ export class FinnhubProvider implements MarketDataProvider {
   }
 
   async getCandles(symbol: string, interval: CandleInterval, limit = 200): Promise<Candle[]> {
-    const resolution = RESOLUTION_MAP[interval] ?? '60';
+    if (!SUPPORTED_INTERVALS.has(interval)) {
+      throw new Error(`Finnhub does not support ${interval} candles`);
+    }
+    const resolution = RESOLUTION_MAP[interval];
     const to   = Math.floor(Date.now() / 1000);
     const from = to - limit * 3600;
     const data = await fetchJSON<{
@@ -140,15 +155,17 @@ export class FinnhubProvider implements MarketDataProvider {
               symbol:      t.s,
               name:        t.s,
               assetClass:  'stock',
-              price:       t.p,
-              change24h:   0,
-              changePct24h: 0,
-              volume24h:   t.v,
-              high24h:     t.p,
-              low24h:      t.p,
-              open24h:     t.p,
+              price:       num(t.p) ?? 0,
+              change24h:   null,
+              changePct24h: null,
+              volume24h:   num(t.v),
+              // A single trade event has no day statistics — null, not the
+              // trade price cloned into high/low/open.
+              high24h:     null,
+              low24h:      null,
+              open24h:     null,
               currency:    'USD',
-              timestamp:   t.t,
+              timestamp:   num(t.t) ?? Date.now(),
               provider:    'finnhub',
             });
           }
