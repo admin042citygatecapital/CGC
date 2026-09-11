@@ -18,6 +18,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { wsSubscribe, wsSubscribeStatus, wsRegisterSymbols, wsUnregisterSymbols, type WsStatus } from './wsManager';
 import { useMarketSSE } from './useMarketSSE';
 import { apiCache } from './apiCache';
+import { finiteNumber, formatPrice, formatChange, normalizeTickerSymbol } from './marketFormat';
 
 export interface TickerData {
   symbol:    string;
@@ -48,32 +49,6 @@ function buildWsUrl(): string {
   if (typeof window === 'undefined') return '';
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${proto}//${window.location.host}/ws/market`;
-}
-
-function finiteNumber(value: unknown, fallback = 0): number {
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function formatPrice(value: unknown): string {
-  const n = finiteNumber(value);
-  if (n >= 1000)  return `$${n.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-  if (n >= 1)     return `$${n.toFixed(4)}`;
-  return `$${n.toFixed(6)}`;
-}
-
-function formatChange(value: unknown): string {
-  const pct = finiteNumber(value);
-  return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
-}
-
-/** Keep provider-specific asset codes out of the customer-facing data model. */
-function normalizeTickerSymbol(value: unknown): string {
-  return String(value ?? '')
-    .trim()
-    .toUpperCase()
-    .replace(/^XBT/, 'BTC')
-    .replace(/^XDG/, 'DOGE');
 }
 
 // Parse a raw REST ticker response into TickerData

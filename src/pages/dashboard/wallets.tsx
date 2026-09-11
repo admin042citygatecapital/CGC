@@ -25,6 +25,7 @@ import { useCustomerAuth } from '@/lib/customerAuth';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { newIdempotencyKey } from '@/lib/idempotency';
 import { useMarketWebSocket, type TickerData } from '@/lib/useMarketWebSocket';
+import { fmtCompactUsd, fmtPrice } from '@/lib/fmt';
 import { VirtualList } from '@/lib/VirtualList';
 import { CurrencyMark } from '@/components/CurrencyMark';
 import { PlaidLinkCard } from '@/components/PlaidLinkCard';
@@ -141,18 +142,8 @@ function fmt(n: number, currency = 'USD'): string {
     });
   } catch { return `${currency} ${n.toFixed(2)}`; }
 }
-function fmtUsd(n: number): string {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(1)}K`;
-  return `${sign}$${abs.toFixed(2)}`;
-}
-function fmtPrice(n: number): string {
-  if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (n >= 1)    return n.toFixed(4);
-  return n.toFixed(6);
-}
+// Balance summaries never show a leading '+' on positive amounts.
+const fmtUsd = (n: number): string => fmtCompactUsd(n, false);
 function isCredit(type: string): boolean {
   return ['deposit', 'manual_credit', 'refund', 'crypto_sell'].includes(type);
 }

@@ -4,6 +4,7 @@
  * set price alerts, view order book, OHLC indicators
  */
 import { useCandles,useOrderBook,useTicker,type CandleInterval } from '@/hooks/useMarketData';
+import { fmtFixed as fmt, fmtPrice } from '@/lib/fmt';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
@@ -38,14 +39,6 @@ interface PriceAlert {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function fmt(n: number, d = 2): string {
-  return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-}
-function fmtPrice(n: number): string {
-  if (n >= 1000) return fmt(n, 2);
-  if (n >= 1)    return fmt(n, 4);
-  return fmt(n, 6);
-}
 function fmtVol(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000)     return `${(n / 1_000).toFixed(0)}K`;

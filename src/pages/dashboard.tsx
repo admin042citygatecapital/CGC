@@ -1,6 +1,7 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useEffect, useState, useRef, useMemo, useCallback, type ElementType } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { fmtCurrency } from '@/lib/fmt';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LogOut, CreditCard, ArrowUpRight, ArrowDownLeft, Globe,
@@ -93,17 +94,6 @@ function txMeta(type: string): { Icon: ElementType; color: string } {
 
 function isCredit(type: string): boolean {
   return ['deposit', 'manual_credit', 'refund', 'crypto_sell'].includes(type);
-}
-
-function fmtCurrency(amount: number, currency: string): string {
-  try {
-    return amount.toLocaleString('en-US', {
-      style: 'currency', currency,
-      minimumFractionDigits: 2, maximumFractionDigits: 2,
-    });
-  } catch {
-    return `${currency} ${amount.toFixed(2)}`;
-  }
 }
 
 function fmtCompact(n: number): string {

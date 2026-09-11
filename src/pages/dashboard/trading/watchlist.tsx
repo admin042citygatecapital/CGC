@@ -3,6 +3,7 @@
  * Persistent watchlist, live prices, alert badges, add/remove/alert management
  */
 import { useTicker,type AssetClass } from '@/hooks/useMarketData';
+import { fmtPrice } from '@/lib/fmt';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
@@ -60,12 +61,6 @@ const POPULAR: { symbol: string; assetClass: AssetClass }[] = [
   { symbol: 'DOGEUSDT', assetClass: 'crypto' },
   { symbol: 'AVAXUSDT', assetClass: 'crypto' },
 ];
-
-function fmtPrice(n: number): string {
-  if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (n >= 1)    return n.toFixed(4);
-  return n.toFixed(6);
-}
 
 // ── Add Symbol Modal ──────────────────────────────────────────────────────────
 

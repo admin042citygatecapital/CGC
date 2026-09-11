@@ -4,6 +4,7 @@
  * Live price feed · Position sizing · Risk calculator
  */
 import { useTicker, type Ticker } from '@/hooks/useMarketData';
+import { fmtFixed as fmt, fmtPrice, fmtCompactUsd as fmtUsd } from '@/lib/fmt';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
@@ -49,22 +50,6 @@ const LEVERAGE_PRESETS = [1, 2, 5, 10, 20, 50, 100];
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-function fmt(n: number, d = 2): string {
-  return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-}
-function fmtPrice(n: number): string {
-  if (n >= 1000) return fmt(n, 2);
-  if (n >= 1)    return fmt(n, 4);
-  return fmt(n, 6);
-}
-function fmtUsd(n: number): string {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : n > 0 ? '+' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(1)}K`;
-  return `${sign}$${abs.toFixed(2)}`;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Order book mock (replace with real WS feed when available)

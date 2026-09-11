@@ -44,3 +44,28 @@ export function fmtPct(value: unknown, decimals = 1, fallback = '0%'): string {
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
+
+/** Fixed-decimal locale format. e.g. fmtFixed(1234.5, 2) → "1,234.50" */
+export function fmtFixed(value: number, decimals = 2): string {
+  return value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+/** Tiered crypto price without a currency symbol: ≥1000 → 2dp, ≥1 → 4dp, else 6dp. */
+export function fmtPrice(value: number): string {
+  if (value >= 1000) return fmtFixed(value, 2);
+  if (value >= 1)    return fmtFixed(value, 4);
+  return fmtFixed(value, 6);
+}
+
+/**
+ * Compacted USD: fmtCompactUsd(1200) → "+$1.2K", fmtCompactUsd(-3_400_000) →
+ * "-$3.40M", fmtCompactUsd(999, false) → "$999.00". Pass signed=false to drop
+ * the leading '+' on positive amounts (balance summaries use this).
+ */
+export function fmtCompactUsd(value: number, signed = true): string {
+  const abs = Math.abs(value);
+  const sign = value < 0 ? '-' : signed && value > 0 ? '+' : '';
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(1)}K`;
+  return `${sign}$${abs.toFixed(2)}`;
+}

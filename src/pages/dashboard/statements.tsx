@@ -2,6 +2,7 @@
  * /dashboard/statements — Transaction statements with PDF/CSV export
  */
 import { useState, useEffect } from 'react';
+import { fmtCurrency as fmt } from '@/lib/fmt';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -13,11 +14,6 @@ import { useCustomerAuth } from '@/lib/customerAuth';
 interface Tx {
   id: string; type: string; status: string; amount: number;
   currency: string; description: string; reference: string; createdAt: string;
-}
-
-function fmt(amount: number, currency: string): string {
-  try { return amount.toLocaleString('en-US', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-  catch { return `${currency} ${amount.toFixed(2)}`; }
 }
 
 function isCredit(type: string): boolean {

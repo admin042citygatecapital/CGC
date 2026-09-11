@@ -4,6 +4,7 @@
  * top merchants, day-of-week breakdown, period comparison.
  */
 import { Helmet } from '@dr.pogodin/react-helmet';
+import { fmtCurrency as fmtUsd, fmtCompactUsd } from '@/lib/fmt';
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -35,16 +36,8 @@ const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function isCredit(type: string): boolean {
   return ['deposit','manual_credit','refund','crypto_sell'].includes(type);
 }
-function fmtUsd(n: number): string {
-  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
-}
-function fmtCompact(n: number): string {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs/1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000)     return `${sign}$${(abs/1_000).toFixed(1)}K`;
-  return `${sign}$${abs.toFixed(2)}`;
-}
+// Balance summaries never show a leading '+' on positive amounts.
+const fmtCompact = (n: number): string => fmtCompactUsd(n, false);
 
 type Period = '7d'|'30d'|'90d'|'1y';
 const PERIOD_DAYS: Record<Period,number> = { '7d':7,'30d':30,'90d':90,'1y':365 };

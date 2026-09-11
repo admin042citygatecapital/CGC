@@ -19,6 +19,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { TickerData } from './useMarketWebSocket';
+import { finiteNumber, formatPrice, formatChange, normalizeTickerSymbol } from './marketFormat';
 
 export type SseStatus = 'connecting' | 'open' | 'closed' | 'error' | 'unsupported';
 
@@ -30,32 +31,6 @@ export interface UseMarketSseResult {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function finiteNumber(value: unknown, fallback = 0): number {
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function formatPrice(value: unknown): string {
-  const n = finiteNumber(value);
-  if (n >= 1000) return `$${n.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-  if (n >= 1)    return `$${n.toFixed(4)}`;
-  return `$${n.toFixed(6)}`;
-}
-
-function formatChange(value: unknown): string {
-  const pct = finiteNumber(value);
-  return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
-}
-
-/** Normalise exchange-specific codes before they become map keys in the UI. */
-function normalizeTickerSymbol(value: unknown): string {
-  return String(value ?? '')
-    .trim()
-    .toUpperCase()
-    .replace(/^XBT/, 'BTC')
-    .replace(/^XDG/, 'DOGE');
-}
 
 function parseTicker(raw: Record<string, unknown>): TickerData | null {
   const symbol = normalizeTickerSymbol(raw.symbol ?? raw.s);

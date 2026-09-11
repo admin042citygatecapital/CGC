@@ -28,14 +28,10 @@ TrendingUp
 import { AnimatePresence,motion } from 'motion/react';
 import { useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
+import { fmtPrice } from '@/lib/fmt';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function fmtPrice(n: number): string {
-  if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (n >= 1)    return n.toFixed(4);
-  return n.toFixed(6);
-}
 function fmtVol(n: number): string {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
   if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;

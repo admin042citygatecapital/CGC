@@ -2,6 +2,7 @@
  * /dashboard/deposits — Deposit instructions & history
  */
 import { useState, useEffect } from 'react';
+import { fmtCurrency as fmt } from '@/lib/fmt';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -14,11 +15,6 @@ import { useCustomerAuth } from '@/lib/customerAuth';
 interface Tx {
   id: string; type: string; status: string; amount: number;
   currency: string; description: string; reference: string; createdAt: string;
-}
-
-function fmt(amount: number, currency: string): string {
-  try { return amount.toLocaleString('en-US', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-  catch { return `${currency} ${amount.toFixed(2)}`; }
 }
 
 function PV({ value, privacy, className = '' }: { value: string; privacy: boolean; className?: string }) {
