@@ -7,21 +7,14 @@ async function loginAdmin(page: import('@playwright/test').Page) {
   await page.locator('input[type="password"]').fill(E2E_ADMIN.password);
   await page.getByRole('button', { name: /access admin panel/i }).click();
 
-  // Debug: check for error messages
-  const error = await page.locator('.error-message, [role="alert"], .text-red-500').textContent().catch(() => null);
-  if (error) console.log(`Login error: ${error}`);
-
-  if (await page.url() === 'https://citygate.capital/admin/login') {
-    console.log(`DEBUG: Current URL is ${await page.url()}`);
-    console.log(`DEBUG: Page title is ${await page.title()}`);
-  }
-
-  // Handle potential 2FA challenge
+  // Fresh browser contexts never carry a trusted device, so the OTP step
+  // always appears (local verification mode in the e2e server). Await it
+  // rather than racing it — a non-waiting isVisible check reads the
+  // credentials form still on screen and skips the challenge entirely.
   const otpField = page.getByLabel('Verification code');
-  if (await otpField.isVisible({ timeout: 5000 })) {
-    await otpField.fill(E2E_ADMIN.otp);
-    await page.getByRole('button', { name: /verify and continue/i }).click();
-  }
+  await expect(otpField).toBeVisible({ timeout: 10_000 });
+  await otpField.fill(E2E_ADMIN.otp);
+  await page.getByRole('button', { name: /verify and continue/i }).click();
 
   await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
   await expect(page.getByRole('heading', { name: /Good (morning|afternoon|evening), Super/i })).toBeVisible();

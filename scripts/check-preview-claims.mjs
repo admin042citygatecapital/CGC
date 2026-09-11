@@ -2,14 +2,12 @@ import { readFile } from 'node:fs/promises';
 
 const publicCopyFiles = [
   'src/pages/index.tsx',
-  'src/pages/about.tsx',
   'src/pages/accounts.tsx',
   'src/pages/support.tsx',
   'src/pages/digital-banking.tsx',
   'src/pages/wallet.tsx',
   'src/pages/transfers.tsx',
   'src/pages/register.tsx',
-  'src/pages/kyc.tsx',
   'src/pages/dashboard/deposits.tsx',
   'src/pages/admin/crypto.tsx',
   'src/pages/admin/index.tsx',
@@ -54,7 +52,6 @@ const prohibited = [
 ];
 
 const publishedPlatformCopyFiles = [
-  'src/pages/about.tsx',
   'src/pages/accounts.tsx',
   'src/pages/support.tsx',
   'src/pages/digital-banking.tsx',
@@ -63,8 +60,6 @@ const publishedPlatformCopyFiles = [
   'src/pages/compliance.tsx',
   'src/pages/privacy-policy.tsx',
   'src/pages/terms-of-service.tsx',
-  'src/pages/kyc.tsx',
-  'src/pages/chatbot/ChatbotPage.tsx',
   'src/pages/dashboard/deposits.tsx',
   'src/pages/dashboard/rates.tsx',
   'src/components/AccountOpeningModal.tsx',
