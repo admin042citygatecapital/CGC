@@ -47,18 +47,45 @@ interface LegacyAuditPayload {
   [key: string]: unknown;
 }
 
+// Metadata keys whose values must never reach the audit record verbatim —
+// callers pass free-form payloads, so secret-shaped keys are redacted at the
+// audit boundary regardless of the caller's care.
+const SENSITIVE_KEY_PATTERN = /pass(word)?|pwd|secret|token|otp|authorization|credential|cookie|cvv|cvc|ssn|\b(pin|card)s?\b|recovery.?codes?/i;
+const REDACTED = '[redacted]';
+
+function redactMeta(meta: Record<string, unknown>): Record<string, unknown> {
+  const safe: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(meta)) {
+    safe[key] = SENSITIVE_KEY_PATTERN.test(key) ? REDACTED : value;
+  }
+  return safe;
+}
+
+/**
+ * Which identifier family supplied the actor. Legacy call-sites conflate
+ * administrator ids, customer ids and the literal 'system'; recording the
+ * source field keeps downstream viewers honest about what the id refers to.
+ */
+type ActorKind = 'admin' | 'customer' | 'system';
+
+function actorDetails(adminId: string | undefined, userId: string | undefined, kind: ActorKind): Record<string, unknown> {
+  return { actorKind: kind, ...(userId ? { userId } : {}) };
+}
+
 export function appendAudit(payload: LegacyAuditPayload): void {
   const { event, adminId, userId, email, ip, reason, ua, meta, ...rest } = payload;
-  const details: Record<string, unknown> = { ...meta };
+  const actorId = adminId ?? userId ?? 'system';
+  const actorKind: ActorKind = adminId !== undefined ? 'admin' : userId !== undefined ? 'customer' : 'system';
+  const details: Record<string, unknown> = redactMeta({ ...meta });
   if (reason) details.reason = reason;
   if (ua)     details.ua     = ua;
-  if (userId) details.userId = userId;
+  Object.assign(details, actorDetails(adminId, userId, actorKind));
   // Merge any extra keys
   for (const [k, v] of Object.entries(rest)) {
-    if (v !== undefined) details[k] = v;
+    if (v !== undefined) details[k] = SENSITIVE_KEY_PATTERN.test(k) ? REDACTED : v;
   }
   appendAuditEntry({
-    adminId:    adminId ?? userId ?? 'system',
+    adminId:    actorId,
     adminEmail: email   ?? '',
     action:     event,
     ip,
@@ -66,7 +93,7 @@ export function appendAudit(payload: LegacyAuditPayload): void {
   }).catch((error) => {
     console.error('[audit] asynchronous audit write failed', {
       event,
-      adminId: adminId ?? userId ?? 'system',
+      adminId: actorId,
       error: error instanceof Error ? error.message : String(error),
     });
   });
@@ -80,16 +107,17 @@ export function appendAudit(payload: LegacyAuditPayload): void {
 export async function appendCriticalAudit(payload: LegacyAuditPayload): Promise<void> {
   const { event, adminId, userId, email, ip, reason, ua, meta, ...rest } = payload;
   const actorId = adminId ?? userId ?? 'system';
+  const actorKind: ActorKind = adminId !== undefined ? 'admin' : userId !== undefined ? 'customer' : 'system';
   if (process.env.NODE_ENV === 'production' && !isDatabaseConfigured()) {
     console.error('[audit] critical audit storage unavailable', { event, adminId: actorId });
     throw new Error('Critical audit storage is unavailable.');
   }
-  const details: Record<string, unknown> = { ...meta };
+  const details: Record<string, unknown> = redactMeta({ ...meta });
   if (reason) details.reason = reason;
   if (ua) details.ua = ua;
-  if (userId) details.userId = userId;
+  Object.assign(details, actorDetails(adminId, userId, actorKind));
   for (const [key, value] of Object.entries(rest)) {
-    if (value !== undefined) details[key] = value;
+    if (value !== undefined) details[key] = SENSITIVE_KEY_PATTERN.test(key) ? REDACTED : value;
   }
   try {
     await appendAuditEntry({
@@ -110,7 +138,18 @@ export async function appendCriticalAudit(payload: LegacyAuditPayload): Promise<
 }
 
 export async function appendAuditEntry(entry: Omit<AuditEntry, 'id' | 'ts'>): Promise<AuditEntry> {
-  if (!isDatabaseConfigured()) return (await ff()).appendAuditEntry(entry);
+  if (!isDatabaseConfigured()) {
+    // The flat-file fallback keeps records durable when the database is not
+    // configured, but in production a database-backed audit trail is the
+    // expected store — running on the fallback must be loud, not silent.
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[audit] database not configured — audit records are being written to the flat-file fallback', {
+        action: entry.action,
+        adminId: entry.adminId,
+      });
+    }
+    return (await ff()).appendAuditEntry(entry);
+  }
   const db   = getDb();
   const rows = await db.insert(auditLog).values({
     id:         'al_' + crypto.randomBytes(8).toString('hex'),
@@ -175,34 +214,69 @@ export interface AuditLogPageOptions {
   severity?: AuditSeverity;
 }
 
+export function deriveAuditSeverity(entry: { action: string; details?: Record<string, unknown> }): { severity: AuditSeverity; source: 'declared' | 'assessed' } {
+  const declared = String(entry.details?.severity ?? '').toLowerCase();
+  if (declared === 'critical' || declared === 'warn' || declared === 'info') {
+    return { severity: declared, source: 'declared' };
+  }
+  const assessed: AuditSeverity = /(failed|denied|rejected|revoked|lockout|quarantine|security)/i.test(entry.action)
+    ? 'warn'
+    : 'info';
+  return { severity: assessed, source: 'assessed' };
+}
+
+/** Shared search/severity filter used by the flat-file fallback path. */
+function matchesPageFilters(
+  entry: AuditEntry,
+  normalizedSearch: string | undefined,
+  severity: AuditSeverity | undefined,
+): boolean {
+  if (severity) {
+    const { severity: derived } = deriveAuditSeverity(entry);
+    if (derived !== severity) return false;
+  }
+  if (!normalizedSearch) return true;
+  const needle = normalizedSearch.toLowerCase();
+  return [entry.adminEmail, entry.adminId, entry.action, entry.target, entry.targetId, entry.ip]
+    .some((value) => String(value ?? '').toLowerCase().includes(needle));
+}
+
 /**
- * Query one audit page in PostgreSQL. Filtering and counting deliberately live
- * at the database boundary so the administration UI never loads the full
- * immutable audit history into application memory.
+ * Query one audit page. Filtering and counting deliberately live at the
+ * database boundary when PostgreSQL is configured; the flat-file fallback
+ * performs a single scan of the file and returns the same page contract.
+ * The stores are not immutable — no caller may describe this history as
+ * immutable without an integrity guarantee.
  */
 export async function getAuditLogPage(
   opts: AuditLogPageOptions,
-): Promise<{ entries: AuditEntry[]; total: number }> {
+): Promise<{
+  entries: AuditEntry[];
+  total: number;
+  /** Set only by the flat-file fallback when lines could not be parsed/read. */
+  dataQuality?: { malformedLines: number; unreadable: boolean };
+}> {
   const page = Math.max(1, opts.page);
   const limit = Math.min(100, Math.max(1, opts.limit));
   const offset = (page - 1) * limit;
   const normalizedSearch = opts.search?.trim();
 
   if (!isDatabaseConfigured()) {
-    const all = (await ff()).getAuditLog({ limit: Number.MAX_SAFE_INTEGER });
-    const filtered = all.filter((entry) => {
-      const details = entry.details ?? {};
-      const declared = String(details.severity ?? '').toLowerCase();
-      const derived: AuditSeverity = declared === 'critical' || declared === 'warn' || declared === 'info'
-        ? declared
-        : /(failed|denied|rejected|revoked|lockout|quarantine|security)/i.test(entry.action) ? 'warn' : 'info';
-      if (opts.severity && derived !== opts.severity) return false;
-      if (!normalizedSearch) return true;
-      const needle = normalizedSearch.toLowerCase();
-      return [entry.adminEmail, entry.adminId, entry.action, entry.target, entry.targetId, entry.ip]
-        .some((value) => String(value ?? '').toLowerCase().includes(needle));
-    });
-    return { entries: filtered.slice(offset, offset + limit), total: filtered.length };
+    const { entries, malformedLines, unreadable } = (await ff()).readAuditFile();
+    const filtered: AuditEntry[] = [];
+    let total = 0;
+    // Newest first, matching the database ordering (desc by ts).
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const entry = entries[i];
+      if (!matchesPageFilters(entry, normalizedSearch, opts.severity)) continue;
+      if (total >= offset && total < offset + limit) filtered.push(entry);
+      total++;
+    }
+    return {
+      entries: filtered,
+      total,
+      ...(malformedLines > 0 || unreadable ? { dataQuality: { malformedLines, unreadable } } : {}),
+    };
   }
 
   const conditions = [];
