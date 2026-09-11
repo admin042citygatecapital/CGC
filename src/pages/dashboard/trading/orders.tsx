@@ -4,6 +4,7 @@
  * embedded spot trading panel (Market / Limit / Stop)
  */
 import { useTicker } from '@/hooks/useMarketData';
+import { fmtFixed as fmt, fmtPrice } from '@/lib/fmt';
 import { VirtualList } from '@/lib/VirtualList';
 import { useBackgroundSync } from '@/lib/backgroundSync';
 import { useCustomerAuth } from '@/lib/customerAuth';
@@ -45,18 +46,10 @@ const SPOT_SYMBOLS = [
   { symbol: 'XRPUSDT', label: 'XRP' },
 ];
 
-function fmt(n: number, d = 2): string {
-  return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-}
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   });
-}
-function fmtPrice(n: number): string {
-  if (n >= 1000) return fmt(n, 2);
-  if (n >= 1)    return fmt(n, 4);
-  return fmt(n, 6);
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {

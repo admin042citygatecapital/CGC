@@ -3,6 +3,7 @@
  * Full executed trade log with P&L, filters, symbol search, CSV export
  */
 import { useCustomerAuth } from '@/lib/customerAuth';
+import { fmtPrice, fmtCompactUsd as fmtUsd } from '@/lib/fmt';
 import { usePrivacy } from '@/lib/usePrivacy';
 import { VirtualList } from '@/lib/VirtualList';
 import { Helmet } from '@dr.pogodin/react-helmet';
@@ -58,21 +59,6 @@ const ASSET_COLORS: Record<string, string> = {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function fmt(n: number, d = 2): string {
-  return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-}
-function fmtPrice(n: number): string {
-  if (n >= 1000) return fmt(n, 2);
-  if (n >= 1)    return fmt(n, 4);
-  return fmt(n, 6);
-}
-function fmtUsd(n: number): string {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : n > 0 ? '+' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(1)}K`;
-  return `${sign}$${abs.toFixed(2)}`;
-}
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',

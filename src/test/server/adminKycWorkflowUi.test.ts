@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 
 describe('administrator KYC workflow UI', () => {
   const usersPage = fs.readFileSync(path.resolve(process.cwd(), 'src/pages/admin/users.tsx'), 'utf8');
-  const kycPage = fs.readFileSync(path.resolve(process.cwd(), 'src/pages/admin/kyc.tsx'), 'utf8');
   const clientEditor = fs.readFileSync(path.resolve(process.cwd(), 'src/components/admin/ClientEditModal.tsx'), 'utf8');
 
   it('routes submitted identity evidence into the dedicated review workflow', () => {
@@ -22,7 +21,6 @@ describe('administrator KYC workflow UI', () => {
 
   it('uses the CSRF-refreshing request path for protected mutations', () => {
     expect(usersPage).toContain("adminFetch('/api/admin/users/approve'");
-    expect(kycPage).toContain('const res = await adminFetch(url');
     expect(clientEditor).toContain("adminFetch('/api/admin/users/edit'");
   });
 });

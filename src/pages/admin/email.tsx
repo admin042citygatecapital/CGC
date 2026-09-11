@@ -512,8 +512,17 @@ function TemplatesTab({ showToast }: { showToast: (m: string, ok?: boolean) => v
             )}
             <div className="p-6">
               <h2 className="text-white text-xl font-semibold mb-4">{editing.name}</h2>
-              <div dangerouslySetInnerHTML={{ __html: editing.body }}
-                style={{ fontFamily: 'Inter, Arial, sans-serif', color: '#d0d0d0', fontSize: 14, lineHeight: 1.7 }} />
+              {/* Administrator-authored HTML must never execute in the admin
+                  panel. An empty sandbox denies scripts AND same-origin, so
+                  template bodies (including pasted or stored HTML) cannot touch
+                  admin cookies or CSRF tokens even in dev CSP mode. */}
+              <iframe
+                title={`${editing.name} preview`}
+                sandbox=""
+                srcDoc={`<!doctype html><html><body style="margin:0;font-family:Inter,Arial,sans-serif;color:#d0d0d0;font-size:14px;line-height:1.7;">${editing.body}</body></html>`}
+                className="w-full border-0"
+                style={{ minHeight: 320 }}
+              />
               {branding && (
                 <div className="text-center mt-7">
                   <a href={branding.websiteUrl} target="_blank" rel="noreferrer"

@@ -218,7 +218,7 @@ export const routes: RouteObject[] = [
   { path: '/dashboard/trading/trades',    element: <CustomerOnly><FeatureOnly feature="investments"><DashboardTradingTrades /></FeatureOnly></CustomerOnly> },
   { path: '/kyc',                     element: <CustomerOnly><FeatureOnly feature="kyc"><OnboardingPage /></FeatureOnly></CustomerOnly> },
   { path: '/onboarding',              element: <CustomerOnly><FeatureOnly feature="kyc"><OnboardingPage /></FeatureOnly></CustomerOnly> },
-  { path: '/onboarding/support',      element: <CustomerOnly><DashboardSupport /></CustomerOnly> },
+  { path: '/onboarding/support',      element: <CustomerOnly><FeatureOnly feature="support"><DashboardSupport /></FeatureOnly></CustomerOnly> },
   // Admin routes (no RootLayout wrapper — AdminLayout handles its own chrome)
   { path: '/admin/login',             element: <AdminLoginPage /> },
   { path: '/admin/forgot-password',   element: <AdminForgotPasswordPage /> },

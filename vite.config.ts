@@ -154,7 +154,7 @@ export default defineConfig(({
     outDir: "dist/client",
     emptyOutDir: true,
     copyPublicDir: true,
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 250,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -169,10 +169,6 @@ export default defineConfig(({
           // Motion (framer-motion fork) — large, animation-only
           if (id.includes('node_modules/motion') || id.includes('node_modules/framer-motion')) {
             return 'motion';
-          }
-          // Lexical rich-text editor — only used in admin CMS
-          if (id.includes('node_modules/lexical') || id.includes('node_modules/@lexical')) {
-            return 'lexical';
           }
           // All Radix UI primitives
           if (id.includes('node_modules/@radix-ui')) {

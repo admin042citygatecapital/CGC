@@ -28,7 +28,9 @@ export interface RenderResult {
 
 function SSRLayoutWrapper() {
   const location = useLocation();
-  const standalonePrefixes = ['/admin', '/login', '/register', '/dashboard'];
+  // Must stay in sync with STANDALONE_PREFIXES in App.tsx — SSR and the
+  // client agree on which routes render without the shared RootLayout chrome.
+  const standalonePrefixes = ['/admin', '/login', '/register', '/dashboard', '/plaid', '/sponsor-review'];
   const isStandalone = standalonePrefixes.some(
     prefix => location.pathname === prefix || location.pathname.startsWith(`${prefix}/`),
   );

@@ -14,6 +14,7 @@ import { AnimatePresence,motion } from 'motion/react';
 import {
 useCallback,
 useEffect,
+useMemo,
 useState,
 type ElementType,type ReactNode
 } from 'react';
@@ -21,8 +22,10 @@ import { Link,useNavigate } from 'react-router-dom';
 
 import { useBackgroundSync } from '@/lib/backgroundSync';
 import { useCustomerAuth } from '@/lib/customerAuth';
+import { useModalA11y } from '@/lib/useModalA11y';
 import { newIdempotencyKey } from '@/lib/idempotency';
-import { useMarketWebSocket } from '@/lib/useMarketWebSocket';
+import { useMarketWebSocket, type TickerData } from '@/lib/useMarketWebSocket';
+import { fmtCompactUsd, fmtPrice } from '@/lib/fmt';
 import { VirtualList } from '@/lib/VirtualList';
 import { CurrencyMark } from '@/components/CurrencyMark';
 import { PlaidLinkCard } from '@/components/PlaidLinkCard';
@@ -139,18 +142,8 @@ function fmt(n: number, currency = 'USD'): string {
     });
   } catch { return `${currency} ${n.toFixed(2)}`; }
 }
-function fmtUsd(n: number): string {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(1)}K`;
-  return `${sign}$${abs.toFixed(2)}`;
-}
-function fmtPrice(n: number): string {
-  if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (n >= 1)    return n.toFixed(4);
-  return n.toFixed(6);
-}
+// Balance summaries never show a leading '+' on positive amounts.
+const fmtUsd = (n: number): string => fmtCompactUsd(n, false);
 function isCredit(type: string): boolean {
   return ['deposit', 'manual_credit', 'refund', 'crypto_sell'].includes(type);
 }
@@ -249,15 +242,23 @@ function DonutChart({ items }: { items: AllocationItem[] }) {
 // Portfolio Performance bar chart
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PERF_SEED: Record<PerfPeriod, number[]> = {
-  '1D': [100, 101.2, 100.8, 102.1, 101.5, 103.4, 102.8, 104.1, 103.6, 105.2, 104.7, 106.3],
-  '1W': [100, 98.5, 101.2, 103.4, 102.1, 105.6, 107.2, 106.8, 108.4, 107.9, 110.1, 109.5],
-  '1M': [100, 103, 101, 107, 105, 110, 108, 113, 111, 116, 114, 119],
-  '3M': [100, 95, 102, 98, 108, 104, 112, 109, 118, 115, 122, 120],
-};
+const PERF_WINDOW_DAYS: Record<PerfPeriod, number> = { '1D': 1, '1W': 7, '1M': 30, '3M': 90 };
 
-function PerfChart({ period, color }: { period: PerfPeriod; color: string }) {
-  const data = PERF_SEED[period];
+/**
+ * Portfolio Performance chart. Series are derived from real transaction
+ * history (index starting at 100, cumulative signed flow). Periods without
+ * enough recorded activity render an honest empty state — a banking UI must
+ * never chart fabricated data.
+ */
+function PerfChart({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <p className="text-xs text-white/40">Not enough account activity in this period yet.</p>
+        <p className="text-[10px] text-white/25 mt-1">Performance appears once transactions are recorded.</p>
+      </div>
+    );
+  }
   const min  = Math.min(...data);
   const max  = Math.max(...data);
   const range = max - min || 1;
@@ -275,7 +276,7 @@ function PerfChart({ period, color }: { period: PerfPeriod; color: string }) {
         const isLast = i === data.length - 1;
         return (
           <motion.rect
-            key={`${period}-${i}`}
+            key={`bar-${i}`}
             x={x} y={y} width={barW} height={barH}
             rx="3"
             fill={isLast ? color : `${color}40`}
@@ -293,9 +294,11 @@ function PerfChart({ period, color }: { period: PerfPeriod; color: string }) {
 // Live ticker pill
 // ─────────────────────────────────────────────────────────────────────────────
 
-function TickerPill({ symbol }: { symbol: string }) {
-  const { tickers } = useMarketWebSocket([symbol], 8_000);
-  const t    = tickers.get(symbol);
+// Receives the ticker from the page-level useMarketWebSocket call — the pills
+// used to subscribe individually, opening one REST poller and one SSE
+// connection per symbol on top of the page-level subscription.
+function TickerPill({ symbol, ticker }: { symbol: string; ticker: TickerData | undefined }) {
+  const t    = ticker;
   const base = symbol.replace('USDT', '');
   const up   = (t?.change24h ?? 0) >= 0;
 
@@ -413,6 +416,7 @@ function TransferModal({
   const [loading, setLoading] = useState(false);
   const [done, setDone]     = useState(false);
   const [error, setError]   = useState('');
+  const transferModalRef = useModalA11y(true, onClose);
 
   const maxAmt   = dir === 'bank_to_trading' ? bankBalance : tradingBalance;
   const fromLbl  = dir === 'bank_to_trading' ? 'Banking Wallet' : 'Trading Wallet';
@@ -443,6 +447,8 @@ function TransferModal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
       onClick={onClose}>
       <motion.div
+        ref={transferModalRef}
+        role="dialog" aria-modal="true" aria-label="Transfer funds"
         initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
         transition={{ duration: 0.22 }}
         className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111] p-6 space-y-5"
@@ -455,7 +461,7 @@ function TransferModal({
             </div>
             <span className="font-semibold text-white">Transfer Funds</span>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/8 text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close transfer dialog" className="p-1.5 rounded-lg hover:bg-white/8 text-white/40 hover:text-white transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -501,10 +507,10 @@ function TransferModal({
 
             {/* Amount input */}
             <div>
-              <label className="text-xs text-white/40 mb-1.5 block">Amount (USD)</label>
+              <label htmlFor="transfer-amount" className="text-xs text-white/40 mb-1.5 block">Amount (USD)</label>
               <div className="flex items-center gap-2 bg-white/6 border border-white/10 rounded-xl px-4 py-3 focus-within:border-amber-400/40 transition-colors">
                 <span className="text-white/30 text-sm font-semibold">$</span>
-                <input type="number" min="0" step="0.01" value={amount}
+                <input id="transfer-amount" type="number" min="0" step="0.01" value={amount}
                   onChange={e => { setAmount(e.target.value); setError(''); }}
                   placeholder="0.00"
                   className="flex-1 bg-transparent text-white text-sm font-mono outline-none placeholder-white/20" />
@@ -515,7 +521,7 @@ function TransferModal({
                 </button>
               </div>
               {error && (
-                <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
+                <p role="alert" className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {error}
                 </p>
               )}
@@ -551,11 +557,14 @@ function QuickActionModal({ action, onClose }: {
   };
   const m    = META[action];
   const Icon = m.icon;
+  const quickActionModalRef = useModalA11y(true, onClose);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
       onClick={onClose}>
       <motion.div
+        ref={quickActionModalRef}
+        role="dialog" aria-modal="true" aria-label={m.title}
         initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
         transition={{ duration: 0.22 }}
         className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#111] p-6 space-y-5"
@@ -568,7 +577,7 @@ function QuickActionModal({ action, onClose }: {
             </div>
             <span className="font-semibold text-white text-base">{m.title}</span>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/8 text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close dialog" className="p-1.5 rounded-lg hover:bg-white/8 text-white/40 hover:text-white transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -609,6 +618,7 @@ export default function WalletsPage() {
   const [ovError, setOvError]       = useState('');
   const [allTx, setAllTx]           = useState<Tx[]>([]);
   const [txLoading, setTxLoading]   = useState(true);
+  const [txError, setTxError]       = useState(false);
 
   // UI state
   const [txTab, setTxTab]           = useState<'banking' | 'trading'>('banking');
@@ -617,11 +627,44 @@ export default function WalletsPage() {
   const [modal, setModal]           = useState<QuickAction | null>(null);
   const [showTransfer, setShowTransfer] = useState(false);
 
-  // WS status for ticker strip
-  const { status: wsStatus, isLive } = useMarketWebSocket(WATCH_SYMBOLS, 8_000);
+  // Single market-data subscription for the whole ticker strip — status feeds
+  // the strip badge and the tickers map feeds every pill.
+  const { tickers: wsTickers, status: wsStatus, isLive } = useMarketWebSocket(WATCH_SYMBOLS, 8_000);
 
-  // Fake sparkline (replace with real historical endpoint when available)
-  const sparkData = [100, 102, 98, 105, 103, 108, 106, 112, 110, 115, 113, 118];
+  // Portfolio value trend — cumulative signed flow over real transaction
+  // history (same derivation as the dashboard overview sparkline).
+  const sparkData = useMemo(() => {
+    if (allTx.length === 0) return [];
+    const sorted = [...allTx].sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt));
+    let running = 0;
+    const points: number[] = [];
+    for (const tx of sorted) {
+      const amount = Number(tx.amount ?? 0);
+      running += isCredit(tx.type) ? amount : -amount;
+      points.push(running);
+    }
+    return points;
+  }, [allTx]);
+
+  // Performance index per period (base 100 + cumulative signed flow) from
+  // real transactions; empty arrays render an honest empty state.
+  const perfSeries = useMemo(() => {
+    const series = {} as Record<PerfPeriod, number[]>;
+    for (const period of Object.keys(PERF_WINDOW_DAYS) as PerfPeriod[]) {
+      const cutoff = Date.now() - PERF_WINDOW_DAYS[period] * 86_400_000;
+      const inWindow = allTx
+        .filter(tx => +new Date(tx.createdAt) >= cutoff)
+        .sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt));
+      let running = 0;
+      series[period] = inWindow.map(tx => {
+        const amount = Number(tx.amount ?? 0);
+        running += isCredit(tx.type) ? amount : -amount;
+        return 100 + running;
+      });
+    }
+    return series;
+  }, [allTx]);
+  const perfData = perfSeries[perfPeriod];
 
   const loadOverview = useCallback(async () => {
     if (!token) return;
@@ -643,15 +686,17 @@ export default function WalletsPage() {
   const loadTx = useCallback(async () => {
     if (!token) return;
     setTxLoading(true);
+    setTxError(false);
     try {
       const res = await fetch('/api/users/transactions?limit=50', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        const d = await res.json() as { transactions: Tx[] };
-        setAllTx(d.transactions ?? []);
-      }
-    } catch { /* silent */ } finally { setTxLoading(false); }
+      if (!res.ok) throw new Error('Failed to load transactions');
+      const d = await res.json() as { transactions: Tx[] };
+      setAllTx(d.transactions ?? []);
+    } catch {
+      setTxError(true); // surfaced near the transactions list — never masked as empty
+    } finally { setTxLoading(false); }
   }, [token]);
 
   useEffect(() => {
@@ -714,12 +759,12 @@ export default function WalletsPage() {
         )}
       </AnimatePresence>
 
-      <div className="min-h-screen bg-[#0A0A0A] text-white">
+      <div className="dashboard-accessible min-h-screen bg-[#0A0A0A] text-white">
 
         {/* ── Sticky header ── */}
         <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#0A0A0A]/95 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center gap-3">
-            <Link to="/dashboard"
+            <Link to="/dashboard" aria-label="Back to dashboard"
               className="w-8 h-8 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-white/40 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </Link>
@@ -739,11 +784,11 @@ export default function WalletsPage() {
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              <button onClick={() => { void loadOverview(); void loadTx(); }}
+              <button onClick={() => { void loadOverview(); void loadTx(); }} aria-label="Refresh wallet data"
                 className="p-2 rounded-xl hover:bg-white/6 transition-colors text-white/30 hover:text-white">
                 <RefreshCw className={`w-3.5 h-3.5 ${ovLoading ? 'animate-spin' : ''}`} />
               </button>
-              <button onClick={togglePrivacy}
+              <button onClick={togglePrivacy} aria-label={privacy ? 'Disable privacy mode' : 'Enable privacy mode'} aria-pressed={privacy}
                 className="p-2 rounded-xl border transition-all"
                 style={{
                   background:   privacy ? `${GOLD}12` : 'rgba(255,255,255,0.04)',
@@ -870,8 +915,8 @@ export default function WalletsPage() {
           {token && <PlaidLinkCard token={token} />}
 
           {/* ── ③ Live ticker strip ── */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {WATCH_SYMBOLS.map(sym => <TickerPill key={sym} symbol={sym} />)}
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {WATCH_SYMBOLS.map(sym => <TickerPill key={sym} symbol={sym} ticker={wsTickers.get(sym)} />)}
           </div>
 
           {/* ── ④⑤ Main grid ── */}
@@ -1039,7 +1084,7 @@ export default function WalletsPage() {
 
                   <AnimatePresence mode="wait">
                     <motion.div key={perfPeriod} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                      <PerfChart period={perfPeriod} color={totalUp ? EMERALD : RED} />
+                      <PerfChart data={perfData} color={totalUp ? EMERALD : RED} />
                     </motion.div>
                   </AnimatePresence>
 
@@ -1142,6 +1187,15 @@ export default function WalletsPage() {
                       txLoading ? (
                         <div className="flex items-center justify-center py-10">
                           <Loader2 className="w-5 h-5 animate-spin text-white/20" />
+                        </div>
+                      ) : txError ? (
+                        <div role="alert" className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                          <History className="w-6 h-6 text-amber-300/60" />
+                          <p className="text-xs text-white/50">Couldn't load transactions.</p>
+                          <button onClick={() => void loadTx()}
+                            className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-[10px] font-semibold text-white/60 hover:text-white/85 hover:bg-white/[0.07] transition-colors">
+                            Retry
+                          </button>
                         </div>
                       ) : walletTx.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 gap-2 text-white/20">

@@ -452,7 +452,16 @@ app.use(async (_req, res, next) => {
 });
 
 // ── Security & performance ──────────────────────────────────────────────────
-app.set("trust proxy", true);
+// Trust exactly the proxy hops in front of the app (Render terminates TLS at
+// one hop). With `true`, any client could rotate its identity by injecting
+// X-Forwarded-For values, defeating every per-IP rate limit, the brute-force
+// IP axis and the session IP fingerprint. Override with TRUST_PROXY_HOPS if
+// the topology changes.
+const TRUST_PROXY_HOPS = Number(process.env.TRUST_PROXY_HOPS ?? '1');
+if (!Number.isInteger(TRUST_PROXY_HOPS) || TRUST_PROXY_HOPS < 0 || TRUST_PROXY_HOPS > 5) {
+  throw new Error('TRUST_PROXY_HOPS must be an integer between 0 and 5.');
+}
+app.set("trust proxy", TRUST_PROXY_HOPS);
 app.use(removeFingerprinting);
 app.use(enforceHttps);
 // Path hardening must run before securityHeaders and all route handlers
@@ -532,6 +541,39 @@ app.use('/api/admin/sponsor-readiness/external-review', rateLimitMiddleware(
   'Independent sponsor review rate limit exceeded.',
 ));
 
+// Dedicated password-reset throttles. The reset endpoints are public; without
+// these they inherited only the global 200/min ceiling, which allowed
+// reset-email flooding of an administrator's or customer's mailbox.
+// Applies to the reset-request POST only — the confirm endpoint has its own
+// single-use token and must not inherit the mailbox throttle.
+function resetStartLimiter(
+  keyFn: (req: Request) => string,
+  opts: { windowMs: number; max: number },
+  message: string,
+) {
+  const limiter = rateLimitMiddleware(keyFn, opts, message);
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.path !== '/' && req.path !== '') return next();
+    return limiter(req, res, next);
+  };
+}
+
+function resetEmailOf(req: Request): string {
+  const email = (req.body as { email?: unknown } | undefined)?.email;
+  return typeof email === 'string' ? email.trim().toLowerCase() : '';
+}
+
+app.use('/api/admin/auth/password-reset', resetStartLimiter(
+  req => `admin-password-reset:${req.ip ?? 'unknown'}`,
+  { windowMs: 15 * 60_000, max: 3 },
+  'Too many password reset requests. Please try again later.',
+));
+app.use('/api/admin/auth/password-reset', resetStartLimiter(
+  req => `admin-password-reset-email:${resetEmailOf(req) || (req.ip ?? 'unknown')}`,
+  { windowMs: 60 * 60_000, max: 3 },
+  'Too many password reset requests for this address. Please try again later.',
+));
+
 // ── Force JSON-only responses on all /api routes ─────────────────────────────
 // Prevents Express default HTML error pages from reaching clients.
 // The JSON error handler registered after route registrations catches any
@@ -585,6 +627,19 @@ app.use('/api/users/register', rateLimitMiddleware(
   (req) => `customer-registration:${req.ip ?? 'unknown'}`,
   { windowMs: 60 * 60_000, max: 5 },
   'Too many registration attempts. Please try again later.',
+));
+// Customer reset requests: per-IP and per-mailbox throttles (see the admin
+// reset throttles above for rationale). Applies to the reset-request POST
+// only, not the single-use confirm endpoint.
+app.use('/api/users/password-reset', resetStartLimiter(
+  req => `customer-password-reset:${req.ip ?? 'unknown'}`,
+  { windowMs: 15 * 60_000, max: 5 },
+  'Too many password reset requests. Please try again later.',
+));
+app.use('/api/users/password-reset', resetStartLimiter(
+  req => `customer-password-reset-email:${resetEmailOf(req) || (req.ip ?? 'unknown')}`,
+  { windowMs: 60 * 60_000, max: 3 },
+  'Too many password reset requests for this address. Please try again later.',
 ));
 app.use('/api/users', requireCustomerSameOrigin);
 app.use('/api/users', (req: Request, res: Response, next: NextFunction) => {

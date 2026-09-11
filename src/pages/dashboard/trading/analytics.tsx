@@ -3,6 +3,7 @@
  * P&L charts, trade history, win/loss stats, asset breakdown, streaks
  */
 import { useCustomerAuth } from '@/lib/customerAuth';
+import { fmtPrice, fmtCompactUsd as fmtUsd } from '@/lib/fmt';
 import { usePrivacy } from '@/lib/usePrivacy';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
@@ -63,20 +64,8 @@ const ASSET_COLORS: Record<string, string> = {
   crypto: '#F7931A', forex: BLUE, stock: EMERALD, commodity: GOLD, etf: '#9945FF',
 };
 
-function fmtUsd(n: number): string {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : n > 0 ? '+' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(1)}K`;
-  return `${sign}$${abs.toFixed(2)}`;
-}
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
-}
-function fmtPrice(n: number): string {
-  if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (n >= 1)    return n.toFixed(4);
-  return n.toFixed(6);
 }
 
 // ── Bar Chart (daily P&L) ─────────────────────────────────────────────────────

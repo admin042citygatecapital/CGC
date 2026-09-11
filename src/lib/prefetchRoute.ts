@@ -20,7 +20,7 @@ const routeImports: Record<string, () => Promise<unknown>> = {
   '/contact':         () => import('../pages/contact'),
 
   // ── Customer dashboard ────────────────────────────────────────────────────
-  '/dashboard':                    () => import('../pages/dashboard/wallets'),
+  '/dashboard':                    () => import('../pages/dashboard'),
   '/dashboard/wallets':            () => import('../pages/dashboard/wallets'),
   '/dashboard/analytics':          () => import('../pages/dashboard/analytics'),
   '/dashboard/cards':              () => import('../pages/dashboard/cards'),
@@ -51,7 +51,7 @@ const routeImports: Record<string, () => Promise<unknown>> = {
   '/admin/users':        () => import('../pages/admin/users'),
   '/admin/transactions': () => import('../pages/admin/transactions'),
   '/admin/security':     () => import('../pages/admin/security'),
-  '/admin/settings':     () => import('../pages/admin/settings'),
+  '/admin/settings':     () => import('../pages/admin/config'),
   '/admin/support':      () => import('../pages/admin/support'),
   '/admin/cms':          () => import('../pages/admin/cms'),
   '/admin/newsletter':   () => import('../pages/admin/newsletter'),

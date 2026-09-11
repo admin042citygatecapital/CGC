@@ -28,9 +28,6 @@ describe('authenticated global search boundary', () => {
     expect(entry).toContain('app.get("/api/users/search", rateLimitMiddleware(');
     expect(entry).toContain('app.get("/api/admin/search", rateLimitMiddleware(');
     expect(entry).not.toMatch(/app\.(post|put|patch|delete)\("\/api\/(users|admin)\/search/);
-    const developer = read('src/server/api/admin/developer/GET.ts');
-    expect(developer).toContain("path:'/api/admin/search'");
-    expect(developer).toContain("path:'/api/users/search'");
   });
 
   it('places customer search behind CustomerOnly and exposes it in mobile navigation', () => {

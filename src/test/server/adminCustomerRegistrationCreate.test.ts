@@ -116,7 +116,9 @@ describe('administrator-created customer registration', () => {
     );
     expect(dependencies.appendCriticalAudit).toHaveBeenCalledWith(expect.objectContaining({
       event: 'admin_user_create_intent',
-      reason: 'controlled registration record',
+      // Free text is preserved verbatim — the old keyword blacklist used to
+      // strip the word "Create" out of audit reasons, corrupting the record.
+      reason: 'Create controlled registration record',
     }));
   });
 

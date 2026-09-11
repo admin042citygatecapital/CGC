@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   CreditCard, ChevronLeft, Snowflake,
-  Loader2, ShieldCheck, XCircle,
+  Loader2, ShieldAlert, ShieldCheck, XCircle,
   Clock, Wifi,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
@@ -49,19 +49,23 @@ export default function DashboardCardsPage() {
   const { token } = useCustomerAuth();
   const [cards,        setCards]        = useState<VirtualCard[]>([]);
   const [loading,      setLoading]      = useState(true);
+  const [loadError,    setLoadError]    = useState(false);
+  const [reloadKey,    setReloadKey]    = useState(0);
   const [activeIdx,    setActiveIdx]    = useState(0);
 
   useEffect(() => {
     if (!token) return;
     setLoading(true);
+    setLoadError(false);
     fetch('/api/users/cards', { credentials: 'same-origin' })
-      .then(r => r.ok ? r.json() : null)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load cards')))
       .then(data => {
         if (data?.cards) setCards(data.cards.filter((c: VirtualCard) => c.status !== 'deleted'));
+        else setLoadError(true);
       })
-      .catch(() => {})
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, reloadKey]);
 
   const activeCard = cards[activeIdx] ?? null;
 
@@ -103,7 +107,22 @@ export default function DashboardCardsPage() {
             </div>
           </div>
 
-          {loading ? (
+          {loadError ? (
+            /* Error state — a failed load must not be masked as "no cards". */
+            <div role="alert" className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center">
+                <ShieldAlert size={24} className="text-amber-300/70" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Couldn't load card records</p>
+                <p className="text-xs text-foreground/50 mt-1">Please check your connection and try again.</p>
+              </div>
+              <button onClick={() => setReloadKey(k => k + 1)}
+                className="px-4 py-2 rounded-xl border border-primary/25 bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/15 transition-colors">
+                Retry
+              </button>
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 size={24} className="animate-spin text-foreground/20" />
             </div>

@@ -133,6 +133,63 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
 // Flat list for command palette
 const ALL_NAV = NAV_GROUPS.flatMap(g => g.items);
 
+/**
+ * Read permission each nav destination requires. Mirrors the server's
+ * PERMISSION_RULES in adminAuthorizationMiddleware.ts — filtering is a UX
+ * convenience so non-privileged roles don't see dead links; the API remains
+ * the authorization authority. Destinations without an entry stay visible
+ * for every role.
+ */
+const NAV_PERMISSIONS: Record<string, string> = {
+  '/admin':                 'dashboard.view',
+  '/admin/operations':      'operations.view',
+  '/admin/customers':       'users.view',
+  '/admin/onboarding':      'compliance.view',
+  '/admin/legal-entity':    'compliance.view',
+  '/admin/transactions':    'transactions.view',
+  '/admin/transfers':       'transfers.view',
+  '/admin/accounts':        'accounts.view',
+  '/admin/cards':           'cards.view',
+  '/admin/crypto':          'wallets.view',
+  '/admin/trading':         'trading.view',
+  '/admin/support':         'support.view',
+  '/admin/notifications':   'operations.view',
+  '/admin/reports':         'reports.view',
+  '/admin/compliance':      'compliance.view',
+  '/admin/audit':           'audit.view',
+  '/admin/security':        'security.view',
+  '/admin/administrators':  'security.view',
+  '/admin/cms':             'cms.view',
+  '/admin/media':           'media.view',
+  '/admin/website':         'cms.view',
+  '/admin/email':           'email.view',
+  '/admin/config':          'config.view',
+  '/admin/financial-sandbox': 'config.view',
+  '/admin/integrations':    'integrations.view',
+  '/admin/rates':           'rates.view',
+  '/admin/system':          'health.view',
+  '/admin/deployments':     'health.view',
+  '/admin/database':        'health.view',
+  '/admin/reconciliation':  'reconciliation.view',
+  '/admin/disputes':        'transactions.view',
+};
+
+function navItemPermitted(href: string, permissions: string[] | undefined): boolean {
+  const baseHref = href.split('?')[0];
+  const permission = NAV_PERMISSIONS[baseHref];
+  // Fail-open on missing session data — the server enforces authorization.
+  if (!permission || !permissions) return true;
+  return permissions.includes(permission);
+}
+
+const permittedNavGroups = (permissions: string[] | undefined) =>
+  NAV_GROUPS
+    .map(group => ({ ...group, items: group.items.filter(item => navItemPermitted(item.href, permissions)) }))
+    .filter(group => group.items.length > 0);
+
+const permittedAllNav = (permissions: string[] | undefined): typeof ALL_NAV =>
+  ALL_NAV.filter(item => navItemPermitted(item.href, permissions));
+
 function isNavItemActive(href: string, pathname: string, search: string): boolean {
   const [hrefPath, hrefSearch = ''] = href.split('?');
   const pathMatches = pathname === hrefPath || (hrefPath !== '/admin' && pathname.startsWith(`${hrefPath}/`));
@@ -189,7 +246,7 @@ function Sidebar({ mobile = false, collapsed = false, admin, navLive, location, 
 
       {/* Nav groups */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-        {NAV_GROUPS.map(group => (
+        {permittedNavGroups(admin?.permissions).map(group => (
           <div key={group.label}>
             {(!collapsed || mobile) && (
               <p className="text-[9px] font-bold tracking-[0.18em] uppercase text-white/20 px-2 mb-1.5">{group.label}</p>
@@ -267,6 +324,8 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
   const [searchingRecords, setSearchingRecords] = useState(false);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  // Same session the Sidebar filters on — verify populates `permissions`.
+  const { admin } = useAdminAuth();
 
   useEffect(() => {
     if (open) { setQuery(''); setTimeout(() => inputRef.current?.focus(), 50); }
@@ -292,12 +351,13 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
     return () => { clearTimeout(timer); controller.abort(); };
   }, [open, query]);
 
+  const permittedNav = permittedAllNav(admin?.permissions);
   const navigationResults = query.trim()
-    ? ALL_NAV.filter(n =>
+    ? permittedNav.filter(n =>
         n.label.toLowerCase().includes(query.toLowerCase()) ||
         n.desc.toLowerCase().includes(query.toLowerCase())
       )
-    : ALL_NAV.slice(0, 8);
+    : permittedNav.slice(0, 8);
   const results = [...recordResults, ...navigationResults].slice(0, 20);
 
   function go(href: string) { navigate(href); onClose(); }

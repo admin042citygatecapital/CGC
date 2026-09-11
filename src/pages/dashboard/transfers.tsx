@@ -164,6 +164,7 @@ export default function CustomerTransfersPage() {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-3">
           <Link
             to="/dashboard"
+            aria-label="Back to dashboard"
             className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-white/45"
           >
             <ArrowLeft size={16} />
@@ -176,6 +177,7 @@ export default function CustomerTransfersPage() {
           </div>
           <button
             onClick={() => void load()}
+            aria-label="Refresh transfers"
             className="w-9 h-9 rounded-xl border border-white/10 text-white/45"
           >
             <RefreshCw
@@ -198,12 +200,12 @@ export default function CustomerTransfersPage() {
           </div>
         </div>
         {error && (
-          <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+          <div role="alert" className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
             {error}
           </div>
         )}
         {message && (
-          <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+          <div role="status" className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-300">
             {message}
           </div>
         )}

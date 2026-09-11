@@ -346,7 +346,10 @@ function defaultConfig(): AppConfig {
       showCountdown:    false,
     },
     featureToggles: {
-      kycApprovalsEnabled:         true,
+      // Workflow controls ship disabled: the admin contract tests pin the
+      // default-off posture and require an authorized, audited save to arm
+      // KYC approval gating (see adminWorkflowControls.test.ts).
+      kycApprovalsEnabled:         false,
       sandboxFinancialControlsEnabled: false,
       accountApplicationsEnabled: true,
       contactFormsEnabled:        true,

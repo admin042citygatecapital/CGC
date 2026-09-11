@@ -1000,12 +1000,12 @@ export default function AdminUsers() {
               className="w-full bg-white/[0.04] border border-white/8 rounded-xl pl-9 pr-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-primary/40" />
           </div>
           <select value={statusFilter} onChange={e => { setStatus(e.target.value); setPage(1); }}
-            className="bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none">
+            className="bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
             <option value="" className="bg-[#0A0A0A]">All Statuses</option>
             {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v} className="bg-[#0A0A0A]">{l}</option>)}
           </select>
           <select value={kycFilter} onChange={e => { setKyc(e.target.value); setPage(1); }}
-            className="bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none">
+            className="bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60">
             <option value="" className="bg-[#0A0A0A]">All KYC</option>
             <option value="not_submitted" className="bg-[#0A0A0A]">Not Submitted</option>
             <option value="submitted" className="bg-[#0A0A0A]">Submitted</option>
@@ -1059,7 +1059,14 @@ export default function AdminUsers() {
                 ) : users.map(u => (
                   <motion.tr key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                     className="hover:bg-white/[0.02] transition-colors cursor-pointer"
-                    onClick={() => setSelected(u)}>
+                    tabIndex={0}
+                    onClick={() => setSelected(u)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelected(u);
+                      }
+                    }}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar name={u.name} />

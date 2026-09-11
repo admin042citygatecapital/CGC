@@ -1,6 +1,7 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useEffect, useState, useRef, useMemo, useCallback, type ElementType } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { fmtCurrency } from '@/lib/fmt';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LogOut, CreditCard, ArrowUpRight, ArrowDownLeft, Globe,
@@ -16,6 +17,7 @@ import {
   Gift,
 } from 'lucide-react';
 import { useCustomerAuth } from '@/lib/customerAuth';
+import { useModalA11y } from '@/lib/useModalA11y';
 import CgcLogo from '@/components/CgcLogo';
 import { CurrencyMark } from '@/components/CurrencyMark';
 import { usePlatformFeatures } from '@/lib/platformFeatures';
@@ -92,17 +94,6 @@ function txMeta(type: string): { Icon: ElementType; color: string } {
 
 function isCredit(type: string): boolean {
   return ['deposit', 'manual_credit', 'refund', 'crypto_sell'].includes(type);
-}
-
-function fmtCurrency(amount: number, currency: string): string {
-  try {
-    return amount.toLocaleString('en-US', {
-      style: 'currency', currency,
-      minimumFractionDigits: 2, maximumFractionDigits: 2,
-    });
-  } catch {
-    return `${currency} ${amount.toFixed(2)}`;
-  }
 }
 
 function fmtCompact(n: number): string {
@@ -294,6 +285,7 @@ function SettingsPanel({
   onChangePassword: () => void;
   onLogout: () => void;
 }) {
+  const settingsPanelRef = useModalA11y(open, onClose);
   return (
     <AnimatePresence>
       {open && (
@@ -304,6 +296,8 @@ function SettingsPanel({
             onClick={onClose}
           />
           <motion.div
+            ref={settingsPanelRef}
+            role="dialog" aria-modal="true" aria-label="Settings"
             initial={{ opacity: 0, x: 320 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 320 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             className="fixed right-0 top-0 bottom-0 z-50 w-80 flex flex-col border-l border-white/8 overflow-y-auto"
@@ -315,7 +309,7 @@ function SettingsPanel({
                 <Settings size={15} style={{ color: '#C9A84C' }} />
                 <span className="text-sm font-semibold text-foreground">Settings</span>
               </div>
-              <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors">
+              <button onClick={onClose} aria-label="Close settings" className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors">
                 <X size={13} />
               </button>
             </div>
@@ -515,6 +509,7 @@ function SettingsRow({
   return (
     <button
       onClick={() => onChange(!checked)}
+      role="switch" aria-checked={checked}
       className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.03] transition-colors w-full text-left"
     >
       <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/6 flex items-center justify-center shrink-0">
@@ -526,6 +521,7 @@ function SettingsRow({
       </div>
       {/* Toggle */}
       <div
+        aria-hidden="true"
         className="relative w-9 h-5 rounded-full transition-all shrink-0"
         style={{ background: checked ? 'rgba(201,168,76,0.3)' : 'rgba(255,255,255,0.08)' }}
       >
@@ -546,6 +542,7 @@ function WalletTxModal({
   currency, txList, privacy, onClose,
 }: { currency: string; txList: Tx[]; privacy: boolean; onClose: () => void }) {
   const filtered = txList.filter(t => t.currency === currency).slice(0, 20);
+  const walletTxModalRef = useModalA11y(true, onClose);
   return (
     <AnimatePresence>
       <motion.div
@@ -554,6 +551,8 @@ function WalletTxModal({
         onClick={onClose}
       >
         <motion.div
+          ref={walletTxModalRef}
+          role="dialog" aria-modal="true" aria-label={`${currency} transactions`}
           initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
           transition={{ type: 'spring', damping: 28, stiffness: 300 }}
           className="w-full max-w-md rounded-3xl border border-white/8 overflow-hidden"
@@ -568,7 +567,7 @@ function WalletTxModal({
                 <p className="text-[10px] text-foreground/30">{filtered.length} recent entries</p>
               </div>
             </div>
-            <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors">
+            <button onClick={onClose} aria-label="Close transaction history" className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors">
               <X size={13} />
             </button>
           </div>
@@ -702,27 +701,38 @@ export default function DashboardPage() {
     if (!loading && !customer) navigate('/login?reason=session_expired', { replace: true });
   }, [customer, loading, navigate]);
 
+  // Data-load failures are surfaced, never masked — a banking dashboard must
+  // not present zeros as real balances when an API call fails.
+  const [txLoadError, setTxLoadError]           = useState(false);
+  const [balanceLoadError, setBalanceLoadError] = useState(false);
+  const [cardsLoadError, setCardsLoadError]     = useState(false);
+  const [reloadKey, setReloadKey]               = useState(0);
+
   useEffect(() => {
     if (!token) return;
     setTxLoading(true);
+    setTxLoadError(false);
     Promise.all([
       fetch('/api/users/transactions?limit=5',    { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : null),
       fetch('/api/users/transactions?limit=1000', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : null),
     ]).then(([recent, all]) => {
       if (recent?.transactions) setRecentTx(recent.transactions);
       if (all?.transactions)    setAllTx(all.transactions);
-    }).catch(() => {}).finally(() => setTxLoading(false));
-  }, [token]);
+    }).catch(() => setTxLoadError(true)).finally(() => setTxLoading(false));
+  }, [token, reloadKey]);
 
   useEffect(() => {
     if (!token) return;
     setBalanceLoading(true);
     fetch('/api/users/balance', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) { setBalanceData(data); setLastUpdated(new Date()); } })
-      .catch(() => {})
+      .then(data => {
+        if (data) { setBalanceData(data); setLastUpdated(new Date()); }
+        else setBalanceLoadError(true);
+      })
+      .catch(() => setBalanceLoadError(true))
       .finally(() => setBalanceLoading(false));
-  }, [token]);
+  }, [token, reloadKey]);
 
   useEffect(() => {
     if (!token) return;
@@ -736,11 +746,15 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!token) return;
     setCardsLoading(true);
+    setCardsLoadError(false);
     fetch('/api/users/cards', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.cards) setCards(data.cards.filter((c: VirtualCard) => c.status !== 'deleted')); })
-      .catch(() => {}).finally(() => setCardsLoading(false));
-  }, [token]);
+      .then(data => {
+        if (data?.cards) setCards(data.cards.filter((c: VirtualCard) => c.status !== 'deleted'));
+        else setCardsLoadError(true);
+      })
+      .catch(() => setCardsLoadError(true)).finally(() => setCardsLoading(false));
+  }, [token, reloadKey]);
 
   // ── Derived data ──────────────────────────────────────────────────────────────
 
@@ -907,6 +921,25 @@ export default function DashboardPage() {
 
       <div className="dashboard-accessible min-h-screen bg-background text-foreground">
 
+        {/* Data-load errors — a failed fetch must never silently render as an
+            empty state or a zero balance on a banking dashboard. */}
+        {(txLoadError || balanceLoadError || cardsLoadError) && (
+          <div role="alert" className="max-w-7xl mx-auto px-4 md:px-6 mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3">
+              <p className="text-xs text-amber-200">
+                Some account data could not be loaded
+                {balanceLoadError ? ' (balances)' : ''}
+                {txLoadError ? ' (transactions)' : ''}
+                {cardsLoadError ? ' (cards)' : ''}. Figures shown may be incomplete — do not treat them as current.
+              </p>
+              <button onClick={() => setReloadKey(k => k + 1)}
+                className="px-3 py-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-200 text-xs font-semibold hover:bg-amber-400/15 transition-colors">
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── Top nav ─────────────────────────────────────────────────────────── */}
         <header className="sticky top-0 z-40 border-b border-white/5 bg-[rgba(10,10,10,0.92)] backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
@@ -963,7 +996,7 @@ export default function DashboardPage() {
               <div ref={bellRef} className="relative">
                 <button onClick={handleBellClick}
                   className="relative w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-foreground/50 hover:text-foreground transition-colors"
-                  aria-label="Notifications">
+                  aria-label="Notifications" aria-haspopup="true" aria-expanded={bellOpen}>
                   <Bell size={15} />
                   {unreadCount > 0 && (
                     <motion.span
@@ -1557,6 +1590,7 @@ export default function DashboardPage() {
                                     onClick={() => !privacy && setRevealedCvv(prev => prev === card.id ? null : card.id)}
                                     className="text-white text-[11px] font-semibold font-mono"
                                     disabled={privacy}
+                                    aria-label={revealedCvv === card.id && !privacy ? 'Hide CVV' : 'Show CVV'}
                                   >
                                     {privacy ? '•••' : (revealedCvv === card.id ? card.cvv : '•••')}
                                   </button>
@@ -1571,6 +1605,7 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-center gap-1.5 mt-2.5">
                           {cards.map((_, i) => (
                             <button key={i} onClick={() => setActiveCard(i)}
+                              aria-label={`Show card ${i + 1} of ${cards.length}`}
                               className="rounded-full transition-all"
                               style={{ width: i === activeCard ? '18px' : '5px', height: '5px', background: i === activeCard ? '#C9A84C' : 'rgba(255,255,255,0.12)' }} />
                           ))}
@@ -1628,12 +1663,12 @@ export default function DashboardPage() {
 
                         {cards.length > 1 && (
                           <div className="flex items-center justify-between mt-auto">
-                            <button onClick={() => setActiveCard(i => Math.max(0, i - 1))} disabled={activeCard === 0}
+                            <button onClick={() => setActiveCard(i => Math.max(0, i - 1))} disabled={activeCard === 0} aria-label="Previous card"
                               className="w-8 h-8 rounded-xl bg-white/4 border border-white/6 flex items-center justify-center text-foreground/35 hover:text-foreground disabled:opacity-20 transition-colors">
                               <ChevronLeft size={13} />
                             </button>
                             <span className="text-xs text-foreground/25">{activeCard + 1} of {cards.length}</span>
-                            <button onClick={() => setActiveCard(i => Math.min(cards.length - 1, i + 1))} disabled={activeCard === cards.length - 1}
+                            <button onClick={() => setActiveCard(i => Math.min(cards.length - 1, i + 1))} disabled={activeCard === cards.length - 1} aria-label="Next card"
                               className="w-8 h-8 rounded-xl bg-white/4 border border-white/6 flex items-center justify-center text-foreground/35 hover:text-foreground disabled:opacity-20 transition-colors">
                               <ChevronRight size={13} />
                             </button>

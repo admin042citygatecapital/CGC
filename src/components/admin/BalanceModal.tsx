@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, TrendingUp, TrendingDown, DollarSign, Loader2, AlertTriangle } from 'lucide-react';
 import { authHeaders } from '@/lib/adminAuth';
+import { useModalA11y } from '@/lib/useModalA11y';
 
 interface User {
   id: string;
@@ -25,6 +26,8 @@ export default function BalanceModal({ user, onClose, onSuccess }: Props) {
   const [confirm, setConfirm]   = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
+
+  const dialogRef = useModalA11y(true, onClose);
 
   const currentBalance = Number(user.balance ?? 0);
   const parsedAmount   = parseFloat(amount) || 0;
@@ -62,6 +65,10 @@ export default function BalanceModal({ user, onClose, onSuccess }: Props) {
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Adjust balance"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -74,7 +81,7 @@ export default function BalanceModal({ user, onClose, onSuccess }: Props) {
             <h2 className="text-white font-semibold text-lg">Adjust Balance</h2>
             <p className="text-white/50 text-sm mt-0.5">{user.name} · {user.email}</p>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close balance editor" className="text-white/40 hover:text-white transition-colors">
             <X size={20} />
           </button>
         </div>

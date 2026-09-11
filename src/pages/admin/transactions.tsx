@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import AdminLayout from '@/layouts/AdminLayout';
 import { authHeaders, useAdminAuth } from '@/lib/adminAuth';
+import { useModalA11y } from '@/lib/useModalA11y';
 
 interface TransactionRecord {
   id: string;
@@ -100,6 +101,8 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
   const [financialReadiness, setFinancialReadiness] = useState<FinancialReadinessCheck | null>(null);
   const [readinessLoading, setReadinessLoading] = useState(transfersOnly);
   const [readinessError, setReadinessError] = useState('');
+  const editorDialogRef = useModalA11y(Boolean(editing), () => setEditing(null));
+  const createDialogRef = useModalA11y(createOpen && transfersOnly, () => setCreateOpen(false));
 
   useEffect(() => {
     if (!authLoading && !admin) navigate('/admin/login');
@@ -364,7 +367,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
         </div>
 
         {editing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Edit transaction metadata">
+          <div ref={editorDialogRef} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Edit transaction metadata">
             <div className="w-full max-w-xl rounded-2xl border border-primary/20 bg-[#0A0A0A] p-6 shadow-2xl shadow-black/60">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
@@ -408,7 +411,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
         )}
 
         {createOpen && transfersOnly && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="create-transfer-title">
+          <div ref={createDialogRef} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="create-transfer-title">
             <form onSubmit={event => { event.preventDefault(); void createPendingTransfer(); }} className="w-full max-w-2xl rounded-2xl border border-amber-300/20 bg-[#0A0A0A] p-6 shadow-2xl shadow-black/60">
               <div className="flex items-start justify-between gap-4"><div><h2 id="create-transfer-title" className="text-lg font-bold text-white">Create pending transfer instruction</h2><p className="mt-1 text-xs text-white/40">This records an operational instruction for review. It does not move or reserve money.</p></div><button type="button" onClick={() => setCreateOpen(false)} aria-label="Close transfer form" className="rounded-lg p-1.5 text-white/35 hover:bg-white/5 hover:text-white"><X size={17} /></button></div>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">

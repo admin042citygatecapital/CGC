@@ -572,25 +572,26 @@ export default function AdminDashboard() {
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
-  // Stats: 30 s refresh
+  // Single polling loop for both cadences. The activity feed refreshes every
+  // 15 s; the full dashboard (stats + health) refreshes on every other tick
+  // (30 s). This replaces two overlapping intervals that each polled
+  // /api/admin/stats, doubling server load.
+  const pollTick = useRef(0);
   useEffect(() => {
-    const id = setInterval(() => fetchStats(true), 30_000);
-    return () => clearInterval(id);
-  }, [fetchStats]);
-
-  // Notifications: 15 s fast-poll (activity only)
-  useEffect(() => {
-    const id = setInterval(async () => {
-      try {
-        const res = await fetch('/api/admin/stats', { headers: authHeaders() });
-        if (res.ok) {
-          const d: Stats = await res.json();
-          setStats(prev => prev ? { ...prev, recentActivity: d.recentActivity } : d);
-        }
-      } catch { /* silent */ }
+    const id = setInterval(() => {
+      if (++pollTick.current % 2 === 0) { void fetchStats(true); return; }
+      void (async () => {
+        try {
+          const res = await fetch('/api/admin/stats', { headers: authHeaders() });
+          if (res.ok) {
+            const d: Stats = await res.json();
+            setStats(prev => prev ? { ...prev, recentActivity: d.recentActivity } : d);
+          }
+        } catch { /* silent */ }
+      })();
     }, 15_000);
     return () => clearInterval(id);
-  }, []);
+  }, [fetchStats]);
 
   const k = stats?.kpis ?? {};
   const spark = (key: string) =>

@@ -24,8 +24,8 @@ export default async (req: Request, res: Response) => {
     if (!await requireCustomerFinancialAccess(user, res)) return;
 
     const {
-      symbol, assetClass, side, type: orderType, quantity,
-      price, stopPrice, currency = 'USD', leverage = 1,
+      symbol, assetClass, side, type: orderType, quantity: rawQuantity,
+      price: rawPrice, stopPrice: rawStopPrice, currency = 'USD', leverage = 1,
       stopLoss, takeProfit, note,
     } = req.body as {
       symbol: string; assetClass: AssetClass; side: OrderSide;
@@ -34,16 +34,31 @@ export default async (req: Request, res: Response) => {
       stopLoss?: number; takeProfit?: number; note?: string;
     };
 
-    if (!symbol || !assetClass || !side || !orderType || !quantity || quantity <= 0)
-      return res.status(400).json({ error: 'symbol, assetClass, side, type, and quantity are required' });
+    // Numeric validation: a string quantity such as "abc" coerces to NaN,
+    // which passes both `!quantity` and `quantity <= 0`. Bound the magnitude
+    // so sandbox ledger entries stay within a sane range.
+    const MAX_QUANTITY = 1_000_000;
+    if (!Number.isFinite(Number(rawQuantity)) || Number(rawQuantity) <= 0 || Number(rawQuantity) > MAX_QUANTITY)
+      return res.status(400).json({ error: `quantity must be a number between 0 (exclusive) and ${MAX_QUANTITY}` });
+    if (rawPrice !== undefined && (!Number.isFinite(Number(rawPrice)) || Number(rawPrice) <= 0))
+      return res.status(400).json({ error: 'price must be a positive number' });
+    if (rawStopPrice !== undefined && (!Number.isFinite(Number(rawStopPrice)) || Number(rawStopPrice) <= 0))
+      return res.status(400).json({ error: 'stopPrice must be a positive number' });
+    if (!symbol || !assetClass || !side || !orderType)
+      return res.status(400).json({ error: 'symbol, assetClass, side, and type are required' });
     if (!['buy', 'sell'].includes(side))
       return res.status(400).json({ error: 'side must be buy or sell' });
     if (!['market', 'limit', 'stop', 'stop_limit'].includes(orderType))
       return res.status(400).json({ error: 'Invalid order type' });
 
+    // Normalise numerics so downstream arithmetic always operates on numbers.
+    const quantity  = Number(rawQuantity);
+    const price     = rawPrice     !== undefined ? Number(rawPrice)     : undefined;
+    const stopPrice = rawStopPrice !== undefined ? Number(rawStopPrice) : undefined;
+
     const livePrice = getLivePrice(symbol);
     const fillPrice = orderType === 'market' ? livePrice : (price ?? livePrice);
-    const lev       = Math.min(Math.max(leverage, 1), 100);
+    const lev       = Number.isFinite(Number(leverage)) ? Math.min(Math.max(Number(leverage), 1), 100) : 1;
 
     const order = await createOrder({
       userId: user.id, symbol, assetClass, side, type: orderType,

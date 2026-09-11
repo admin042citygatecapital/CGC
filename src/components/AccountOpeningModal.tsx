@@ -1,4 +1,5 @@
 import { trackConversion } from '@/lib/useAnalytics';
+import { useModalA11y } from '@/lib/useModalA11y';
 import {
 AlertCircle,
 ArrowLeft,
@@ -440,6 +441,8 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted]   = useState(false);
 
+  const dialogRef = useModalA11y(open, onClose);
+
   // Sync plan when modal opens with a different plan
   useEffect(() => {
     if (open) {
@@ -555,6 +558,10 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
             className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
           >
             <div
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Create platform profile"
               className="relative w-full max-w-xl max-h-[90vh] flex flex-col rounded-3xl overflow-hidden pointer-events-auto"
               style={{
                 background: 'linear-gradient(160deg, #111 0%, #0A0A0A 100%)',
@@ -579,6 +586,7 @@ export default function AccountOpeningModal({ open, onClose, initialPlan = 'Pers
                 </div>
                 <button
                   onClick={onClose}
+                  aria-label="Close registration form"
                   className="w-8 h-8 rounded-lg glass flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors"
                 >
                   <X size={15} />

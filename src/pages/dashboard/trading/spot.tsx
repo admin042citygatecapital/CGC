@@ -3,7 +3,8 @@
  * Market / Limit / Stop orders · SL/TP · Leverage · Paper-trading order book
  * Live price feed · Position sizing · Risk calculator
  */
-import { useTicker } from '@/hooks/useMarketData';
+import { useTicker, type Ticker } from '@/hooks/useMarketData';
+import { fmtFixed as fmt, fmtPrice, fmtCompactUsd as fmtUsd } from '@/lib/fmt';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
@@ -50,22 +51,6 @@ const LEVERAGE_PRESETS = [1, 2, 5, 10, 20, 50, 100];
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function fmt(n: number, d = 2): string {
-  return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-}
-function fmtPrice(n: number): string {
-  if (n >= 1000) return fmt(n, 2);
-  if (n >= 1)    return fmt(n, 4);
-  return fmt(n, 6);
-}
-function fmtUsd(n: number): string {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : n > 0 ? '+' : '';
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(1)}K`;
-  return `${sign}$${abs.toFixed(2)}`;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Order book mock (replace with real WS feed when available)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,9 +78,11 @@ function generateOrderBook(midPrice: number) {
 // Price ticker display
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PriceTicker({ symbol }: { symbol: string }) {
-  const { tickers } = useTicker([symbol], 'crypto', 3000);
-  const t   = tickers[0];
+// Receives the ticker fetched once by SpotTradingPage — subscribing to market
+// data again here would open a duplicate REST poller and SSE connection for
+// the same symbol.
+function PriceTicker({ ticker }: { ticker: Ticker | null }) {
+  const t   = ticker;
   const up  = (t?.changePct24h ?? 0) >= 0;
   const prevRef = useRef(t?.price ?? 0);
   const [flash, setFlash] = useState<'up' | 'down' | null>(null);
@@ -154,6 +141,9 @@ function OrderBook({ midPrice, onPriceClick }: { midPrice: number; onPriceClick:
       <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2">
         <Activity className="w-4 h-4" style={{ color: GOLD }} />
         <span className="text-sm font-semibold text-white">Order Book</span>
+        {/* The book is synthesised locally until a real depth feed is wired —
+            it must be labelled so customers never read it as live market data. */}
+        <span className="text-[9px] px-1.5 py-0.5 rounded-md border border-white/10 text-white/40 uppercase tracking-wide font-semibold">Simulated</span>
       </div>
       <div className="p-3 space-y-0.5">
         {/* Header */}
@@ -392,7 +382,7 @@ export default function SpotTradingPage() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-1">
                 <p className="text-xs text-white/30 mb-1">{symbolMeta.label}</p>
-                <PriceTicker symbol={symbol} />
+                <PriceTicker ticker={tickers[0] ?? null} />
               </div>
               <div className="grid grid-cols-3 gap-4 text-xs">
                 <div>
