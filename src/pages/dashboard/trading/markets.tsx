@@ -11,7 +11,6 @@ useTicker,
 type AssetClass,
 type Ticker,
 } from '@/hooks/useMarketData';
-import { useMarketWebSocket } from '@/lib/useMarketWebSocket';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
 AlertCircle,
@@ -171,12 +170,13 @@ export default function MarketsPage() {
   const [activeTab, setActiveTab]   = useState<'all' | 'watchlist' | 'gainers' | 'losers' | 'trending'>('all');
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const { tickers, loading, error, refetch } = useTicker(DEFAULT_SYMBOLS, 'crypto', 8000);
+  // Single market-data pipeline: useTicker wraps useMarketWebSocket (WS → SSE →
+  // REST fallback) and now also surfaces the connection status for the badge,
+  // so the page must not open a second parallel subscription for the same
+  // symbols (double REST polling and duplicate SSE connections).
+  const { tickers, loading, error, refetch, status: wsStatus, isLive, source } = useTicker(DEFAULT_SYMBOLS, 'crypto', 8000);
   const { summary, loading: summaryLoading }  = useMarketSummary('crypto', 30_000);
   const { results: searchResults, loading: searching, search } = useMarketSearch();
-
-  // WS status for the live badge
-  const { status: wsStatus, isLive, source } = useMarketWebSocket(DEFAULT_SYMBOLS, 8000);
 
   const toggleWatch = (sym: string) => {
     setWatchlist(prev => {

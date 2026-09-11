@@ -91,7 +91,7 @@ export function useTicker(
   assetClass?: AssetClass,
   pollMs = 8000,  // REST fallback interval (WS is ~3s when connected)
 ) {
-  const { tickers: wsMap, isLive } = useMarketWebSocket(symbols, pollMs);
+  const { tickers: wsMap, isLive, status, source } = useMarketWebSocket(symbols, pollMs);
 
   // Convert WS map → Ticker[] shape expected by consumers
   const tickers = useMemo<Ticker[]>(() => {
@@ -123,7 +123,7 @@ export function useTicker(
   const loading = wsMap.size === 0;
   const [error] = useState<string | null>(null);
 
-  return { tickers, loading, error, isLive, refetch: () => {} };
+  return { tickers, loading, error, isLive, status, source, refetch: () => {} };
 }
 
 // ── useCandles — cached, background-synced ────────────────────────────────────
@@ -260,6 +260,12 @@ export function useMarketSearch() {
         setLoading(false);
       }
     }, 350);
+  }, []);
+
+  // Cancel a pending debounced query on unmount so it can never fire
+  // setLoading/setResults against an unmounted component.
+  useEffect(() => () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
   }, []);
 
   return { results, loading, error, search };

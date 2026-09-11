@@ -36,6 +36,8 @@ interface ManagedSocket {
   subscribedSymbols: Set<string>;
   /** Whether the Page Visibility listener has been attached */
   visibilityBound: boolean;
+  /** Stored handler so the document listener can be removed on teardown */
+  visibilityHandler: (() => void) | null;
 }
 
 const HEARTBEAT_INTERVAL = 30_000;
@@ -57,6 +59,7 @@ function getManagedSocket(url: string): ManagedSocket {
       url,
       subscribedSymbols: new Set(),
       visibilityBound: false,
+      visibilityHandler: null,
     });
   }
   return sockets.get(url)!;
@@ -101,7 +104,7 @@ function bindVisibility(managed: ManagedSocket) {
   if (managed.visibilityBound || typeof document === 'undefined') return;
   managed.visibilityBound = true;
 
-  document.addEventListener('visibilitychange', () => {
+  const handler = () => {
     if (document.hidden) {
       // Tab hidden — pause heartbeat to avoid unnecessary keepalive traffic
       stopHeartbeat(managed);
@@ -110,13 +113,28 @@ function bindVisibility(managed: ManagedSocket) {
       if (managed.ws?.readyState === WebSocket.OPEN) {
         startHeartbeat(managed);
         try { managed.ws.send(JSON.stringify({ type: 'ping' })); } catch { /* ignore */ }
-      } else if (!managed.intentionallyClosed) {
-        // Socket died while hidden — reconnect immediately
+      } else if (!managed.intentionallyClosed && hasSubscribers(managed)) {
+        // Socket died while hidden — reconnect immediately (only when someone
+        // is still listening; never reopen a fully torn-down socket)
         managed.reconnectDelay = INITIAL_RECONNECT_DELAY;
         connect(managed);
       }
     }
-  }, { passive: true });
+  };
+  managed.visibilityHandler = handler;
+  document.addEventListener('visibilitychange', handler, { passive: true });
+}
+
+function removeVisibilityListener(managed: ManagedSocket) {
+  if (managed.visibilityHandler && typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', managed.visibilityHandler);
+  }
+  managed.visibilityHandler = null;
+  managed.visibilityBound = false;
+}
+
+function hasSubscribers(managed: ManagedSocket): boolean {
+  return [...managed.subscribers.values()].some(set => set.size > 0);
 }
 
 function scheduleReconnect(managed: ManagedSocket) {
@@ -233,8 +251,7 @@ export function wsSubscribe(url: string, type: string, handler: Subscriber): () 
     }
 
     // Close connection if no subscribers remain
-    const totalSubs = [...managed.subscribers.values()].reduce((n, s) => n + s.size, 0);
-    if (totalSubs === 0) {
+    if (!hasSubscribers(managed)) {
       managed.intentionallyClosed = true;
       stopHeartbeat(managed);
       if (managed.reconnectTimer) {
@@ -244,6 +261,13 @@ export function wsSubscribe(url: string, type: string, handler: Subscriber): () 
       managed.ws?.close();
       managed.ws = null;
       managed.status = 'closed';
+      // Fully tear down: drop the document listener and, when no symbols are
+      // registered either, forget the entry entirely so a future subscriber
+      // starts from a clean slate instead of inheriting stale state.
+      removeVisibilityListener(managed);
+      if (managed.subscribedSymbols.size === 0) {
+        sockets.delete(url);
+      }
     }
   };
 }

@@ -24,7 +24,7 @@ import { useBackgroundSync } from '@/lib/backgroundSync';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { newIdempotencyKey } from '@/lib/idempotency';
-import { useMarketWebSocket } from '@/lib/useMarketWebSocket';
+import { useMarketWebSocket, type TickerData } from '@/lib/useMarketWebSocket';
 import { VirtualList } from '@/lib/VirtualList';
 import { CurrencyMark } from '@/components/CurrencyMark';
 import { PlaidLinkCard } from '@/components/PlaidLinkCard';
@@ -303,9 +303,11 @@ function PerfChart({ data, color }: { data: number[]; color: string }) {
 // Live ticker pill
 // ─────────────────────────────────────────────────────────────────────────────
 
-function TickerPill({ symbol }: { symbol: string }) {
-  const { tickers } = useMarketWebSocket([symbol], 8_000);
-  const t    = tickers.get(symbol);
+// Receives the ticker from the page-level useMarketWebSocket call — the pills
+// used to subscribe individually, opening one REST poller and one SSE
+// connection per symbol on top of the page-level subscription.
+function TickerPill({ symbol, ticker }: { symbol: string; ticker: TickerData | undefined }) {
+  const t    = ticker;
   const base = symbol.replace('USDT', '');
   const up   = (t?.change24h ?? 0) >= 0;
 
@@ -634,8 +636,9 @@ export default function WalletsPage() {
   const [modal, setModal]           = useState<QuickAction | null>(null);
   const [showTransfer, setShowTransfer] = useState(false);
 
-  // WS status for ticker strip
-  const { status: wsStatus, isLive } = useMarketWebSocket(WATCH_SYMBOLS, 8_000);
+  // Single market-data subscription for the whole ticker strip — status feeds
+  // the strip badge and the tickers map feeds every pill.
+  const { tickers: wsTickers, status: wsStatus, isLive } = useMarketWebSocket(WATCH_SYMBOLS, 8_000);
 
   // Portfolio value trend — cumulative signed flow over real transaction
   // history (same derivation as the dashboard overview sparkline).
@@ -922,7 +925,7 @@ export default function WalletsPage() {
 
           {/* ── ③ Live ticker strip ── */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {WATCH_SYMBOLS.map(sym => <TickerPill key={sym} symbol={sym} />)}
+            {WATCH_SYMBOLS.map(sym => <TickerPill key={sym} symbol={sym} ticker={wsTickers.get(sym)} />)}
           </div>
 
           {/* ── ④⑤ Main grid ── */}

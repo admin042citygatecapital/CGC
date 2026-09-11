@@ -3,7 +3,7 @@
  * Market / Limit / Stop orders · SL/TP · Leverage · Paper-trading order book
  * Live price feed · Position sizing · Risk calculator
  */
-import { useTicker } from '@/hooks/useMarketData';
+import { useTicker, type Ticker } from '@/hooks/useMarketData';
 import { useCustomerAuth } from '@/lib/customerAuth';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import {
@@ -93,9 +93,11 @@ function generateOrderBook(midPrice: number) {
 // Price ticker display
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PriceTicker({ symbol }: { symbol: string }) {
-  const { tickers } = useTicker([symbol], 'crypto', 3000);
-  const t   = tickers[0];
+// Receives the ticker fetched once by SpotTradingPage — subscribing to market
+// data again here would open a duplicate REST poller and SSE connection for
+// the same symbol.
+function PriceTicker({ ticker }: { ticker: Ticker | null }) {
+  const t   = ticker;
   const up  = (t?.changePct24h ?? 0) >= 0;
   const prevRef = useRef(t?.price ?? 0);
   const [flash, setFlash] = useState<'up' | 'down' | null>(null);
@@ -395,7 +397,7 @@ export default function SpotTradingPage() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-1">
                 <p className="text-xs text-white/30 mb-1">{symbolMeta.label}</p>
-                <PriceTicker symbol={symbol} />
+                <PriceTicker ticker={tickers[0] ?? null} />
               </div>
               <div className="grid grid-cols-3 gap-4 text-xs">
                 <div>
