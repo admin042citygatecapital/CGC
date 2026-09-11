@@ -29,7 +29,7 @@ TrendingUp,
 Wrench
 } from 'lucide-react';
 import { AnimatePresence,motion } from 'motion/react';
-import { useCallback,useEffect,useState } from 'react';
+import { useCallback,useEffect,useId,useRef,useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { workflowControlPatch } from '@/shared/workflowControlPatch';
 
@@ -143,6 +143,14 @@ function isSectionId(value: string | null): value is SectionKey | 'env' {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Parse a numeric input with a fallback and hard bounds — no NaN or
+ *  out-of-range values reach the config payload. */
+function clampNumber(raw: string, fallback: number, min: number, max: number): number {
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
 function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <div className="flex items-center gap-2">
@@ -161,10 +169,11 @@ function Field({ label, value, onChange, type = 'text', placeholder = '', hint =
   label: string; value: string | number; onChange: (v: string) => void;
   type?: string; placeholder?: string; hint?: string;
 }) {
+  const id = useId();
   return (
     <div>
-      <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      <label htmlFor={id} className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">{label}</label>
+      <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/40" />
       {hint && <p className="text-white/20 text-[10px] mt-1">{hint}</p>}
     </div>
@@ -175,10 +184,11 @@ function SelectField({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void;
   options: { value: string; label: string }[];
 }) {
+  const id = useId();
   return (
     <div>
-      <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)}
+      <label htmlFor={id} className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">{label}</label>
+      <select id={id} value={value} onChange={e => onChange(e.target.value)}
         className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none">
         {options.map(o => <option key={o.value} value={o.value} className="bg-[#0A0A0A]">{o.label}</option>)}
       </select>
@@ -214,7 +224,17 @@ export default function AdminConfigPage() {
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
   const [toast,    setToast]    = useState<{ msg: string; ok: boolean } | null>(null);
-  const [dirty,    setDirty]    = useState(false);
+  // Dirty state is tracked per section so saving one section never marks
+  // another section's unsaved work as clean, and so section switches can
+  // warn about the section actually being left.
+  const [dirtySections, setDirtySections] = useState<Set<string>>(new Set());
+  const [envError, setEnvError] = useState(false);
+  const [envLoaded, setEnvLoaded] = useState(false);
+  // Per-section edit counters — lets an in-flight save recognise that the
+  // section kept being edited after the request started and must NOT be
+  // marked clean when that (older) response arrives.
+  const editSeq = useRef<Map<string, number>>(new Map());
+  const dirty = dirtySections.size > 0;
   const [workflowBaseline, setWorkflowBaseline] = useState<Record<string, unknown>>({});
   const [workflowVersion, setWorkflowVersion] = useState<string | null>(null);
   const [scopeKind, setScopeKind] = useState<FeatureScopeKind>('users');
@@ -225,38 +245,60 @@ export default function AdminConfigPage() {
     if (isSectionId(requestedSection)) setActiveSection(requestedSection);
   }, [requestedSection]);
 
-  const showToast = (msg: string, ok = true) => {
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = useCallback((msg: string, ok = true) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast({ msg, ok });
-    setTimeout(() => setToast(null), 4000);
-  };
+    toastTimer.current = setTimeout(() => setToast(null), 4000);
+  }, []);
 
   // ── Load ──────────────────────────────────────────────────────────────────
 
   const loadConfig = useCallback(async () => {
     setLoading(true);
-    const r = await fetch('/api/admin/config', { headers: authHeaders() });
-    if (r.ok) {
-      const loaded = await r.json();
-      setConfig(loaded);
-      setWorkflowBaseline(loaded.featureToggles ?? {});
-      setWorkflowVersion(loaded.workflowVersion ?? null);
-      setDirty(false);
+    try {
+      const r = await fetch('/api/admin/config', { headers: authHeaders() });
+      if (r.ok) {
+        const loaded = await r.json();
+        setConfig(loaded);
+        setWorkflowBaseline(loaded.featureToggles ?? {});
+        setWorkflowVersion(loaded.workflowVersion ?? null);
+        setDirtySections(new Set());
+      } else {
+        showToast('Configuration failed to load', false);
+      }
+    } catch {
+      showToast('Configuration failed to load — check your connection', false);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, []);
+  }, [showToast]);
 
   const loadEnv = useCallback(async () => {
-    const r = await fetch('/api/admin/config?section=env', { headers: authHeaders() });
-    if (r.ok) { const d = await r.json(); setEnvVars(d.env ?? []); }
+    setEnvError(false);
+    try {
+      const r = await fetch('/api/admin/config?section=env', { headers: authHeaders() });
+      if (r.ok) { const d = await r.json(); setEnvVars(d.env ?? []); }
+      else setEnvError(true);
+    } catch {
+      setEnvError(true);
+    } finally {
+      setEnvLoaded(true);
+    }
   }, []);
 
   useEffect(() => { loadConfig(); loadEnv(); }, [loadConfig, loadEnv]);
 
   // ── Patch local state ─────────────────────────────────────────────────────
 
+  function markDirty(section: string) {
+    editSeq.current.set(section, (editSeq.current.get(section) ?? 0) + 1);
+    setDirtySections(prev => new Set(prev).add(section));
+  }
+
   function patch(section: string, key: string, value: unknown) {
     setConfig(c => ({ ...c, [section]: { ...c[section], [key]: value } }));
-    setDirty(true);
+    markDirty(section);
   }
 
   function patchPlatformFeature(key: string, value: boolean) {
@@ -267,7 +309,7 @@ export default function AdminConfigPage() {
         platformFeatures: { ...current.featureToggles?.platformFeatures, [key]: value },
       },
     }));
-    setDirty(true);
+    markDirty('featureToggles');
   }
 
   function patchScopedFeature(kind: 'plans' | FeatureScopeKind, identifier: string, feature: string, restricted: boolean) {
@@ -285,7 +327,7 @@ export default function AdminConfigPage() {
       else delete nextScope[normalizedIdentifier];
       return { ...current, featureToggles: { ...featureToggles, featureAccess: { ...featureAccess, [kind]: nextScope } } };
     });
-    setDirty(true);
+    markDirty('featureToggles');
   }
 
   function addScopedRestriction() {
@@ -305,37 +347,70 @@ export default function AdminConfigPage() {
 
   async function save() {
     if (activeSection === 'env') return;
-    const data = activeSection === 'featureToggles'
+    const section = activeSection;
+    const data = section === 'featureToggles'
       ? workflowControlPatch(config.featureToggles ?? {}, workflowBaseline)
-      : config[activeSection];
+      : config[section];
+    const seqAtStart = editSeq.current.get(section) ?? 0;
     setSaving(true);
-    const r = await fetch('/api/admin/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ section: activeSection, data, expectedWorkflowVersion: workflowVersion }),
-    });
-    setSaving(false);
-    if (r.ok) {
-      if (activeSection === 'featureToggles') await loadConfig();
-      showToast('Configuration saved'); setDirty(false);
+    try {
+      const r = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ section, data, expectedWorkflowVersion: workflowVersion }),
+      });
+      if (r.ok) {
+        // Only mark the section clean when it was not edited again while the
+        // save was in flight — a newer unsaved draft must survive.
+        if ((editSeq.current.get(section) ?? 0) === seqAtStart) {
+          setDirtySections(prev => { const n = new Set(prev); n.delete(section); return n; });
+        }
+        if (section === 'featureToggles') await loadConfig();
+        showToast('Configuration saved');
+      }
+      else showToast(r.status === 409 || r.status === 428 ? 'Workflow controls changed or are unavailable. Reload before saving.' : 'Save failed', false);
+    } catch {
+      showToast('Save failed — check your connection', false);
+    } finally {
+      setSaving(false);
     }
-    else showToast(r.status === 409 || r.status === 428 ? 'Workflow controls changed or are unavailable. Reload before saving.' : 'Save failed', false);
   }
 
   async function reset() {
     if (activeSection === 'env') return;
+    const section = activeSection;
+    if (!window.confirm(`Reset "${section}" to platform defaults? Unsaved changes in this section will be discarded.`)) return;
     setSaving(true);
-    const r = await fetch('/api/admin/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ section: activeSection, action: 'reset', expectedWorkflowVersion: workflowVersion }),
-    });
-    setSaving(false);
-    if (r.ok) { const d = await r.json(); setConfig(current => ({ ...current, ...d.config })); if (activeSection === 'featureToggles') await loadConfig(); showToast('Reset to defaults'); setDirty(false); }
-    else showToast(r.status === 409 || r.status === 428 ? 'Workflow controls changed or are unavailable. Reload before resetting.' : 'Reset failed', false);
+    try {
+      const r = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ section, action: 'reset', expectedWorkflowVersion: workflowVersion }),
+      });
+      if (r.ok) {
+        const d = await r.json();
+        setConfig(current => ({ ...current, ...d.config }));
+        if (section === 'featureToggles') await loadConfig();
+        else setDirtySections(prev => { const n = new Set(prev); n.delete(section); return n; });
+        showToast('Reset to defaults');
+      }
+      else showToast(r.status === 409 || r.status === 428 ? 'Workflow controls changed or are unavailable. Reload before resetting.' : 'Reset failed', false);
+    } catch {
+      showToast('Reset failed — check your connection', false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   const s = (section: string) => config[section] ?? {};
+
+  function switchSection(next: string) {
+    if (next === activeSection) return;
+    // Warn before leaving a section with unsaved changes — a save only sends
+    // the section in view, so the draft would otherwise be silently lost.
+    if (dirtySections.has(activeSection) && !window.confirm('You have unsaved changes in this section. Leave without saving?')) return;
+    setActiveSection(next as SectionKey | 'env');
+  }
 
   return (
     <>
@@ -359,7 +434,8 @@ export default function AdminConfigPage() {
                 const Icon = sec.icon;
                 const active = activeSection === sec.id;
                 return (
-                  <button key={sec.id} onClick={() => setActiveSection(sec.id)}
+                  <button key={sec.id} onClick={() => switchSection(sec.id)}
+                    aria-current={active ? 'page' : undefined}
                     className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${active ? 'text-black' : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'}`}
                     style={active ? { background: 'linear-gradient(135deg,#C9A84C,#F0D080)' } : {}}>
                     <Icon size={13} className={active ? 'text-black' : 'text-white/30'} />
@@ -604,7 +680,7 @@ export default function AdminConfigPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <Field label="Default Currency" value={s('dashboardWidgets').defaultCurrency ?? 'USD'} onChange={v => patch('dashboardWidgets','defaultCurrency',v)} />
-                        <Field label="Transaction Feed Limit" value={s('dashboardWidgets').transactionFeedLimit ?? 10} onChange={v => patch('dashboardWidgets','transactionFeedLimit',parseInt(v,10)||10)} type="number" />
+                        <Field label="Transaction Feed Limit" value={s('dashboardWidgets').transactionFeedLimit ?? 10} onChange={v => patch('dashboardWidgets','transactionFeedLimit',clampNumber(v, 10, 1, 100))} type="number" />
                       </div>
                     </div>
                   </>
@@ -649,7 +725,7 @@ export default function AdminConfigPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-white/80 font-semibold text-sm">Maintenance Mode</p>
-                            <p className="text-white/30 text-xs mt-0.5">{s('maintenanceMode').enabled ? '⚠ Site is currently in maintenance mode' : 'Site is live and accessible'}</p>
+                            <p className="text-white/30 text-xs mt-0.5">{s('maintenanceMode').enabled ? '⚠ Draft setting: maintenance mode enabled' : 'Draft setting: maintenance mode off'}{dirtySections.has('maintenanceMode') ? ' · unsaved' : ' · saved'}</p>
                           </div>
                           <Toggle label="Maintenance mode" value={s('maintenanceMode').enabled ?? false} onChange={v => patch('maintenanceMode','enabled',v)} />
                         </div>
@@ -778,8 +854,8 @@ export default function AdminConfigPage() {
                         ))}
                       </div>
                       <div className="grid grid-cols-2 gap-4 pt-2">
-                        <Field label="Max Daily Transfer Limit ($)" value={s('featureToggles').maxDailyTransferLimit ?? 50000} onChange={v => patch('featureToggles','maxDailyTransferLimit',parseFloat(v)||0)} type="number" />
-                        <Field label="Max Single Transfer Limit ($)" value={s('featureToggles').maxSingleTransferLimit ?? 10000} onChange={v => patch('featureToggles','maxSingleTransferLimit',parseFloat(v)||0)} type="number" />
+                        <Field label="Max Daily Transfer Limit ($)" value={s('featureToggles').maxDailyTransferLimit ?? 50000} onChange={v => patch('featureToggles','maxDailyTransferLimit',clampNumber(v, 50000, 0, 1_000_000_000))} type="number" />
+                        <Field label="Max Single Transfer Limit ($)" value={s('featureToggles').maxSingleTransferLimit ?? 10000} onChange={v => patch('featureToggles','maxSingleTransferLimit',clampNumber(v, 10000, 0, 1_000_000_000))} type="number" />
                       </div>
                     </div>
                   </>
@@ -794,9 +870,9 @@ export default function AdminConfigPage() {
                       <SelectField label="Provider" value={s('exchangeRates').provider ?? 'manual'} onChange={v => patch('exchangeRates','provider',v)}
                         options={[{value:'manual',label:'Manual'},{value:'openexchangerates',label:'Open Exchange Rates'},{value:'fixer',label:'Fixer.io'},{value:'exchangerate-api',label:'ExchangeRate-API'}]} />
                       <Field label="Provider API Key" value={s('exchangeRates').apiKey ?? ''} onChange={v => patch('exchangeRates','apiKey',v)} placeholder="Enter API key" hint="Stored securely — displayed as ••••••••" />
-                      <Field label="Markup %" value={s('exchangeRates').markupPercent ?? 1.5} onChange={v => patch('exchangeRates','markupPercent',parseFloat(v)||0)} type="number" hint="Applied on top of mid-market rate" />
-                      <Field label="Update Interval (minutes)" value={s('exchangeRates').updateIntervalMins ?? 60} onChange={v => patch('exchangeRates','updateIntervalMins',parseInt(v,10)||60)} type="number" />
-                      <Field label="Decimal Places" value={s('exchangeRates').roundingDecimalPlaces ?? 4} onChange={v => patch('exchangeRates','roundingDecimalPlaces',parseInt(v,10)||4)} type="number" />
+                      <Field label="Markup %" value={s('exchangeRates').markupPercent ?? 1.5} onChange={v => patch('exchangeRates','markupPercent',clampNumber(v, 1.5, 0, 100))} type="number" hint="Applied on top of mid-market rate" />
+                      <Field label="Update Interval (minutes)" value={s('exchangeRates').updateIntervalMins ?? 60} onChange={v => patch('exchangeRates','updateIntervalMins',clampNumber(v, 60, 1, 1440))} type="number" />
+                      <Field label="Decimal Places" value={s('exchangeRates').roundingDecimalPlaces ?? 4} onChange={v => patch('exchangeRates','roundingDecimalPlaces',clampNumber(v, 4, 0, 8))} type="number" />
                       <div className="md:col-span-2">
                         <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Displayed Currencies (comma-separated)</label>
                         <input value={(s('exchangeRates').displayedCurrencies ?? []).join(', ')} onChange={e => patch('exchangeRates','displayedCurrencies',e.target.value.split(',').map((s: string) => s.trim().toUpperCase()).filter(Boolean))}
@@ -913,8 +989,16 @@ export default function AdminConfigPage() {
                       </div>
                     </div>
 
-                    {envVars.length === 0 ? (
+                    {envError ? (
+                      <div className="flex flex-col items-center gap-3 py-8">
+                        <p className="text-xs text-red-400">Environment report failed to load.</p>
+                        <button type="button" onClick={() => { setEnvLoaded(false); loadEnv(); }}
+                          className="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/5 text-white/60 hover:text-white hover:bg-white/10">Retry</button>
+                      </div>
+                    ) : envVars.length === 0 && !envLoaded ? (
                       <div className="flex justify-center py-8"><Loader2 size={16} className="animate-spin text-white/20" /></div>
+                    ) : envVars.length === 0 ? (
+                      <div className="flex justify-center py-8"><p className="text-xs text-white/25">No environment variables reported.</p></div>
                     ) : (
                       <div className="space-y-1.5">
                         {['CRITICAL','WARNING','INFO'].map(level => {

@@ -101,4 +101,20 @@ describe('admin configuration persistence response', () => {
     expect(res.json).toHaveBeenCalledWith({ error: 'Failed to save configuration.' });
     expect(res.json).not.toHaveBeenCalledWith(expect.objectContaining({ ok: true }));
   });
+
+  it('reset responses never carry the legacy configStore homepage section', async () => {
+    dependencies.resetSection.mockResolvedValueOnce({
+      theme: { mode: 'dark' },
+      homepage: { stale: 'configStore shape' },
+    });
+    const handler = (await import('../../server/api/admin/config/POST.js')).default;
+    const json = vi.fn((..._args: unknown[]) => ({}));
+    await handler(request({ section: 'theme', action: 'reset' }), {
+      status: vi.fn(() => undefined), json, setHeader: vi.fn(),
+    } as unknown as Response);
+
+    const payload = json.mock.calls.map(c => c[0] as { ok?: boolean }).find(c => c?.ok) as { config: Record<string, unknown> } | undefined;
+    expect(payload).toBeDefined();
+    expect(payload && 'homepage' in payload.config).toBe(false);
+  });
 });

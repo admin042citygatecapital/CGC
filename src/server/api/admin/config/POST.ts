@@ -106,7 +106,13 @@ export default async function handler(req: Request, res: Response) {
     // ── All other sections: configStore ──────────────────────────────────────
     if (action === 'reset') {
       const cfg = section === 'featureToggles' ? await resetSection(section, expectedWorkflowVersion) : await resetSection(section);
-      return res.json({ ok: true, config: redactConfigSecrets(cfg) });
+      // configStore's AppConfig carries its own legacy `homepage` section, but
+      // the live homepage is content-file backed and section='homepage' never
+      // reaches this branch. Shipping that stale shape would let the editor's
+      // response merge overwrite the content-file homepage view, so strip it.
+      const safe: Record<string, unknown> = { ...redactConfigSecrets(cfg) };
+      delete safe.homepage;
+      return res.json({ ok: true, config: safe });
     }
 
     if (!data || typeof data !== 'object') {
