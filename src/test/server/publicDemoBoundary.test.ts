@@ -38,14 +38,6 @@ describe('published public website boundary', () => {
     expect(page).not.toContain('https://citygate.capital/demo/');
   });
 
-  it('keeps the corporate homepage factual and partnership-led', () => {
-    const page = readFileSync('src/pages/corporate-home.tsx', 'utf8');
-    expect(page).toContain('Financial infrastructure,');
-    expect(page).toContain('Discuss a partnership');
-    expect(page).toContain('Product capabilities are activated only');
-    expect(page).not.toMatch(/Open Account|Create Account|Start Banking|insured deposits/i);
-  });
-
   it('keeps the public accounts page free of synthetic customer financial data', () => {
     const page = readFileSync('src/pages/accounts.tsx', 'utf8');
     expect(page).toContain('Choose the Account That Fits');

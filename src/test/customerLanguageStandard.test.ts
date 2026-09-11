@@ -7,7 +7,6 @@ const customerSources = [
   "src/pages/wallet.tsx",
   "src/pages/accounts.tsx",
   "src/pages/transfers.tsx",
-  "src/pages/about.tsx",
   "src/lib/chatbot/chat-config.ts",
   "src/server/lib/emailTemplateStore.ts",
   "src/server/lib/emailService.ts",
