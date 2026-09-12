@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { CheckCircle2, Circle, Loader2, Wrench } from 'lucide-react';
-import { ACCOUNT_TYPE_META, APPLICATION_FLOWS, type AccountType } from '../shared/applicationFlow';
+import { ACCOUNT_TYPE_META, APPLICATION_FLOWS, ACCOUNT_TYPE_SLUGS, type AccountType } from '../shared/applicationFlow';
 
 interface ApplicationSummary {
   id: string; reference: string | null; accountType: string; selectedPlan: string | null;
@@ -55,7 +55,7 @@ export default function ApplicationStatusPage() {
         if (!r.ok) { setError('Could not load your applications.'); return; }
         const j = await r.json() as { applications: ApplicationSummary[] };
         setApps(j.applications);
-        j.applications.filter(a => a.status === 'REVIEW_REQUIRED' || a.status === 'APPROVED').forEach(a => void loadKyc(a.id));
+        j.applications.filter(a => ['REVIEW_REQUIRED', 'APPROVED', 'NEEDS_INFORMATION', 'ACTIVATION_PENDING'].includes(a.status)).forEach(a => void loadKyc(a.id));
       } catch {
         setError('Network error — try again.');
       } finally {
@@ -139,7 +139,7 @@ export default function ApplicationStatusPage() {
 
                 {!['REVIEW_REQUIRED', 'APPROVED', 'REJECTED', 'ACTIVATION_PENDING'].includes(app.status) && (
                   <Link
-                    to={`/register/${(meta?.label ?? 'personal').toLowerCase().replace('-', '')}`}
+                    to={`/register/${ACCOUNT_TYPE_SLUGS[app.accountType as AccountType] ?? 'personal'}`}
                     className="mt-4 inline-block rounded-xl bg-[#E6C76A] px-4 py-2 text-sm font-semibold text-black"
                   >
                     Continue application

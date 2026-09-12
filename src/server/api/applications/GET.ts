@@ -3,7 +3,7 @@
  * Never exposes another applicant's data.
  */
 import type { Request, Response } from 'express';
-import { listApplicationsForUser } from '../../lib/applicationsStore.js';
+import { listApplicationsForUser, sanitizeSteps } from '../../lib/applicationsStore.js';
 import { isDatabaseConfigured } from '../../db/db.js';
 
 export default async function handler(req: Request, res: Response): Promise<void> {
@@ -27,7 +27,7 @@ export default async function handler(req: Request, res: Response): Promise<void
       status: row.status,
       currentStep: row.currentStep,
       completionPct: row.completionPct,
-      steps: row.steps,
+      steps: sanitizeSteps(row.steps),
       decision: row.decision,
       decisionReason: row.decisionReason,
       informationRequest: row.informationRequest,

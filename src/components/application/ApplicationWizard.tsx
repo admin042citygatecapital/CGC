@@ -58,7 +58,13 @@ export default function ApplicationWizard({ type, plan }: { type: AccountType; p
             return;
           }
           window.localStorage.removeItem(STORAGE_PREFIX + type);
-        } catch { /* fall through to create */ }
+        } catch {
+          // Transient failure — keep the stored draft id and let the user
+          // retry instead of silently creating an orphan duplicate.
+          setNotice('Could not reach the server. Please try again.');
+          setBooting(false);
+          return;
+        }
       }
       const r = await fetch('/api/applications', {
         method: 'POST',
@@ -141,7 +147,8 @@ export default function ApplicationWizard({ type, plan }: { type: AccountType; p
     setErrors(e => { const n = { ...e }; delete n[name]; return n; });
   };
 
-  const submitted = app?.status === 'REVIEW_REQUIRED' || ['APPROVED', 'REJECTED', 'NEEDS_INFORMATION'].includes(app?.status ?? '');
+  const needsInfo = app?.status === 'NEEDS_INFORMATION';
+  const submitted = app ? ['REVIEW_REQUIRED', 'APPROVED', 'ACTIVATION_PENDING'].includes(app.status) : false;
   const inputCls = 'w-full rounded-lg border border-[#2a2a2e] bg-[#101014] px-3 py-2.5 text-sm text-white placeholder:text-[#6b6b74] focus:border-[#E6C76A]/70 focus:outline-none';
 
   return (
@@ -186,6 +193,13 @@ export default function ApplicationWizard({ type, plan }: { type: AccountType; p
           </section>
         ) : (
           <>
+            {needsInfo && app?.status === 'NEEDS_INFORMATION' && (
+              <p className="mb-4 flex items-start gap-2 rounded-lg bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                Additional information requested — update the relevant steps and
+                resubmit. {(app as { informationRequest?: string }).informationRequest}
+              </p>
+            )}
             <section className="rounded-2xl border border-[#2a2a2e] bg-[#0d0d11] p-6">
               <h2 className="text-lg font-semibold">{step.title}</h2>
               <p className="mt-1 text-sm text-[#a9a9b2]">{step.description}</p>

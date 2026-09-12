@@ -6,6 +6,7 @@ import { dirname, extname, join, resolve } from "node:path";
 import { readFileSync } from "node:fs";
 // Security & performance middleware
 import { securityHeaders, enforceHttps, removeFingerprinting, requestSizeGuard, apiCacheHeaders } from "./lib/securityMiddleware";
+import multer from "multer";
 import { pathHardeningMiddleware } from "./lib/pathHardeningMiddleware";
 import { rateLimitMiddleware } from "./lib/rateLimiter";
 import { httpLogger, redactHttpLogUrl } from "./lib/httpLogger";
@@ -504,7 +505,7 @@ app.use(cookieParser());
 
 // ── Body parsing ────────────────────────────────────────────────────────────
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const limitKb = req.path === '/api/users/onboarding/documents' ? 5120 : 512;
+  const limitKb = req.path === '/api/users/onboarding/documents' || req.path === '/api/kyc/documents' ? 5120 : 512;
   return requestSizeGuard(limitKb)(req, res, next);
 });
 app.use(express.json({
@@ -743,12 +744,21 @@ app.use(['/api/kyc'], async (req: Request, res: Response, next: NextFunction) =>
   if (req.method === 'POST') return requireCustomerSameOrigin(req, res, next);
   next();
 });
+app.use('/api/applications', rateLimitMiddleware(
+  req => `applications-create:${req.ip}`,
+  { windowMs: 60_000, max: 10 },
+  'Too many applications started from this address. Please try again later.',
+));
 app.post("/api/applications", accounts_applications_post);
 app.get("/api/applications", accounts_applications_get);
 app.get("/api/applications/:id", accounts_applications_id_get);
 app.patch("/api/applications/:id", accounts_applications_id_patch);
 app.post("/api/applications/:id/submit", accounts_applications_id_submit_post);
-app.post("/api/kyc/documents", kyc_documents_post);
+const kycUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+});
+app.post("/api/kyc/documents", kycUpload.single('document'), kyc_documents_post);
 app.get("/api/kyc/status", kyc_status_get);
 app.get("/api/admin/kyc-cases", admin_kyc_cases_get);
 app.post("/api/admin/kyc-cases/:id/decision", admin_kyc_cases_decision_post);

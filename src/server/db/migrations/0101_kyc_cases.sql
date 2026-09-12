@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS kyc_cases (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS kyc_cases_application_idx ON kyc_cases (application_id);
+CREATE UNIQUE INDEX IF NOT EXISTS kyc_cases_application_idx ON kyc_cases (application_id);
 CREATE INDEX IF NOT EXISTS kyc_cases_status_idx      ON kyc_cases (status);
 CREATE INDEX IF NOT EXISTS kyc_cases_user_idx        ON kyc_cases (user_id);
 

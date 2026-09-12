@@ -36,6 +36,12 @@ export interface AccountTypeMeta {
   plans: readonly AccountPlan[];
 }
 
+/** Canonical URL slug per account type (never derive from display labels). */
+export const ACCOUNT_TYPE_SLUGS: Record<AccountType, string> = {
+  PERSONAL: 'personal', SAVINGS: 'savings', BUSINESS: 'business',
+  MULTI_CURRENCY: 'multi-currency', WEALTH: 'wealth',
+};
+
 export const ACCOUNT_TYPE_META: Record<AccountType, AccountTypeMeta> = {
   PERSONAL: {
     type: 'PERSONAL', label: 'Personal', tagline: 'Everyday banking',
@@ -295,7 +301,18 @@ export function validateStep(step: StepDef, data: Record<string, unknown>): Reco
       continue;
     }
     if (field.type === 'email' && !EMAIL_RE.test(value)) errors[field.name] = 'Enter a valid email address.';
-    if (field.name === 'dob' && !DOB_RE.test(value)) errors[field.name] = 'Use the YYYY-MM-DD format.';
+    if (field.name === 'dob') {
+      if (!DOB_RE.test(value)) { errors[field.name] = 'Use the YYYY-MM-DD format.'; }
+      else {
+        const d = new Date(value + 'T00:00:00Z');
+        if (Number.isNaN(d.getTime()) || d > new Date() || d < new Date('1900-01-01')) {
+          errors[field.name] = 'Enter a valid date of birth.';
+        }
+      }
+    }
+    if (field.type === 'currency' && !/^[0-9]+([.,][0-9]{1,2})?$/.test(value)) {
+      errors[field.name] = 'Enter a valid amount (digits only, optional decimals).';
+    }
     if (field.name === 'password') {
       const problem = passwordProblem(value);
       if (problem) errors[field.name] = problem;
@@ -315,7 +332,7 @@ export function stepIdsFor(type: AccountType): string[] {
 }
 
 export function completionPct(type: AccountType, completed: Record<string, unknown>): number {
-  const steps = APPLICATION_FLOWS[type];
-  const done = steps.filter(s => s.id === 'review' || completed[s.id]).length;
+  const steps = APPLICATION_FLOWS[type].filter(s => s.id !== 'review');
+  const done = steps.filter(s => completed[s.id]).length;
   return Math.round((done / steps.length) * 100);
 }

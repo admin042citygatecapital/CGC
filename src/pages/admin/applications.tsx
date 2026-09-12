@@ -20,6 +20,7 @@ const STATUSES = ['APPLICATION_STARTED', 'EMAIL_VERIFICATION_REQUIRED', 'EMAIL_V
 
 export default function AdminApplications() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
@@ -39,25 +40,38 @@ export default function AdminApplications() {
       if (!r.ok) throw new Error(String(r.status));
       const j = await r.json() as { applications: Row[] };
       setRows(j.applications);
+      setLoadError(null);
     } catch {
-      setRows([]);
+      setRows(null);
+      setLoadError('Could not load applications — check your connection or permissions.');
     } finally {
       setLoading(false);
     }
   }, [type, status, search]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const t = window.setTimeout(() => { void load(); }, 350);
+    return () => window.clearTimeout(t);
+  }, [load]);
 
   const submitDecision = useCallback(async () => {
     if (!decision) return;
     setBusy(true);
     try {
-      const r = await fetch(`/api/admin/applications/${decision.row.id}/decision`, {
-        method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decision: decision.value, reason: decision.reason }),
-      });
-      const j = await r.json() as { ok?: boolean; error?: string };
+      let r: Response;
+      try {
+        r = await fetch(`/api/admin/applications/${decision.row.id}/decision`, {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ decision: decision.value, reason: decision.reason }),
+        });
+      } catch {
+        setToast({ ok: false, text: 'Network error — decision not recorded.' });
+        window.setTimeout(() => setToast(null), 4000);
+        setBusy(false);
+        return;
+      }
+      const j = await r.json().catch(() => ({ ok: false, error: 'Network error.' })) as { ok?: boolean; error?: string };
       setToast(j.ok
         ? { ok: true, text: `Application ${decision.row.reference ?? decision.row.id}: ${decision.value}` }
         : { ok: false, text: j.error ?? 'Decision failed.' });
@@ -102,6 +116,7 @@ export default function AdminApplications() {
           </div>
         </div>
 
+        {loadError && <p role="alert" className="rounded-xl bg-red-950/60 px-4 py-3 text-sm text-red-200">{loadError}</p>}
         {loading ? (
           <div className="flex items-center gap-2 py-10 text-[var(--muted-foreground)]"><Loader2 className="h-5 w-5 animate-spin" /> Loading…</div>
         ) : (rows?.length ?? 0) === 0 ? (

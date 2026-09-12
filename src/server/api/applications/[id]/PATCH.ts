@@ -8,9 +8,12 @@
  */
 import type { Request, Response } from 'express';
 import { APPLICATION_FLOWS, type AccountType } from '../../../../shared/applicationFlow.js';
-import { getApplication, saveStep, linkUser, markEmailVerified } from '../../../lib/applicationsStore.js';
+import { getApplication, saveStep, linkUser, markEmailVerified, recordEvent } from '../../../lib/applicationsStore.js';
 import { isDatabaseConfigured } from '../../../db/db.js';
-import { findUserById } from '../../../lib/userStore.js';
+import { findUserById, createUserWithRegistrationCase } from '../../../lib/userStore.js';
+import { hashPassword } from '../../../lib/passwordHash.js';
+import { sendVerificationEmail } from '../../../lib/emailService.js';
+import crypto from 'node:crypto';
 
 export default async function handler(req: Request, res: Response): Promise<void> {
   if (!isDatabaseConfigured()) {
@@ -50,10 +53,9 @@ export default async function handler(req: Request, res: Response): Promise<void
     return;
   }
 
-  // Identity step: create the customer identity through the existing
-  // registration path (never a duplicate when the email already exists — the
-  // register endpoint rejects duplicates; an existing verified customer is
-  // told to sign in instead).
+  // Identity step: link an existing verified customer, or provision a new one
+  // through the platform's registration path — always hashed, never plaintext,
+  // and always with a real verification email.
   if (stepId === 'contact') {
     const email = String(dataRec.email ?? '').toLowerCase();
     const existing = await findUserByEmailForApplication(email);
@@ -67,6 +69,27 @@ export default async function handler(req: Request, res: Response): Promise<void
         });
         return;
       }
+    } else if (!app.userId) {
+      const password = typeof dataRec.password === 'string' ? dataRec.password : '';
+      const verifyToken = crypto.randomBytes(32).toString('hex');
+      const { user } = await createUserWithRegistrationCase({
+        email,
+        name: email.split('@')[0],
+        passwordHash: await hashPassword(password),
+        emailVerifyToken: verifyToken,
+        emailVerifyExpiry: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+        ip: req.ip ?? 'unknown',
+        status: 'pending_verification',
+        kycStatus: 'not_submitted',
+        emailVerified: false,
+      }, 'individual');
+      await linkUser(id, user.id, email);
+      const env = process.env.PUBLIC_URL || process.env.SITE_URL;
+      const base = (env ? env.replace(/\/+$/, '') : `${req.protocol}://${req.hostname}`);
+      await sendVerificationEmail(email, user.name, verifyToken, base).catch(() => {
+        console.error(JSON.stringify({ event: 'applications.verification_email_failed', applicationId: id }));
+      });
+      await recordEvent(id, email, null, 'IDENTITY_CREATED', {});
     }
   }
 
@@ -79,6 +102,13 @@ export default async function handler(req: Request, res: Response): Promise<void
     const user = await findUserById(app.userId);
     if (!user || !user.emailVerified) {
       res.status(400).json({ error: 'Your email address is not verified yet. Use the link we emailed you.' });
+      return;
+    }
+    // The verified address must be the one actually recorded on the
+    // application — a contact re-save that changed the email invalidates
+    // verification carried over from a previous address.
+    if ((user.email ?? '').toLowerCase() !== (app.email ?? '').toLowerCase()) {
+      res.status(400).json({ error: 'The application email changed after verification — re-verify the new address.' });
       return;
     }
     await markEmailVerified(id, app.email || 'applicant');

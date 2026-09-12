@@ -11,7 +11,7 @@ import crypto from 'node:crypto';
 import { and, desc, eq } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { kycCases, kycCaseEvents, kycCaseDocuments } from '../db/schema.js';
-import { validateAndSanitizeKycDocument, uploadPrivateKycObject, createKycObjectKey } from './kycStorage.js';
+import { validateAndSanitizeKycDocument, uploadPrivateKycObject, deletePrivateKycObject, createKycObjectKey } from './kycStorage.js';
 
 export interface KycCaseRow {
   id: string; applicationId: string; userId: string | null; accountType: string;
@@ -41,7 +41,11 @@ export async function ensureCaseForApplication(input: {
   const [row] = await db.insert(kycCases).values({
     id: crypto.randomUUID(), applicationId: input.applicationId, userId: input.userId,
     accountType: input.accountType, status: 'SUBMITTED', submittedAt: new Date(),
-  }).returning();
+  }).onConflictDoNothing().returning();
+  if (!row) {
+    const [again] = await db.select().from(kycCases).where(eq(kycCases.applicationId, input.applicationId)).limit(1);
+    return again as KycCaseRow;
+  }
   await event(row.id, input.actor, null, 'KYC_SUBMITTED', { accountType: input.accountType });
   return row as KycCaseRow;
 }
@@ -72,8 +76,13 @@ export interface KycDecisionInput {
   reason: string; reviewerId: string; reviewerRole: string;
 }
 
+const CASE_DECISION_SOURCES = ['SUBMITTED', 'UNDER_REVIEW', 'NEEDS_INFORMATION', 'APPROVED', 'REJECTED'];
+
 export async function decideCase(input: KycDecisionInput): Promise<KycCaseRow | null> {
   if (!isDatabaseConfigured()) return null;
+  const [current] = await getDb().select().from(kycCases).where(eq(kycCases.id, input.caseId)).limit(1);
+  if (!current) return null;
+  if (!CASE_DECISION_SOURCES.includes((current as { status: string }).status)) return null;
   const [row] = await getDb().update(kycCases).set({
     status: input.decision, reviewReason: input.reason, reviewerId: input.reviewerId,
     reviewedAt: new Date(), updatedAt: new Date(),
@@ -109,15 +118,21 @@ export async function addCaseDocument(input: {
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : 'Document rejected.' };
   }
+  if (!isDatabaseConfigured()) return { ok: false, error: 'Database offline.' };
   const documentId = crypto.randomUUID();
   const key = createKycObjectKey(input.caseId, documentId, sanitized.mimeType as never);
   await uploadPrivateKycObject(key, sanitized.bytes, sanitized.mimeType as never);
-  if (!isDatabaseConfigured()) return { ok: false, error: 'Database offline.' };
-  await getDb().insert(kycCaseDocuments).values({
-    id: documentId, caseId: input.caseId, documentType: input.documentType,
-    issuingCountry: input.issuingCountry, storagePath: key, mimeType: sanitized.mimeType,
-    byteSize: sanitized.bytes.length, originalName: input.file.name.slice(0, 120), uploadedBy: input.uploadedBy,
-  });
+  try {
+    await getDb().insert(kycCaseDocuments).values({
+      id: documentId, caseId: input.caseId, documentType: input.documentType,
+      issuingCountry: input.issuingCountry, storagePath: key, mimeType: sanitized.mimeType,
+      byteSize: sanitized.bytes.length, originalName: input.file.name.slice(0, 120), uploadedBy: input.uploadedBy,
+    });
+  } catch (error) {
+    // Do not leave an orphaned blob with no metadata row.
+    await deletePrivateKycObject(key).catch(() => {});
+    throw error;
+  }
   await event(input.caseId, input.uploadedBy, null, 'DOCUMENT_UPLOADED', { documentId, documentType: input.documentType });
   return { ok: true, documentId };
 }

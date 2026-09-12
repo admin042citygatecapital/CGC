@@ -6,6 +6,27 @@
 -- trail. Additive only — no data is dropped or rewritten; the legacy intake
 -- API keeps working because every legacy column keeps its default.
 
+-- Legacy-compat: the account_applications table originated out-of-band in the
+-- production database. Guard its creation so fresh databases (CI, previews)
+-- can run this migration; existing tables are untouched.
+CREATE TABLE IF NOT EXISTS account_applications (
+  id             TEXT PRIMARY KEY,
+  first_name     TEXT NOT NULL DEFAULT '',
+  last_name      TEXT NOT NULL DEFAULT '',
+  email          TEXT NOT NULL,
+  phone          TEXT NOT NULL DEFAULT '',
+  dob            TEXT NOT NULL DEFAULT '',
+  gender         TEXT,
+  nationality    TEXT NOT NULL DEFAULT '',
+  address        TEXT NOT NULL DEFAULT '',
+  account_type   TEXT NOT NULL DEFAULT 'personal',
+  status         TEXT NOT NULL DEFAULT 'APPLICATION_STARTED',
+  submitted_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ip             TEXT NOT NULL DEFAULT 'unknown',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 ALTER TABLE account_applications
   ADD COLUMN IF NOT EXISTS reference           TEXT,
   ADD COLUMN IF NOT EXISTS user_id             TEXT REFERENCES users(id) ON DELETE SET NULL,

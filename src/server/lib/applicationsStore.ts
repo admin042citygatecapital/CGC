@@ -7,7 +7,7 @@
  * application never creates a duplicate user.
  */
 import crypto from 'node:crypto';
-import { and, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { accountApplications, applicationEvents } from '../db/schema.js';
 import { APPLICATION_FLOWS, validateStep, completionPct,
@@ -95,6 +95,37 @@ export async function listApplicationsForUser(userId: string): Promise<Applicati
   return rows as ApplicationRow[];
 }
 
+
+/** Fields that must never be persisted in or returned from `steps`. */
+const FORBIDDEN_STEP_KEYS = new Set(['password', 'confirmPassword', 'otp', 'cardNumber', 'cvv']);
+
+/** Project step data onto its declared fields and drop credential fields. */
+export function sanitizeStepData(
+  stepId: string,
+  data: Record<string, unknown>,
+  type: AccountType,
+): Record<string, unknown> {
+  const step = APPLICATION_FLOWS[type]?.find(s => s.id === stepId);
+  const known = new Set(step?.fields.map(f => f.name) ?? []);
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (FORBIDDEN_STEP_KEYS.has(key) || (known.size > 0 && !known.has(key))) continue;
+    out[key] = value;
+  }
+  return out;
+}
+
+/** Defense-in-depth for data persisted before the sanitizer existed. */
+export function sanitizeSteps(steps: Record<string, Record<string, unknown>>): Record<string, Record<string, unknown>> {
+  const out: Record<string, Record<string, unknown>> = {};
+  for (const [stepId, data] of Object.entries(steps)) {
+    out[stepId] = Object.fromEntries(
+      Object.entries(data).filter(([k]) => !FORBIDDEN_STEP_KEYS.has(k)),
+    );
+  }
+  return out;
+}
+
 /** Save one step's validated data. Returns the updated row. */
 export async function saveStep(input: {
   applicationId: string;
@@ -104,7 +135,7 @@ export async function saveStep(input: {
 }): Promise<{ ok: true; row: ApplicationRow } | { ok: false; error: string; errors?: Record<string, string> }> {
   const app = await getApplication(input.applicationId);
   if (!app) return { ok: false, error: 'Application not found.' };
-  if (['APPROVED', 'REJECTED', 'ACTIVATION_PENDING'].includes(app.status)) {
+  if (['REVIEW_REQUIRED', 'APPROVED', 'REJECTED', 'ACTIVATION_PENDING'].includes(app.status)) {
     return { ok: false, error: 'This application has been decided and is no longer editable.' };
   }
   const type = app.accountType as AccountType;
@@ -114,16 +145,16 @@ export async function saveStep(input: {
   const errors = validateStep(step, input.data);
   if (Object.keys(errors).length > 0) return { ok: false, error: 'Validation failed.', errors };
 
-  const steps = { ...app.steps, [input.stepId]: input.data };
+  const cleaned = sanitizeStepData(input.stepId, input.data, type);
+  const steps = { ...app.steps, [input.stepId]: cleaned };
   const nextStepIndex = APPLICATION_FLOWS[type].findIndex(s => s.id === input.stepId) + 1;
   const nextStep = APPLICATION_FLOWS[type][nextStepIndex]?.id ?? 'review';
 
+  // Status derives from the email_verified column — never from step data —
+  // so re-saving a step can never regress a verified application.
   let status: ApplicationStatus | undefined;
-  if (input.stepId === 'contact' && steps.verification?.verified !== true) {
-    status = 'EMAIL_VERIFICATION_REQUIRED';
-  }
-  if (input.stepId === 'verification' && steps.verification?.verified === true) {
-    status = 'EMAIL_VERIFIED';
+  if (input.stepId === 'contact' && app.userId) {
+    status = app.emailVerified ? 'EMAIL_VERIFIED' : 'EMAIL_VERIFICATION_REQUIRED';
   }
 
   const [row] = await getDb().update(accountApplications).set({
@@ -135,10 +166,10 @@ export async function saveStep(input: {
     firstName: typeof steps.personal?.firstName === 'string' ? String(steps.personal.firstName) : app.firstName,
     lastName: typeof steps.personal?.lastName === 'string' ? String(steps.personal.lastName) : app.lastName,
     email: typeof steps.contact?.email === 'string' ? String(steps.contact.email).toLowerCase() : app.email,
-    selectedPlan: typeof steps.contact === 'object' && steps[Object.keys(APPLICATION_FLOWS[type])[2]] &&
-        typeof (steps[Object.keys(APPLICATION_FLOWS[type])[2]] as Record<string, unknown>).plan === 'string'
-      ? String((steps[Object.keys(APPLICATION_FLOWS[type])[2]] as Record<string, unknown>).plan)
-      : app.selectedPlan,
+    selectedPlan: (APPLICATION_FLOWS[type]
+      .map(s => (steps[s.id] ?? {}) as Record<string, unknown>)
+      .map(stepData => stepData.plan)
+      .find(p => typeof p === 'string' && (p as string).length > 0) as string | undefined) ?? app.selectedPlan,
     updatedAt: new Date(),
   }).where(eq(accountApplications.id, input.applicationId)).returning();
 
@@ -148,7 +179,8 @@ export async function saveStep(input: {
 
 export async function markEmailVerified(applicationId: string, actor: string): Promise<void> {
   const app = await getApplication(applicationId);
-  if (!app || app.emailVerified) return;
+  if (!app) return;
+  if (app.emailVerified && app.status === 'EMAIL_VERIFIED') return;
   await getDb().update(accountApplications)
     .set({ emailVerified: true, status: 'EMAIL_VERIFIED', updatedAt: new Date() })
     .where(eq(accountApplications.id, applicationId));
@@ -179,9 +211,19 @@ export async function submitApplication(input: {
       return { ok: false, error: `Step "${step.title}" is incomplete.` };
     }
   }
+  // Conditional transition: only submit from a valid status (prevents the
+  // double-submit race and mid-review data flips).
   const [row] = await getDb().update(accountApplications).set({
     status: 'REVIEW_REQUIRED', submittedAt: new Date(), updatedAt: new Date(),
-  }).where(eq(accountApplications.id, input.applicationId)).returning();
+  }).where(and(
+    eq(accountApplications.id, input.applicationId),
+    inArray(accountApplications.status, ['EMAIL_VERIFIED', 'NEEDS_INFORMATION']),
+  )).returning();
+  if (!row) {
+    const current = await getApplication(input.applicationId);
+    return { ok: false, error: current && ['REVIEW_REQUIRED', 'APPROVED', 'ACTIVATION_PENDING'].includes(current.status)
+      ? 'This application is already submitted.' : 'Complete all steps and verify your email before submitting.' };
+  }
   await recordEvent(input.applicationId, input.actor, null, 'APPLICATION_SUBMITTED', {});
   // Open the per-application KYC case (SUBMITTED → review lifecycle).
   const { ensureCaseForApplication } = await import('./kycCaseStore.js');
@@ -203,7 +245,7 @@ export async function listApplicationsForAdmin(filter: {
   if (filter.status) conditions.push(eq(accountApplications.status, filter.status));
   if (filter.search) {
     conditions.push(or(
-      ilike(accountApplications.email, `%${filter.search}%`),
+      ilike(accountApplications.email, `%${filter.search.replace(/%/g, '\%').replace(/_/g, '\_')}%`),
       ilike(accountApplications.firstName, `%${filter.search}%`),
       ilike(accountApplications.lastName, `%${filter.search}%`),
       ilike(accountApplications.reference, `%${filter.search}%`),

@@ -26,6 +26,7 @@ const PERMISSION_RULES: readonly PermissionRule[] = [
   { prefixes: ['/trading'], read: 'trading.view', write: 'trading.manage' },
   { prefixes: ['/kyc/aml'], read: 'compliance.view', write: 'compliance.manage' },
   { prefixes: ['/kyc'], read: 'compliance.view', write: 'users.kyc' },
+  { prefixes: ['/applications', '/kyc-cases'], read: 'compliance.view', write: 'compliance.manage' },
   { prefixes: ['/onboarding/compliance-cases', '/onboarding/monitoring', '/onboarding/screening'], read: 'compliance.view', write: 'compliance.manage' },
   { prefixes: ['/onboarding'], read: 'compliance.view', write: 'users.kyc' },
   { prefixes: ['/legal-entity', '/assurance-exercises', '/sponsor-readiness', '/readiness'], read: 'compliance.view', write: 'compliance.manage' },

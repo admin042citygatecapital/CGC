@@ -5,7 +5,7 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
-import { ACCOUNT_TYPE_META, ACCOUNT_TYPES } from '../../shared/applicationFlow';
+import { ACCOUNT_TYPE_META, ACCOUNT_TYPES, ACCOUNT_TYPE_SLUGS } from '../../shared/applicationFlow';
 
 export default function RegisterHomePage() {
   return (
@@ -28,7 +28,7 @@ export default function RegisterHomePage() {
             return (
               <Link
                 key={type}
-                to={`/register/${meta.label.toLowerCase().replace('-', '')}`}
+                to={`/register/${ACCOUNT_TYPE_SLUGS[type]}`}
                 className="group rounded-2xl border border-[#2a2a2e] bg-[#0d0d11] p-6 transition hover:border-[#E6C76A]/60 hover:shadow-[0_0_30px_rgba(230,199,106,0.08)]"
               >
                 <p className="text-xs uppercase tracking-widest text-[#E6C76A]/80">{meta.tagline}</p>
