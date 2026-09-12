@@ -98,7 +98,7 @@ const AdminMedia           = lazy(() => import('./pages/admin/media'));
 const AdminConfig          = lazy(() => import('./pages/admin/config'));
 const AdminFeatures        = lazy(() => import('./pages/admin/features'));
 const AdminApplications    = lazy(() => import('./pages/admin/applications'));
-const RegisterHomePage     = lazy(() => import('./pages/register'));
+const RegisterHomePage     = lazy(() => import('./pages/register/index'));
 const RegisterPersonal     = lazy(() => import('./pages/register/personal'));
 const RegisterSavings      = lazy(() => import('./pages/register/savings'));
 const RegisterBusiness     = lazy(() => import('./pages/register/business'));
