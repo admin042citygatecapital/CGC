@@ -1,17 +1,17 @@
 /**
  * City Gate Capital — Product Support Assistant Configuration
- * Provider: OpenAI (gpt-4o-mini)
+ * Provider: Anthropic (claude-haiku-4-5)
  * Personality: Professional, friendly, secure, banking-focused
  */
 
 import type { LanguageModel } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { getSecret } from '#runtime/secrets';
 
 export function getChatModel(): LanguageModel {
-  const apiKey = String(getSecret('OPENAI_API_KEY') ?? '');
-  if (!apiKey) throw new Error('OPENAI_API_KEY is not configured');
-  return createOpenAI({ apiKey })('gpt-4o-mini');
+  const apiKey = String(getSecret('ANTHROPIC_API_KEY') ?? '');
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not configured');
+  return createAnthropic({ apiKey })('claude-haiku-4-5');
 }
 
 /**

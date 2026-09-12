@@ -536,6 +536,14 @@ app.use('/api/webhooks/resend', rateLimitMiddleware(
   'Email webhook rate limit exceeded.',
 ));
 
+// The unauthenticated chat route drives per-request provider spend; bound it
+// well below the global /api budget so one IP cannot run up the provider bill.
+app.use('/api/chat', rateLimitMiddleware(
+  req => `chat:${req.ip}`,
+  { windowMs: 60_000, max: 10 },
+  'Chat rate limit exceeded. Please wait a moment before sending another message.',
+));
+
 app.use('/api/admin/sponsor-readiness/external-review', rateLimitMiddleware(
   req => `sponsor-external-review:${req.ip}`,
   { windowMs: 60_000, max: 10 },

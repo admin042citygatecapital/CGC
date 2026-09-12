@@ -104,7 +104,16 @@ describe('chat endpoint input contract', () => {
     expect(options.messages).toEqual([
       { role: 'user', content: 'How do I view statements?' },
       { role: 'assistant', content: 'From the statements page.' },
-      { role: 'user', content: 'Thanks' },
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: 'Thanks',
+            providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
+          },
+        ],
+      },
     ]);
     expect(options.maxOutputTokens).toBe(1_000);
     expect(options.abortSignal).toBeInstanceOf(AbortSignal);
@@ -119,7 +128,18 @@ describe('chat endpoint input contract', () => {
     expect(status).toBe(200);
 
     const forwarded = dependencies.streamText.mock.calls[0][0].messages;
-    expect(forwarded).toEqual([{ role: 'user', content: 'hello' }]);
+    expect(forwarded).toEqual([
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: 'hello',
+            providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
+          },
+        ],
+      },
+    ]);
   });
 
   it('aborts the provider call when the response closes', async () => {

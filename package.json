@@ -49,7 +49,7 @@
     "audit": "better-npm-audit audit --level high --registry=https://registry.npmjs.org --exclude 1124282"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^4.0.11",
+    "@ai-sdk/anthropic": "^4.0.53",
     "@dr.pogodin/react-helmet": "^3.0.5",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-avatar": "^1.1.10",

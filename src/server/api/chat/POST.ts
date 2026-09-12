@@ -87,12 +87,39 @@ export default async function handler(req: Request, res: Response) {
   try {
     const model = getChatModel();
 
+    // Anthropic prompt caching: put the cache breakpoint on the last message so
+    // the whole prefix (system prompt + accumulated history) is cacheable once
+    // it crosses the model's minimum cacheable size (4,096 tokens on Haiku 4.5 —
+    // the ~1.3K-token system prompt alone is below it and would be ignored).
+    // Applied to the final turn regardless of role.
+    const cachedMessages = safeMessages.map((message, index) =>
+      index === safeMessages.length - 1
+        ? {
+            ...message,
+            content: [
+              {
+                type: 'text' as const,
+                text: message.content,
+                providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' as const } } },
+              },
+            ],
+          }
+        : message,
+    );
+
     const result = streamText({
       model,
       system: getSystemPrompt(),
-      messages: safeMessages,
+      messages: cachedMessages,
       maxOutputTokens: MAX_OUTPUT_TOKENS,
       abortSignal: timeout.signal,
+
+      // streamText is lazy: provider failures after headers are sent surface as
+      // stream error parts, not throws. Without this, an outage produces a
+      // silent 200 with an empty body indistinguishable from success in logs.
+      onError: ({ error }) => {
+        console.error(JSON.stringify({ event: 'chat.stream.error', error: String(error) }));
+      },
 
       // ─── AGENT MODE ──────────────────────────────────────────────────────
       // Uncomment tools and maxSteps to enable multi-step tool calling.
@@ -112,7 +139,7 @@ export default async function handler(req: Request, res: Response) {
     res.setHeader('X-Accel-Buffering', 'no');
 
     // pipeTextStreamToResponse is the confirmed Express streaming method on
-    // StreamTextResult in AI SDK v6. It pipes the raw text stream directly
+    // StreamTextResult in AI SDK v7. It pipes the raw text stream directly
     // into the Express ServerResponse and calls res.end() when complete.
     result.pipeTextStreamToResponse(res);
 

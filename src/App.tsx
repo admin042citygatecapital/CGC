@@ -26,6 +26,13 @@ const CookieBanner = lazy(() =>
   })
 );
 
+const AriaChatPanel = lazy(() =>
+  import('@/components/AriaChatPanel').catch((error) => {
+    console.warn('Failed to load AriaChatPanel:', error);
+    return { default: () => <></> };
+  })
+);
+
 // Routes that manage their own full-page layout (no shared header/footer)
 const STANDALONE_PREFIXES = ['/admin', '/login', '/register', '/dashboard', '/plaid', '/sponsor-review'];
 
@@ -47,6 +54,13 @@ function LayoutWrapper() {
       {/* Single mount point — never re-mounts during navigation */}
       <ClientOnly>
         <TawkWidget />
+        {/* CookieBannerErrorBoundary is a generic render-isolating boundary: a
+            throw inside the panel must not blank the whole page. */}
+        <CookieBannerErrorBoundary>
+          <Suspense fallback={null}>
+            <AriaChatPanel />
+          </Suspense>
+        </CookieBannerErrorBoundary>
       </ClientOnly>
 
       {isStandalone ? (
