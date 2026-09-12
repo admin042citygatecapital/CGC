@@ -25,7 +25,6 @@ const SponsorReviewPage = lazy(() => import('./pages/sponsor-review'));
 
 // Customer auth pages
 const LoginPage         = lazy(() => import('./pages/login'));
-const RegisterPage      = lazy(() => import('./pages/register'));
 const ForgotPasswordPage = lazy(() => import('./pages/forgot-password'));
 const ResetPasswordPage  = lazy(() => import('./pages/reset-password'));
 const PlaidOAuthPage     = lazy(() => import('./pages/plaid-oauth'));
@@ -98,6 +97,14 @@ const AdminCompliance      = lazy(() => import('./pages/admin/compliance'));
 const AdminMedia           = lazy(() => import('./pages/admin/media'));
 const AdminConfig          = lazy(() => import('./pages/admin/config'));
 const AdminFeatures        = lazy(() => import('./pages/admin/features'));
+const AdminApplications    = lazy(() => import('./pages/admin/applications'));
+const RegisterHomePage     = lazy(() => import('./pages/register'));
+const RegisterPersonal     = lazy(() => import('./pages/register/personal'));
+const RegisterSavings      = lazy(() => import('./pages/register/savings'));
+const RegisterBusiness     = lazy(() => import('./pages/register/business'));
+const RegisterMultiCurrency = lazy(() => import('./pages/register/multi-currency'));
+const RegisterWealth       = lazy(() => import('./pages/register/wealth'));
+const ApplicationStatus    = lazy(() => import('./pages/application-status'));
 const AdminFinancialSandbox = lazy(() => import('./pages/admin/financial-sandbox'));
 const AdminIntegrations    = lazy(() => import('./pages/admin/integrations'));
 const AdminTrading         = lazy(() => import('./pages/admin/trading'));
@@ -133,7 +140,13 @@ export const routes: RouteObject[] = [
   { path: '/newsletter', element: <AdminOnly><NewsletterPage /></AdminOnly> },
   // Customer auth routes (no RootLayout — these pages manage their own chrome)
   { path: '/login',           element: <LoginPage /> },
-  { path: '/register',        element: <FeatureOnly feature="registration"><RegisterPage /></FeatureOnly> },
+  { path: '/register',         element: <FeatureOnly feature="registration"><RegisterHomePage /></FeatureOnly> },
+  { path: '/register/personal',      element: <FeatureOnly feature="registration"><RegisterPersonal /></FeatureOnly> },
+  { path: '/register/savings',       element: <FeatureOnly feature="registration"><RegisterSavings /></FeatureOnly> },
+  { path: '/register/business',      element: <FeatureOnly feature="registration"><RegisterBusiness /></FeatureOnly> },
+  { path: '/register/multi-currency', element: <FeatureOnly feature="registration"><RegisterMultiCurrency /></FeatureOnly> },
+  { path: '/register/wealth',        element: <FeatureOnly feature="registration"><RegisterWealth /></FeatureOnly> },
+  { path: '/application/status', element: <ApplicationStatus /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password',  element: <ResetPasswordPage /> },
   { path: '/plaid/oauth',     element: <CustomerOnly><PlaidOAuthPage /></CustomerOnly> },
@@ -216,6 +229,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/media',           element: <AdminOnly><AdminMedia /></AdminOnly> },
   { path: '/admin/config',          element: <AdminOnly><AdminConfig /></AdminOnly> },
   { path: '/admin/features',        element: <AdminOnly><AdminFeatures /></AdminOnly> },
+  { path: '/admin/applications',    element: <AdminOnly><AdminApplications /></AdminOnly> },
   { path: '/admin/financial-sandbox', element: <AdminOnly><AdminFinancialSandbox /></AdminOnly> },
   { path: '/admin/configuration',   element: <AdminOnly><AdminConfig /></AdminOnly> },
   { path: '/admin/integrations',    element: <AdminOnly><AdminIntegrations /></AdminOnly> },

@@ -15,7 +15,7 @@ describe('administrator UI correctness', () => {
   it('links operations to their canonical, accurately described destinations', () => {
     expect(layout).toContain("label: 'Transfers',    href: '/admin/transfers'");
     expect(layout).toContain("label: 'Wallets & Digital Assets', href: '/admin/crypto'");
-    expect(layout).toContain("href: '/admin/config?section=featureToggles'");
+    expect(layout).toContain("href: '/admin/features'");
     expect(layout).toContain('isNavItemActive(item.href, location.pathname, location.search)');
   });
 

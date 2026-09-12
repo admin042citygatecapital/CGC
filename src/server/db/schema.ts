@@ -1010,6 +1010,94 @@ export const onboardingEvents = pgTable(
   (t) => [index('onboarding_events_case_created_idx').on(t.caseId, t.createdAt), index('onboarding_events_user_created_idx').on(t.userId, t.createdAt)],
 );
 
+// ── Account applications (multi-account registration system) ────────────────
+
+export const accountApplications = pgTable('account_applications', {
+  id: text('id').primaryKey(),
+  firstName: text('first_name').notNull().default(''),
+  lastName: text('last_name').notNull().default(''),
+  email: text('email').notNull(),
+  phone: text('phone').notNull().default(''),
+  dob: text('dob').notNull().default(''),
+  gender: text('gender'),
+  nationality: text('nationality').notNull().default(''),
+  address: text('address').notNull().default(''),
+  accountType: text('account_type').notNull().default('personal'),
+  status: text('status').notNull().default('APPLICATION_STARTED'),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }).notNull().defaultNow(),
+  ip: text('ip').notNull().default('unknown'),
+  // Extended multi-step application fields (migration 0018)
+  reference: text('reference'),
+  userId: text('user_id'),
+  selectedPlan: text('selected_plan'),
+  currentStep: text('current_step').notNull().default('contact'),
+  completionPct: integer('completion_pct').notNull().default(0),
+  steps: jsonb('steps').$type<Record<string, Record<string, unknown>>>().notNull().default({}),
+  emailVerified: boolean('email_verified').notNull().default(false),
+  decision: text('decision'),
+  decisionReason: text('decision_reason'),
+  decidedBy: text('decided_by'),
+  decidedAt: timestamp('decided_at', { withTimezone: true }),
+  informationRequest: text('information_request'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('account_applications_reference_idx').on(t.reference),
+  index('account_applications_user_idx').on(t.userId),
+  index('account_applications_status_idx').on(t.status),
+]);
+
+export const applicationEvents = pgTable('application_events', {
+  id: text('id').primaryKey(),
+  applicationId: text('application_id').notNull(),
+  actor: text('actor').notNull(),
+  actorRole: text('actor_role'),
+  event: text('event').notNull(),
+  detail: jsonb('detail').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('application_events_application_idx').on(t.applicationId, t.createdAt)]);
+
+export const kycCases = pgTable('kyc_cases', {
+  id: text('id').primaryKey(),
+  applicationId: text('application_id').notNull(),
+  userId: text('user_id'),
+  accountType: text('account_type').notNull(),
+  status: text('status').notNull().default('DRAFT'),
+  riskLevel: text('risk_level').notNull().default('unrated'),
+  reviewerId: text('reviewer_id'),
+  providerName: text('provider_name'),
+  providerStatus: text('provider_status'),
+  providerRef: text('provider_ref'),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewReason: text('review_reason'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('kyc_cases_application_idx').on(t.applicationId), index('kyc_cases_status_idx').on(t.status)]);
+
+export const kycCaseEvents = pgTable('kyc_case_events', {
+  id: text('id').primaryKey(),
+  caseId: text('case_id').notNull(),
+  actor: text('actor').notNull(),
+  actorRole: text('actor_role'),
+  event: text('event').notNull(),
+  detail: jsonb('detail').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('kyc_case_events_case_idx').on(t.caseId, t.createdAt)]);
+
+export const kycCaseDocuments = pgTable('kyc_case_documents', {
+  id: text('id').primaryKey(),
+  caseId: text('case_id').notNull(),
+  documentType: text('document_type').notNull(),
+  issuingCountry: text('issuing_country'),
+  storagePath: text('storage_path').notNull(),
+  mimeType: text('mime_type').notNull(),
+  byteSize: integer('byte_size').notNull(),
+  originalName: text('original_name'),
+  uploadedBy: text('uploaded_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('kyc_case_documents_case_idx').on(t.caseId)]);
+
 export const complianceCases = pgTable(
   'compliance_cases',
   {

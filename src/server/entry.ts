@@ -52,7 +52,19 @@ import admin_database_get from "./api/admin/database/GET";
 import admin_deployments_get from "./api/admin/deployments/GET";
 
 // <api-imports>
+import accounts_applications_post from "./api/applications/POST";
+import accounts_applications_get from "./api/applications/GET";
+import accounts_applications_id_get from "./api/applications/[id]/GET";
+import accounts_applications_id_patch from "./api/applications/[id]/PATCH";
+import accounts_applications_id_submit_post from "./api/applications/[id]/submit/POST";
+import admin_applications_get from "./api/admin/applications/GET";
+import admin_applications_id_decision_post from "./api/admin/applications/[id]/decision/POST";
 import accounts_apply_post_0 from "./api/accounts/apply/POST";
+import kyc_documents_post from "./api/kyc/documents/POST";
+import kyc_status_get from "./api/kyc/status/GET";
+import admin_kyc_cases_get from "./api/admin/kyc-cases/GET";
+import admin_kyc_cases_decision_post from "./api/admin/kyc-cases/[id]/decision/POST";
+
 import admin_audit_get_1 from "./api/admin/audit/GET";
 import admin_auth_diag_get_2 from "./api/admin/auth/diag/GET";
 import admin_auth_login_post_3 from "./api/admin/auth/login/POST";
@@ -382,7 +394,8 @@ import { requireAdminAuthorization } from "./lib/adminAuthorizationMiddleware";
 import { enforceSecurityNetworkPolicy } from "./lib/securityNetworkPolicyMiddleware";
 import { csrfProtect } from "./api/csrf/GET";
 import { auditAdminMutation } from "./lib/adminMutationAuditMiddleware";
-import { requireCustomerAuth, requireCustomerSameOrigin } from "./lib/customerAuthMiddleware";
+import { requireCustomerAuth, requireCustomerSameOrigin, resolveCustomerSessionToken } from "./lib/customerAuthMiddleware";
+import { findUserBySessionToken } from "./lib/userStore";
 import { requireCustomerLifecycleAccess } from "./lib/customerLifecycleAccess";
 import { sendEmail as smtpSendEmail } from "./lib/smtpTransport";
 import { seoRoutes } from "../lib/seo-routes";
@@ -710,6 +723,39 @@ app.post("/api/admin/onboarding/compliance-cases", admin_onboarding_compliance_c
 app.get("/api/admin/onboarding/monitoring", admin_onboarding_monitoring_get);
 app.post("/api/admin/onboarding/monitoring", admin_onboarding_monitoring_post);
 app.post("/api/accounts/apply", accounts_apply_post_0);
+// Attach the customer session when present, without requiring it — anonymous
+// applicants work on drafts until the identity step links one.
+app.use('/api/applications', async (req: Request, res: Response, next: NextFunction) => {
+  const token = resolveCustomerSessionToken(req);
+  if (token) {
+    const user = await findUserBySessionToken(token).catch(() => null);
+    if (user) req.customerUser = user;
+  }
+  if (req.method === 'POST' || req.method === 'PATCH') return requireCustomerSameOrigin(req, res, next);
+  next();
+});
+app.use(['/api/kyc'], async (req: Request, res: Response, next: NextFunction) => {
+  const token = resolveCustomerSessionToken(req);
+  if (token) {
+    const user = await findUserBySessionToken(token).catch(() => null);
+    if (user) req.customerUser = user;
+  }
+  if (req.method === 'POST') return requireCustomerSameOrigin(req, res, next);
+  next();
+});
+app.post("/api/applications", accounts_applications_post);
+app.get("/api/applications", accounts_applications_get);
+app.get("/api/applications/:id", accounts_applications_id_get);
+app.patch("/api/applications/:id", accounts_applications_id_patch);
+app.post("/api/applications/:id/submit", accounts_applications_id_submit_post);
+app.post("/api/kyc/documents", kyc_documents_post);
+app.get("/api/kyc/status", kyc_status_get);
+app.get("/api/admin/kyc-cases", admin_kyc_cases_get);
+app.post("/api/admin/kyc-cases/:id/decision", admin_kyc_cases_decision_post);
+
+app.get("/api/admin/applications", admin_applications_get);
+app.post("/api/admin/applications/:id/decision", admin_applications_id_decision_post);
+
 app.get("/api/admin/audit", admin_audit_get_1);
 app.get("/api/admin/auth/diag", admin_auth_diag_get_2);
 app.post("/api/admin/auth/login", admin_auth_login_post_3);
