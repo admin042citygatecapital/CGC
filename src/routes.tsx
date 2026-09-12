@@ -97,6 +97,7 @@ const AdminReports         = lazy(() => import('./pages/admin/reports'));
 const AdminCompliance      = lazy(() => import('./pages/admin/compliance'));
 const AdminMedia           = lazy(() => import('./pages/admin/media'));
 const AdminConfig          = lazy(() => import('./pages/admin/config'));
+const AdminFeatures        = lazy(() => import('./pages/admin/features'));
 const AdminFinancialSandbox = lazy(() => import('./pages/admin/financial-sandbox'));
 const AdminIntegrations    = lazy(() => import('./pages/admin/integrations'));
 const AdminTrading         = lazy(() => import('./pages/admin/trading'));
@@ -214,6 +215,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/compliance',      element: <AdminOnly><AdminCompliance /></AdminOnly> },
   { path: '/admin/media',           element: <AdminOnly><AdminMedia /></AdminOnly> },
   { path: '/admin/config',          element: <AdminOnly><AdminConfig /></AdminOnly> },
+  { path: '/admin/features',        element: <AdminOnly><AdminFeatures /></AdminOnly> },
   { path: '/admin/financial-sandbox', element: <AdminOnly><AdminFinancialSandbox /></AdminOnly> },
   { path: '/admin/configuration',   element: <AdminOnly><AdminConfig /></AdminOnly> },
   { path: '/admin/integrations',    element: <AdminOnly><AdminIntegrations /></AdminOnly> },
