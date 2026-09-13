@@ -525,7 +525,12 @@ app.use(httpLogger);
 // ── Global API rate limit (200 req/min per IP in production) ───────────────
 // The isolated browser audit intentionally visits the complete route catalogue
 // in under a minute and may raise this ceiling without changing production.
-const globalApiRateLimitMax = process.env.E2E_TEST_MODE === '1' ? 1_000 : 200;
+// Fenced by NODE_ENV: a production process must never honour E2E_TEST_MODE,
+// even if a stray environment variable leaks into a deployment.
+const globalApiRateLimitMax = process.env.NODE_ENV !== 'production'
+  && process.env.E2E_TEST_MODE === '1'
+  ? 1_000
+  : 200;
 app.use('/api', rateLimitMiddleware(
   req => `global:${req.ip}`,
   { windowMs: 60_000, max: globalApiRateLimitMax },
@@ -1682,9 +1687,11 @@ if (isStandaloneEntrypoint && !isVercelRuntime) {
 	// The E2E server is a separate process from its fixture builder. Seed the
 	// reset-token digest inside this process so the password-reset handler and
 	// fixture share the same in-memory store. These variables are accepted only
-	// in the explicitly isolated E2E runtime and are never logged.
+	// in the explicitly isolated E2E runtime and are never logged. Fenced by
+	// NODE_ENV (belt and suspenders with the envValidator tripwire that
+	// hard-exits production when these variables are set).
 	const seedE2EResetToken = async () => {
-		if (process.env.E2E_TEST_MODE !== '1') return;
+		if (process.env.NODE_ENV !== 'production' && process.env.E2E_TEST_MODE === '1') return;
 		const resetUserId = process.env.E2E_RESET_USER_ID;
 		const resetToken = process.env.E2E_RESET_TOKEN;
 		const resetExpiresAt = process.env.E2E_RESET_EXPIRES_AT;
