@@ -268,11 +268,15 @@ export function startEmailQueueWorker(
     }
   }
 
-  setInterval(() => {
+  // Unref both timers so the worker never holds the event loop open on
+  // shutdown — graceful close should not burn into the deploy timeout
+  // waiting for the next 60s retry tick.
+  const interval = setInterval(() => {
     processQueue().catch(err =>
       console.error(JSON.stringify({ event: 'email.queue.worker_error', error: String(err) }))
     );
   }, RETRY_INTERVAL_MS);
+  interval.unref();
 
-  setTimeout(() => processQueue().catch(() => {}), 5000);
+  setTimeout(() => processQueue().catch(() => {}), 5000).unref();
 }
