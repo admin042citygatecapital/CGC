@@ -366,19 +366,22 @@ let cache: EmailTemplate[] | null = null;
 // The kyc_rejected default was corrected from a needs-information notice to a
 // decision notice. Persisted stores save the whole catalogue whenever an admin
 // edits ANY template, so environments that did so still hold the OLD default
-// text; copies matching it verbatim are replaced by the corrected default
-// (genuine admin customizations, which differ in text, are left untouched).
+// text; copies matching it verbatim have ONLY the body swapped for the
+// corrected default — a persisted name or subject (an admin customization in
+// its own right) is preserved as-is. Genuine admin customizations, which
+// differ in body text, are left untouched.
 const STALE_KYC_REJECTED_BODY = `<p>Dear {user_name},</p>
 <p>Your identity-review workflow needs additional information.</p>
 <p><strong>Reviewer note:</strong> {rejection_reason}</p>
 <p>Submit information only through the secure onboarding workflow. This notice does not by itself activate a financial service.</p>
 <p>Best regards,<br/>The City Gate Capital Team</p>`;
 
-/** Replace persisted copies of superseded default bodies with the current default. */
+/** Replace only the stale default body, preserving each copy's own name and subject. */
 function withCorrectedDefaults(saved: EmailTemplate[]): EmailTemplate[] {
+  const correctedBody = DEFAULTS.find(def => def.id === 'kyc_rejected')!.body;
   return saved.map(template =>
     template.id === 'kyc_rejected' && template.body === STALE_KYC_REJECTED_BODY
-      ? { ...DEFAULTS.find(def => def.id === 'kyc_rejected')! }
+      ? { ...template, body: correctedBody }
       : template);
 }
 

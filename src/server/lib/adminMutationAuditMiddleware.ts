@@ -145,6 +145,83 @@ export async function auditAdminMutation(req: Request, res: Response, next: Next
 }
 
 /**
+ * Sessionless denials (the unauthenticated scan traffic this audit exists to
+ * catch) are coalesced: one row per (ip, method, path, status) per short
+ * window, carrying an attempts count. Without this a bot sweep writes one
+ * admin_api_denied row per probed path per request, flooding the compliance
+ * table with noise. Authenticated denials keep one row per request — an
+ * administrator's individual denial is a distinct security event. The
+ * counter is deliberately process-local: restarts merely restart the
+ * coalescing window.
+ */
+const DENIED_COALESCE_WINDOW_MS = 15_000;
+/** Key-space bound: a path-sweeping scan could otherwise grow the map unbounded. */
+const MAX_PENDING_DENIED_KEYS = 512;
+
+interface PendingDenial {
+  count: number;
+  windowStart: number;
+  ip: string;
+  method: string;
+  path: string;
+  module: string;
+  targetId?: string;
+  statusCode: number;
+  reason: string | undefined;
+}
+
+const pendingDeniedRows = new Map<string, PendingDenial>();
+
+function writeDeniedRow(pending: PendingDenial): void {
+  try {
+    appendAudit({
+      event: 'admin_api_denied',
+      ip: pending.ip,
+      target: pending.module,
+      targetId: pending.targetId,
+      reason: pending.reason ?? (pending.statusCode === 401 ? 'unauthenticated' : 'forbidden'),
+      meta: {
+        method: pending.method,
+        path: pending.path,
+        statusCode: pending.statusCode,
+        module: pending.module,
+        attempts: pending.count,
+      },
+    });
+  } catch {
+    // Best effort only — the guard's response has already been sent.
+  }
+}
+
+/** Flush every pending row regardless of window expiry (overflow drain). */
+function flushAllPendingDeniedRows(): void {
+  // Flush everything, not just expired windows, so the key space itself
+  // cannot grow past the cap during a sweep.
+  for (const [key, pending] of pendingDeniedRows) {
+    pendingDeniedRows.delete(key);
+    writeDeniedRow(pending);
+  }
+}
+
+function flushPendingDeniedRows(): void {
+  const now = Date.now();
+  if (pendingDeniedRows.size > MAX_PENDING_DENIED_KEYS) {
+    flushAllPendingDeniedRows();
+    return;
+  }
+  for (const [key, pending] of pendingDeniedRows) {
+    if (now - pending.windowStart < DENIED_COALESCE_WINDOW_MS) continue;
+    pendingDeniedRows.delete(key);
+    writeDeniedRow(pending);
+  }
+}
+
+// Mirrors the rate-store sweep idiom: an unref'd interval retires expired
+// windows so coalesced rows reach the trail even when no further request for
+// that key arrives.
+setInterval(flushPendingDeniedRows, DENIED_COALESCE_WINDOW_MS).unref();
+
+/**
  * Best-effort audit of denied privileged attempts. Every guard in the chain
  * (auth, authorization, CSRF, network policy) responds 401/403 without calling
  * next(), so auditAdminMutation never observed them and a denied write left no
@@ -185,11 +262,45 @@ export function auditAdminDenied(req: Request, res: Response, next: NextFunction
     // flag set in auditAdminMutation) — guard-chain denials never reach it.
     if (res.locals?.adminMutationAudited === true) return;
     const session = req.adminSession;
+    if (!session) {
+      // Coalesce scan noise (see the window constants above). The first
+      // attempt's reason and target stand for the window; the attempts count
+      // preserves the full volume of the signal.
+      const key = `${req.ip ?? 'unknown'}|${method}|${path}|${res.statusCode}`;
+      const now = Date.now();
+      const pending = pendingDeniedRows.get(key);
+      if (pending && now - pending.windowStart < DENIED_COALESCE_WINDOW_MS) {
+        pending.count += 1;
+        return;
+      }
+      // A new key, or one whose window expired between interval sweeps: its
+      // previous row (if any) is flushed here, then a fresh window begins.
+      if (pending) {
+        pendingDeniedRows.delete(key);
+        writeDeniedRow(pending);
+      }
+      // Enforce the key-space cap at insertion too: without this a single
+      // burst of unique (ip, method, path, status) keys grows the map
+      // unbounded until the next interval sweep.
+      if (pendingDeniedRows.size >= MAX_PENDING_DENIED_KEYS) flushAllPendingDeniedRows();
+      pendingDeniedRows.set(key, {
+        count: 1,
+        windowStart: now,
+        ip: req.ip ?? 'unknown',
+        method,
+        path,
+        module,
+        targetId,
+        statusCode: res.statusCode,
+        reason: denyReason,
+      });
+      return;
+    }
     try {
       appendAudit({
         event: 'admin_api_denied',
-        adminId: session?.adminId,
-        email: session?.email,
+        adminId: session.adminId,
+        email: session.email,
         ip: req.ip ?? 'unknown',
         target: module,
         targetId,
@@ -199,7 +310,7 @@ export function auditAdminDenied(req: Request, res: Response, next: NextFunction
           path,
           statusCode: res.statusCode,
           module,
-          ...(session?.role ? { role: session.role } : {}),
+          ...(session.role ? { role: session.role } : {}),
         },
       });
     } catch {

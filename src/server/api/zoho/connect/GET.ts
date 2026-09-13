@@ -26,10 +26,11 @@ export default function handler(req: Request, res: Response) {
 
   // OAuth initiation mutates integration state (the one-time state set) and
   // sits outside the central /api/admin audit middleware, so record it here.
-  // The state value itself is never recorded.
+  // The state value itself is never recorded. adminId is omitted when no
+  // administrator session exists so the record's actorKind stays 'system'.
   appendAudit({
     event:   'admin_zoho_oauth_started',
-    adminId: req.adminSession?.adminId ?? 'system',
+    adminId: req.adminSession?.adminId,
     email:   req.adminSession?.email,
     ip:      req.ip,
     meta:    { integration: 'zoho-mail', clientIdConfigured: Boolean(clientId) },

@@ -156,10 +156,27 @@ describe('denied admin mutation audit', () => {
     response.json({ error: 'Authentication required' });
     response.emitFinish();
 
+    // Sessionless denials coalesce into a pending window, so the row is not
+    // written synchronously with the first attempt.
+    expect(appendAudit).not.toHaveBeenCalled();
+
+    // Expire the coalescing window and replay the same probe: the pending row
+    // flushes synchronously before the fresh window begins.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(Date.now() + 15_000 + 1);
+      const replay = finishableResponse(401);
+      auditAdminDenied(request, replay, vi.fn() as NextFunction);
+      replay.json({ error: 'Authentication required' });
+      replay.emitFinish();
+    } finally {
+      vi.useRealTimers();
+    }
+
     expect(appendAudit).toHaveBeenCalledWith(expect.objectContaining({
       event: 'admin_api_denied',
       reason: 'Authentication required',
-      meta: expect.objectContaining({ statusCode: 401 }),
+      meta: expect.objectContaining({ statusCode: 401, attempts: 1 }),
     }));
     const payload = appendAudit.mock.calls[0][0] as { adminId?: string; email?: string };
     expect(payload.adminId).toBeUndefined();

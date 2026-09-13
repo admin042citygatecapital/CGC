@@ -46,6 +46,9 @@ export default async function handler(req: Request, res: Response) {
   if (!await authorizeAdminPermission(req, res, 'email.send')) return;
   // This route sits outside the central /api/admin audit middleware, so the
   // bulk send is audited here — counts only, never recipient emails or content.
+  // adminId is omitted when no administrator session exists (e.g. a cron
+  // trigger) so the record's actorKind stays 'system' instead of mislabeling
+  // the run as admin activity.
   const session = req.adminSession;
   try {
     const now     = Date.now();
@@ -55,7 +58,7 @@ export default async function handler(req: Request, res: Response) {
 
     appendAudit({
       event:   'admin_newsletter_sequence_triggered',
-      adminId: session?.adminId ?? 'system',
+      adminId: session?.adminId,
       email:   session?.email,
       ip:      req.ip,
       meta:    { sequence: 'nurture', sequenceSteps: NURTURE_SEQUENCE.length, activeSubscribers: all.length },
@@ -108,7 +111,7 @@ export default async function handler(req: Request, res: Response) {
 
     appendAudit({
       event:   'admin_newsletter_sequence_processed',
-      adminId: session?.adminId ?? 'system',
+      adminId: session?.adminId,
       email:   session?.email,
       ip:      req.ip,
       meta:    { sequence: 'nurture', queued: results.length, sent, skipped, completed },
@@ -122,7 +125,7 @@ export default async function handler(req: Request, res: Response) {
     // is recorded here. Only the error type is stored, never the message.
     appendAudit({
       event:   'admin_newsletter_sequence_failed',
-      adminId: session?.adminId ?? 'system',
+      adminId: session?.adminId,
       email:   session?.email,
       ip:      req.ip,
       meta:    { sequence: 'nurture', errorType: err instanceof Error ? err.name : 'UnknownError' },
