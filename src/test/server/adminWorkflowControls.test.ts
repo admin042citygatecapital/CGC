@@ -182,3 +182,37 @@ describe('KYC approval gate', () => {
     expect(mocks.database).not.toHaveBeenCalled();
   });
 });
+
+describe('KYC no-op decision guard', () => {
+  // under_review keeps the approval switch out of the path under test.
+  const noopReview = {
+    caseId: 'test-case', decision: 'under_review' as const, reason: 'Identical review rationale.',
+    expectedVersion: 1, adminId: 'test-checker', adminEmail: 'checker@example.test', adminRole: 'COMPLIANCE_ADMIN',
+  };
+
+  beforeEach(() => {
+    mocks.bundle.mockResolvedValue({ case: {
+      id: 'test-case', status: 'under_review', version: 1, caseType: 'individual',
+      reviewReason: 'Identical review rationale.',
+    } });
+  });
+
+  it('returns NO_OP_DECISION for a byte-identical re-decision without writing', async () => {
+    const { decideKycCase } = await import('../../server/lib/kycReviewService.js');
+    await expect(decideKycCase(noopReview)).rejects.toMatchObject({ code: 'NO_OP_DECISION' });
+    expect(mocks.makerChecker).toHaveBeenCalledWith(expect.objectContaining({ id: 'test-case' }), 'test-checker');
+    expect(mocks.database).not.toHaveBeenCalled();
+  });
+
+  it('proceeds past the guard when the same status carries a new rationale', async () => {
+    mocks.database.mockReturnValue({ transaction: () => Promise.reject(new Error('Reached the versioned transaction')) });
+    const { decideKycCase } = await import('../../server/lib/kycReviewService.js');
+    await expect(decideKycCase({ ...noopReview, reason: 'An updated review rationale.' })).rejects.toThrow('Reached the versioned transaction');
+    expect(mocks.makerChecker).toHaveBeenCalledOnce();
+  });
+
+  it('reports WORKFLOW_CONFLICT for a stale version even when the decision is a no-op', async () => {
+    const { decideKycCase } = await import('../../server/lib/kycReviewService.js');
+    await expect(decideKycCase({ ...noopReview, expectedVersion: 0 })).rejects.toMatchObject({ code: 'WORKFLOW_CONFLICT' });
+  });
+});

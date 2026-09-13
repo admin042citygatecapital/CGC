@@ -1691,7 +1691,9 @@ if (isStandaloneEntrypoint && !isVercelRuntime) {
 	// NODE_ENV (belt and suspenders with the envValidator tripwire that
 	// hard-exits production when these variables are set).
 	const seedE2EResetToken = async () => {
-		if (process.env.NODE_ENV !== 'production' && process.env.E2E_TEST_MODE === '1') return;
+		// Same polarity as the otpStore e2e gate and the rate-limit fence above:
+		// seed only in the explicitly isolated E2E runtime, never in production.
+		if (!(process.env.NODE_ENV !== 'production' && process.env.E2E_TEST_MODE === '1')) return;
 		const resetUserId = process.env.E2E_RESET_USER_ID;
 		const resetToken = process.env.E2E_RESET_TOKEN;
 		const resetExpiresAt = process.env.E2E_RESET_EXPIRES_AT;
