@@ -5,6 +5,11 @@
  * protected terminal with DATABASE_URL configured:
  *
  *   npm run admin:rotate-password
+ *
+ * Non-interactive environments (e.g. a Render one-shot job with no TTY) may
+ * instead supply CGC_ADMIN_NEW_PASSWORD: the variable is consumed once,
+ * policy-validated, and removed from the environment before the rotation
+ * begins. It is never echoed or logged.
  */
 
 import crypto from 'node:crypto';
@@ -82,14 +87,25 @@ async function run(): Promise<void> {
   const operationId = crypto.randomUUID();
 
   try {
-    const first = await readHidden('New SUPER_ADMIN password: ');
-    password = first.value;
-    passwordBytes = first.bytes;
-    const second = await readHidden('Confirm new password: ');
-    confirmation = second.value;
-    confirmationBytes = second.bytes;
+    const envPassword = String(process.env.CGC_ADMIN_NEW_PASSWORD ?? '').trim();
+    if (envPassword) {
+      // Non-interactive path: no confirmation prompt exists, so the policy
+      // check below is the only guard. Delete the variable immediately so it
+      // does not outlive this read in the process environment.
+      delete process.env.CGC_ADMIN_NEW_PASSWORD;
+      process.stdout.write('Using CGC_ADMIN_NEW_PASSWORD from the environment (value not echoed).\n');
+      password = envPassword;
+      passwordBytes = Buffer.from(envPassword, 'utf8');
+    } else {
+      const first = await readHidden('New SUPER_ADMIN password: ');
+      password = first.value;
+      passwordBytes = first.bytes;
+      const second = await readHidden('Confirm new password: ');
+      confirmation = second.value;
+      confirmationBytes = second.bytes;
 
-    if (password !== confirmation) throw new RotationError('The password entries do not match.');
+      if (password !== confirmation) throw new RotationError('The password entries do not match.');
+    }
     const policy = validateAdminPassword(password);
     if (!policy.ok) throw new RotationError(policy.errors.join(' '));
 
