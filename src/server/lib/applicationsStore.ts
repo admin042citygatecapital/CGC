@@ -244,11 +244,12 @@ export async function listApplicationsForAdmin(filter: {
   if (filter.type) conditions.push(eq(accountApplications.accountType, filter.type));
   if (filter.status) conditions.push(eq(accountApplications.status, filter.status));
   if (filter.search) {
+    const like = filter.search.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
     conditions.push(or(
-      ilike(accountApplications.email, `%${filter.search.replace(/%/g, '\%').replace(/_/g, '\_')}%`),
-      ilike(accountApplications.firstName, `%${filter.search}%`),
-      ilike(accountApplications.lastName, `%${filter.search}%`),
-      ilike(accountApplications.reference, `%${filter.search}%`),
+      ilike(accountApplications.email, `%${like}%`),
+      ilike(accountApplications.firstName, `%${like}%`),
+      ilike(accountApplications.lastName, `%${like}%`),
+      ilike(accountApplications.reference, `%${like}%`),
     ));
   }
   const rows = await getDb().select().from(accountApplications)
