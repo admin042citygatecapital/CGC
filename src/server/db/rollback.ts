@@ -24,9 +24,18 @@ if (!url) {
   process.exit(1);
 }
 
+// Omit the ssl key when the URL governs TLS: an explicitly passed `undefined`
+// would shadow the URL's sslmode and silently downgrade to plaintext.
+const ssl = url.includes('sslmode=')
+  ? undefined
+  : /localhost|127\.0\.0\.1|::1/.test(url)
+    ? false
+    : url.includes('neon.tech')
+      ? 'require'
+      : true;
 const sql = postgres(url, {
   max: 1,
-  ssl: url.includes('neon.tech') ? 'require' : undefined,
+  ...(ssl === undefined ? {} : { ssl }),
 });
 
 const TABLES = [

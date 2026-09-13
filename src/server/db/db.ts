@@ -32,12 +32,15 @@ function createClient(): ReturnType<typeof postgres> | null {
   const url = getUrl();
   if (!url) return null;
 
+  const ssl = resolveSsl(url);
   return postgres(url, {
     max: getPoolSize(),
     idle_timeout: 20,
     connect_timeout: 10,
     prepare: false,
-    ssl: resolveSsl(url),
+    // Omit the key when the URL governs TLS: an explicitly passed `undefined`
+    // would shadow the URL's sslmode and silently downgrade to plaintext.
+    ...(ssl === undefined ? {} : { ssl }),
   });
 }
 
@@ -46,6 +49,8 @@ function createClient(): ReturnType<typeof postgres> | null {
  * connections at pg_hba, and postgres.js only enables TLS when the URL carries
  * an sslmode parameter or an explicit ssl option. Require TLS for every host
  * that is not loopback, leaving an explicit sslmode in the URL authoritative.
+ * Returns undefined when the URL already carries sslmode — the caller must
+ * omit the ssl option entirely so the URL's value stays authoritative.
  */
 function resolveSsl(url: string): boolean | undefined {
   if (/sslmode=/.test(url)) return undefined;

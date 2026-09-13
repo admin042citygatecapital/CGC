@@ -16,12 +16,15 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
+const ssl = resolveSsl(databaseUrl);
 const sql = postgres(databaseUrl, {
   max: 1,
   connect_timeout: 15,
   idle_timeout: 5,
   prepare: false,
-  ssl: resolveSsl(databaseUrl),
+  // Omit the key when the URL governs TLS: an explicitly passed `undefined`
+  // would shadow the URL's sslmode and silently downgrade to plaintext.
+  ...(ssl === undefined ? {} : { ssl }),
 });
 
 /**
@@ -29,6 +32,8 @@ const sql = postgres(databaseUrl, {
  * connections at pg_hba, and postgres.js only enables TLS when the URL carries
  * an sslmode parameter or an explicit ssl option. Require TLS for every host
  * that is not loopback, leaving an explicit sslmode in the URL authoritative.
+ * Returns undefined when the URL already carries sslmode — the caller must
+ * omit the ssl option entirely so the URL's value stays authoritative.
  */
 function resolveSsl(url: string): boolean | undefined {
   if (/sslmode=/.test(url)) return undefined;
