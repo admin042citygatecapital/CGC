@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { privateSubdirectory } from '../../../lib/storagePaths.js';
 import { authorizeAdminPermission } from '../../../lib/rbacMiddleware.js';
+import { appendAudit } from '../../../lib/auditLog.js';
 
 const SEQUENCE_LOG_DIR = privateSubdirectory('newsletter');
 const STEP_LOG_FILE    = path.join(SEQUENCE_LOG_DIR, 'sequence-steps.json');
@@ -43,11 +44,22 @@ interface SendResult {
 
 export default async function handler(req: Request, res: Response) {
   if (!await authorizeAdminPermission(req, res, 'email.send')) return;
+  // This route sits outside the central /api/admin audit middleware, so the
+  // bulk send is audited here — counts only, never recipient emails or content.
+  const session = req.adminSession;
   try {
     const now     = Date.now();
     const stepMap = readStepMap();
     const results: SendResult[] = [];
     const all     = await getActiveSubscribers();
+
+    appendAudit({
+      event:   'admin_newsletter_sequence_triggered',
+      adminId: session?.adminId ?? 'system',
+      email:   session?.email,
+      ip:      req.ip,
+      meta:    { sequence: 'nurture', sequenceSteps: NURTURE_SEQUENCE.length, activeSubscribers: all.length },
+    });
 
     for (const subscriber of all) {
       const state         = stepMap[subscriber.email];
@@ -94,9 +106,27 @@ export default async function handler(req: Request, res: Response) {
     const skipped   = results.filter(r => r.status === 'skipped').length;
     const completed = results.filter(r => r.status === 'completed').length;
 
+    appendAudit({
+      event:   'admin_newsletter_sequence_processed',
+      adminId: session?.adminId ?? 'system',
+      email:   session?.email,
+      ip:      req.ip,
+      meta:    { sequence: 'nurture', queued: results.length, sent, skipped, completed },
+    });
+
     return res.json({ ok: true, processed: results.length, sent, skipped, completed, results });
   } catch (err) {
     console.error('newsletter.send-sequence.error', err);
+    // A failed bulk send must not leave the 'triggered' record dangling: this
+    // route has no central audit middleware fallback, so the failure outcome
+    // is recorded here. Only the error type is stored, never the message.
+    appendAudit({
+      event:   'admin_newsletter_sequence_failed',
+      adminId: session?.adminId ?? 'system',
+      email:   session?.email,
+      ip:      req.ip,
+      meta:    { sequence: 'nurture', errorType: err instanceof Error ? err.name : 'UnknownError' },
+    });
     return res.status(500).json({ error: 'Failed to process sequence' });
   }
 }

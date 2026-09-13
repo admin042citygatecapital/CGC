@@ -11,6 +11,7 @@
 import type { Request, Response } from 'express';
 import { getSecret } from '#runtime/secrets';
 import { pendingStates } from '../connect/GET.js';
+import { appendAudit } from '../../../lib/auditLog.js';
 
 // Try EU first (citygate.capital is UK-based), fall back to US
 const ZOHO_TOKEN_URLS = [
@@ -25,8 +26,24 @@ const REDIRECT_URI      = 'https://citygate.capital/api/zoho/callback';
 export default async function handler(req: Request, res: Response) {
   const { code, state, error, error_description } = req.query as Record<string, string | undefined>;
 
+  // The callback is public (Zoho's redirect must complete without a session),
+  // but it consumes one-time state and produces integration credentials, so
+  // each terminal outcome is audited here. Token values are never recorded.
+  // adminId is omitted when no administrator session exists so the record's
+  // actorKind stays 'system' instead of mislabeling public traffic as admin.
+  const auditOutcome = (outcome: string, details: Record<string, unknown> = {}): void => {
+    appendAudit({
+      event:   'admin_zoho_oauth_callback',
+      adminId: req.adminSession?.adminId,
+      email:   req.adminSession?.email,
+      ip:      req.ip,
+      meta:    { integration: 'zoho-mail', outcome, ...details },
+    });
+  };
+
   // ── Zoho returned an error ────────────────────────────────────────────────
   if (error) {
+    auditOutcome('zoho_denied', { zohoError: error });
     return res.status(400).send(errorPage(
       'Zoho Authorization Denied',
       `${error}: ${error_description ?? 'No description provided.'}`,
@@ -36,6 +53,7 @@ export default async function handler(req: Request, res: Response) {
 
   // ── Missing code ──────────────────────────────────────────────────────────
   if (!code) {
+    auditOutcome('missing_code');
     return res.status(400).send(errorPage(
       'Missing Authorization Code',
       'No code parameter in the callback URL.',
@@ -45,6 +63,7 @@ export default async function handler(req: Request, res: Response) {
 
   // ── CSRF state check ─────────────────────────────────────────────────────
   if (!state || !pendingStates.has(state)) {
+    auditOutcome('invalid_state');
     return res.status(403).send(errorPage(
       'Invalid State Token',
       'The state parameter is missing or does not match.',
@@ -58,6 +77,7 @@ export default async function handler(req: Request, res: Response) {
   const clientId     = String(getSecret('ZOHO_CLIENT_ID') || getSecret('CLIENTID') || '');
 
   if (!clientSecret) {
+    auditOutcome('client_secret_unconfigured');
     return res.status(503).send(errorPage(
       'ZOHO_CLIENT_SECRET Not Configured',
       'Add ZOHO_CLIENT_SECRET in Settings → Secrets, then retry.',
@@ -97,6 +117,13 @@ export default async function handler(req: Request, res: Response) {
         const refreshToken = data.refresh_token as string | undefined;
         const accessToken  = data.access_token  as string | undefined;
         const expiresIn    = data.expires_in    as number | undefined;
+        auditOutcome('token_exchange_succeeded', {
+          region: tokenUrl,
+          // Names avoid the 'token' substring: SENSITIVE_KEY_PATTERN in
+          // auditLog.ts would redact the (non-sensitive) boolean and number.
+          offlineAccess: Boolean(refreshToken),
+          accessLifetimeSeconds: Number.isFinite(expiresIn) ? expiresIn : undefined,
+        });
         return res.send(successPage(refreshToken, accessToken, expiresIn, tokenUrl));
       }
 
@@ -105,6 +132,7 @@ export default async function handler(req: Request, res: Response) {
       lastStatus = tokenRes.status;
     }
 
+    auditOutcome('token_exchange_failed', { zohoError: lastData.error ?? `HTTP ${lastStatus}` });
     return res.status(502).send(errorPage(
       'Token Exchange Failed',
       `All regions failed. Last error: ${lastData.error ?? lastStatus} — ${lastData.error_description ?? lastRaw.slice(0, 300)}`,
@@ -113,6 +141,7 @@ export default async function handler(req: Request, res: Response) {
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    auditOutcome('callback_error', { error: msg });
     console.error(JSON.stringify({ event: 'zoho.oauth.callback_error', error: msg }));
     return res.status(500).send(errorPage('Unexpected Error', msg, ''));
   }

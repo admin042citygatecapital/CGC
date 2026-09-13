@@ -7,6 +7,7 @@
 import type { Request, Response } from 'express';
 import { getSecret } from '#runtime/secrets';
 import { randomBytes } from 'node:crypto';
+import { appendAudit } from '../../../lib/auditLog.js';
 
 // DEFAULT_CLIENT_ID intentionally removed — must be set via ZOHO_CLIENT_ID secret.
 const REDIRECT_URI       = 'https://citygate.capital/api/zoho/callback';
@@ -22,6 +23,17 @@ export default function handler(req: Request, res: Response) {
   pendingStates.add(state);
   // Expire after 10 minutes
   setTimeout(() => pendingStates.delete(state), 10 * 60 * 1000);
+
+  // OAuth initiation mutates integration state (the one-time state set) and
+  // sits outside the central /api/admin audit middleware, so record it here.
+  // The state value itself is never recorded.
+  appendAudit({
+    event:   'admin_zoho_oauth_started',
+    adminId: req.adminSession?.adminId ?? 'system',
+    email:   req.adminSession?.email,
+    ip:      req.ip,
+    meta:    { integration: 'zoho-mail', clientIdConfigured: Boolean(clientId) },
+  });
 
   // Use EU auth endpoint — citygate.capital is UK-based.
   // The auth URL region must match the token exchange region.
