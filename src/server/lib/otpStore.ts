@@ -69,7 +69,11 @@ function normalizeEmail(email: string): string {
 }
 
 function isolatedE2eMode(): boolean {
-  return process.env.E2E_TEST_MODE === '1';
+  // Deliberately fenced like the emailService e2e gate: a production process
+  // must never honour E2E_TEST_MODE, even if a stray environment variable
+  // leaks into a Render deployment (a static OTP there would bypass admin
+  // two-factor authentication entirely).
+  return process.env.NODE_ENV !== 'production' && process.env.E2E_TEST_MODE === '1';
 }
 
 function makeOtp(): string {

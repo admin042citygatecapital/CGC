@@ -610,6 +610,34 @@ export function validateEnvAtStartup(): void {
     missing:     report.summary.missing,
   }));
 
+  // Test-harness variables are forbidden in production outright: E2E_TEST_MODE
+  // relaxes admin OTP verification and rate limiting (otpStore.ts), and the
+  // E2E_RESET_* variables seed a password-reset path (entry.ts). Startup
+  // validation is the tripwire that keeps an operator mistake from turning
+  // admin 2FA into a static code.
+  const forbiddenInProd = [
+    'E2E_TEST_MODE',
+    'E2E_ADMIN_OTP',
+    'E2E_RESET_USER_ID',
+    'E2E_RESET_TOKEN',
+    'E2E_RESET_EXPIRES_AT',
+  ].filter(name => process.env[name] !== undefined);
+
+  if (forbiddenInProd.length > 0) {
+    console.error(JSON.stringify({
+      event:   'env.validation.fatal',
+      message: `Server startup aborted: production process carries test-harness variable(s) ${forbiddenInProd.join(', ')}.`,
+      invalid: forbiddenInProd,
+    }));
+    if (isProd) {
+      process.exit(1);
+    }
+    console.warn(JSON.stringify({
+      event:   'env.validation.dev-override',
+      message: 'Test-harness variables present but continuing in non-production mode.',
+    }));
+  }
+
   const criticalMissing: EnvVarReport[] = [];
   const warningMissing:  EnvVarReport[] = [];
 
