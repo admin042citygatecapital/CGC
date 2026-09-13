@@ -1,5 +1,5 @@
 import { Helmet } from '@dr.pogodin/react-helmet';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
@@ -104,6 +104,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
   const [financialReadiness, setFinancialReadiness] = useState<FinancialReadinessCheck | null>(null);
   const [readinessLoading, setReadinessLoading] = useState(transfersOnly);
   const [readinessError, setReadinessError] = useState('');
+  const recordsRequestSeq = useRef(0);
   const editorDialogRef = useModalA11y(Boolean(editing), () => setEditing(null));
   const createDialogRef = useModalA11y(createOpen && transfersOnly, () => setCreateOpen(false));
 
@@ -117,6 +118,8 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
   }, [transfersOnly]);
 
   const loadRecords = useCallback(async () => {
+    // Sequence guard: a slower response for an older filter/page must not overwrite a newer one.
+    const requestId = ++recordsRequestSeq.current;
     setLoading(true);
     setError('');
     const params = new URLSearchParams({ page: String(page), limit: '25' });
@@ -128,16 +131,18 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
       const response = await fetch(`/api/admin/transactions?${params}`, { headers: authHeaders() });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Unable to load the transaction register.');
+      if (requestId !== recordsRequestSeq.current) return;
       setRecords(Array.isArray(result.data) ? result.data : []);
       setTotal(Number(result.total ?? 0));
       setPages(Math.max(1, Number(result.pages ?? 1)));
     } catch (cause) {
+      if (requestId !== recordsRequestSeq.current) return;
       setError(cause instanceof Error ? cause.message : 'Unable to load the transaction register.');
       setRecords([]);
       setTotal(0);
       setPages(1);
     } finally {
-      setLoading(false);
+      if (requestId === recordsRequestSeq.current) setLoading(false);
     }
   }, [page, search, statusFilter, typeFilter, userIdFilter]);
 

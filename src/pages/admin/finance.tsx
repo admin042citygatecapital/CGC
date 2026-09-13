@@ -227,7 +227,7 @@ export default function AdminFinance() {
           <Landmark size={16} className="mt-0.5 shrink-0 text-[#D8B85A]" />
           <div>
             <p className="text-sm font-semibold text-[#E8C96A]">Balances are ledger projections</p>
-            <p className="mt-1 text-xs leading-relaxed text-[#E8C96A]/55">Customer balances are never edited directly. Every change is a balanced double-entry journal posted to the isolated ledger, with an intent audit record written before posting. Debits require sufficient available funds; the maximum adjustment is 10,000.00 per posting.</p>
+            <p className="mt-1 text-xs leading-relaxed text-[#E8C96A]/55">Customer balances are never edited directly. Every change is a balanced double-entry journal posted to the isolated ledger, with an intent audit record written before posting. Debits require sufficient available funds; the maximum adjustment is 10,000,000.00 per posting.</p>
           </div>
         </div>
 
