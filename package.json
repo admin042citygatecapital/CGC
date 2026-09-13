@@ -46,7 +46,7 @@
     "sponsor:evidence:drafts": "npx tsx scripts/prepare-sponsor-draft-evidence.ts",
     "receipt:preview": "npx tsx scripts/generate-transaction-receipt-preview.ts",
     "preview:seed": "npx tsx scripts/seed-preview-user.ts",
-    "audit": "better-npm-audit audit --level high --registry=https://registry.npmjs.org --exclude 1124282"
+    "audit": "better-npm-audit audit --level high --registry=https://registry.npmjs.org"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.53",
@@ -147,6 +147,7 @@
     "js-yaml": "4.3.2",
     "nanoid": "3.3.18",
     "undici": "7.29.0",
+    "qs": "^6.16.0",
     "tsx": {
       "esbuild": "0.28.1"
     },
