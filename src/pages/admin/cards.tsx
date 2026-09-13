@@ -27,7 +27,12 @@ import { AnimatePresence,motion } from 'motion/react';
 import { useCallback,useEffect,useState } from 'react';
 import { Link,useNavigate,useSearchParams } from 'react-router-dom';
 
-const CARD_OPERATIONS_AVAILABLE = false;
+/**
+ * No card issuer-processor is contracted, so every card mutation the page sends
+ * is refused by the server with 501 CARD_PROVIDER_NOT_CONFIGURED. Buttons stay
+ * visible so operators see the real server response instead of a silent no-op.
+ */
+const CARD_PROVIDER_NOT_CONFIGURED = 'CARD_PROVIDER_NOT_CONFIGURED';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -94,6 +99,19 @@ function Toast({ msg, ok }: { msg: string; ok: boolean }) {
   );
 }
 
+/** Error box for card mutations, showing the server's message and machine code. */
+function ModalError({ msg, code }: { msg: string; code?: string }) {
+  return (
+    <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">
+      <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <p>{msg}</p>
+        {code && <p className="mt-1 text-[10px] font-mono text-red-400/60 uppercase tracking-wide">{code}</p>}
+      </div>
+    </div>
+  );
+}
+
 function ModalShell({ title, onClose, children, icon: Icon, iconColor = '#C9A84C', width = 'max-w-md' }: {
   title: string; onClose: () => void; children: React.ReactNode;
   icon?: React.ElementType; iconColor?: string; width?: string;
@@ -128,10 +146,11 @@ function IssueCardModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
   const [network, setNetwork] = useState<'visa' | 'mastercard'>('visa');
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
+  const [errorCode, setErrCode] = useState('');
 
   async function submit() {
-    if (!userId.trim()) { setError('User ID is required'); return; }
-    setLoading(true); setError('');
+    if (!userId.trim()) { setError('User ID is required'); setErrCode(''); return; }
+    setLoading(true); setError(''); setErrCode('');
     const res = await fetch('/api/admin/cards/issue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -140,7 +159,7 @@ function IssueCardModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
     const d = await res.json();
     setLoading(false);
     if (res.ok) { onSuccess(d.message ?? 'Card issued'); onClose(); }
-    else setError(d.error ?? 'Failed to issue card');
+    else { setError(d.error ?? 'Failed to issue card'); setErrCode(d.code); }
   }
 
   const inputCls = 'w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none focus:border-primary/40';
@@ -148,11 +167,7 @@ function IssueCardModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
 
   return (
     <ModalShell title="Issue New Card" onClose={onClose} icon={Plus} iconColor="#10B981">
-      {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">
-          <AlertTriangle size={13} /> {error}
-        </div>
-      )}
+      {error && <ModalError msg={error} code={errorCode} />}
       <div className="space-y-4">
         <div>
           <label className={labelCls}>Customer User ID *</label>
@@ -195,11 +210,12 @@ function SpendingLimitModal({ card, onClose, onSuccess }: { card: AdminCard; onC
   const [limit,   setLimit]   = useState(card.spendingLimit != null ? String(card.spendingLimit) : '');
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
+  const [errorCode, setErrCode] = useState('');
 
   async function submit() {
     const val = limit.trim() === '' ? null : parseFloat(limit);
-    if (val !== null && (isNaN(val) || val < 0)) { setError('Enter a valid positive amount or leave blank to remove limit'); return; }
-    setLoading(true); setError('');
+    if (val !== null && (isNaN(val) || val < 0)) { setError('Enter a valid positive amount or leave blank to remove limit'); setErrCode(''); return; }
+    setLoading(true); setError(''); setErrCode('');
     const res = await fetch('/api/admin/cards/spending-limit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -208,12 +224,12 @@ function SpendingLimitModal({ card, onClose, onSuccess }: { card: AdminCard; onC
     const d = await res.json();
     setLoading(false);
     if (res.ok) { onSuccess(d.message ?? 'Limit updated'); onClose(); }
-    else setError(d.error ?? 'Failed to update limit');
+    else { setError(d.error ?? 'Failed to update limit'); setErrCode(d.code); }
   }
 
   return (
     <ModalShell title={`Spending Limit — ${card.numberMasked}`} onClose={onClose} icon={DollarSign} iconColor="#C9A84C">
-      {error && <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4"><AlertTriangle size={13} />{error}</div>}
+      {error && <ModalError msg={error} code={errorCode} />}
       <p className="text-white/40 text-xs mb-4">Set a daily spending cap in USD. Leave blank to remove the limit entirely.</p>
       <div>
         <label className="text-white/30 text-[10px] uppercase tracking-wide mb-1.5 block">Daily Limit (USD)</label>
@@ -245,11 +261,12 @@ function PinModal({ card, onClose, onSuccess }: { card: AdminCard; onClose: () =
   const [show,    setShow]    = useState(false);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
+  const [errorCode, setErrCode] = useState('');
 
   async function submit() {
-    if (!/^\d{4}$/.test(pin)) { setError('PIN must be exactly 4 digits'); return; }
-    if (pin !== confirm) { setError('PINs do not match'); return; }
-    setLoading(true); setError('');
+    if (!/^\d{4}$/.test(pin)) { setError('PIN must be exactly 4 digits'); setErrCode(''); return; }
+    if (pin !== confirm) { setError('PINs do not match'); setErrCode(''); return; }
+    setLoading(true); setError(''); setErrCode('');
     const res = await fetch('/api/admin/cards/pin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -258,14 +275,14 @@ function PinModal({ card, onClose, onSuccess }: { card: AdminCard; onClose: () =
     const d = await res.json();
     setLoading(false);
     if (res.ok) { onSuccess(d.message ?? 'PIN updated'); onClose(); }
-    else setError(d.error ?? 'Failed to update PIN');
+    else { setError(d.error ?? 'Failed to update PIN'); setErrCode(d.code); }
   }
 
   const pinInputCls = 'w-full bg-white/[0.04] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm font-mono tracking-[0.4em] placeholder:text-white/20 placeholder:tracking-normal focus:outline-none focus:border-amber-500/40';
 
   return (
     <ModalShell title={`Set PIN — ${card.numberMasked}`} onClose={onClose} icon={KeyRound} iconColor="#F59E0B">
-      {error && <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4"><AlertTriangle size={13} />{error}</div>}
+      {error && <ModalError msg={error} code={errorCode} />}
       <p className="text-white/40 text-xs mb-4">
         {card.hasPin ? 'This card already has a PIN. Setting a new one will override it.' : 'Set a 4-digit PIN for this card.'}
       </p>
@@ -303,9 +320,11 @@ function PinModal({ card, onClose, onSuccess }: { card: AdminCard; onClose: () =
 // ─────────────────────────────────────────────────────────────────────────────
 function ReplaceModal({ card, onClose, onSuccess }: { card: AdminCard; onClose: () => void; onSuccess: (msg: string) => void }) {
   const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState('');
+  const [errorCode, setErrCode] = useState('');
 
   async function submit() {
-    setLoading(true);
+    setLoading(true); setError(''); setErrCode('');
     const res = await fetch('/api/admin/cards/replace', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -314,7 +333,7 @@ function ReplaceModal({ card, onClose, onSuccess }: { card: AdminCard; onClose: 
     const d = await res.json();
     setLoading(false);
     if (res.ok) { onSuccess(d.message ?? 'Card replaced'); onClose(); }
-    else onSuccess(d.error ?? 'Replacement failed');
+    else { setError(d.error ?? 'Replacement failed'); setErrCode(d.code); }
   }
 
   return (
@@ -328,10 +347,11 @@ function ReplaceModal({ card, onClose, onSuccess }: { card: AdminCard; onClose: 
           </p>
         </div>
       </div>
+      {error && <ModalError msg={error} code={errorCode} />}
       <div className="flex gap-3">
         <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/8 text-white/50 text-sm hover:bg-white/[0.04]">Cancel</button>
         <button onClick={submit} disabled={loading}
-          className="flex-1 py-2.5 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-400 text-sm font-semibold hover:bg-purple-500/30 flex items-center justify-center gap-2">
+          className="flex-1 py-2.5 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-400 text-sm font-semibold hover:bg-purple-500/30 flex items-center justify-center gap-2 disabled:opacity-50">
           {loading ? <Loader2 size={13} className="animate-spin" /> : <Repeat2 size={13} />}
           Replace Card
         </button>
@@ -509,7 +529,7 @@ export default function AdminCardsPage() {
     if (res.ok) {
       showToast(d.message ?? 'Card updated');
       setCards(prev => prev.map(c => c.id === card.id ? { ...c, status: d.status } : c));
-    } else showToast(d.error ?? 'Action failed', false);
+    } else showToast(`${d.error ?? 'Action failed'}${d.code ? ` (${d.code})` : ''}`, false);
   }
 
   // Stats
@@ -549,17 +569,17 @@ export default function AdminCardsPage() {
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/8 text-white/50 text-sm hover:text-white transition-colors">
               <RefreshCw size={13} />
             </button>
-            <button disabled title="Requires an approved card issuer adapter"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-not-allowed opacity-50"
+            <button onClick={() => setIssueOpen(true)} title="Requires a contracted card issuer-processor — the server refuses this request until one is contracted"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold opacity-80 hover:opacity-100 transition-opacity"
               style={{ background: 'linear-gradient(135deg,#C9A84C,#F0D080)', color: '#000' }}>
-              <Plus size={14} /> Issuer unavailable
+              <Plus size={14} /> Issue Card
             </button>
           </div>
         </div>
 
         <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/[0.07] px-4 py-3">
           <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-300" />
-          <div><p className="text-sm font-semibold text-amber-100">Read-only synthetic records</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">These entries are demonstration application data, not issued payment cards or processor records. PAN and CVV are not loaded by this page. Issuing, freezing, replacing, PIN and spending-limit controls require a contracted card issuer adapter and cannot be enabled from environment settings.</p></div>
+          <div><p className="text-sm font-semibold text-amber-100">Read-only synthetic records</p><p className="mt-1 text-xs leading-relaxed text-amber-100/55">These entries are demonstration application data, not issued payment cards or processor records. PAN and CVV are not loaded by this page. Issuing, freezing, replacing, PIN and spending-limit controls require a contracted issuer-processor and BIN-sponsor bank; without one they cannot be enabled from environment settings, and every card mutation sent from this page is refused by the server with <span className="font-mono text-amber-200/80">501 {CARD_PROVIDER_NOT_CONFIGURED}</span> — the record is left unchanged.</p></div>
         </div>
 
         {/* ── Stats strip ── */}
@@ -679,7 +699,6 @@ export default function AdminCardsPage() {
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        {CARD_OPERATIONS_AVAILABLE && <>
                         {/* Freeze / Unfreeze */}
                         {(card.status === 'active' || card.status === 'frozen') && (
                           <button onClick={() => doFreeze(card)} disabled={!!actionLoading} title={card.status === 'frozen' ? 'Unfreeze' : 'Freeze'}
@@ -708,7 +727,6 @@ export default function AdminCardsPage() {
                           className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400/50 hover:text-amber-400 hover:bg-amber-500/20 transition-colors">
                           <KeyRound size={11} />
                         </button>
-                        </>}
                         {/* Activity */}
                         <button onClick={() => setActivityCard(card)} title="View Activity"
                           className="w-7 h-7 rounded-lg bg-white/[0.04] flex items-center justify-center text-white/30 hover:text-white hover:bg-white/[0.08] transition-colors">
@@ -743,7 +761,7 @@ export default function AdminCardsPage() {
 
         {/* ── Modals ── */}
         <AnimatePresence>
-          {CARD_OPERATIONS_AVAILABLE && issueOpen && (
+          {issueOpen && (
             <IssueCardModal
               onClose={() => setIssueOpen(false)}
               onSuccess={msg => { showToast(msg); fetchCards(); }}
@@ -752,7 +770,7 @@ export default function AdminCardsPage() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {CARD_OPERATIONS_AVAILABLE && limitCard && (
+          {limitCard && (
             <SpendingLimitModal
               card={limitCard}
               onClose={() => setLimitCard(null)}
@@ -762,7 +780,7 @@ export default function AdminCardsPage() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {CARD_OPERATIONS_AVAILABLE && pinCard && (
+          {pinCard && (
             <PinModal
               card={pinCard}
               onClose={() => setPinCard(null)}
@@ -772,7 +790,7 @@ export default function AdminCardsPage() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {CARD_OPERATIONS_AVAILABLE && replaceCard && (
+          {replaceCard && (
             <ReplaceModal
               card={replaceCard}
               onClose={() => setReplaceCard(null)}

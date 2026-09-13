@@ -62,13 +62,29 @@ describe('card issuer boundary', () => {
     );
 
     expect(adminPage).toContain('Read-only synthetic records');
-    expect(adminPage).toContain('CARD_OPERATIONS_AVAILABLE = false');
+    expect(adminPage).toContain('CARD_PROVIDER_NOT_CONFIGURED');
     expect(customerPage).toContain('Read-only synthetic card records');
     expect(customerPage).not.toMatch(/numberFull|revealedCvv|handleFreezeToggle|handleRequestCard/);
     expect(digitalBankingPage).toContain('Virtual Card Experience');
     expect(digitalBankingPage).toContain('Physical Card Experience');
     expect(digitalBankingPage).toContain('approved issuer or programme');
     expect(digitalBankingPage).not.toMatch(/generateCard|freezeCard|deleteCard|\/api\/users\/cards\/generate/);
+  });
+
+  it('refuses every administrator card mutation with a structured provider-not-configured response', () => {
+    for (const route of [
+      'src/server/api/admin/cards/issue/POST.ts',
+      'src/server/api/admin/cards/freeze/POST.ts',
+      'src/server/api/admin/cards/pin/POST.ts',
+      'src/server/api/admin/cards/replace/POST.ts',
+      'src/server/api/admin/cards/spending-limit/POST.ts',
+    ]) {
+      const source = fs.readFileSync(path.resolve(process.cwd(), route), 'utf8');
+      expect(source).toContain('LIVE_CARD_ISSUER_ADAPTER_IMPLEMENTED');
+      expect(source).toMatch(/res\.status\(501\)\.json\(\{\s*error:/);
+      expect(source).toContain("code: 'CARD_PROVIDER_NOT_CONFIGURED'");
+      expect(source).toContain('issuer-processor is contracted');
+    }
   });
 
   it('maps every issuer-controlled capability without pretending an adapter exists', () => {
