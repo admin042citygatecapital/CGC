@@ -11,6 +11,7 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { getSecret } from '#runtime/secrets';
 import * as schema from './schema.js';
+import { resolveSsl } from './ssl.js';
 
 let database: ReturnType<typeof drizzle<typeof schema>> | null = null;
 let queryClient: ReturnType<typeof postgres> | null = null;
@@ -42,20 +43,6 @@ function createClient(): ReturnType<typeof postgres> | null {
     // would shadow the URL's sslmode and silently downgrade to plaintext.
     ...(ssl === undefined ? {} : { ssl }),
   });
-}
-
-/**
- * Managed PostgreSQL providers (Supabase, Neon, Render) reject unencrypted
- * connections at pg_hba, and postgres.js only enables TLS when the URL carries
- * an sslmode parameter or an explicit ssl option. Require TLS for every host
- * that is not loopback, leaving an explicit sslmode in the URL authoritative.
- * Returns undefined when the URL already carries sslmode — the caller must
- * omit the ssl option entirely so the URL's value stays authoritative.
- */
-function resolveSsl(url: string): boolean | undefined {
-  if (/sslmode=/.test(url)) return undefined;
-  if (/localhost|127\.0\.0\.1|::1/.test(url)) return false;
-  return true;
 }
 
 export function getQueryClient(): ReturnType<typeof postgres> {

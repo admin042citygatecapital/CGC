@@ -13,6 +13,7 @@
 
 import postgres from 'postgres';
 import { getSecret } from '#runtime/secrets';
+import { resolveSsl } from './ssl.js';
 
 const args    = process.argv.slice(2);
 const CONFIRM = args.includes('--confirm');
@@ -26,13 +27,7 @@ if (!url) {
 
 // Omit the ssl key when the URL governs TLS: an explicitly passed `undefined`
 // would shadow the URL's sslmode and silently downgrade to plaintext.
-const ssl = url.includes('sslmode=')
-  ? undefined
-  : /localhost|127\.0\.0\.1|::1/.test(url)
-    ? false
-    : url.includes('neon.tech')
-      ? 'require'
-      : true;
+const ssl = resolveSsl(url);
 const sql = postgres(url, {
   max: 1,
   ...(ssl === undefined ? {} : { ssl }),

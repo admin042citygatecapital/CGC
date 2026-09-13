@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import postgres from 'postgres';
 import { getSecret } from '#runtime/secrets';
+import { resolveSsl } from './ssl.js';
 
 const databaseUrl = String(
   getSecret('DATABASE_URL') ||
@@ -26,20 +27,6 @@ const sql = postgres(databaseUrl, {
   // would shadow the URL's sslmode and silently downgrade to plaintext.
   ...(ssl === undefined ? {} : { ssl }),
 });
-
-/**
- * Managed PostgreSQL providers (Supabase, Neon, Render) reject unencrypted
- * connections at pg_hba, and postgres.js only enables TLS when the URL carries
- * an sslmode parameter or an explicit ssl option. Require TLS for every host
- * that is not loopback, leaving an explicit sslmode in the URL authoritative.
- * Returns undefined when the URL already carries sslmode — the caller must
- * omit the ssl option entirely so the URL's value stays authoritative.
- */
-function resolveSsl(url: string): boolean | undefined {
-  if (/sslmode=/.test(url)) return undefined;
-  if (/localhost|127\.0\.0\.1|::1/.test(url)) return false;
-  return true;
-}
 
 const migrationsDirectory = path.join(import.meta.dirname, 'migrations');
 
