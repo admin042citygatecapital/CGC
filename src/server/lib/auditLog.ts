@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 import { desc, eq, and, gte, ilike, or, sql } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { auditLog } from '../db/schema.js';
+import { escapeLikePattern } from './inputValidator.js';
 
 export interface AuditEntry {
   id:         string;
@@ -305,7 +306,7 @@ export async function getAuditLogPage(
 
   const conditions = [];
   if (normalizedSearch) {
-    const pattern = `%${normalizedSearch.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_')}%`;
+    const pattern = `%${escapeLikePattern(normalizedSearch)}%`;
     conditions.push(or(
       ilike(auditLog.adminEmail, pattern),
       ilike(auditLog.adminId, pattern),

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { getQueryClient } from '../../../db/db.js';
 import { loadBeneficiaries } from '../beneficiaries/GET.js';
+import { escapeLikePattern } from '../../../lib/inputValidator.js';
 
 const HELP = [
   { id: 'transfers', title: 'Sending and tracking transfers', keywords: 'transfer recipient beneficiary status reference', href: '/dashboard/support' },
@@ -16,7 +17,7 @@ export default async function handler(req: Request, res: Response) {
   if (query.length < 2) return res.json({ query, results: [] });
   try {
     const sql = getQueryClient();
-    const pattern = `%${query}%`;
+    const pattern = `%${escapeLikePattern(query)}%`;
     const [transactions, conversations, statementPeriods] = await Promise.all([
       sql`SELECT id,reference,description,amount,currency,status,created_at FROM transactions WHERE user_id=${customer.id} AND (reference ILIKE ${pattern} OR description ILIKE ${pattern}) ORDER BY created_at DESC LIMIT 10`,
       sql`SELECT id,subject,status,updated_at FROM support_conversations WHERE user_id=${customer.id} AND subject ILIKE ${pattern} ORDER BY updated_at DESC LIMIT 5`,

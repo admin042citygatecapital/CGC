@@ -10,6 +10,7 @@ import crypto from 'node:crypto';
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { accountApplications, applicationEvents } from '../db/schema.js';
+import { escapeLikePattern } from './inputValidator.js';
 import { APPLICATION_FLOWS, validateStep, completionPct,
   type AccountType, type ApplicationStatus } from '../../shared/applicationFlow.js';
 
@@ -244,7 +245,7 @@ export async function listApplicationsForAdmin(filter: {
   if (filter.type) conditions.push(eq(accountApplications.accountType, filter.type));
   if (filter.status) conditions.push(eq(accountApplications.status, filter.status));
   if (filter.search) {
-    const like = filter.search.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+    const like = escapeLikePattern(filter.search);
     conditions.push(or(
       ilike(accountApplications.email, `%${like}%`),
       ilike(accountApplications.firstName, `%${like}%`),

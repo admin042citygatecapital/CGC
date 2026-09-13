@@ -13,6 +13,7 @@ import {
   type SandboxStatus,
   type SandboxTransaction,
 } from "./financialSandbox.js";
+import { escapeLikePattern } from "./inputValidator.js";
 
 type TxSql = postgres.TransactionSql<Record<string, never>>;
 type AccountRow = {
@@ -307,7 +308,7 @@ export class DatabaseFinancialSandbox {
     requireDatabase();
     const sql = getQueryClient();
     const search = input.search?.trim().toLowerCase() ?? "";
-    const like = `%${search}%`;
+    const like = `%${escapeLikePattern(search)}%`;
     const status = input.status?.trim() ?? "";
     const asset = input.asset?.trim() ?? "";
     const pageSize = Math.min(100, Math.max(1, input.pageSize ?? 20));

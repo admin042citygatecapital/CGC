@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { getQueryClient, isDatabaseConfigured } from "../db/db.js";
 import { appendAudit, appendCriticalAudit } from "./auditLog.js";
+import { escapeLikePattern } from "./inputValidator.js";
 import { findUserById, loadAllUsers } from "./userStore.js";
 
 export const ACCOUNT_TYPES = ["personal", "savings", "business"] as const;
@@ -326,6 +327,8 @@ export async function listCustomerAccounts(
       )
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
+  const search = input.search?.trim() ?? "";
+  const like = `%${escapeLikePattern(search)}%`;
   const rows = await getQueryClient()<AccountRow[]>`
     SELECT a.id, a.user_id, u.name AS customer_name, u.email AS customer_email,
            a.label, a.account_type, a.status, a.primary_currency,
@@ -335,10 +338,10 @@ export async function listCustomerAccounts(
       JOIN users u ON u.id = a.user_id
      WHERE (${input.userId ?? null}::text IS NULL OR a.user_id = ${input.userId ?? null})
        AND (${input.status ?? null}::text IS NULL OR a.status = ${input.status ?? null})
-       AND (${input.search?.trim() || null}::text IS NULL OR
-            a.label ILIKE ${`%${input.search?.trim() ?? ""}%`} OR
-            u.name ILIKE ${`%${input.search?.trim() ?? ""}%`} OR
-            u.email ILIKE ${`%${input.search?.trim() ?? ""}%`})
+       AND (${search || null}::text IS NULL OR
+            a.label ILIKE ${like} OR
+            u.name ILIKE ${like} OR
+            u.email ILIKE ${like})
      ORDER BY a.updated_at DESC`;
   return rows.map(rowToAccount);
 }

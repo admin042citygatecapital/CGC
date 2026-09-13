@@ -8,7 +8,7 @@ import { eq, desc, and, gte, lte, ilike, inArray, or, sql as drizzleSql } from '
 import { getDb, isDatabaseConfigured } from '../db/db.js';
 import { transactions } from '../db/schema.js';
 import type { Transaction as DbTransaction } from '../db/schema.js';
-import { stripDangerousKeys } from './inputValidator.js';
+import { escapeLikePattern, stripDangerousKeys } from './inputValidator.js';
 
 // ── Types (backward compat) ───────────────────────────────────────────────────
 
@@ -292,7 +292,7 @@ export async function queryTransactions(q: TxQuery = {}): Promise<{ data: Transa
   if (q.from)     conditions.push(gte(transactions.createdAt, new Date(q.from)));
   if (q.to)       conditions.push(lte(transactions.createdAt, new Date(q.to)));
   if (q.search) {
-    const s = `%${q.search}%`;
+    const s = `%${escapeLikePattern(q.search)}%`;
     conditions.push(or(
       ilike(transactions.userName, s),
       ilike(transactions.userEmail, s),

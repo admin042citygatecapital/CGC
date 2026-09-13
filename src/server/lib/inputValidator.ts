@@ -93,6 +93,22 @@ export function sanitizeNote(input: unknown): string {
   return sanitizeString(input, 500);
 }
 
+// ── SQL LIKE wildcard escaping ───────────────────────────────────────────────
+
+/**
+ * Escape SQL LIKE/ILIKE wildcards (% _) and the escape character (\) so a
+ * user-supplied search term matches only itself. Order matters: the
+ * backslash must be escaped first or the % and _ escapes get doubled.
+ * Parameterised queries still prevent SQL injection; this only keeps the
+ * wildcards out of the pattern semantics.
+ */
+export function escapeLikePattern(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/%/g, '\\%')
+    .replace(/_/g, '\\_');
+}
+
 // ── Email / password ──────────────────────────────────────────────────────────
 
 /** Validate email format */

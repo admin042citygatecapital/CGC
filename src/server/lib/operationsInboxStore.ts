@@ -6,6 +6,7 @@ import { getDb, getQueryClient, isDatabaseConfigured } from '../db/db.js';
 import { operationsItems } from '../db/schema.js';
 import type { OperationsItemRow } from '../db/schema.js';
 import { privateSubdirectory } from './storagePaths.js';
+import { escapeLikePattern } from './inputValidator.js';
 
 export type OperationsSource = 'account_application' | 'contact_form' | 'card_request' | 'newsletter_signup' | 'support_ticket';
 export type OperationsStatus = 'new' | 'in_review' | 'waiting_customer' | 'approved' | 'rejected' | 'resolved' | 'archived';
@@ -100,7 +101,7 @@ export async function listOperationsItems(query: OperationsQuery = {}) {
   if (query.priority && VALID_PRIORITY.has(query.priority as OperationsPriority)) conditions.push(eq(operationsItems.priority, query.priority));
   const search = query.search?.trim();
   if (search) {
-    const pattern = `%${search}%`;
+    const pattern = `%${escapeLikePattern(search)}%`;
     const match = or(
       ilike(operationsItems.title, pattern), ilike(operationsItems.summary, pattern),
       ilike(operationsItems.requesterName, pattern), ilike(operationsItems.requesterEmail, pattern),

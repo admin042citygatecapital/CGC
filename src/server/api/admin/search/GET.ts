@@ -1,12 +1,13 @@
 import type { Request, Response } from 'express';
 import { getQueryClient } from '../../../db/db.js';
+import { escapeLikePattern } from '../../../lib/inputValidator.js';
 
 export default async function handler(req: Request, res: Response) {
   const query = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 80) : '';
   if (query.length < 2) return res.json({ query, results: [] });
   try {
     const sql = getQueryClient();
-    const pattern = `%${query}%`;
+    const pattern = `%${escapeLikePattern(query)}%`;
     const [customers, transactions, cards, accounts, support] = await Promise.all([
       sql`SELECT id,name,email,status,kyc_status FROM users WHERE name ILIKE ${pattern} OR email ILIKE ${pattern} OR id ILIKE ${pattern} ORDER BY updated_at DESC LIMIT 6`,
       sql`SELECT id,reference,description,user_name,user_email,status,type FROM transactions WHERE reference ILIKE ${pattern} OR description ILIKE ${pattern} OR user_name ILIKE ${pattern} OR user_email ILIKE ${pattern} ORDER BY created_at DESC LIMIT 8`,

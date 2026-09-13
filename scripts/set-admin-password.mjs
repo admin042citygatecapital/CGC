@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { hashPassword } from '../src/server/lib/passwordHash.js';
+import { validateAdminPassword } from '../src/server/lib/adminPasswordPolicy.js';
 import { getDb, closeConnection } from '../src/server/db/db.js';
 import { admins, adminSessions, auditLog } from '../src/server/db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -45,10 +46,19 @@ async function promptHidden(message) {
 async function main() {
   const email = 'admin@citygate.capital';
   const newPassword = (process.env.CGC_ADMIN_NEW_PASSWORD ?? '').trim()
-    || await promptHidden(`New password for ${email} (input hidden, min 12 chars): `);
+    || await promptHidden(`New password for ${email} (input hidden, 16+ chars, mixed case, number, symbol): `);
 
-  if (!newPassword || newPassword.length < 12) {
-    console.error('No password supplied (set CGC_ADMIN_NEW_PASSWORD or run interactively); minimum 12 characters.');
+  if (!newPassword) {
+    console.error('No password supplied (set CGC_ADMIN_NEW_PASSWORD or run interactively).');
+    process.exit(1);
+  }
+
+  // Same policy as `npm run admin:rotate-password` and every admin
+  // password-change surface: length, character classes, and common fragments.
+  const policy = validateAdminPassword(newPassword);
+  if (!policy.ok) {
+    console.error('Password rejected by the admin password policy:');
+    for (const error of policy.errors) console.error(`  - ${error}`);
     process.exit(1);
   }
 
