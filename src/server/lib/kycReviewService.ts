@@ -48,9 +48,12 @@ export async function decideKycCase(input: KycReviewInput) {
   const bundle = await getOnboardingCaseBundle(input.caseId);
   if (!bundle) throw Object.assign(new Error('Onboarding case not found.'), { code: 'NOT_FOUND' });
   if (!REVIEWABLE.has(bundle.case.status)) throw Object.assign(new Error('Case is not reviewable in its current status.'), { code: 'INVALID_TRANSITION' });
-  // A no-op re-decision (e.g. under_review on an under_review case) must not
-  // bump the version or re-send the customer email.
-  if (bundle.case.status === input.decision) throw Object.assign(new Error('The case already carries this status; nothing to decide.'), { code: 'NO_OP_DECISION' });
+  // A byte-identical re-decision (e.g. under_review with the same rationale)
+  // must not bump the version or re-send the customer email; the same status
+  // with a new rationale is a legitimate re-decision and proceeds.
+  if (bundle.case.status === input.decision && (bundle.case.reviewReason ?? '') === reason) {
+    throw Object.assign(new Error('The case already carries this status with the same rationale; nothing to decide.'), { code: 'NO_OP_DECISION' });
+  }
   if (!Number.isInteger(input.expectedVersion) || input.expectedVersion !== bundle.case.version) {
     throw Object.assign(new Error('The KYC case changed. Refresh it before reviewing.'), { code: 'WORKFLOW_CONFLICT' });
   }

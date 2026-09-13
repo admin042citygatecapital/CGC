@@ -274,10 +274,21 @@ export async function decideApplication(input: {
   if (!['REVIEW_REQUIRED', 'NEEDS_INFORMATION', 'APPROVED', 'REJECTED'].includes(app.status)) {
     return { ok: false, error: `Application in status ${app.status} cannot be decided.` };
   }
-  // A no-op re-decision (e.g. REVIEW_REQUIRED on a REVIEW_REQUIRED application)
-  // must not bump the record or re-send the decision email.
+  // A byte-identical re-decision (same status and rationale) must not bump
+  // the record or re-send the decision email; the same status with new
+  // content is a legitimate re-decision (e.g. an updated information
+  // request) and proceeds through the normal path.
   if (app.status === input.decision) {
-    return { ok: false, error: `Application already carries status ${input.decision}; nothing to decide.` };
+    const incomingInformationRequest = input.decision === 'NEEDS_INFORMATION'
+      ? (input.informationRequest ?? input.reason)
+      : undefined;
+    const storedInformationRequest = input.decision === 'NEEDS_INFORMATION'
+      ? app.informationRequest
+      : undefined;
+    if ((app.decisionReason ?? '') === input.reason &&
+        (storedInformationRequest ?? '') === (incomingInformationRequest ?? '')) {
+      return { ok: false, error: `Application already carries status ${input.decision} with the same rationale; nothing to decide.` };
+    }
   }
   const [row] = await getDb().update(accountApplications).set({
     status: input.decision,
