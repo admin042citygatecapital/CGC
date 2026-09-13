@@ -12,7 +12,10 @@ export const E2E_ROUTE_AUDIT_CUSTOMER = {
 
 export const E2E_ADMIN = {
   email: 'admin@citygate.capital',
-  password: 'CGC-Admin-Secure-2026-Pass!',
+  // Local e2e fixture only — deliberately distinct from any real credential
+  // (the e2e server seeds its own admin row from this value; see
+  // scripts/start-e2e-server.ts).
+  password: 'Preview-E2E-Admin-77!',
   otp: '937497',
 } as const;
 
