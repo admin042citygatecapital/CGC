@@ -23,6 +23,12 @@ export type TemplateId =
   | 'email_verification'
   | 'kyc_approved'
   | 'kyc_rejected'
+  | 'application_received'
+  | 'application_under_review'
+  | 'application_needs_information'
+  | 'application_approved'
+  | 'application_activation_pending'
+  | 'application_rejected'
   | 'deposit_confirmed'
   | 'withdrawal_approved'
   | 'transfer_sent'
@@ -98,15 +104,102 @@ Date Joined: {date}</p>
   },
   {
     id: 'kyc_rejected',
-    name: 'Identity Review Needs Information',
-    description: 'Notification requesting additional information for identity review.',
+    name: 'Identity Review Decision',
+    description: 'Notification that an identity-review case was not approved.',
     category: 'kyc',
     variables: ['{user_name}', '{rejection_reason}', '{date}'],
-    subject: 'Identity Review Needs Information — City Gate Capital',
+    subject: 'Identity Review Decision — City Gate Capital',
     body: `<p>Dear {user_name},</p>
-<p>Your identity-review workflow needs additional information.</p>
+<p>Your current identity-review case was not approved as of {date}.</p>
 <p><strong>Reviewer note:</strong> {rejection_reason}</p>
-<p>Submit information only through the secure onboarding workflow. This notice does not by itself activate a financial service.</p>
+<p>This decision does not by itself activate banking, payments, cards, trading, custody, or other financial services. If you have a question about this decision, contact support@citygate.capital. No response-time guarantee is offered.</p>
+<p>Best regards,<br/>The City Gate Capital Team</p>`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  },
+  {
+    id: 'application_received',
+    name: 'Application Received',
+    description: 'Sent when a customer submits an account application for review.',
+    category: 'kyc',
+    variables: ['{user_name}', '{reference}', '{account_type}', '{date}'],
+    subject: 'Application Received: {reference} — City Gate Capital',
+    body: `<p>Dear {user_name},</p>
+<p>Your {account_type} application ({reference}) was received on {date} and is queued for review. No further action is needed from you at this stage.</p>
+<p>This acknowledgment does not open an account and does not activate banking, payments, cards, trading, custody, or any other financial service. Review, provider verification, and eligibility checks are still outstanding, and financial services are not currently activated on this platform.</p>
+<p>Please do not send identity documents, payment details, or funds by email. Any requested information will be collected only through the secure application area after sign-in.</p>
+<p>Best regards,<br/>The City Gate Capital Team</p>`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  },
+  {
+    id: 'application_under_review',
+    name: 'Application In Review',
+    description: 'Sent when an application or identity-review case moves into the review stage.',
+    category: 'kyc',
+    variables: ['{user_name}', '{date}'],
+    subject: 'Your Application Is In Review — City Gate Capital',
+    body: `<p>Dear {user_name},</p>
+<p>Your application has moved into the review stage as of {date}. Reviews are completed by our compliance team and may involve identity, sanctions, and eligibility checks.</p>
+<p>This notice does not activate banking, payments, cards, trading, custody, or other financial services. Final decisions on account approval and activation remain pending.</p>
+<p>Best regards,<br/>The City Gate Capital Team</p>`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  },
+  {
+    id: 'application_needs_information',
+    name: 'Application Information Request',
+    description: 'Sent when an application decision requests additional information.',
+    category: 'kyc',
+    variables: ['{user_name}', '{reference}', '{information_request}', '{date}'],
+    subject: 'Information Required: {reference} — City Gate Capital',
+    body: `<p>Dear {user_name},</p>
+<p>Your application ({reference}) needs additional information before the review can continue.</p>
+<p><strong>Reviewer instructions:</strong> {information_request}</p>
+<p>Provide the requested information only through the secure application area after sign-in. No financial service is activated by this request.</p>
+<p>Best regards,<br/>The City Gate Capital Team</p>`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  },
+  {
+    id: 'application_approved',
+    name: 'Application Approved — Activation Pending',
+    description: 'Sent when an account application is approved and final activation is still pending.',
+    category: 'kyc',
+    variables: ['{user_name}', '{reference}', '{date}'],
+    subject: 'Application Approved: {reference} — City Gate Capital',
+    body: `<p>Dear {user_name},</p>
+<p>Your application ({reference}) has been approved as of {date}. Final account activation remains pending.</p>
+<p>This approval does not by itself activate banking, payments, cards, trading, custody, or any other financial service. Product access remains subject to provider verification, eligibility, and applicable approvals, and financial services are not currently activated on this platform.</p>
+<p>Best regards,<br/>The City Gate Capital Team</p>`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  },
+  {
+    id: 'application_activation_pending',
+    name: 'Application Activation Pending',
+    description: 'Sent when an application decision records the activation-pending stage.',
+    category: 'kyc',
+    variables: ['{user_name}', '{reference}', '{date}'],
+    subject: 'Application Decision Recorded: {reference} — City Gate Capital',
+    body: `<p>Dear {user_name},</p>
+<p>A decision was recorded on your application ({reference}) as of {date}. Your account is now awaiting final activation.</p>
+<p>Final activation is not automatic: it requires provider verification, eligibility, and applicable approvals. No financial service is activated by this notice.</p>
+<p>Best regards,<br/>The City Gate Capital Team</p>`,
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'system',
+  },
+  {
+    id: 'application_rejected',
+    name: 'Application Decision — Not Approved',
+    description: 'Sent when an account application is not approved.',
+    category: 'kyc',
+    variables: ['{user_name}', '{reference}', '{decision_reason}', '{date}'],
+    subject: 'Application Decision: {reference} — City Gate Capital',
+    body: `<p>Dear {user_name},</p>
+<p>After review, your application ({reference}) was not approved as of {date}.</p>
+<p><strong>Reviewer note:</strong> {decision_reason}</p>
+<p>This decision does not create an account and no financial service is activated. If you believe this decision was made in error, contact support@citygate.capital. No response-time guarantee is offered.</p>
 <p>Best regards,<br/>The City Gate Capital Team</p>`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
@@ -270,6 +363,25 @@ Date: {date}</p>
 
 let cache: EmailTemplate[] | null = null;
 
+// The kyc_rejected default was corrected from a needs-information notice to a
+// decision notice. Persisted stores save the whole catalogue whenever an admin
+// edits ANY template, so environments that did so still hold the OLD default
+// text; copies matching it verbatim are replaced by the corrected default
+// (genuine admin customizations, which differ in text, are left untouched).
+const STALE_KYC_REJECTED_BODY = `<p>Dear {user_name},</p>
+<p>Your identity-review workflow needs additional information.</p>
+<p><strong>Reviewer note:</strong> {rejection_reason}</p>
+<p>Submit information only through the secure onboarding workflow. This notice does not by itself activate a financial service.</p>
+<p>Best regards,<br/>The City Gate Capital Team</p>`;
+
+/** Replace persisted copies of superseded default bodies with the current default. */
+function withCorrectedDefaults(saved: EmailTemplate[]): EmailTemplate[] {
+  return saved.map(template =>
+    template.id === 'kyc_rejected' && template.body === STALE_KYC_REJECTED_BODY
+      ? { ...DEFAULTS.find(def => def.id === 'kyc_rejected')! }
+      : template);
+}
+
 // ── Store functions ───────────────────────────────────────────────────────────
 
 function ensureDir() {
@@ -283,9 +395,9 @@ export function loadTemplates(): EmailTemplate[] {
   try {
     const raw = fs.readFileSync(DATA_FILE, 'utf-8');
     const saved = JSON.parse(raw) as EmailTemplate[];
-    // Merge saved with defaults — add any new default templates not yet saved
+    // Merge saved with defaults — correct superseded defaults, add any new default templates not yet saved
     const savedIds = new Set(saved.map(t => t.id));
-    const merged = [...saved];
+    const merged = withCorrectedDefaults(saved);
     for (const def of DEFAULTS) {
       if (!savedIds.has(def.id)) merged.push(def);
     }
@@ -358,7 +470,7 @@ export async function loadEmailTemplatesFromDb(): Promise<void> {
     if (!rows.length || !Array.isArray(rows[0].value)) return;
     const saved = rows[0].value as unknown as EmailTemplate[];
     const savedIds = new Set(saved.map(template => template.id));
-    cache = [...saved, ...DEFAULTS.filter(template => !savedIds.has(template.id))];
+    cache = [...withCorrectedDefaults(saved), ...DEFAULTS.filter(template => !savedIds.has(template.id))];
   } catch (error) {
     console.warn(JSON.stringify({ event: 'emailTemplates.load.skipped', error: String(error) }));
   }

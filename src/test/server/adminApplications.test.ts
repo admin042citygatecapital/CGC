@@ -65,6 +65,13 @@ vi.mock('../../server/lib/kycCaseStore.js', () => ({
   decideCase: vi.fn().mockResolvedValue(null),
 }));
 
+// The best-effort decision notice resolves a promise (the store chains .catch
+// on it); mocking keeps the suite off the real transport and its
+// provider-unconfigured path.
+vi.mock('../../server/lib/emailService.js', () => ({
+  sendApplicationDecisionEmail: vi.fn(() => Promise.resolve()),
+}));
+
 beforeEach(() => {
   vi.resetModules();
   mocks.configured = false;

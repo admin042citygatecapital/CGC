@@ -274,6 +274,11 @@ export async function decideApplication(input: {
   if (!['REVIEW_REQUIRED', 'NEEDS_INFORMATION', 'APPROVED', 'REJECTED'].includes(app.status)) {
     return { ok: false, error: `Application in status ${app.status} cannot be decided.` };
   }
+  // A no-op re-decision (e.g. REVIEW_REQUIRED on a REVIEW_REQUIRED application)
+  // must not bump the record or re-send the decision email.
+  if (app.status === input.decision) {
+    return { ok: false, error: `Application already carries status ${input.decision}; nothing to decide.` };
+  }
   const [row] = await getDb().update(accountApplications).set({
     status: input.decision,
     decisionReason: input.reason,
@@ -294,7 +299,25 @@ export async function decideApplication(input: {
       reason: input.reason, reviewerId: input.adminId, reviewerRole: input.adminRole,
     });
   }
-  return { ok: true, row: row as ApplicationRow };
+  // Decision notice — best-effort, sent after the store writes and never
+  // blocking the decision response (mirrors the KYC review delivery pattern).
+  const decided = row as ApplicationRow | undefined;
+  if (decided) {
+    const { sendApplicationDecisionEmail } = await import('./emailService.js');
+    sendApplicationDecisionEmail(
+      decided.email,
+      [decided.firstName, decided.lastName].filter(Boolean).join(' ') || 'Applicant',
+      {
+        decision: input.decision,
+        reference: decided.reference ?? input.applicationId,
+        reason: input.reason,
+        informationRequest: input.decision === 'NEEDS_INFORMATION' ? (input.informationRequest ?? input.reason) : undefined,
+      },
+    ).catch(error => console.warn(JSON.stringify({
+      event: 'application.decision.email_failed', applicationId: input.applicationId, decision: input.decision, error: String(error),
+    })));
+  }
+  return { ok: true, row: decided as ApplicationRow };
 }
 
 export async function listApplicationEvents(applicationId: string) {

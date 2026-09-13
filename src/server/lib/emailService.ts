@@ -234,12 +234,12 @@ function configuredTemplate(
   vars: Record<string, string>,
   fallback: { subject: string; title: string; body: string },
 ): { subject: string; html: string } {
+  // Money-movement templates stay gated: their persisted admin copy must not
+  // make a pre-deployment look transactional. Review-status templates
+  // (kyc_approved / kyc_rejected / application_*) follow admin edits directly.
   const financialTemplateIds = new Set<TemplateId>([
-    'kyc_approved', 'kyc_rejected', 'deposit_confirmed',
-    'withdrawal_approved', 'transfer_sent', 'transfer_received',
+    'deposit_confirmed', 'withdrawal_approved', 'transfer_sent', 'transfer_received',
   ]);
-  // Persisted admin copy must not make a pre-deployment look transactional. Until
-  // live readiness is genuinely implemented, use the reviewed safe default.
   const template = financialTemplateIds.has(id) && !hasLiveFinancialReadiness()
     ? getDefaultTemplate(id)
     : getTemplate(id);
@@ -327,19 +327,29 @@ export async function sendKycMoreInformationEmail(to: string, name: string, inst
 }
 
 export async function sendKycRejectedEmail(to: string, name: string, reason: string) {
-  await send({
-    to,
+  const content = configuredTemplate('kyc_rejected', {
+    user_name: name,
+    rejection_reason: reason,
+    date: new Date().toLocaleDateString('en-GB'),
+  }, {
     subject: 'Identity Review Decision — City Gate Capital',
-    html: emailWrapper('Identity Review Decision', `<p>Dear ${escapeEmailHtml(name)},</p><p>Your current identity-review case was not approved.</p><p>${escapeEmailHtml(reason)}</p>`),
+    title: 'Identity Review Decision',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your current identity-review case was not approved.</p><p>${escapeEmailHtml(reason)}</p>`,
   });
+  await send({ to, ...content });
 }
 
 export async function sendKycReviewApprovedEmail(to: string, name: string) {
-  await send({
-    to,
+  const content = configuredTemplate('kyc_approved', {
+    user_name: name,
+    date: new Date().toLocaleDateString('en-GB'),
+    account_number: 'Available in your secure dashboard',
+  }, {
     subject: 'Identity Review Approved — Final Activation Pending',
-    html: emailWrapper('Identity Review Approved', `<p>Dear ${escapeEmailHtml(name)},</p><p>Your identity and provider screening review is complete. Final account activation remains pending and financial services are not yet available.</p>`),
+    title: 'Identity Review Approved',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your identity and provider screening review is complete. Final account activation remains pending and financial services are not yet available.</p>`,
   });
+  await send({ to, ...content });
 }
 
 export async function sendFinalActivationEmail(to: string, name: string) {
@@ -356,9 +366,94 @@ export async function sendRejectionEmail(to: string, name: string, reason: strin
     rejection_reason: reason,
     date: new Date().toLocaleDateString('en-GB'),
   }, {
-    subject: 'City Gate Capital — Identity Review Needs Information',
-    title: 'Identity Review Needs Information',
-    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your identity-review workflow needs additional information. Submit information only through the secure onboarding workflow.</p><p><strong>Reviewer note:</strong> ${escapeEmailHtml(reason)}</p>`,
+    subject: 'Identity Review Decision — City Gate Capital',
+    title: 'Identity Review Decision',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your identity-review case was not approved. This does not activate a financial service.</p><p><strong>Reviewer note:</strong> ${escapeEmailHtml(reason)}</p>`,
+  });
+  await send({ to, ...content });
+}
+
+// ─── Application lifecycle emails ─────────────────────────────────────────────
+
+const APPLICATION_DECISION_LABEL: Record<string, string> = {
+  APPROVED: 'approved',
+  REJECTED: 'not approved',
+  NEEDS_INFORMATION: 'returned for information',
+  ACTIVATION_PENDING: 'recorded as activation pending',
+};
+
+/** Submission acknowledgment — fired best-effort from the submit endpoint. */
+export async function sendApplicationSubmittedEmail(
+  to: string,
+  name: string,
+  reference: string,
+  accountType: string,
+) {
+  if (!to) return;
+  const content = configuredTemplate('application_received', {
+    user_name: name,
+    reference,
+    account_type: accountType,
+    date: new Date().toLocaleDateString('en-GB'),
+  }, {
+    subject: `Application Received: ${reference} — City Gate Capital`,
+    title: 'Application Received',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your application (${escapeEmailHtml(reference)}) was received and is queued for review. This acknowledgment does not open an account or activate any financial service; review, provider verification, and eligibility checks remain outstanding.</p>`,
+  });
+  await send({ to, ...content });
+}
+
+/** Review-in-progress notice — shared by the application and KYC case flows. */
+export async function sendApplicationUnderReviewEmail(to: string, name: string) {
+  if (!to) return;
+  const content = configuredTemplate('application_under_review', {
+    user_name: name,
+    date: new Date().toLocaleDateString('en-GB'),
+  }, {
+    subject: 'Your Application Is In Review — City Gate Capital',
+    title: 'Application In Review',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your application has moved into the review stage. This notice does not activate any financial service; final decisions on approval and activation remain pending.</p>`,
+  });
+  await send({ to, ...content });
+}
+
+export type ApplicationDecisionNotice =
+  | 'APPROVED' | 'REJECTED' | 'NEEDS_INFORMATION' | 'REVIEW_REQUIRED' | 'ACTIVATION_PENDING';
+
+/**
+ * Decision notice for an account application. Maps each admin decision to its
+ * admin-editable template; REVIEW_REQUIRED shares the under-review template.
+ */
+export async function sendApplicationDecisionEmail(
+  to: string,
+  name: string,
+  input: {
+    decision: ApplicationDecisionNotice;
+    reference: string;
+    reason: string;
+    informationRequest?: string;
+  },
+) {
+  if (!to) return;
+  if (input.decision === 'REVIEW_REQUIRED') {
+    return sendApplicationUnderReviewEmail(to, name);
+  }
+  const templateByDecision = {
+    APPROVED: 'application_approved',
+    REJECTED: 'application_rejected',
+    NEEDS_INFORMATION: 'application_needs_information',
+    ACTIVATION_PENDING: 'application_activation_pending',
+  } as const;
+  const content = configuredTemplate(templateByDecision[input.decision], {
+    user_name: name,
+    reference: input.reference,
+    date: new Date().toLocaleDateString('en-GB'),
+    decision_reason: input.reason,
+    information_request: input.informationRequest ?? input.reason,
+  }, {
+    subject: `Application Decision: ${input.reference} — City Gate Capital`,
+    title: 'Application Decision',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your application (${escapeEmailHtml(input.reference)}) was ${APPLICATION_DECISION_LABEL[input.decision] ?? 'updated'} as of ${new Date().toLocaleDateString('en-GB')}.</p><p><strong>Reviewer note:</strong> ${escapeEmailHtml(input.reason)}</p><p>This decision does not by itself activate any financial service.</p>`,
   });
   await send({ to, ...content });
 }

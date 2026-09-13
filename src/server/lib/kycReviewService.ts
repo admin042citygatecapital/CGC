@@ -3,7 +3,7 @@ import { readWorkflowControls } from './configStore.js';
 import { and, eq } from 'drizzle-orm';
 import { getDb } from '../db/db.js';
 import { auditLog, onboardingCases, onboardingEvents, users } from '../db/schema.js';
-import { sendKycMoreInformationEmail, sendKycRejectedEmail, sendKycReviewApprovedEmail } from './emailService.js';
+import { sendApplicationUnderReviewEmail, sendKycMoreInformationEmail, sendKycRejectedEmail, sendKycReviewApprovedEmail } from './emailService.js';
 import { createNotification } from './notificationStore.js';
 import { assertMakerChecker, getOnboardingCaseBundle, type OnboardingStatus } from './onboardingStore.js';
 import { assertProviderVerificationComplete } from './onboardingProviderStore.js';
@@ -48,6 +48,9 @@ export async function decideKycCase(input: KycReviewInput) {
   const bundle = await getOnboardingCaseBundle(input.caseId);
   if (!bundle) throw Object.assign(new Error('Onboarding case not found.'), { code: 'NOT_FOUND' });
   if (!REVIEWABLE.has(bundle.case.status)) throw Object.assign(new Error('Case is not reviewable in its current status.'), { code: 'INVALID_TRANSITION' });
+  // A no-op re-decision (e.g. under_review on an under_review case) must not
+  // bump the version or re-send the customer email.
+  if (bundle.case.status === input.decision) throw Object.assign(new Error('The case already carries this status; nothing to decide.'), { code: 'NO_OP_DECISION' });
   if (!Number.isInteger(input.expectedVersion) || input.expectedVersion !== bundle.case.version) {
     throw Object.assign(new Error('The KYC case changed. Refresh it before reviewing.'), { code: 'WORKFLOW_CONFLICT' });
   }
@@ -114,6 +117,7 @@ export async function decideKycCase(input: KycReviewInput) {
     createNotification(bundle.case.userId, `Identity review ${input.decision.replace('_', ' ')}`,
       input.decision === 'approved' ? 'Your identity review is complete. Final account activation remains pending.' : reason, '/kyc'),
   ];
+  if (input.decision === 'under_review') deliveries.push(sendApplicationUnderReviewEmail(result.customer.email, result.customer.name));
   if (input.decision === 'needs_info') deliveries.push(sendKycMoreInformationEmail(result.customer.email, result.customer.name, reason));
   if (input.decision === 'rejected') deliveries.push(sendKycRejectedEmail(result.customer.email, result.customer.name, reason));
   if (input.decision === 'approved') deliveries.push(sendKycReviewApprovedEmail(result.customer.email, result.customer.name));

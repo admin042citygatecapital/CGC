@@ -21,6 +21,7 @@ vi.mock('../../server/lib/onboardingStore.js', () => ({
 }));
 vi.mock('../../server/lib/onboardingProviderStore.js', () => ({ assertProviderVerificationComplete: mocks.provider }));
 vi.mock('../../server/lib/emailService.js', () => ({
+  sendApplicationUnderReviewEmail: vi.fn(),
   sendKycMoreInformationEmail: vi.fn(), sendKycRejectedEmail: vi.fn(), sendKycReviewApprovedEmail: vi.fn(),
 }));
 vi.mock('../../server/lib/notificationStore.js', () => ({ createNotification: vi.fn() }));
