@@ -68,7 +68,7 @@ src/
 ├── pages/               # Route content components (public site, dashboard, admin)
 ├── layouts/              # Shared layout wrappers
 ├── components/           # Reusable UI components
-├── lib/                  # Client-side utilities (incl. supabaseClient.ts)
+├── lib/                  # Client-side utilities
 ├── server/
 │   ├── entry.ts           # Express app + SSR entrypoint (default export)
 │   ├── api/                # File-based API routes (src/server/api/**/METHOD.ts)

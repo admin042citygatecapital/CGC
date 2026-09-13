@@ -110,18 +110,6 @@ export const env = {
     fromName:    s('MAIL_FROM_NAME')    || process.env.MAIL_FROM_NAME    || 'City Gate Capital',
   },
 
-  // ── Supabase ──────────────────────────────────────────────────────────────
-  supabase: {
-    url:            s('SUPABASE_URL'),
-    // Accept both the legacy JWT key names used by existing deployments and
-    // the newer publishable/secret key names. Neither server key is ever
-    // exposed through a VITE_ variable.
-    publishableKey: s('SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY'),
-    secretKey:      s('SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY'),
-    jwksUrl:        s('SUPABASE_JWKS_URL'),
-    storageBucket:  s('SUPABASE_STORAGE_BUCKET') || 'cgc-media',
-  },
-
   // ── tawk.to live support ──────────────────────────────────────────────────
   // These are public embed identifiers, never API credentials.
   tawk: {
