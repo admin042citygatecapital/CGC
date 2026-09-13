@@ -26,6 +26,7 @@ export default async function handler(req: Request, res: Response) {
   const status = String(req.query.status ?? '').trim();
   const currency = String(req.query.currency ?? '').trim();
   const search = String(req.query.search ?? '').trim();
+  const userId = String(req.query.userId ?? '').trim();
 
   const result = await queryTransactions({
     page,
@@ -33,6 +34,7 @@ export default async function handler(req: Request, res: Response) {
     type: type ? type as TxType : undefined,
     status: status ? status as TxStatus : undefined,
     currency: currency ? currency as TxCurrency : undefined,
+    userId: userId || undefined,
     search: search || undefined,
   });
 

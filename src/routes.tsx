@@ -1,7 +1,13 @@
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { AdminOnly, CustomerOnly, FeatureOnly } from './components/routeGuards';
+
+/** Redirect that carries the current query string across (deep links like /admin/kyc?search=…). */
+function PreserveSearchRedirect({ to }: { to: string }) {
+  const { search } = useLocation();
+  return <Navigate to={`${to}${search}`} replace />;
+}
 
 export type Path = string;
 export type Params = Record<string, string | undefined>;
@@ -215,7 +221,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/links',        element: <AdminOnly><AdminLinks /></AdminOnly> },
   { path: '/admin/website',      element: <AdminOnly><AdminWebsite /></AdminOnly> },
   { path: '/admin/rates',        element: <AdminOnly><AdminRates /></AdminOnly> },
-  { path: '/admin/kyc',             element: <AdminOnly><Navigate to="/admin/onboarding" replace /></AdminOnly> },
+  { path: '/admin/kyc',             element: <AdminOnly><PreserveSearchRedirect to="/admin/onboarding" /></AdminOnly> },
   { path: '/admin/onboarding',      element: <AdminOnly><AdminOnboarding /></AdminOnly> },
   { path: '/admin/sponsor-readiness', element: <AdminOnly><AdminSponsorReadiness /></AdminOnly> },
   { path: '/admin/readiness',       element: <AdminOnly><AdminReadiness /></AdminOnly> },

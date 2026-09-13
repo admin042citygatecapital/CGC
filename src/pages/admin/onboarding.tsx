@@ -46,7 +46,8 @@ export default function AdminOnboardingPage() {
   const [controls, setControls] = useState<ProgrammeControl[]>([]);
   const [programme, setProgramme] = useState<ProgrammeState | null>(null);
   const [monitoringAlerts, setMonitoringAlerts] = useState<MonitoringAlert[]>([]);
-  const [search, setSearch] = useState('');
+  // Seed the filter from deep links like /admin/kyc?search=<email> (see users.tsx).
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('search') ?? '');
   const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
   const [sortOrder, setSortOrder] = useState('recent');
   const [page, setPage] = useState(1);

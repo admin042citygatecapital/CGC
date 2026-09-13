@@ -86,7 +86,10 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
+  // Seed filters from deep links like /admin/transactions?userId=<id> or ?search=… (see support.tsx).
+  const initialParams = new URLSearchParams(window.location.search);
+  const [search, setSearch] = useState(() => initialParams.get('search') ?? '');
+  const [userIdFilter, setUserIdFilter] = useState(() => initialParams.get('userId') ?? '');
   const [typeFilter, setTypeFilter] = useState(transfersOnly ? 'transfer' : '');
   const [statusFilter, setStatusFilter] = useState('');
   const [editing, setEditing] = useState<TransactionRecord | null>(null);
@@ -120,6 +123,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
     if (search.trim()) params.set('search', search.trim());
     if (typeFilter) params.set('type', typeFilter);
     if (statusFilter) params.set('status', statusFilter);
+    if (userIdFilter.trim()) params.set('userId', userIdFilter.trim());
     try {
       const response = await fetch(`/api/admin/transactions?${params}`, { headers: authHeaders() });
       const result = await response.json();
@@ -135,7 +139,7 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, typeFilter]);
+  }, [page, search, statusFilter, typeFilter, userIdFilter]);
 
   useEffect(() => {
     const timeout = setTimeout(() => void loadRecords(), search ? 350 : 0);
@@ -317,6 +321,12 @@ export default function AdminTransactions({ view = 'transactions' }: { view?: 't
             <Search size={13} className="shrink-0 text-white/25" />
             <input value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Search user, ID, or reference" className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/20" />
           </div>
+          {userIdFilter && (
+            <div className="flex items-center gap-2 rounded-xl border border-sky-400/25 bg-sky-400/[0.08] px-3 py-2 text-xs text-sky-200">
+              <span>Customer {userIdFilter}</span>
+              <button type="button" onClick={() => { setUserIdFilter(''); setPage(1); }} className="rounded-md border border-sky-400/30 px-1.5 py-0.5 text-[10px] font-semibold text-sky-200/80 hover:bg-sky-400/10" aria-label="Clear customer filter">Clear</button>
+            </div>
+          )}
           <select value={typeFilter} onChange={event => { setTypeFilter(event.target.value); setPage(1); }} className="rounded-xl border border-white/8 bg-white/[0.04] px-3 py-2 text-sm text-white/60 outline-none">
             {!transfersOnly && <option value="">All types</option>}
             {(transfersOnly

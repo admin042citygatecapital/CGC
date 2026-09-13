@@ -76,7 +76,7 @@ describe('administrator UI correctness', () => {
     expect(layout).toContain("label: 'KYC & Onboarding'");
     expect(layout).not.toContain("label: 'KYC Review'");
     expect(layout).not.toContain("label: 'Onboarding Cases'");
-    expect(routes).toContain("path: '/admin/kyc',             element: <AdminOnly><Navigate to=\"/admin/onboarding\" replace /></AdminOnly>");
+    expect(routes).toContain("path: '/admin/kyc',             element: <AdminOnly><PreserveSearchRedirect to=\"/admin/onboarding\" /></AdminOnly>");
     for (const path of ['/admin/administrators', '/admin/deployments', '/admin/database']) {
       expect(routes).toContain(`path: '${path}'`);
     }

@@ -887,6 +887,22 @@ export default function AdminUsers() {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
+  // Deep-link support: /admin/users?id=<id> (from support.tsx) opens that customer's drawer.
+  const deepLinkId = new URLSearchParams(window.location.search).get('id');
+  useEffect(() => {
+    if (!deepLinkId || authLoading || !admin) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/users/${encodeURIComponent(deepLinkId)}`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const d = await res.json();
+        if (!cancelled && d?.id) setSelected(d as User);
+      } catch { /* deep-link open is best-effort */ }
+    })();
+    return () => { cancelled = true; };
+  }, [deepLinkId, authLoading, admin]);
+
   async function doAction(userId: string, action: string, extra?: object) {
     let actionPayload = extra ?? {};
     if (['suspend', 'freeze', 'reactivate'].includes(action) && !('reason' in actionPayload)) {
