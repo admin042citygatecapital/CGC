@@ -21,7 +21,20 @@ const sql = postgres(databaseUrl, {
   connect_timeout: 15,
   idle_timeout: 5,
   prepare: false,
+  ssl: resolveSsl(databaseUrl),
 });
+
+/**
+ * Managed PostgreSQL providers (Supabase, Neon, Render) reject unencrypted
+ * connections at pg_hba, and postgres.js only enables TLS when the URL carries
+ * an sslmode parameter or an explicit ssl option. Require TLS for every host
+ * that is not loopback, leaving an explicit sslmode in the URL authoritative.
+ */
+function resolveSsl(url: string): boolean | undefined {
+  if (/sslmode=/.test(url)) return undefined;
+  if (/localhost|127\.0\.0\.1|::1/.test(url)) return false;
+  return true;
+}
 
 const migrationsDirectory = path.join(import.meta.dirname, 'migrations');
 

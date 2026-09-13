@@ -37,7 +37,20 @@ function createClient(): ReturnType<typeof postgres> | null {
     idle_timeout: 20,
     connect_timeout: 10,
     prepare: false,
+    ssl: resolveSsl(url),
   });
+}
+
+/**
+ * Managed PostgreSQL providers (Supabase, Neon, Render) reject unencrypted
+ * connections at pg_hba, and postgres.js only enables TLS when the URL carries
+ * an sslmode parameter or an explicit ssl option. Require TLS for every host
+ * that is not loopback, leaving an explicit sslmode in the URL authoritative.
+ */
+function resolveSsl(url: string): boolean | undefined {
+  if (/sslmode=/.test(url)) return undefined;
+  if (/localhost|127\.0\.0\.1|::1/.test(url)) return false;
+  return true;
 }
 
 export function getQueryClient(): ReturnType<typeof postgres> {
