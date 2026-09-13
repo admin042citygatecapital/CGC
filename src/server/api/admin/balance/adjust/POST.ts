@@ -7,12 +7,14 @@ import type { Request, Response } from 'express';
 import { safeParseId, sanitizeNote, isOneOf } from '../../../../lib/inputValidator.js';
 import { CustomerSimulationLedgerError, postCustomerControlledAdjustment } from '../../../../lib/customerSimulationLedger.js';
 import { requireFinancialOperations } from '../../../../lib/platformMode.js';
+import { authorizeRecentAdminStepUp } from '../../../../lib/rbacMiddleware.js';
 
 const DIRECTIONS = ['credit', 'debit'] as const;
 const REFERENCE_PATTERN = /^[A-Z0-9][A-Z0-9._/-]{5,63}$/i;
 
 export default async function handler(req: Request, res: Response) {
   if (!requireFinancialOperations(res)) return;
+  if (!authorizeRecentAdminStepUp(req, res)) return;
   const body = req.body as Record<string, unknown>;
   const accountId = safeParseId(body.accountId);
   const direction = isOneOf(body.direction ?? body.type, DIRECTIONS);
@@ -37,7 +39,7 @@ export default async function handler(req: Request, res: Response) {
     );
     return res.status(201).json({
       success: true,
-      adjustment: { id: adjustment.id, reference: adjustment.reference, status: adjustment.status, currency: adjustment.currency, amount: (Number(adjustment.amountMinor) / 100).toFixed(2), journalLines: adjustment.lines.length, createdAt: adjustment.createdAt },
+      adjustment: { id: adjustment.id, reference: adjustment.reference, status: adjustment.status, direction, currency: adjustment.currency, amount: (Number(adjustment.amountMinor) / 100).toFixed(2), journalLines: adjustment.lines.length, createdAt: adjustment.createdAt },
       balancesDerivedFromLedger: true,
     });
   } catch (error) {
