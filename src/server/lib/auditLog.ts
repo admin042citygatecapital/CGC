@@ -44,6 +44,9 @@ interface LegacyAuditPayload {
   reason?:  string;
   ua?:      string;
   meta?:    Record<string, unknown>;
+  /** Structured target identity, mirroring the handler-level appendAuditEntry writers. */
+  target?:   string;
+  targetId?: string;
   [key: string]: unknown;
 }
 
@@ -73,7 +76,7 @@ function actorDetails(adminId: string | undefined, userId: string | undefined, k
 }
 
 export function appendAudit(payload: LegacyAuditPayload): void {
-  const { event, adminId, userId, email, ip, reason, ua, meta, ...rest } = payload;
+  const { event, adminId, userId, email, ip, reason, ua, meta, target, targetId, ...rest } = payload;
   const actorId = adminId ?? userId ?? 'system';
   const actorKind: ActorKind = adminId !== undefined ? 'admin' : userId !== undefined ? 'customer' : 'system';
   const details: Record<string, unknown> = redactMeta({ ...meta });
@@ -88,6 +91,8 @@ export function appendAudit(payload: LegacyAuditPayload): void {
     adminId:    actorId,
     adminEmail: email   ?? '',
     action:     event,
+    target,
+    targetId,
     ip,
     details:    Object.keys(details).length > 0 ? details : undefined,
   }).catch((error) => {
@@ -105,7 +110,7 @@ export function appendAudit(payload: LegacyAuditPayload): void {
  * closed before changing regulated state.
  */
 export async function appendCriticalAudit(payload: LegacyAuditPayload): Promise<void> {
-  const { event, adminId, userId, email, ip, reason, ua, meta, ...rest } = payload;
+  const { event, adminId, userId, email, ip, reason, ua, meta, target, targetId, ...rest } = payload;
   const actorId = adminId ?? userId ?? 'system';
   const actorKind: ActorKind = adminId !== undefined ? 'admin' : userId !== undefined ? 'customer' : 'system';
   if (process.env.NODE_ENV === 'production' && !isDatabaseConfigured()) {
@@ -124,6 +129,8 @@ export async function appendCriticalAudit(payload: LegacyAuditPayload): Promise<
       adminId: actorId,
       adminEmail: email ?? '',
       action: event,
+      target,
+      targetId,
       ip,
       details: Object.keys(details).length > 0 ? details : undefined,
     });
@@ -137,7 +144,24 @@ export async function appendCriticalAudit(payload: LegacyAuditPayload): Promise<
   }
 }
 
-export async function appendAuditEntry(entry: Omit<AuditEntry, 'id' | 'ts'>): Promise<AuditEntry> {
+/**
+ * Redaction lives at this lowest-level writer, not only in the legacy helpers:
+ * roughly a dozen call sites append structured entries directly, so applying
+ * the sensitive-key boundary here covers every appendAuditEntry caller
+ * regardless of which helper it used. It does NOT reach the three
+ * transaction-internal writers that insert into the auditLog table directly
+ * (kycReviewService, finalCustomerActivation, synthetic-test POST) — those
+ * must keep their detail keys secret-free at the call site. Re-redacting
+ * already-redacted payloads (appendAudit/appendCriticalAudit) is idempotent,
+ * so no caller needs an opt-out.
+ */
+function redactEntryDetails(entry: Omit<AuditEntry, 'id' | 'ts'>): Omit<AuditEntry, 'id' | 'ts'> {
+  if (!entry.details) return entry;
+  return { ...entry, details: redactMeta(entry.details) };
+}
+
+export async function appendAuditEntry(uncheckedEntry: Omit<AuditEntry, 'id' | 'ts'>): Promise<AuditEntry> {
+  const entry = redactEntryDetails(uncheckedEntry);
   if (!isDatabaseConfigured()) {
     // The flat-file fallback keeps records durable when the database is not
     // configured, but in production a database-backed audit trail is the

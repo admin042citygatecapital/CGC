@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import type { AdminRole } from './sessionStore.js';
 import { readRoles, type PermissionKey } from './securityCenterStore.js';
 
-const PUBLIC_ADMIN_PATHS = new Set([
+export const PUBLIC_ADMIN_PATHS = new Set([
   '/auth/login', '/auth/password-reset', '/auth/password-reset/confirm',
   '/auth/otp/verify', '/auth/otp/resend', '/auth/diag', '/auth/verify',
   '/zoho/oauth/callback', '/sponsor-readiness/external-review',
@@ -44,6 +44,15 @@ const PERMISSION_RULES: readonly PermissionRule[] = [
   { prefixes: ['/health', '/env-report', '/database', '/deployments'], read: 'health.view' },
   { prefixes: ['/operations', '/notifications', '/provider-sandbox'], read: 'operations.view', write: 'operations.manage' },
   { prefixes: ['/reports'], read: 'reports.view', write: 'reports.export' },
+  // Analytics reports are mounted on /api/analytics, outside the /api/admin
+  // prefix where requireAdminAuthorization is globally attached. These suffix
+  // rules apply when that middleware is mounted directly on /api/analytics;
+  // the consent-gated POST /event collector is skipped before authorization.
+  // Gating analytics reads on reports.view deliberately tightens what was
+  // previously readable by every authenticated administrator: SUPPORT_ADMIN
+  // and CONTENT_ADMIN hold no reports.view, so they now receive 403 here.
+  // Grant reports.view to a role (Security → Roles) to restore its access.
+  { prefixes: ['/ab-results', '/conversions', '/summary'], read: 'reports.view' },
   { prefixes: ['/audit'], read: 'audit.view' },
   { prefixes: ['/stats', '/search', '/links'], read: 'dashboard.view' },
   { prefixes: ['/developer', '/documentation'], read: 'config.view' },

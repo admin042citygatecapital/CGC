@@ -394,7 +394,7 @@ import { requireAdminAuth } from "./lib/adminAuthMiddleware";
 import { requireAdminAuthorization } from "./lib/adminAuthorizationMiddleware";
 import { enforceSecurityNetworkPolicy } from "./lib/securityNetworkPolicyMiddleware";
 import { csrfProtect } from "./api/csrf/GET";
-import { auditAdminMutation } from "./lib/adminMutationAuditMiddleware";
+import { auditAdminMutation, auditAdminDenied } from "./lib/adminMutationAuditMiddleware";
 import { requireCustomerAuth, requireCustomerSameOrigin, resolveCustomerSessionToken } from "./lib/customerAuthMiddleware";
 import { findUserBySessionToken } from "./lib/userStore";
 import { requireCustomerLifecycleAccess } from "./lib/customerLifecycleAccess";
@@ -533,6 +533,11 @@ app.use('/api', rateLimitMiddleware(
 ));
 // ── API cache headers (no-store for all /api routes) ────────────────────────
 app.use('/api', apiCacheHeaders);
+
+// Mounted before every guard (network policy, auth, authorization, CSRF):
+// denied mutations (401/403) must be audited even though the guards respond
+// without reaching auditAdminMutation. Best-effort — never alters responses.
+app.use('/api/admin', auditAdminDenied);
 
 // Apply durable administrator-managed network blocks before public login or
 // authenticated administration/customer handlers are reached.
@@ -691,6 +696,14 @@ app.use('/api/analytics', (req: Request, res: Response, next: NextFunction) => {
   const suffix = req.path.endsWith('/') && req.path.length > 1 ? req.path.slice(0, -1) : req.path;
   if (req.method === 'POST' && suffix === '/event') return next();
   return requireAdminAuth(req, res, next);
+});
+// Authentication alone is not authorization: /api/analytics sits outside the
+// /api/admin prefix, so report reads need their permission enforced here.
+// The public POST /event collector is skipped so it stays consent-gated only.
+app.use('/api/analytics', (req: Request, res: Response, next: NextFunction) => {
+  const suffix = req.path.endsWith('/') && req.path.length > 1 ? req.path.slice(0, -1) : req.path;
+  if (req.method === 'POST' && suffix === '/event') return next();
+  return requireAdminAuthorization(req, res, next);
 });
 app.use('/api/newsletter/subscribers', requireAdminAuth);
 app.use('/api/newsletter/send-sequence', requireAdminAuth);
