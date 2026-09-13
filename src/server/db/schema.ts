@@ -284,7 +284,7 @@ export const transactions = pgTable(
     id: text('id').primaryKey(),
     type: txTypeEnum('type').notNull(),
     status: txStatusEnum('status').notNull().default('pending'),
-    userId: text('user_id').notNull(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
     userName: text('user_name').notNull(),
     userEmail: text('user_email').notNull(),
     amount: numeric('amount', {
@@ -407,8 +407,8 @@ export const kycNotes = pgTable(
   'kyc_notes',
   {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull(),
-    adminId: text('admin_id').notNull(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+    adminId: text('admin_id').notNull().references(() => admins.id, { onDelete: 'restrict' }),
     adminName: text('admin_name'),
     note: text('note').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -433,7 +433,7 @@ export const tradingPositions = pgTable(
   'trading_positions',
   {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
     symbol: text('symbol').notNull(),
     assetClass: assetClassEnum('asset_class').notNull(),
     side: orderSideEnum('side').notNull(),
@@ -459,7 +459,7 @@ export const tradingOrders = pgTable(
   'trading_orders',
   {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
     symbol: text('symbol').notNull(),
     assetClass: assetClassEnum('asset_class').notNull(),
     side: orderSideEnum('side').notNull(),
@@ -486,8 +486,9 @@ export const tradingTrades = pgTable(
   'trading_trades',
   {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
     orderId: text('order_id').notNull(),
+    // order_id is enforced at the database level by migration 0059.
     positionId: text('position_id'),
     symbol: text('symbol').notNull(),
     assetClass: assetClassEnum('asset_class').notNull(),
