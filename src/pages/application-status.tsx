@@ -18,8 +18,20 @@ interface ApplicationSummary {
 
 interface KycStatus {
   kyc: { id: string; status: string; riskLevel: string; provider: { name: string; status: string } | null; reviewReason: string | null } | null;
-  documents: Array<{ id: string; documentType: string; originalName: string | null; createdAt: string }>;
+  documents: Array<{ id: string; documentType: string; issuingCountry?: string | null; originalName: string | null; createdAt: string }>;
 }
+
+const KYC_DOCUMENT_TYPES = ['PASSPORT', 'NATIONAL_ID', 'DRIVERS_LICENSE', 'RESIDENCE_PERMIT'] as const;
+const OPEN_KYC_STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'NEEDS_INFORMATION', 'IN_PROGRESS', 'DRAFT'];
+const KYC_NEXT_ACTION: Record<string, string> = {
+  SUBMITTED: 'Your documents are queued for review. Add any missing identity documents below.',
+  UNDER_REVIEW: 'A reviewer is checking your case. No action is needed unless we contact you.',
+  NEEDS_INFORMATION: 'We asked for more information — upload the requested documents below and watch your email.',
+  APPROVED: 'Identity verification is complete. Service activation is handled by our operations team.',
+  REJECTED: 'This application was not approved. See the reason above.',
+  EXPIRED: 'This review expired — contact support to restart verification.',
+};
+
 
 const STATUS_COPY: Record<string, string> = {
   APPLICATION_STARTED: 'Application started — complete the steps below.',
@@ -38,6 +50,9 @@ export default function ApplicationStatusPage() {
   const [kycByApp, setKycByApp] = useState<Record<string, KycStatus>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [upload, setUpload] = useState<{ appId: string; documentType: string; issuingCountry: string; file: File | null }>({ appId: '', documentType: 'PASSPORT', issuingCountry: '', file: null });
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   const loadKyc = useCallback(async (id: string) => {
     const r = await fetch(`/api/kyc/status?applicationId=${encodeURIComponent(id)}`, { credentials: 'include' });
@@ -46,6 +61,32 @@ export default function ApplicationStatusPage() {
       setKycByApp(m => ({ ...m, [id]: j }));
     }
   }, []);
+
+  const uploadDocument = useCallback(async (appId: string) => {
+    if (!upload.file) return;
+    setUploadBusy(true);
+    setUploadMessage(null);
+    try {
+      const body = new FormData();
+      body.set('applicationId', appId);
+      body.set('documentType', upload.documentType);
+      if (upload.issuingCountry.trim()) body.set('issuingCountry', upload.issuingCountry.trim());
+      body.set('document', upload.file);
+      const r = await fetch('/api/kyc/documents', { method: 'POST', credentials: 'include', body });
+      const j = await r.json().catch(() => ({})) as { ok?: boolean; error?: string };
+      if (r.ok && j.ok) {
+        setUploadMessage({ ok: true, text: 'Document uploaded securely for review.' });
+        setUpload(u => ({ ...u, appId: appId, file: null }));
+        void loadKyc(appId);
+      } else {
+        setUploadMessage({ ok: false, text: j.error ?? 'Upload failed.' });
+      }
+    } catch {
+      setUploadMessage({ ok: false, text: 'Network error — upload failed.' });
+    } finally {
+      setUploadBusy(false);
+    }
+  }, [upload, loadKyc]);
 
   useEffect(() => {
     (async () => {
@@ -130,9 +171,55 @@ export default function ApplicationStatusPage() {
                     <p className="font-medium">KYC review: <span className="text-[#E6C76A]">{kyc.status.replaceAll('_', ' ')}</span></p>
                     {kyc.provider && <p className="mt-1 text-xs text-[#a9a9b2]">Provider: {kyc.provider.name} — {kyc.provider.status ?? 'pending'}</p>}
                     {docs.length > 0 && (
-                      <p className="mt-1 text-xs text-[#a9a9b2]">
-                        Documents: {docs.map(d => d.documentType.replaceAll('_', ' ')).join(', ')}
-                      </p>
+                      <ul className="mt-2 space-y-1 text-xs text-[#a9a9b2]">
+                        {docs.map(d => (
+                          <li key={d.id}>• {d.documentType.replaceAll('_', ' ')}{d.issuingCountry ? ` (${d.issuingCountry})` : ''} — {d.originalName ?? 'document'}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {KYC_NEXT_ACTION[kyc.status] && (
+                      <p className="mt-2 text-xs text-[#c8c8cf]">Next: {KYC_NEXT_ACTION[kyc.status]}</p>
+                    )}
+
+                    {OPEN_KYC_STATUSES.includes(kyc.status) && (
+                      <div className="mt-3 rounded-lg border border-[#2a2a2e] bg-[#0a0a0e] p-3">
+                        <p className="text-xs font-medium text-[#c8c8cf]">Upload an identity document (JPEG, PNG or PDF, up to 5 MB)</p>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                          <select
+                            aria-label="Document type"
+                            value={upload.appId === app.id ? upload.documentType : 'PASSPORT'}
+                            onChange={e => setUpload(u => ({ ...u, appId: app.id, documentType: e.target.value }))}
+                            className="rounded-lg border border-[#2a2a2e] bg-[#101014] px-2 py-1.5 text-xs text-white"
+                          >
+                            {KYC_DOCUMENT_TYPES.map(t => <option key={t} value={t}>{t.replaceAll('_', ' ')}</option>)}
+                          </select>
+                          <input
+                            aria-label="Issuing country"
+                            value={upload.appId === app.id ? upload.issuingCountry : ''}
+                            onChange={e => setUpload(u => ({ ...u, appId: app.id, issuingCountry: e.target.value }))}
+                            placeholder="Issuing country"
+                            className="rounded-lg border border-[#2a2a2e] bg-[#101014] px-2 py-1.5 text-xs text-white placeholder-[#6b6b74]"
+                          />
+                          <input
+                            aria-label="Document file"
+                            type="file"
+                            accept="image/jpeg,image/png,application/pdf"
+                            onChange={e => setUpload(u => ({ ...u, appId: app.id, file: e.target.files?.[0] ?? null }))}
+                            className="rounded-lg border border-[#2a2a2e] bg-[#101014] px-2 py-1.5 text-xs text-white file:mr-2 file:rounded file:border-0 file:bg-[#E6C76A] file:px-2 file:py-1 file:text-black"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          disabled={uploadBusy || !(upload.appId === app.id && upload.file)}
+                          onClick={() => void uploadDocument(app.id)}
+                          className="mt-2 rounded-lg bg-[#E6C76A] px-3 py-1.5 text-xs font-semibold text-black disabled:opacity-40"
+                        >
+                          {uploadBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Upload document'}
+                        </button>
+                        {uploadMessage && (
+                          <p role="status" className={`mt-2 text-xs ${uploadMessage.ok ? 'text-emerald-400' : 'text-red-400'}`}>{uploadMessage.text}</p>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}

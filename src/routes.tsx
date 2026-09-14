@@ -1,13 +1,7 @@
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router-dom';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { AdminOnly, CustomerOnly, FeatureOnly } from './components/routeGuards';
-
-/** Redirect that carries the current query string across (deep links like /admin/kyc?search=…). */
-function PreserveSearchRedirect({ to }: { to: string }) {
-  const { search } = useLocation();
-  return <Navigate to={`${to}${search}`} replace />;
-}
 
 export type Path = string;
 export type Params = Record<string, string | undefined>;
@@ -105,6 +99,7 @@ const AdminMedia           = lazy(() => import('./pages/admin/media'));
 const AdminConfig          = lazy(() => import('./pages/admin/config'));
 const AdminFeatures        = lazy(() => import('./pages/admin/features'));
 const AdminApplications    = lazy(() => import('./pages/admin/applications'));
+const AdminKyc             = lazy(() => import('./pages/admin/kyc'));
 const RegisterHomePage     = lazy(() => import('./pages/register/index'));
 const RegisterPersonal     = lazy(() => import('./pages/register/personal'));
 const RegisterSavings      = lazy(() => import('./pages/register/savings'));
@@ -222,7 +217,7 @@ export const routes: RouteObject[] = [
   { path: '/admin/links',        element: <AdminOnly><AdminLinks /></AdminOnly> },
   { path: '/admin/website',      element: <AdminOnly><AdminWebsite /></AdminOnly> },
   { path: '/admin/rates',        element: <AdminOnly><AdminRates /></AdminOnly> },
-  { path: '/admin/kyc',             element: <AdminOnly><PreserveSearchRedirect to="/admin/onboarding" /></AdminOnly> },
+  { path: '/admin/kyc',             element: <AdminOnly><AdminKyc /></AdminOnly> },
   { path: '/admin/onboarding',      element: <AdminOnly><AdminOnboarding /></AdminOnly> },
   { path: '/admin/sponsor-readiness', element: <AdminOnly><AdminSponsorReadiness /></AdminOnly> },
   { path: '/admin/readiness',       element: <AdminOnly><AdminReadiness /></AdminOnly> },

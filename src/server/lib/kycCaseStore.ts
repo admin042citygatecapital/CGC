@@ -8,9 +8,10 @@
  * provider-reported values.
  */
 import crypto from 'node:crypto';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, ilike, or } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
-import { kycCases, kycCaseEvents, kycCaseDocuments } from '../db/schema.js';
+import { accountApplications, kycCases, kycCaseEvents, kycCaseDocuments } from '../db/schema.js';
+import { escapeLikePattern } from './inputValidator.js';
 import { validateAndSanitizeKycDocument, uploadPrivateKycObject, deletePrivateKycObject, createKycObjectKey } from './kycStorage.js';
 
 export interface KycCaseRow {
@@ -61,14 +62,41 @@ export async function listCasesForUser(userId: string): Promise<KycCaseRow[]> {
   return getDb().select().from(kycCases).where(eq(kycCases.userId, userId)).orderBy(desc(kycCases.updatedAt)) as unknown as KycCaseRow[];
 }
 
-export async function listCasesForAdmin(filter: { status?: string; accountType?: string; limit?: number }): Promise<KycCaseRow[]> {
+export async function listCasesForAdmin(filter: { status?: string; accountType?: string; q?: string; limit?: number }): Promise<Array<KycCaseRow & { customerEmail: string | null; customerName: string | null; applicationReference: string | null }>> {
   if (!isDatabaseConfigured()) return [];
   const conditions = [];
   if (filter.status) conditions.push(eq(kycCases.status, filter.status));
   if (filter.accountType) conditions.push(eq(kycCases.accountType, filter.accountType));
-  return getDb().select().from(kycCases)
+  const search = filter.q?.trim();
+  if (search) {
+    const pattern = `%${escapeLikePattern(search)}%`;
+    conditions.push(or(
+      ilike(accountApplications.email, pattern),
+      ilike(accountApplications.reference, pattern),
+      ilike(accountApplications.firstName, pattern),
+      ilike(accountApplications.lastName, pattern),
+    ));
+  }
+  const rows = await getDb().select({
+    kycCase: kycCases,
+    customerEmail: accountApplications.email,
+    customerFirstName: accountApplications.firstName,
+    customerLastName: accountApplications.lastName,
+    applicationReference: accountApplications.reference,
+  }).from(kycCases)
+    .leftJoin(accountApplications, eq(kycCases.applicationId, accountApplications.id))
     .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(kycCases.updatedAt)).limit(Math.min(filter.limit ?? 100, 200)) as unknown as KycCaseRow[];
+    .orderBy(desc(kycCases.updatedAt)).limit(Math.min(filter.limit ?? 100, 200));
+  return rows.map((row) => {
+    const c = row.kycCase as unknown as KycCaseRow;
+    const name = [row.customerFirstName, row.customerLastName].filter(Boolean).join(' ');
+    return {
+      ...c,
+      customerEmail: (row.customerEmail as string | null) ?? null,
+      customerName: name || null,
+      applicationReference: (row.applicationReference as string | null) ?? null,
+    };
+  });
 }
 
 export interface KycDecisionInput {
@@ -102,6 +130,74 @@ export async function recordProviderStatus(input: {
   }).where(eq(kycCases.id, input.caseId));
   await event(input.caseId, input.actor, null, 'PROVIDER_STATUS_RECORDED', { provider: input.providerName, status: input.providerStatus });
 }
+
+/** Case detail for the review panel: case, linked application summary, documents, events. */
+export async function getCaseWithApplication(caseId: string): Promise<{
+  kycCase: KycCaseRow; application: {
+    id: string; reference: string | null; email: string; firstName: string; lastName: string;
+    accountType: string; selectedPlan: string | null; status: string; completionPct: number;
+    informationRequest: string | null; decisionReason: string | null;
+  } | null;
+} | null> {
+  if (!isDatabaseConfigured()) return null;
+  const [kycCase] = await getDb().select().from(kycCases).where(eq(kycCases.id, caseId)).limit(1);
+  if (!kycCase) return null;
+  const caseRow = kycCase as KycCaseRow;
+  const [application] = await getDb().select({
+    id: accountApplications.id, reference: accountApplications.reference, email: accountApplications.email,
+    firstName: accountApplications.firstName, lastName: accountApplications.lastName,
+    accountType: accountApplications.accountType, selectedPlan: accountApplications.selectedPlan,
+    status: accountApplications.status, completionPct: accountApplications.completionPct,
+    informationRequest: accountApplications.informationRequest, decisionReason: accountApplications.decisionReason,
+  }).from(accountApplications).where(eq(accountApplications.id, caseRow.applicationId)).limit(1);
+  return {
+    kycCase: caseRow,
+    application: (application as {
+      id: string; reference: string | null; email: string; firstName: string; lastName: string;
+      accountType: string; selectedPlan: string | null; status: string; completionPct: number;
+      informationRequest: string | null; decisionReason: string | null;
+    } | undefined) ?? null,
+  };
+}
+
+/** Internal reviewer note. Content stays in the case event trail, never in central logs. */
+export async function addCaseNote(input: {
+  caseId: string; actor: string; actorRole: string | null; note: string;
+}): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false;
+  const [existing] = await getDb().select().from(kycCases).where(eq(kycCases.id, input.caseId)).limit(1);
+  if (!existing) return false;
+  await event(input.caseId, input.actor, input.actorRole, 'KYC_NOTE_ADDED', { note: input.note });
+  return true;
+}
+
+/** Assign (or re-assign) the reviewing administrator. */
+export async function assignReviewer(input: {
+  caseId: string; reviewerId: string; actor: string; actorRole: string | null;
+}): Promise<KycCaseRow | null> {
+  if (!isDatabaseConfigured()) return null;
+  const [row] = await getDb().update(kycCases).set({
+    reviewerId: input.reviewerId, updatedAt: new Date(),
+  }).where(eq(kycCases.id, input.caseId)).returning();
+  if (!row) return null;
+  await event(input.caseId, input.actor, input.actorRole, 'REVIEWER_ASSIGNED', { reviewerId: input.reviewerId });
+  return row as KycCaseRow;
+}
+
+/** Server-side document metadata including the private storage path. Never returned to clients. */
+export async function getCaseDocument(caseId: string, documentId: string): Promise<{
+  id: string; caseId: string; documentType: string; issuingCountry: string | null;
+  storagePath: string; mimeType: string; originalName: string | null; createdAt: Date;
+} | null> {
+  if (!isDatabaseConfigured()) return null;
+  const [row] = await getDb().select().from(kycCaseDocuments)
+    .where(and(eq(kycCaseDocuments.id, documentId), eq(kycCaseDocuments.caseId, caseId)))
+    .limit(1);
+  if (!row) return null;
+  const r = row as { id: string; caseId: string; documentType: string; issuingCountry: string | null; storagePath: string; mimeType: string; originalName: string | null; createdAt: Date };
+  return r;
+}
+
 
 /** Validate + store a document in the private bucket; register metadata only. */
 export async function addCaseDocument(input: {

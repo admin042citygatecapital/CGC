@@ -65,6 +65,10 @@ import kyc_documents_post from "./api/kyc/documents/POST";
 import kyc_status_get from "./api/kyc/status/GET";
 import admin_kyc_cases_get from "./api/admin/kyc-cases/GET";
 import admin_kyc_cases_decision_post from "./api/admin/kyc-cases/[id]/decision/POST";
+import admin_kyc_cases_id_get from "./api/admin/kyc-cases/[id]/GET";
+import admin_kyc_cases_id_notes_post from "./api/admin/kyc-cases/[id]/notes/POST";
+import admin_kyc_cases_id_assign_post from "./api/admin/kyc-cases/[id]/assign/POST";
+import admin_kyc_cases_id_documents_document_get from "./api/admin/kyc-cases/[id]/documents/[documentId]/GET";
 
 import admin_audit_get_1 from "./api/admin/audit/GET";
 import admin_auth_diag_get_2 from "./api/admin/auth/diag/GET";
@@ -780,6 +784,10 @@ app.post("/api/kyc/documents", kycUpload.single('document'), kyc_documents_post)
 app.get("/api/kyc/status", kyc_status_get);
 app.get("/api/admin/kyc-cases", admin_kyc_cases_get);
 app.post("/api/admin/kyc-cases/:id/decision", admin_kyc_cases_decision_post);
+app.get("/api/admin/kyc-cases/:id", admin_kyc_cases_id_get);
+app.post("/api/admin/kyc-cases/:id/notes", admin_kyc_cases_id_notes_post);
+app.post("/api/admin/kyc-cases/:id/assign", admin_kyc_cases_id_assign_post);
+app.get("/api/admin/kyc-cases/:id/documents/:documentId", admin_kyc_cases_id_documents_document_get);
 
 app.get("/api/admin/applications", admin_applications_get);
 app.post("/api/admin/applications/:id/decision", admin_applications_id_decision_post);

@@ -10,7 +10,7 @@ export type KycMimeType = 'image/jpeg' | 'image/png' | 'application/pdf';
 
 let cachedClient: SupabaseClient | null = null;
 
-function storageClient(): SupabaseClient {
+export function storageClient(): SupabaseClient {
   const url = String(getSecret('SUPABASE_URL') ?? '').trim();
   const key = String(getSecret('SUPABASE_SERVICE_ROLE_KEY') ?? getSecret('SUPABASE_SECRET_KEY') ?? '').trim();
   if (!url || !key) throw Object.assign(new Error('Private KYC storage is not configured.'), { code: 'KYC_STORAGE_UNAVAILABLE' });

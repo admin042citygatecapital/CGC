@@ -72,11 +72,12 @@ describe('administrator UI correctness', () => {
     expect(auditRoute).not.toContain('.slice(offset');
   });
 
-  it('exposes one KYC workspace and first-class operational pages', () => {
+  it('keeps the KYC workspaces accurate with first-class operational pages', () => {
     expect(layout).toContain("label: 'KYC & Onboarding'");
-    expect(layout).not.toContain("label: 'KYC Review'");
+    expect(layout).toContain("label: 'KYC Review',   href: '/admin/kyc'");
     expect(layout).not.toContain("label: 'Onboarding Cases'");
-    expect(routes).toContain("path: '/admin/kyc',             element: <AdminOnly><PreserveSearchRedirect to=\"/admin/onboarding\" /></AdminOnly>");
+    expect(routes).toContain("path: '/admin/kyc',             element: <AdminOnly><AdminKyc /></AdminOnly>");
+    expect(routes).toContain("path: '/admin/onboarding',      element: <AdminOnly><AdminOnboarding /></AdminOnly>");
     for (const path of ['/admin/administrators', '/admin/deployments', '/admin/database']) {
       expect(routes).toContain(`path: '${path}'`);
     }

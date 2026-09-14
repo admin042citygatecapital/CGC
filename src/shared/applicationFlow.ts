@@ -146,6 +146,8 @@ const REVIEW_STEP: StepDef = {
 const ACTIVITY_RANGES = ['Under 10,000', '10,000 – 50,000', '50,000 – 250,000', '250,000 – 1,000,000', 'Over 1,000,000'] as const;
 const EMPLOYMENT = ['Employed', 'Self-employed', 'Business owner', 'Retired', 'Student', 'Other'] as const;
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'NGN', 'AED', 'CAD'] as const;
+const SOURCE_OF_FUNDS = ['Salary / employment income', 'Business income', 'Investment income', 'Personal savings', 'Inheritance or gift', 'Property sale', 'Other'] as const;
+const SOURCE_OF_WEALTH = ['Employment income', 'Business ownership', 'Investments', 'Inheritance', 'Property', 'Entrepreneurship', 'Other'] as const;
 
 export const APPLICATION_FLOWS: Record<AccountType, readonly StepDef[]> = {
   PERSONAL: [
@@ -182,6 +184,7 @@ export const APPLICATION_FLOWS: Record<AccountType, readonly StepDef[]> = {
         { name: 'timeframe', label: 'Target timeframe', type: 'select', required: true, options: ['6 months', '1 year', '2 years', '5 years', 'Longer'] },
         { name: 'currency', label: 'Preferred currency', type: 'select', required: true, options: CURRENCIES },
         { name: 'autoSave', label: 'Auto-save preference', type: 'select', required: true, options: ['Manual only', 'Weekly', 'Monthly'] },
+        { name: 'sourceOfFunds', label: 'Source of funds category', type: 'select', required: true, options: SOURCE_OF_FUNDS },
         { name: 'existingRelationship', label: 'Existing customer relationship', type: 'select', required: true, options: ['New customer', 'Existing personal account', 'Existing business account'] },
         { name: 'plan', label: 'Preferred plan', type: 'select', required: true, options: PLANS },
       ],
@@ -241,6 +244,8 @@ export const APPLICATION_FLOWS: Record<AccountType, readonly StepDef[]> = {
         { name: 'activityCountries', label: 'Countries where activity is expected (comma-separated)', type: 'text', required: true },
         { name: 'fxUsage', label: 'Expected FX usage', type: 'select', required: true, options: ['Occasional', 'Monthly', 'Weekly', 'Daily'] },
         { name: 'internationalTransfers', label: 'Expected international transfer activity', type: 'select', required: true, options: ['Rarely', 'Monthly', 'Weekly', 'Daily'] },
+        { name: 'monthlyVolume', label: 'Expected monthly volume', type: 'select', required: true, options: ACTIVITY_RANGES },
+        { name: 'sourceOfFunds', label: 'Source of funds category', type: 'select', required: true, options: SOURCE_OF_FUNDS },
         { name: 'purpose', label: 'Account purpose', type: 'textarea', required: true, maxLength: 500 },
         { name: 'plan', label: 'Preferred plan', type: 'select', required: true, options: PLANS },
       ],
@@ -260,6 +265,8 @@ export const APPLICATION_FLOWS: Record<AccountType, readonly StepDef[]> = {
         { name: 'customerType', label: 'Customer type', type: 'select', required: true, options: ['Individual', 'Business', 'Family office'] },
         { name: 'objectives', label: 'Financial objectives', type: 'textarea', required: true, maxLength: 800 },
         { name: 'experience', label: 'Investment experience', type: 'select', required: true, options: ['None', 'Basic', 'Intermediate', 'Advanced', 'Professional'] },
+        { name: 'sourceOfWealth', label: 'Approximate source of wealth category', type: 'select', required: true, options: SOURCE_OF_WEALTH },
+        { name: 'sourceOfFunds', label: 'Source of funds category', type: 'select', required: true, options: SOURCE_OF_FUNDS },
         { name: 'serviceRequirements', label: 'Intended service requirements', type: 'textarea', required: true, maxLength: 800 },
         { name: 'reportingCurrency', label: 'Preferred reporting currency', type: 'select', required: true, options: CURRENCIES },
         { name: 'supportPreference', label: 'Relationship-support preference', type: 'select', required: true, options: ['Dedicated manager', 'Team coverage', 'Digital only'] },

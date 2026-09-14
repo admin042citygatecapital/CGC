@@ -101,6 +101,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { label: 'Reports',      href: '/admin/reports',      icon: PieChart,        badge: null, desc: 'Operational, customer and service reporting' },
       { label: 'Compliance',   href: '/admin/compliance',   icon: Scale,           badge: null, desc: 'Compliance reviews, monitoring and evidence' },
       { label: 'Applications', href: '/admin/applications', icon: FileText,        badge: null, desc: 'Account application review and decisions' },
+      { label: 'KYC Review',   href: '/admin/kyc',          icon: ShieldCheck,     badge: null, desc: 'Per-account KYC cases, documents and review decisions' },
       { label: 'Audit Log',    href: '/admin/audit',        icon: ClipboardList,   badge: null, desc: 'Full platform audit trail' },
       { label: 'Security',     href: '/admin/security',     icon: Shield,          badge: null, desc: 'Threats, sessions & IPs' },
       { label: 'Administrators', href: '/admin/administrators', icon: UserCog,      badge: null, desc: 'Administrator identities, roles and session posture' },
