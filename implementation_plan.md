@@ -132,6 +132,9 @@ Also added the missing toast render block in `src/pages/admin/kyc.tsx` (the `fla
 
 **Re-run confirmation (diag5 detached batch, 2026-09-14, same working tree):** `TYPECHECK_OK · LINT_OK · KYCPANEL_OK (22/22) · TEST_OK (191 files / 931 tests) · BUILD_OK (client 17.0s, SSR 25.8s, admin-docs copied) — DIAG5_DONE. All six stages green on a fresh run.
 
+**Live application of migration 0102 (2026-09-14, project `chdpquotirulzmycpcxm` via session pooler):** applied with the state-tracked runner (`0102` was the only pending version of 65 recorded). Post-apply probe: RLS enabled on all five target tables; `anon`/`authenticated`/`PUBLIC` grants on them reduced **56 → 0** (Data API can no longer reach application/KYC data); `schema_migrations` now records `0102_kyc_application_rls`. The app's `postgres` owner role is unaffected. Auth note: direct `db.*:5432` connectivity verified; connection used `sslmode=require` over the session pooler.
+
+
 
 
 
