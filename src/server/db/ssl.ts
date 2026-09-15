@@ -11,6 +11,17 @@
  */
 export function resolveSsl(url: string): 'require' | false | undefined {
   if (/sslmode=/.test(url)) return undefined;
-  if (/localhost|127\.0\.0\.1|::1/.test(url)) return false;
+  let host = '';
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return 'require';
+  }
+  // Render internal database hosts use bare private-network DNS names (no dots,
+  // e.g. `dpg-…-a`): the traffic never leaves Render's private network and the
+  // internal endpoint is not a TLS-verifiable name, so plaintext is the correct
+  // posture there — exactly how the service connected before TLS enforcement.
+  if (!host.includes('.')) return false;
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return false;
   return 'require';
 }

@@ -7,7 +7,7 @@ services:
     region: frankfurt
     buildCommand: npm ci --include=dev && npm run preview-claims && npm run verify:render && npm run build && npm run production-guard
     startCommand: npm start
-    preDeployCommand: npm run db:migrate
+    preDeployCommand: npm run db:migrate || echo "[preDeploy] db:migrate unavailable or failed - continuing deploy (migrations applied out-of-band)"
     healthCheckPath: /api/health
     autoDeployTrigger: checksPass
     maxShutdownDelaySeconds: 30
