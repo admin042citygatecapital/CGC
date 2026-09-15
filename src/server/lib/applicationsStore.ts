@@ -9,7 +9,7 @@
 import crypto from 'node:crypto';
 import { and, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 import { getDb, isDatabaseConfigured } from '../db/db.js';
-import { accountApplications, applicationEvents } from '../db/schema.js';
+import { accountApplications, applicationEvents, beneficialOwners, businessMembers, businessProfiles } from '../db/schema.js';
 import { escapeLikePattern } from './inputValidator.js';
 import { APPLICATION_FLOWS, validateStep, completionPct,
   type AccountType, type ApplicationStatus } from '../../shared/applicationFlow.js';
@@ -232,6 +232,14 @@ export async function submitApplication(input: {
     applicationId: input.applicationId, userId: app.userId,
     accountType: app.accountType, actor: input.actor,
   });
+  // Persist the business ownership/control projection (best-effort: the wizard
+  // JSON remains the source of truth; a projection failure never fails the
+  // submission — admins still see the full step data).
+  if (app.accountType === 'BUSINESS') {
+    await persistBusinessOwnership(input.applicationId).catch(error => console.warn(JSON.stringify({
+      event: 'application.business_ownership.persist_failed', applicationId: input.applicationId, error: String(error),
+    })));
+  }
   return { ok: true, row: row as ApplicationRow };
 }
 
@@ -338,4 +346,140 @@ export async function listApplicationEvents(applicationId: string) {
     .where(eq(applicationEvents.applicationId, applicationId))
     .orderBy(desc(applicationEvents.createdAt))
     .limit(200);
+}
+
+// ── Business ownership projection (migration 0103) ───────────────────────────
+
+export interface BusinessOwnershipProjection {
+  profile: {
+    legalName: string; tradingName: string | null; entityType: string | null;
+    incorporationCountry: string | null; registrationNumber: string | null;
+    registeredAddress: string | null; operatingAddress: string | null;
+    website: string | null; industry: string | null; description: string | null;
+    monthlyActivity: string | null; transactionVolume: string | null; requiredCurrencies: string | null;
+  } | null;
+  representative: { fullName: string; detail: string | null } | null;
+  members: Array<{ memberKind: string; teamRole: string | null; fullName: string; detail: string | null }>;
+  owners: Array<{ fullName: string; ownershipPct: number }>;
+}
+
+/** Parse "Name — Role" style line fields from the ownership wizard step. */
+function parseOwnershipLines(value: unknown): Array<{ name: string; role: string }> {
+  if (typeof value !== 'string') return [];
+  return value.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const emDash = line.indexOf('—');
+      const hyphen = line.indexOf(' - ');
+      const index = emDash >= 0 ? emDash : hyphen;
+      if (index <= 0) return { name: line, role: '' };
+      return { name: line.slice(0, index).trim(), role: line.slice(index + (emDash >= 0 ? 1 : 3)).trim() };
+    })
+    .filter((entry) => entry.name.length > 0);
+}
+
+function nonEmptyText(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+/** Rewrite the relational business projection from the submitted wizard steps. */
+export async function persistBusinessOwnership(applicationId: string): Promise<void> {
+  const app = await getApplication(applicationId);
+  if (!app) throw new Error('Application not found.');
+  const db = getDb();
+  const steps = app.steps as Record<string, Record<string, unknown>>;
+  const business = steps.business ?? {};
+  const ownership = steps.ownership ?? {};
+  const legalName = nonEmptyText(business.legalName);
+  if (!legalName) return; // nothing to project yet
+
+  await db.delete(businessMembers).where(eq(businessMembers.applicationId, applicationId));
+  await db.delete(beneficialOwners).where(eq(beneficialOwners.applicationId, applicationId));
+  await db.delete(businessProfiles).where(eq(businessProfiles.applicationId, applicationId));
+
+  await db.insert(businessProfiles).values({
+    id: `bprof_${crypto.randomBytes(12).toString('hex')}`,
+    applicationId,
+    legalName,
+    tradingName: nonEmptyText(business.tradingName),
+    entityType: nonEmptyText(business.entityType),
+    incorporationCountry: nonEmptyText(business.incorporationCountry),
+    registrationNumber: nonEmptyText(business.registrationNumber),
+    registeredAddress: nonEmptyText(business.registeredAddress),
+    operatingAddress: nonEmptyText(business.operatingAddress),
+    website: nonEmptyText(business.website),
+    industry: nonEmptyText(business.industry),
+    description: nonEmptyText(business.description),
+    monthlyActivity: nonEmptyText(business.monthlyActivity),
+    transactionVolume: nonEmptyText(business.transactionVolume),
+    requiredCurrencies: nonEmptyText(business.requiredCurrencies),
+    updatedAt: new Date(),
+  });
+
+  // The authorized representative is the applicant's personal-information step.
+  const firstName = typeof steps.personal?.firstName === 'string' ? steps.personal.firstName.trim() : '';
+  const lastName = typeof steps.personal?.lastName === 'string' ? steps.personal.lastName.trim() : '';
+  const representativeName = [firstName, lastName].filter(Boolean).join(' ');
+  const memberRows: Array<{ id: string; applicationId: string; memberKind: string; teamRole: string | null; fullName: string; detail: string | null }> = [];
+  if (representativeName) {
+    memberRows.push({
+      id: `bm_${crypto.randomBytes(12).toString('hex')}`, applicationId,
+      memberKind: 'representative', teamRole: 'Owner',
+      fullName: representativeName,
+      detail: nonEmptyText(steps.personal?.roleTitle),
+    });
+  }
+  for (const { name, role } of parseOwnershipLines(ownership.directors)) {
+    memberRows.push({
+      id: `bm_${crypto.randomBytes(12).toString('hex')}`, applicationId,
+      memberKind: 'director', teamRole: null, fullName: name, detail: role || null,
+    });
+  }
+  for (const { name, role } of parseOwnershipLines(ownership.teamAccess)) {
+    memberRows.push({
+      id: `bm_${crypto.randomBytes(12).toString('hex')}`, applicationId,
+      memberKind: 'team', teamRole: role || null, fullName: name, detail: null,
+    });
+  }
+  if (memberRows.length > 0) await db.insert(businessMembers).values(memberRows);
+
+  const ownerRows = parseOwnershipLines(ownership.beneficialOwners)
+    .map(({ name, role }) => {
+      const pctMatch = /(\d{1,3})\s*%/.exec(role);
+      return { id: `bo_${crypto.randomBytes(12).toString('hex')}`, applicationId, fullName: name, ownershipPct: pctMatch ? Number(pctMatch[1]) : 0 };
+    })
+    .filter((row) => row.fullName.length > 0);
+  if (ownerRows.length > 0) await db.insert(beneficialOwners).values(ownerRows);
+}
+
+/** Read the relational projection back for the admin review surface. */
+export async function getBusinessOwnership(applicationId: string): Promise<BusinessOwnershipProjection> {
+  if (!isDatabaseConfigured()) {
+    return { profile: null, representative: null, members: [], owners: [] };
+  }
+  const [profile] = await getDb().select().from(businessProfiles)
+    .where(eq(businessProfiles.applicationId, applicationId)).limit(1);
+  const members = await getDb().select().from(businessMembers)
+    .where(eq(businessMembers.applicationId, applicationId))
+    .orderBy(businessMembers.createdAt);
+  const owners = await getDb().select().from(beneficialOwners)
+    .where(eq(beneficialOwners.applicationId, applicationId))
+    .orderBy(beneficialOwners.createdAt);
+  const representative = members.find((m) => m.memberKind === 'representative');
+  return {
+    profile: profile ? {
+      legalName: profile.legalName, tradingName: profile.tradingName, entityType: profile.entityType,
+      incorporationCountry: profile.incorporationCountry, registrationNumber: profile.registrationNumber,
+      registeredAddress: profile.registeredAddress, operatingAddress: profile.operatingAddress,
+      website: profile.website, industry: profile.industry, description: profile.description,
+      monthlyActivity: profile.monthlyActivity, transactionVolume: profile.transactionVolume,
+      requiredCurrencies: profile.requiredCurrencies,
+    } : null,
+    representative: representative ? { fullName: representative.fullName, detail: representative.detail } : null,
+    members: members
+      .filter((m) => m.memberKind !== 'representative')
+      .map((m) => ({ memberKind: m.memberKind, teamRole: m.teamRole, fullName: m.fullName, detail: m.detail })),
+    owners: owners.map((o) => ({ fullName: o.fullName, ownershipPct: o.ownershipPct })),
+  };
 }

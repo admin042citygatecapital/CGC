@@ -24,6 +24,7 @@ export type TemplateId =
   | 'kyc_approved'
   | 'kyc_rejected'
   | 'application_received'
+  | 'application_started'
   | 'application_under_review'
   | 'application_needs_information'
   | 'application_approved'

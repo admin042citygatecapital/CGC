@@ -41,6 +41,15 @@ export default async function handler(req: Request, res: Response): Promise<void
       email: session?.email ?? '',
       ip: req.ip ?? 'unknown',
     });
+    // Application-started notice — best-effort after the store commit; only for
+    // drafts that already carry an identity email. Never blocks the response.
+    if (row.email) {
+      const { sendApplicationStartedEmail } = await import('../../lib/emailService.js');
+      sendApplicationStartedEmail(row.email, 'Applicant', row.reference ?? row.id, row.accountType)
+        .catch(error => console.warn(JSON.stringify({
+          event: 'application.started.email_failed', applicationId: row.id, error: String(error),
+        })));
+    }
     res.status(201).json({
       ok: true,
       application: {

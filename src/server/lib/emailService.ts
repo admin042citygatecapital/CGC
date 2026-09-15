@@ -403,6 +403,27 @@ export async function sendApplicationSubmittedEmail(
   await send({ to, ...content });
 }
 
+/** Application-started notice — fired best-effort when a draft is created. */
+export async function sendApplicationStartedEmail(
+  to: string,
+  name: string,
+  reference: string,
+  accountType: string,
+) {
+  if (!to) return;
+  const content = configuredTemplate('application_started', {
+    user_name: name,
+    reference,
+    account_type: accountType,
+    date: new Date().toLocaleDateString('en-GB'),
+  }, {
+    subject: `Application Started: ${reference} — City Gate Capital`,
+    title: 'Application Started',
+    body: `<p>Dear ${escapeEmailHtml(name)},</p><p>Your ${escapeEmailHtml(accountType.replaceAll('_', ' ').toLowerCase())} account application (${escapeEmailHtml(reference)}) has been started. You can save your progress and continue later from the application status page.</p><p>Starting an application does not open an account or activate any financial service.</p>`,
+  });
+  await send({ to, ...content });
+}
+
 /** Review-in-progress notice — shared by the application and KYC case flows. */
 export async function sendApplicationUnderReviewEmail(to: string, name: string) {
   if (!to) return;

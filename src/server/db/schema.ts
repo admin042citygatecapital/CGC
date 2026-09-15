@@ -1099,6 +1099,49 @@ export const kycCaseDocuments = pgTable('kyc_case_documents', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('kyc_case_documents_case_idx').on(t.caseId)]);
 
+// ── Business ownership / control (migration 0103) ────────────────────────────
+// Queryable projection of the BUSINESS wizard steps, rewritten idempotently on
+// every submission. See migration 0103_business_ownership.sql.
+
+export const businessProfiles = pgTable('business_profiles', {
+  id: text('id').primaryKey(),
+  applicationId: text('application_id').notNull(),
+  legalName: text('legal_name').notNull(),
+  tradingName: text('trading_name'),
+  entityType: text('entity_type'),
+  incorporationCountry: text('incorporation_country'),
+  registrationNumber: text('registration_number'),
+  registeredAddress: text('registered_address'),
+  operatingAddress: text('operating_address'),
+  website: text('website'),
+  industry: text('industry'),
+  description: text('description'),
+  monthlyActivity: text('monthly_activity'),
+  transactionVolume: text('transaction_volume'),
+  requiredCurrencies: text('required_currencies'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('business_profiles_application_idx').on(t.applicationId)]);
+
+export const businessMembers = pgTable('business_members', {
+  id: text('id').primaryKey(),
+  applicationId: text('application_id').notNull(),
+  memberKind: text('member_kind').notNull(),
+  teamRole: text('team_role'),
+  fullName: text('full_name').notNull(),
+  detail: text('detail'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('business_members_application_idx').on(t.applicationId)]);
+
+export const beneficialOwners = pgTable('beneficial_owners', {
+  id: text('id').primaryKey(),
+  applicationId: text('application_id').notNull(),
+  fullName: text('full_name').notNull(),
+  ownershipPct: integer('ownership_pct').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('beneficial_owners_application_idx').on(t.applicationId)]);
+
+
 export const complianceCases = pgTable(
   'compliance_cases',
   {
