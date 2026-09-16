@@ -328,3 +328,91 @@ describe('POST /api/admin/applications/:id/decision', () => {
     expect(mocks.captured.set).toMatchObject({ decidedBy: 'admin@citygate.capital' });
   });
 });
+
+describe('GET /api/admin/applications/:id', () => {
+  const detailRow = { ...applicationRow, steps: { contact: { email: 'anna@example.test', password: 'secret', otp: '123456' } } };
+
+  it('requires an application id', async () => {
+    mocks.configured = true;
+    const handler = (await import('../../server/api/admin/applications/[id]/GET.js')).default;
+    const { res, state } = responseDouble();
+    await handler({ params: {} } as unknown as Request, res);
+    expect(state.status).toBe(400);
+  });
+
+  it('answers 503 while the database is offline', async () => {
+    const handler = (await import('../../server/api/admin/applications/[id]/GET.js')).default;
+    const { res, state } = responseDouble();
+    await handler({ params: { id: 'appl_cgc1' } } as unknown as Request, res);
+    expect(state.status).toBe(503);
+  });
+
+  it('answers 404 for an unknown application', async () => {
+    mocks.configured = true;
+    mocks.selectRows = [];
+    const handler = (await import('../../server/api/admin/applications/[id]/GET.js')).default;
+    const { res, state } = responseDouble();
+    await handler({ params: { id: 'appl_missing' } } as unknown as Request, res);
+    expect(state.status).toBe(404);
+  });
+
+  it('returns the credential-free detail with events for an admin', async () => {
+    mocks.configured = true;
+    mocks.selectRows = [detailRow];
+    const handler = (await import('../../server/api/admin/applications/[id]/GET.js')).default;
+    const { res, state } = responseDouble();
+    await handler({ params: { id: 'appl_cgc1' } } as unknown as Request, res);
+    expect(state.status).toBe(200);
+    const body = state.body as { ok: boolean; application: Record<string, unknown>; businessOwnership: unknown };
+    expect(body.ok).toBe(true);
+    expect(body.application.id).toBe('appl_cgc1');
+    const steps = body.application.steps as Record<string, unknown>;
+    expect(steps.contact).not.toHaveProperty('password');
+    expect(steps.contact).not.toHaveProperty('otp');
+    expect(body.businessOwnership).toBeNull();
+  });
+});
+
+describe('POST /api/admin/applications/:id/notes', () => {
+  it('requires an id and a note of 2 to 2000 characters', async () => {
+    mocks.configured = true;
+    const handler = (await import('../../server/api/admin/applications/[id]/notes/POST.js')).default;
+    const { res, state } = responseDouble();
+    await handler({ params: {}, body: { note: 'Looks fine.' } } as unknown as Request, res);
+    expect(state.status).toBe(400);
+    await handler({ params: { id: 'appl_cgc1' }, body: {} } as unknown as Request, res);
+    expect(state.status).toBe(400);
+    await handler({ params: { id: 'appl_cgc1' }, body: { note: 'x' } } as unknown as Request, res);
+    expect(state.status).toBe(400);
+    await handler({ params: { id: 'appl_cgc1' }, body: { note: 'y'.repeat(2001) } } as unknown as Request, res);
+    expect(state.status).toBe(400);
+    expect(mocks.captured.event).toBeUndefined();
+  });
+
+  it('answers 503 while the database is offline and 404 for unknown applications', async () => {
+    const handler = (await import('../../server/api/admin/applications/[id]/notes/POST.js')).default;
+    const { res, state } = responseDouble();
+    await handler({ params: { id: 'appl_cgc1' }, body: { note: 'Looks fine.' } } as unknown as Request, res);
+    expect(state.status).toBe(503);
+    mocks.configured = true;
+    mocks.selectRows = [];
+    await handler({ params: { id: 'appl_missing' }, body: { note: 'Looks fine.' } } as unknown as Request, res);
+    expect(state.status).toBe(404);
+  });
+
+  it('records the note on the event trail attributed to the acting admin', async () => {
+    mocks.configured = true;
+    mocks.selectRows = [applicationRow];
+    const handler = (await import('../../server/api/admin/applications/[id]/notes/POST.js')).default;
+    const { res, state } = responseDouble();
+    await handler({ params: { id: 'appl_cgc1' }, body: { note: '  Looks fine.  ' }, adminSession } as unknown as Request, res);
+    expect(state.status).toBe(201);
+    expect(mocks.captured.event).toMatchObject({
+      applicationId: 'appl_cgc1', actor: 'admin-checker', actorRole: 'COMPLIANCE_OFFICER',
+      event: 'NOTE_ADDED', detail: { note: 'Looks fine.' },
+    });
+
+    await handler({ params: { id: 'appl_cgc1' }, body: { note: 'Second view.' } } as unknown as Request, responseDouble().res);
+    expect(mocks.captured.event).toMatchObject({ actor: 'unknown-admin', actorRole: null });
+  });
+});

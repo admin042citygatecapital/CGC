@@ -1,140 +1,43 @@
-# Implementation Plan — Verification & Finalization of Per-Account-Type Registration + KYC
+﻿# Implementation Plan - Multi-Phase Platform Program
 
-**Repo:** `C:\Users\gigaf\.cline\data\workspaces\chat\city-gate-capital-platform` (branch `main`, in sync with `origin/main`)
-**Base commit:** `5d73e33` ("Use postgres.js 'require' TLS mode for managed providers")
-**Date:** 2026-09-14
-**Mode:** Deep-planning protocol — this document is the agreed plan. Work below is limited to verification and, if needed, fixes to make verification green. No commits/pushes unless explicitly requested.
+[Overview]
+Deliver seven workstreams (dashboard fixes, cleanup, KYC, security, rates/fees, newsletter/SMTP, production deploy) on top of the registration system, in the user-confirmed order. Deploy target: the existing Render service (city-gate-capital-preview-2026) with custom domain citygate.capital. Every phase ends with the full gate: lint, type-check, test, build, then commit and push both repos. Aikido full-scan runs over every changed file before each commit.
 
----
+Codebase reality check (reconnaissance results): the newsletter, SMTP, KYC, security, and rates areas already have substantial scaffolding - subscriberStore, campaign APIs, emailQueue delivery logs, smtpConfigStore and admin/smtp.tsx, emailTemplateStore with the full template catalogue, kycCaseStore with review/assign/notes/decision APIs and signed document access, securityCenterStore alerts, sessionStore, adminMutationAuditMiddleware, loginLog, ratesStore with per-pair rates, tier-fees and fx-markup APIs, and the /api/users/swap endpoint. Most phases extend existing modules rather than create them.
 
-## Overview
+Risk discipline: cleanup is surgical and test-gated; intentional fallbacks (subscriberStore.flatfile.ts, importFlatFiles) stay; no database column removal without a reviewed migration; production DB test-record removal is SQL-reviewed before execution.
 
-The per-account-type registration + KYC gap implementation is **already written** and sits uncommitted on top of `5d73e33`. Deep investigation of every touched file confirmed the implementation is complete and internally consistent:
+[Phase 0 - Close the registration gate]
+Finish the in-flight work before anything new: the three new test suites are written and green (businessOwnership 8/8, adminApplications 21/21, emailTemplates 5/5).
+Steps: run full suite (expect about 952 tests, 194 files), npm run build, commit tests and plan doc, push both repos, trigger deploy on Render service srv-dak4s60dl3ps738sks2g (preDeployCommand is null, autoDeploy off), poll to live, delete broken service cgc-prod (srv-daks2hjm8hqs73efhb5g), verify /api/health (commit 02cb002, database healthy), /admin/kyc, /admin/applications, optional DB probe, then deliver the registration spec PASS/FAIL report.
+Files: src/test/server/businessOwnership.test.ts (new), src/test/server/emailTemplates.test.ts (new), src/test/server/adminApplications.test.ts (extended), implementation_plan.md (this doc).
 
-- **Flow (`src/shared/applicationFlow.ts`)** — 11 step ids (`contact`, `personal`, `security`, `review`, `preferences`, `verification`, `savings`, `business`, `ownership`, `multiCurrency`, `wealth`) with the new required selects present: `sourceOfFunds` (savings L187, multi-currency L248, wealth L269), `monthlyVolume` (multi-currency L247), `sourceOfWealth` (wealth L268).
-- **Customer status page (`src/pages/application-status.tsx`)** — per-application KYC document upload form (`POST /api/kyc/documents` with `documentType`, optional `issuingCountry`, `document` file; JPEG/PNG/PDF ≤ 5 MB) plus next-action guidance for `SUBMITTED` and `NEEDS_INFORMATION` states.
-- **Admin KYC panel (`src/pages/admin/kyc.tsx`, new)** — type/status/search filters, case drawer, document links via signed URLs; imports only `ExternalLink`, `Loader2` (no unused `Search` icon).
-- **Admin shell wiring** — `src/routes.tsx` L102/L220 (`/admin/kyc` → `AdminOnly > AdminKyc`), `src/layouts/AdminLayout.tsx` L81 (`KYC & Onboarding`) + L104 (`KYC Review` → `/admin/kyc`) + L485 pending-verifications badge, matching the exact-string assertions in `adminUiCorrectness.test.ts`.
-- **Server routes (`src/server/entry.ts` L785–790)** — `GET /api/admin/kyc-cases`, `GET /:id`, `POST /:id/notes`, `POST /:id/assign`, `GET /:id/documents/:documentId` (plus pre-existing `POST /:id/decision`).
-- **Store & storage (`src/server/lib/kycCaseStore.ts`, `kycStorage.ts`)** — `listCasesForAdmin`, `getCaseWithApplication`, `addCaseNote`, `assignReviewer`, `getCaseDocument`, `getCaseDocumentPath`, and `createKycDocumentSignedUrl` (60 s default TTL); LIKE input escaped via `escapeLikePattern` (`inputValidator.ts` L105).
-- **Migration (`src/server/db/migrations/0102_kyc_application_rls.sql`, new)** — enables RLS on `account_applications`, `application_events`, `kyc_cases`, `kyc_case_events`, `kyc_case_documents`; revokes `PUBLIC`/`anon`/`authenticated`; mirrors the migration-0056 private-KYC pattern; safe to run on any Postgres provider.
-- **Tests** — new `src/test/server/kycCaseReviewPanel.test.ts` (RLS migration content, case detail 503/200, decision, notes, assign event, signed-URL route 400/404/503/200 + audit + no storage-path leak) and extended `adminUiCorrectness.test.ts`.
+[Phase 1 - Customer dashboard fixes]
+Bug 1 balance shows 0.00: investigate src/server/api/users/balance/GET.ts (reads user.primaryCurrency, auto-detects highest USD-equivalent currency from transactions) and its wallet summation source; the EUR-only user case must produce a correct cross-currency total converted into the primary currency. Bug 2 currency display: ensure src/pages/dashboard.tsx renders primaryAmount in the detected primary currency instead of hardcoded USD. Bug 3 blank spending chart: locate the chart (likely src/pages/dashboard/analytics.tsx) and bind real aggregated spending data; add a fixture-driven test. Bug 4 exchange widget: src/pages/wallet.tsx Exchange Now button must call POST /api/users/swap with validation, confirmation, and error handling; fix clipped rate rows styling so BTC/USD and ETH/EUR rows render fully.
+Files: src/server/api/users/balance/GET.ts, src/server/api/users/swap/POST.ts (verify), src/pages/dashboard.tsx, src/pages/dashboard/analytics.tsx, src/pages/wallet.tsx, plus tests (src/test/server/userBalance.test.ts or existing suite extension; component test for chart binding and exchange flow).
 
-The previous session's verification batch was **interrupted during `npm ci`** (log ends with `^C`; status file never advanced past `=== npm ci ===`). `node_modules` is therefore in an unknown, possibly partial state. **The only remaining work is a clean, fully green verification run and the final report.** No code changes are planned unless a stage fails.
+[Phase 2 - Cleanup and optimization]
+Surgical, test-gated cleanup only. Unused imports and dead routes: cross-check src/routes.tsx against pages and api handler folders; remove unreferenced exports only when no route, test, or dynamic import references them. Hardcoded data: replace display-only constants (for example BankingModule.tsx hardcoded stat tiles) with live API data where a source exists; keep demo seeds in scripts/ untouched (explicitly tooling). API hygiene: console.log sweep in server handlers (structured JSON logging only), consistent error shapes, verify every admin route passes the central admin middleware (adminMutationAuditMiddleware and rbacMiddleware tests already cover the matrix - extend where gaps appear). Security: run aikido full scan on all changed files; verify no secrets in frontend bundles; input validation audit on public intake routes; file-upload type and size validation on KYC/profile endpoints (kycStorage already validates - confirm). Performance: FX ticker poll interval capped at 30 seconds; remove duplicate library loads if found; image optimization pass on marketing assets.
+Database: review schema.ts for duplicate table definitions and FK correctness (users, transactions, wallets, KYC records); production Supabase test-record sweep only via reviewed SQL, never blind deletes.
+Explicit non-actions: no unused-column removal without a migration; keep flatfile migration fallbacks; no mass file deletion - only verified orphans.
 
-## Types
+[Phase 3 - KYC verification flow]
+Admin side: KYC stats dashboard API (pending count, approved/rejected this week, expired over 12 months, average review time in hours) surfaced on src/pages/admin/kyc.tsx. Review queue: sortable list with document type, country, risk score, and actions (approve, reject, request info, flag) - the case store and decision endpoints exist; extend list projection. Document viewer: signed front/back/selfie images (kycDocumentSigning exists), auto-extracted fields with manual correction (Sumsub supplies extraction and match confidence when configured; heuristic fallback otherwise), authenticity result, notes (exists), mandatory rejection reason. Rejection reasons: enum (expired, unclear, name mismatch, suspected fraud, wrong type, other+free text) on the decision API; auto-email to user (template kyc_rejected exists, add reason variable); user dashboard shows reason and resubmit instructions. Expiry: new migration adding kyc_expires_at; admin-settable 6/12/24 months; 30-day reminder email job; expired users downgraded to view-only until resubmission; admin extend/revoke actions. Customer side: 5-step progress indicator, upload guidelines with example images, estimated review time, pending-over-10-minutes status page with support contact, approval redirect with congratulations.
+Risk scoring: country risk list, document type weight, applicant age, VPN/proxy flag from submission metadata, previous rejections; displayed as Low/Medium/High on queue cards.
+Files: src/server/lib/kycCaseStore.ts, kycRiskScore.ts (new), migration 0104_kyc_expiry.sql (new), admin/kyc.tsx, admin KYC APIs, customer onboarding pages, emailService templates; tests per module.
 
-No new or changed types are required for this plan (verification-only). For reference, the types exercised by verification:
+[Phase 4 - Security section]
+Flags dashboard: aggregation API over securityCenterStore (active flags, resolved this month, suspended accounts, failed logins last 24h from loginLog, flagged transactions last 7d) with summary cards on the admin security page. Flag detail view: flag type taxonomy (suspicious login, unusual transaction, KYC mismatch, multiple failed attempts, VPN, unusual location, large transfer), user context (name, email, tier, KYC status, registration date), 30-day activity log, device and IP history, and action buttons (suspend account, clear flag, request re-KYC, block IP, watchlist) wired to existing stores with audit entries. Automated flag rules: settings panel with per-rule toggle and severity (login from new country/device, transfer above admin-set threshold, over 3 failed logins per hour, multiple accounts per IP, KYC document mismatch, flagged wallet destination); evaluation hooks in the login and transfer handlers. IP management: blacklist/whitelist/country-block/VPN-mode stored via configStore, enforced in the session middleware, export endpoint. 2FA controls: platform-wide mandatory toggle, withdrawal-threshold and wire-transfer mandates, per-user force-enable, enabled-vs-disabled list (totpEnabled exists). Audit log: read-only admin view of adminMutationAuditMiddleware records with filters (admin, action type, date range) and CSV export. Session management: active session list with device/browser/IP/location (sessionStore plus loginLog enrichment), force-logout single session, platform-wide emergency lockdown.
+Files: src/server/lib/securityCenterStore.ts, sessionStore.ts, loginLog.ts, new securityRulesStore.ts and ipControlStore.ts, admin security page and APIs; tests per module.
 
-- `KycCaseRow` / handler signatures in `src/server/lib/kycCaseStore.ts` (e.g. `listCasesForAdmin(filter: { status?: string; accountType?: string; q?: string; limit?: number })` returning rows joined with `customerEmail`, `customerName`, `applicationReference`).
-- Route handler contract `export default async function (req: Request, res: Response)` used by all `src/server/api/admin/kyc-cases/...` handlers.
-- Signed-URL return `{ signedUrl: string; expiresAt: Date }` from `createKycDocumentSignedUrl`.
+[Phase 5 - Rates and fees]
+Per-transaction-type fees: extend ratesStore with domestic, international wire, crypto send, and exchange fee entries, each flat-or-percentage with a mode toggle; admin UI rows on src/pages/admin/rates.tsx; application points at transaction creation so changes take effect immediately for new transactions. Per-currency-pair markup: the store already holds per-pair rates and the global fx-markup API exists - add per-pair markup fields (editable, persistent, applied on top of live rates before customer display) plus the markup preview in the UI. Account tier fees: extend the existing tier-fees API and rates UI so personal uses defaults, savings can be reduced or zero, and business gets a custom schedule with volume discounts. Fee history: the settings/rates POST already logs changes - add the read-only history view with admin, old value, new value, timestamp, and CSV export. Withdrawal limits: the limits API exists - add per-tier defaults plus per-user overrides, and show current limit, used-today, and remaining on the admin user profile in Banking Operations.
+Files: src/server/lib/ratesStore.ts, src/pages/admin/rates.tsx, src/server/api/admin/rates/*, transaction creation paths (transfers, swaps, withdrawals), fee history API; tests per module.
 
-## Files
+[Phase 6 - Newsletter and SMTP]
+SMTP configuration: complete src/pages/admin/smtp.tsx - host, port dropdown (25/465/587), encryption dropdown (None/SSL/TLS), username, password with show/hide, sender name, sender email, reply-to - backed by smtpConfigStore; the Send Test Email endpoint exists (admin/smtp/test/POST) - surface it in the UI with result feedback. Email templates: build the template manager page over emailTemplateStore (catalogue already contains welcome, kyc approved/rejected, application lifecycle, deposit confirmed, withdrawal approved, transfer sent/received, password reset, 2FA code, security alert, login alert, support reply) - subject and body editors with the documented dynamic variables per template, preview, save and reset-to-default (saveTemplate/resetTemplate exist). Email log: page over emailQueue getEmailLogs with recipient, template, timestamp, delivery status (delivered/bounced/failed - resend webhook supplies provider evidence), filters by date/status/template, and resend for failed entries. Subscribers: list over subscriberStore (name, email, tier, subscription date), manual unsubscribe (admin endpoint exists), CSV export, CSV import (import endpoint exists). Campaign builder: campaign name, subject, rich body editor with variable insertion, desktop and mobile preview, recipient segments (all users, personal, business, savings holders, custom by registration date or country), send-now or scheduled send, save-as-draft (campaigns APIs exist; add scheduling field and segment resolution). Campaign history: sent list with name, subject, date, recipients, open rate, click rate, unsubscribes, and duplicate-and-resend (duplicate API exists; add open/click tracking beacons and unsubscribe attribution). Unsubscribe compliance: the unsubscribe GET exists - add the confirmation page, immediate removal, admin log entry, and keep transactional emails unaffected (template store already sends transactional regardless of subscription).
+Files: src/pages/admin/smtp.tsx, admin newsletter page(s), src/server/lib/subscriberStore.ts, emailQueue.ts, campaign APIs, unsubscribe GET confirmation view; tests per module.
 
-**Already implemented (uncommitted; validated by this plan, not modified unless a stage fails):**
-
-| Path | State |
-| --- | --- |
-| `src/shared/applicationFlow.ts` | modified |
-| `src/pages/application-status.tsx` | modified |
-| `src/pages/admin/kyc.tsx` | new |
-| `src/routes.tsx` | modified |
-| `src/layouts/AdminLayout.tsx` | modified |
-| `src/server/entry.ts` | modified |
-| `src/server/api/admin/kyc-cases/GET.ts` | modified |
-| `src/server/api/admin/kyc-cases/[id]/GET.ts` | new |
-| `src/server/api/admin/kyc-cases/[id]/notes/` | new |
-| `src/server/api/admin/kyc-cases/[id]/assign/` | new |
-| `src/server/api/admin/kyc-cases/[id]/documents/` | new |
-| `src/server/lib/kycCaseStore.ts` | modified |
-| `src/server/lib/kycStorage.ts` | modified |
-| `src/server/db/migrations/0102_kyc_application_rls.sql` | new |
-| `src/test/server/kycCaseReviewPanel.test.ts` | new |
-| `src/test/server/adminUiCorrectness.test.ts` | modified |
-
-**Created by this plan:**
-
-- `implementation_plan.md` (this file, repo root)
-- Verification artifacts in `%TEMP%\cline\`: `run-verify.bat`, `verify-status.txt`, `verify-{npmci,typecheck,kycpanel,lint,test,build}.log` (temp only, never committed)
-
-## Functions
-
-No production functions will be written by this plan. Verification exercises:
-
-- `npm run type-check` → `tsc --noEmit` over the whole tree (covers all handlers/store/flow types above).
-- `npx vitest run src/test/server/kycCaseReviewPanel.test.ts --config vitest.server.config.mjs` → targeted KYC panel + RLS + signed-URL suite.
-- `npm run lint` → `eslint .` (security/no-unsanitized/react-hooks rulesets).
-- `npm run test:ci` → full server vitest suite (`vitest.server.config.mjs`: `src/**/*.{test,spec}.{ts,tsx}`, node env, single worker).
-- `npm run build` → `vite build && vite build --ssr src/server/entry.ts && node scripts/copy-admin-docs.mjs` (proves SSR entry + admin KYC routes bundle; `scripts/copy-admin-docs.mjs` confirmed present).
-
-If any stage fails, the fix is scoped to the failing assertion/stage only, then that stage (and any stage that could be affected) is re-run.
-
-## Classes
-
-None. The codebase uses functions/modules and Drizzle-style row objects; no class definitions are added or modified by this plan.
-
-## Dependencies
-
-- **Runtime/toolchain:** Node ≥ 22 with `engine-strict=true` (`.npmrc`); Node v24 present.
-- **Install:** `npm ci --no-audit --no-fund` (clean reinstall — required because the previous run was interrupted; `npm ci` removes `node_modules` itself).
-- **No new npm dependencies** are added. Everything used (typescript, eslint, vitest, vite, drizzle, postgres.js, supabase-js) is already pinned in `package-lock.json`.
-- **Secrets:** none required. The repo has **no `.env`**; no credentials from the user-provided Downloads env files are echoed into logs, this document, or commits.
-
-## Testing
-
-1. **Stage order (via detached `run-verify.bat`, markers appended to `verify-status.txt`):**
-   1. `npm ci` → `NPMCI_OK/_FAIL`
-   2. `npm run type-check` → `TYPECHECK_OK/_FAIL`
-   3. targeted `kycCaseReviewPanel.test.ts` → `KYCPANEL_OK/_FAIL`
-   4. `npm run lint` → `LINT_OK/_FAIL`
-   5. `npm run test:ci` → `TEST_OK/_FAIL`
-   6. `npm run build` → `BUILD_OK/_FAIL`
-   7. `VERIFY_DONE` marker
-2. **Pass criteria:** all six stages `*_OK`.
-3. **Failure handling:** per-stage log triage (`verify-<stage>.log`), minimal fix, re-run the failed stage; re-run `test:ci` if any production source file changed after it last passed.
-4. **Explicitly NOT covered (caveat for the final report):** no live E2E. Without a live database/Storage/email configuration this environment cannot execute: applying migration `0102` to a real database, real Supabase Storage signed-URL issuance, admin auth against a live session, or email delivery. Coverage is by migration-content assertions, mocked handler tests, type-check, and build.
-
-## Implementation Order
-
-1. **Relaunch verification detached** (done at plan-execution start): `Start-Process cmd '/c run-verify.bat'` so polling cannot kill it.
-2. **Write `implementation_plan.md`** (this document) while `npm ci` runs.
-3. **Poll `verify-status.txt`** until `VERIFY_DONE`; consolidate per-stage PASS/FAIL.
-4. **If all green:** produce the final report (stage table, what was validated, no-live-E2E caveat) and stop. Changes remain uncommitted.
-5. **If any stage fails:** triage the stage log → minimal fix → re-run failed stage (plus `test:ci`/`type-check` if production sources changed) → loop to 3.
-6. **Follow-ups requiring explicit user go-ahead (out of scope now):** git add/commit of the 16 paths above; applying `0102` + RLS verification against the authoritative production database.
-
-## Assumptions, Open Questions & Risks
-
-- **Database authority unconfirmed:** the user-provided env files reference Neon credentials, while `PRODUCTION_READINESS.md` describes a live Supabase project. The repo itself has no `.env`, so nothing here can resolve it — and nothing needs to: migration `0102` is written provider-agnostically (guards `anon`/`authenticated` revokes behind `pg_roles` existence checks) and the app talks to Postgres through `DATABASE_URL`. This stays an open question for deployment, not for verification.
-- **No commits by default.** If the user wants the work committed, that is one explicit confirmation away; suggested message: `Add per-account-type KYC review panel, signed document URLs, RLS hardening and richer application flow`.
-- **Risk — interrupted-install residue:** mitigated by `npm ci` (self-cleaning) rather than `npm install`.
-- **Risk — flaky full suite:** `vitest.server.config.mjs` already serializes (single worker, `fileParallelism: false`); a genuine failure is fixed, an environment flake is re-run once and noted.
-- **Secret hygiene:** Downloads env files with Neon/Supabase credentials are never echoed, logged, or committed.
-
----
-
-## Verification Findings & Fixes Applied (2026-09-14)
-
-The first completed batch failed per-stage; triage found three root causes (plus the earlier `documents/[documentId]/GET.ts` import-depth bug, fixed pre-batch). Fixes applied and re-verified:
-
-1. **Admin KYC routes responded without an explicit status on success paths** — `assign/POST.ts`, the case-detail `GET.ts` and the document signed-URL `GET.ts` called bare `res.json(...)`, so an explicit-status assertion captured `0` ("expected +0 to be 200"). Fixed: `res.status(200).json(...)` in all three (Express behavior unchanged for real clients; consistent with the sibling routes and the 201 notes path).
-2. **Signed-URL issuance violated the pre-existing `kycPrivateSchema.test.ts` guard** (kycStorage.ts must never contain `createSignedUrl`/`getPublicUrl`). Fixed by moving `createKycDocumentSignedUrl` verbatim into the new `src/server/lib/kycDocumentSigning.ts`, which imports the now-exported `storageClient` and `KYC_BUCKET` from `kycStorage.ts`; the admin route imports the new module. The guard's intent — the customer-facing write surface never mints URLs — is preserved and the old test is unchanged.
-3. **`kycCaseReviewPanel.test.ts` double dispatched on schema module identity**, which breaks across `vi.resetModules()` generations: the mocked `db.js` factory result is cached with a stale schema instance while the re-imported store gets a fresh one, so every row-provisioning test 404'd. Fixed: dispatch on the table's SQL name via drizzle's `getTableName` (`kyc_cases`, `account_applications`, `kyc_case_documents`, `kyc_case_events`) — pure table data, stable across module generations.
-
-Also added the missing toast render block in `src/pages/admin/kyc.tsx` (the `flash()` state existed but was never displayed) — resolves TS6133 + eslint `no-unused-vars`.
-
-**Final verification result (diag4 batch, 2026-09-14):**
-- `type-check` **PASS** · `lint` **PASS**
-- `kycCaseReviewPanel.test.ts` **22/22 PASS**
-- `test:ci` **PASS — 191/191 test files, 931/931 tests** (includes `kycPrivateSchema`, `kycPrivateStorage`, `adminApplications`, `adminUiCorrectness`)
-- `build` **PASS** — client bundle ✓, SSR bundle ✓ (`dist/server.bundle.mjs`), admin docs copied ✓ (`{"ok":true,"artifact":"dist/admin-docs"}`)
-
-**Re-run confirmation (diag5 detached batch, 2026-09-14, same working tree):** `TYPECHECK_OK · LINT_OK · KYCPANEL_OK (22/22) · TEST_OK (191 files / 931 tests) · BUILD_OK (client 17.0s, SSR 25.8s, admin-docs copied) — DIAG5_DONE. All six stages green on a fresh run.
-
-**Live application of migration 0102 (2026-09-14, project `chdpquotirulzmycpcxm` via session pooler):** applied with the state-tracked runner (`0102` was the only pending version of 65 recorded). Post-apply probe: RLS enabled on all five target tables; `anon`/`authenticated`/`PUBLIC` grants on them reduced **56 → 0** (Data API can no longer reach application/KYC data); `schema_migrations` now records `0102_kyc_application_rls`. The app's `postgres` owner role is unaffected. Auth note: direct `db.*:5432` connectivity verified; connection used `sslmode=require` over the session pooler.
-
-
-
-
-
+[Phase 7 - Production deploy to citygate.capital]
+Pre-deployment: build with zero errors and review warnings; env var audit on the Render service (secrets present, DATABASE_URL points at the Render production database, no development values); all API endpoints smoke-checked; mobile and desktop load check. Domain: attach citygate.capital and www.citygate.capital to the Render service (dashboard DNS or API), SSL auto-provisioned by Render. Publish: final build and deploy, poll to live. Post-deploy verification: site loads at citygate.capital, /dashboard and /admin render, FX ticker shows live rates, registration through KYC completes for a test user, admin login reaches every section, SSL active on all pages, no console errors on key pages.
+Files: Render service settings (custom domains), env vars, render.yaml if blueprint drift appears.
