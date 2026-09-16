@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { FxMarkups } from '../../server/lib/ratesStore.js';
 
 const deps = vi.hoisted(() => ({
   user: {
@@ -19,7 +20,7 @@ const deps = vi.hoisted(() => ({
       BTC_USD: 67000, ETH_USD: 3500, SOL_USD: 170, USDT_USD: 1, BNB_USD: 590,
     },
     txFees: { currency_exchange: { mode: 'percentage', flat: 0, percentage: 0, minFee: 0, maxFee: 0, enabled: false } },
-    fxMarkups: { pairs: [] },
+    fxMarkups: { pairs: [] } as FxMarkups,
   },
   swapResult: { ok: true, replayed: false, sourceBalance: 4.9, usdBalance: 1000 } as unknown,
 }));
@@ -119,7 +120,8 @@ describe('POST /api/users/swap contract (Bug 4 server side)', () => {
   });
 
   it('applies the per-pair FX markup spread', async () => {
-    deps.rates.fxMarkups = { pairs: [{ pair: 'BTC/USD', markup: 1, enabled: true }] };
+    const previous = deps.rates.fxMarkups;
+    deps.rates.fxMarkups = { ...previous, pairs: [{ pair: 'BTC/USD', markup: 1, enabled: true }] };
     try {
       const response = responseDouble();
       await swapHandler(swapRequest({ fromAsset: 'BTC', toAsset: 'USD', amount: 1 }), response.res);
@@ -127,7 +129,7 @@ describe('POST /api/users/swap contract (Bug 4 server side)', () => {
       expect(body.markupPct).toBe(1);
       expect(body.toAmount).toBeCloseTo(67000 * 0.99, 2);
     } finally {
-      deps.rates.fxMarkups = { pairs: [] };
+      deps.rates.fxMarkups = previous;
     }
   });
 
