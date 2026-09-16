@@ -20,7 +20,7 @@ const deps = vi.hoisted(() => ({
       BTC_USD: 67000, ETH_USD: 3500, SOL_USD: 170, USDT_USD: 1, BNB_USD: 590,
     },
     txFees: { currency_exchange: { mode: 'percentage', flat: 0, percentage: 0, minFee: 0, maxFee: 0, enabled: false } },
-    fxMarkups: { pairs: [] } as FxMarkups,
+    fxMarkups: { pairs: [] } as unknown as FxMarkups,
   },
   swapResult: { ok: true, replayed: false, sourceBalance: 4.9, usdBalance: 1000 } as unknown,
 }));
