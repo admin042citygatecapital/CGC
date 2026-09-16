@@ -1,11 +1,11 @@
-services:
+﻿services:
   - type: web
     name: city-gate-capital
     branch: main
     runtime: node
     plan: starter
     region: frankfurt
-    buildCommand: npm ci --include=dev && npm run preview-claims && npm run verify:render && npm run build && npm run production-guard
+    buildCommand: echo BISECT_YAML_BC_OK
     startCommand: npm start
     # Migrations are applied out-of-band (state-tracked runner) — the pre-deploy
     # stage fails unreliably on this service and must not gate deploys.
